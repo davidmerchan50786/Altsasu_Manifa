@@ -65,7 +65,7 @@ Alterna la posición de la cámara entre el hombro derecho e izquierdo del perso
 #### `MouseLock.cs`
 **Ruta:** `Assets/#Xtra/MouseLock.cs`
 
-Bloquea y oculta el cursor del ratón durante el juego.
+Bloquea y oculta el cursor del ratón durante el juego. Ver también la entrada en [Utilidades](#utilidades).
 
 ---
 
@@ -219,7 +219,7 @@ Cámara que sigue al vehículo con suavizado. Se desempareja de la jerarquía en
 #### `OrbitCamera.cs`
 **Ruta:** `Assets/#Tools/Resources/Scripts/OrbitCamera.cs`
 
-Cámara en tercera persona. En estado normal sigue a `targetOrbit` con FOV 60°. Al mantener `Fire2` (apuntar) cambia a `targetShoot` con FOV 20° (zoom) y dibuja la mira (`crosshairTexture`) en pantalla.
+Cámara en tercera persona. En estado normal sigue a `targetOrbit` con campo de visión de 60 grados. Al mantener `Fire2` (apuntar) cambia a `targetShoot` con campo de visión de 20 grados (zoom) y dibuja la mira (`crosshairTexture`) en pantalla.
 
 | Campo | Tipo | Descripción |
 |---|---|---|
@@ -262,7 +262,7 @@ Reproduce un `AudioSource` al entrar en un trigger de suelo. Úsalo en los pies 
 Fuerza la posición y rotación de `GameOb` para que coincidan con `PositionToKeep` y `RotationToKeep` en cada frame. Útil para anclar objetos decorativos a un punto de referencia. Se desactiva pulsando `N`.
 
 #### `MouseLock.cs`
-Bloquea el cursor al iniciar la escena.
+Bloquea el cursor al iniciar la escena. Documentado en detalle en la sección [Jugador](#jugador).
 
 #### `Slomo.cs` / `TargetFinder.cs`
 Scripts stub listos para implementar cámara lenta y búsqueda de objetivos respectivamente.

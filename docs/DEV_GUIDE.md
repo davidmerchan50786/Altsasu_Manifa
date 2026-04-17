@@ -323,7 +323,7 @@ git clone <url-del-repositorio>
 
 1. El artista exporta el FBX/PNG y lo coloca en la subcarpeta correcta de `Assets/`.
 2. Abre Unity — la importación automática asigna configuración por defecto.
-3. Ajusta los ajustes de importación en el Inspector (compresión de textura, rig del modelo, clips de animación).
+3. Ajusta la configuración de importación en el Inspector (compresión de textura, rig del modelo, clips de animación).
 4. Crea el material HDRP y asigna las texturas.
 5. Hace commit del FBX, PNG, `.meta` files y materiales en una rama `art/xxx`.
 6. Abre un Pull Request hacia `develop` para que un programador valide las referencias y los meta files.
