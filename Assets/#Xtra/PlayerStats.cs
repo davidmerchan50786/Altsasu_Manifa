@@ -23,43 +23,58 @@ public class PlayerStats : MonoBehaviour
     public Text HungerText;
     public Text ThirstText;
 
+    // Previous values — UI only redraws when something actually changed
+    private float _prevHealth;
+    private float _prevMaxHealth;
+    private float _prevHunger;
+    private float _prevThirst;
 
     void Start()
     {
-        
+        // Force first-frame UI refresh
+        _prevHealth    = float.MinValue;
+        _prevMaxHealth = float.MinValue;
+        _prevHunger    = float.MinValue;
+        _prevThirst    = float.MinValue;
     }
 
 
     void Update()
     {
-        TextBarLink();
         Needs();
+        TextBarLink();
     }
 
     private void TextBarLink()
     {
-        HealtBar.value = Health;
-        HealthText.text = Health.ToString("f");
-        HealtBar.maxValue = MaxHealth;
+        if (Health != _prevHealth || MaxHealth != _prevMaxHealth)
+        {
+            HealtBar.maxValue = MaxHealth;
+            HealtBar.value    = Health;
+            HealthText.text   = Health.ToString("f");
+            _prevHealth    = Health;
+            _prevMaxHealth = MaxHealth;
+        }
 
-        ThirstBar.value = Thirst;
-        HungerBar.value = Hunger;
+        if (Thirst != _prevThirst)
+        {
+            ThirstBar.value  = Thirst;
+            ThirstText.text  = Thirst.ToString("f");
+            _prevThirst = Thirst;
+        }
 
-        ThirstText.text = Thirst.ToString("f");
-        HungerText.text = Hunger.ToString("f");
-
-
+        if (Hunger != _prevHunger)
+        {
+            HungerBar.value  = Hunger;
+            HungerText.text  = Hunger.ToString("f");
+            _prevHunger = Hunger;
+        }
     }
 
 
     private void Needs()
     {
-        
         Hunger -= HungerRate * Time.deltaTime;
         Thirst -= ThirstRate * Time.deltaTime;
-
-        
-
-        
     }
 }

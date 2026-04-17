@@ -18,12 +18,14 @@ public class PlayerMotor : MonoBehaviour {
     private float speed = 0;
     private float direction = 0;
     private Locomotion locomotion = null;
+	private Camera _mainCamera;
 
 	// Use this for initialization
 	void Start () 
 	{
         animator = GetComponent<Animator>();
         locomotion = new Locomotion(animator);
+		_mainCamera = Camera.main;
 	}
     
 	void Update () 
@@ -53,9 +55,9 @@ public class PlayerMotor : MonoBehaviour {
 			
 		}
 
-        if (animator && Camera.main)
+        if (animator && _mainCamera)
 		{
-            JoystickToEvents.Do(transform,Camera.main.transform, ref speed, ref direction);
+            JoystickToEvents.Do(transform, _mainCamera.transform, ref speed, ref direction);
 			locomotion.Do(speed * val, direction * 180);
 		}
 	}
