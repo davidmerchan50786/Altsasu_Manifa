@@ -69,7 +69,7 @@ public class MakeMoneyTests
 
         // Object.Destroy is deferred; the reference becomes null on the next frame,
         // but we can verify the object is marked for destruction via its status.
-        Assert.IsTrue(moneyGO == null || !moneyGO.activeInHierarchy || moneyGO == null,
+        Assert.IsTrue(moneyGO == null || !moneyGO.activeInHierarchy,
             "Pickup object should be scheduled for destruction.");
         moneyGO = null; // Prevent double-destroy in TearDown
     }
