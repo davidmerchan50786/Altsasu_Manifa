@@ -34,7 +34,7 @@ public class Health : MonoBehaviour
 
     void Update()
     {
-        if (!_isDead && CurrentHealth < 0)
+        if (!_isDead && CurrentHealth <= 0)
         {
             _isDead = true;
 

@@ -104,6 +104,9 @@ public class Weapons : MonoBehaviour {
 	private Camera _mainCamera;
 	private OrbitCamera _camScript;
 
+	// ─── Per-weapon cached Renderer references ────────────────────────────────
+	private Renderer[] _weaponRenderers;
+
 	// ─── Per-tag hit-particle pools ──────────────────────────────────────────
 	// Index matches _hitParticles array: 0=Dirt,1=Metal,2=Wood,3=Glass,4=Water,5=Blood,6=Ground
 	private ObjectPool[] _hitParticlePools;
@@ -122,6 +125,14 @@ public class Weapons : MonoBehaviour {
 		GameObject camObj = GameObject.Find("PlayerCamera");
 		if (camObj != null)
 			_camScript = camObj.GetComponent<OrbitCamera>();
+
+		// Cache Renderer for each weapon object
+		_weaponRenderers = new Renderer[weaponsSetup.Length];
+		for (int i = 0; i < weaponsSetup.Length; i++)
+		{
+			if (weaponsSetup[i].WeapObj != null)
+				_weaponRenderers[i] = weaponsSetup[i].WeapObj.GetComponent<Renderer>();
+		}
 
 		// Build a pool root to keep the hierarchy tidy
 		_poolRoot = new GameObject("WeaponPools").transform;
@@ -323,10 +334,12 @@ public class Weapons : MonoBehaviour {
 	//	if (weaponIndex != 0) {
 
 			ws.WeapObj.tag = "on";
-			ws.WeapObj.GetComponent<Renderer>().enabled = true;
+			if (_weaponRenderers[weaponIndex] != null)
+				_weaponRenderers[weaponIndex].enabled = true;
 
 	//		if (OldWeapIndex!=0){
-			oldWs.WeapObj.GetComponent<Renderer>().enabled = false;
+			if (_weaponRenderers[OldWeapIndex] != null)
+				_weaponRenderers[OldWeapIndex].enabled = false;
 			oldWs.WeapObj.tag = "off";
 //			}
 	//			}
