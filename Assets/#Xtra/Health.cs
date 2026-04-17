@@ -29,7 +29,8 @@ public class Health : MonoBehaviour
             Destroy(gameObject.GetComponent<Rigidbody>());
             Destroy(gameObject.GetComponent<CapsuleCollider>());
             Destroy(gameObject.GetComponent<NavMeshAgent>());
-            gameObject.GetComponent<AutoDestroy>().enabled = true;
+            var autoDestroy = gameObject.GetComponent<AutoDestroy>();
+            if (autoDestroy != null) autoDestroy.enabled = true;
         }
     }
 }

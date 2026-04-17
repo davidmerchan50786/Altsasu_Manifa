@@ -55,6 +55,7 @@ public class GUISystem : MonoBehaviour {
 		if (GuiIsActive)
 		GUILayout.Label(playerScript.weaponsSetup[playerScript.weaponIndex].Bullets + " / " + playerScript.weaponsSetup[playerScript.weaponIndex].Magazine,"WeaponInfo");
 
-		GUI.EndGroup ();
+		GUILayout.EndVertical();
+		GUILayout.EndArea();
 	}
 }
