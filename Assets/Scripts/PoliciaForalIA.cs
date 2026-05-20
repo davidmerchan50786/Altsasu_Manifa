@@ -415,12 +415,9 @@ public class PoliciaForalIA : MonoBehaviour
 
     private bool EsDeNoche()
     {
-        // FIX 1: usar referencia cacheada en Awake en lugar de FindFirstObjectByType cada frame.
-        // De O(n) 60 veces/seg → O(1). Elimina ~120 búsquedas de escena por segundo.
         if (_atmosfera == null) return false;
-        // SistemaAtmosfera expone HoraActual (0–24). Noche = 20:00–06:00
-        // TODO: exponer atm.HoraActual cuando la propiedad esté disponible
-        return false;
+        float h = _atmosfera.HoraDelDia;
+        return h >= 20f || h < 6.5f; // noche = 20:00-06:30
     }
 
     private void ActualizarLinterna()
