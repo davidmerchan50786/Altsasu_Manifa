@@ -86,6 +86,8 @@ public sealed class AltsasuCore : MonoBehaviour
     public SistemaTutorial       tutorialSystem;
     public GeneradorMundoOSM     generadorMundoSystem;
     public IntegradorAssets      integradorAssetsSystem;
+    public GeneradorFachadasAAA  fachadasSystem;
+    public UIManagerAltsasua     uiManagerSystem;
 
     // ── Configuración ──────────────────────────────────────────────────────
     [Header("Mundo")]
@@ -170,6 +172,8 @@ public sealed class AltsasuCore : MonoBehaviour
         EnsureOn(ref tutorialSystem,          "SistemaTutorial");
         EnsureOn(ref generadorMundoSystem,   "GeneradorMundoOSM");
         EnsureOn(ref integradorAssetsSystem, "IntegradorAssets");
+        EnsureOn(ref fachadasSystem,         "GeneradorFachadasAAA");
+        EnsureOn(ref uiManagerSystem,        "UIManagerAltsasua");
 
         yield return null;
 
