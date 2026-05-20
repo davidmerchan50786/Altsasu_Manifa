@@ -65,6 +65,7 @@ public sealed class AltsasuCore : MonoBehaviour
     public SonidosAmbienteAltsasu audioSystem;
     public HUDAAA               hudSystem;
     public HUDJugador           hudJugadorSystem;
+    public HUDCanvas            hudCanvasSystem;
     public MenuPausa            menuPausaSystem;
 
     // ── Sistemas AAA+ ─────────────────────────────────────────────────────
@@ -75,6 +76,10 @@ public sealed class AltsasuCore : MonoBehaviour
     public SistemaLuzHDRP        luzSystem;
     public SistemaPolish         polishSystem;
     public SistemaImpactos       impactosSystem;
+    public SistemaGuardado       guardadoSystem;
+    public SistemaVidaNocturna   vidaNocturnaSystem;
+    public TuningFisica          tuningFisicaSystem;
+    public SistemaReverbZonas    reverbSystem;
 
     // ── Configuración ──────────────────────────────────────────────────────
     [Header("Mundo")]
@@ -147,8 +152,12 @@ public sealed class AltsasuCore : MonoBehaviour
         EnsureOn(ref terrenoSystem,      "SistemaTerreno");
         EnsureOn(ref postProcesoSystem,  "SistemaPostProcesoAAA");
         EnsureOn(ref musicaSystem,       "SistemaMusica");
-        EnsureOn(ref polishSystem,       "SistemaPolish");
+        EnsureOn(ref polishSystem,        "SistemaPolish");
         EnsureOn(ref impactosSystem,     "SistemaImpactos");
+        EnsureOn(ref guardadoSystem,     "SistemaGuardado");
+        EnsureOn(ref vidaNocturnaSystem, "SistemaVidaNocturna");
+        EnsureOn(ref tuningFisicaSystem, "TuningFisica");
+        EnsureOn(ref reverbSystem,       "SistemaReverbZonas");
 
         yield return null;
 
@@ -179,8 +188,9 @@ public sealed class AltsasuCore : MonoBehaviour
         // ── PASO 7: Conectar referencias cruzadas ─────────────────────────
         ConectarSistemas();
 
-        // ── PASO 8: HUD doble (HUDAAA + HUDJugador son complementarios) ──
+        // ── PASO 8: HUD doble (HUDAAA + HUDJugador) + Canvas AAA ─────────
         EnsureHUDs();
+        EnsureOn(ref hudCanvasSystem, "HUDCanvas");
 
         // ── PASO 8b: Menú de pausa + opciones ────────────────────────────
         EnsureOn(ref menuPausaSystem, "MenuPausa");
