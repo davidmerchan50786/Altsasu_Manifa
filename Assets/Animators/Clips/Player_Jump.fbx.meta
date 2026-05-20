@@ -1,0 +1,27 @@
+fileFormatVersion: 2
+guid: 3bb1b80cfcdd480e851490f413cdffbd
+ModelImporter:
+  serializedVersion: 22200
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+  animations:
+    legacyGenerateAnimations: 4
+    animationType: 3
+    clipAnimations:
+    - serializedVersion: 16
+      name: Player_Jump
+      takeName: Take 001
+      firstFrame: 0
+      lastFrame: 9999
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+  userData:
+  assetBundleName:
+  assetBundleVariant:
