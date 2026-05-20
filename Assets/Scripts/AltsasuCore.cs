@@ -80,6 +80,10 @@ public sealed class AltsasuCore : MonoBehaviour
     public SistemaVidaNocturna   vidaNocturnaSystem;
     public TuningFisica          tuningFisicaSystem;
     public SistemaReverbZonas    reverbSystem;
+    public AudioManager          audioManagerSystem;
+    public SistemaLogros         logrosSystem;
+    public SistemaAgendaNPC      agendaNPCSystem;
+    public SistemaTutorial       tutorialSystem;
 
     // ── Configuración ──────────────────────────────────────────────────────
     [Header("Mundo")]
@@ -158,6 +162,10 @@ public sealed class AltsasuCore : MonoBehaviour
         EnsureOn(ref vidaNocturnaSystem, "SistemaVidaNocturna");
         EnsureOn(ref tuningFisicaSystem, "TuningFisica");
         EnsureOn(ref reverbSystem,       "SistemaReverbZonas");
+        EnsureOn(ref audioManagerSystem, "AudioManager");
+        EnsureOn(ref logrosSystem,       "SistemaLogros");
+        EnsureOn(ref agendaNPCSystem,    "SistemaAgendaNPC");
+        EnsureOn(ref tutorialSystem,     "SistemaTutorial");
 
         yield return null;
 
