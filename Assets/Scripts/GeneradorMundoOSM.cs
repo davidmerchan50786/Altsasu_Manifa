@@ -434,19 +434,38 @@ public class GeneradorMundoOSM : MonoBehaviour
 // ── JSON Array helper ─────────────────────────────────────────────────────
 public static class JsonHelper
 {
+    /// <summary>
+    /// Parsea un array JSON raíz "[{...},{...}]" en T[].
+    /// Usa el wrapper trick de JsonUtility (no requiere Newtonsoft).
+    /// Los campos de T DEBEN estar anotados con [Serializable] y ser public.
+    /// </summary>
     public static T[] ParseArray<T>(string json)
     {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        // Normalizar: quitar BOM y espacios iniciales
+        json = json.Trim().TrimStart('﻿');
+
+        // Asegurarse de que es un array
+        if (!json.StartsWith("["))
+        {
+            AlsasuaLogger.Warn("JsonHelper", "JSON no es un array raiz");
+            return null;
+        }
+
         try
         {
+            // Wrapper trick compatible con JsonUtility
             string wrapped = "{\"items\":" + json + "}";
             var wrapper = JsonUtility.FromJson<Wrapper<T>>(wrapped);
             return wrapper?.items;
         }
         catch (Exception e)
         {
-            AlsasuaLogger.Warn("JsonHelper", $"Error parseando JSON: {e.Message}");
+            AlsasuaLogger.Warn("JsonHelper", $"Error parseando JSON ({typeof(T).Name}): {e.Message}");
             return null;
         }
     }
+
     [Serializable] class Wrapper<T> { public T[] items; }
 }

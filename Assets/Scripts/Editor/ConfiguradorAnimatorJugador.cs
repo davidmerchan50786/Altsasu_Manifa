@@ -37,12 +37,20 @@ public static class ConfiguradorAnimatorJugador
             Debug.Log("[AnimatorJugador] AnimatorController creado en " + RUTA);
         }
 
-        // ── Parámetros ────────────────────────────────────────────────────
-        EnsureParameter(controller, "Speed",     AnimatorControllerParameterType.Float);
-        EnsureParameter(controller, "IsJumping", AnimatorControllerParameterType.Bool);
-        EnsureParameter(controller, "InVehicle", AnimatorControllerParameterType.Bool);
-        EnsureParameter(controller, "IsDead",    AnimatorControllerParameterType.Bool);
-        EnsureParameter(controller, "IsAiming",  AnimatorControllerParameterType.Bool);
+        // ── Parámetros — nombres exactos que ControladorJugador.cs envía ──
+        // Velocidad de movimiento normalizada (0=quieto, 1=corriendo)
+        EnsureParameter(controller, "VelocidadMovimiento", AnimatorControllerParameterType.Float);
+        // Estados booleanos
+        EnsureParameter(controller, "EstaAgachado",   AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "EstaApuntando",  AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "EstaEnSuelo",    AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "InVehicle",      AnimatorControllerParameterType.Bool);
+        // Triggers
+        EnsureParameter(controller, "Saltar",  AnimatorControllerParameterType.Trigger);
+        EnsureParameter(controller, "Morir",   AnimatorControllerParameterType.Trigger);
+        EnsureParameter(controller, "Disparar",AnimatorControllerParameterType.Trigger);
+        // Alias compatibles con otros sistemas
+        EnsureParameter(controller, "Speed",      AnimatorControllerParameterType.Float);
         EnsureParameter(controller, "IsCrouching",AnimatorControllerParameterType.Bool);
 
         var layer = controller.layers[0];
@@ -51,8 +59,8 @@ public static class ConfiguradorAnimatorJugador
         // ── Blend Tree de locomoción ──────────────────────────────────────
         BlendTree locoTree;
         var locoState = controller.CreateBlendTreeInController("Locomotion", out locoTree, 0);
-        locoTree.blendType   = BlendTreeType.Simple1D;
-        locoTree.blendParameter = "Speed";
+        locoTree.blendType      = BlendTreeType.Simple1D;
+        locoTree.blendParameter = "VelocidadMovimiento"; // nombre exacto de ControladorJugador
 
         // Añadir motions (clips null = placeholder — Unity los acepta)
         var idleClip  = BuscarOCrearClip("Idle");
@@ -81,11 +89,11 @@ public static class ConfiguradorAnimatorJugador
         // Estado por defecto
         sm.defaultState = locoState;
 
-        // ── Transiciones desde Locomotion ─────────────────────────────────
-        // Loco → Jump
+        // ── Transiciones — usan los parámetros exactos de ControladorJugador ─
+        // Loco → Jump (trigger Saltar)
         var locoJump = locoState.AddTransition(jumpState);
-        locoJump.AddCondition(AnimatorConditionMode.If, 0, "IsJumping");
-        locoJump.duration = 0.05f;
+        locoJump.AddCondition(AnimatorConditionMode.If, 0, "Saltar");
+        locoJump.duration = 0.05f; locoJump.hasExitTime = false;
 
         // Loco → Drive
         var locoDrive = locoState.AddTransition(driveState);
@@ -94,21 +102,21 @@ public static class ConfiguradorAnimatorJugador
 
         // Loco → Aim
         var locoAim = locoState.AddTransition(aimState);
-        locoAim.AddCondition(AnimatorConditionMode.If, 0, "IsAiming");
+        locoAim.AddCondition(AnimatorConditionMode.If, 0, "EstaApuntando");
         locoAim.duration = 0.1f;
 
         // Loco → Crouch
         var locoCrouch = locoState.AddTransition(crouchState);
-        locoCrouch.AddCondition(AnimatorConditionMode.If, 0, "IsCrouching");
-        locoCrouch.duration = 0.15f;
+        locoCrouch.AddCondition(AnimatorConditionMode.If, 0, "EstaAgachado");
+        locoCrouch.duration = 0.12f;
 
-        // Jump → Fall (tras 0.5s sin condición)
+        // Jump → Fall
         var jumpFall = jumpState.AddTransition(fallState);
         jumpFall.duration = 0.1f; jumpFall.exitTime = 0.5f; jumpFall.hasExitTime = true;
 
-        // Fall → Loco
+        // Fall → Loco (cuando toca suelo)
         var fallLoco = fallState.AddTransition(locoState);
-        fallLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "IsJumping");
+        fallLoco.AddCondition(AnimatorConditionMode.If, 0, "EstaEnSuelo");
         fallLoco.duration = 0.2f;
 
         // Drive → Loco
@@ -118,18 +126,18 @@ public static class ConfiguradorAnimatorJugador
 
         // Aim → Loco
         var aimLoco = aimState.AddTransition(locoState);
-        aimLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "IsAiming");
+        aimLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "EstaApuntando");
         aimLoco.duration = 0.1f;
 
         // Crouch → Loco
         var crouchLoco = crouchState.AddTransition(locoState);
-        crouchLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "IsCrouching");
-        crouchLoco.duration = 0.15f;
+        crouchLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "EstaAgachado");
+        crouchLoco.duration = 0.12f;
 
-        // ── AnyState → Die (máxima prioridad) ────────────────────────────
+        // ── AnyState → Die (trigger Morir — máxima prioridad) ─────────────
         var anyDie = sm.AddAnyStateTransition(dieState);
-        anyDie.AddCondition(AnimatorConditionMode.If, 0, "IsDead");
-        anyDie.duration = 0.1f;
+        anyDie.AddCondition(AnimatorConditionMode.If, 0, "Morir");
+        anyDie.duration = 0.1f; anyDie.canTransitionToSelf = false;
 
         // ── Guardar ───────────────────────────────────────────────────────
         EditorUtility.SetDirty(controller);
@@ -166,16 +174,29 @@ public static class ConfiguradorAnimatorJugador
 
     static AnimationClip BuscarOCrearClip(string nombre)
     {
-        // Buscar en Assets/Animations
-        var guids = AssetDatabase.FindAssets($"{nombre} t:AnimationClip", new[]{"Assets"});
+        // 1. Primero buscar en Player_*.fbx (animaciones procedurales del jugador)
+        string playerFbx = $"Assets/Animators/Clips/Player_{nombre}.fbx";
+        var assets = AssetDatabase.LoadAllAssetsAtPath(playerFbx);
+        var clip   = System.Linq.Enumerable.OfType<AnimationClip>(assets)
+                          .FirstOrDefault(c => !c.name.Contains("__preview__"));
+        if (clip != null) return clip;
+
+        // 2. Buscar cualquier AnimationClip con ese nombre en el proyecto
+        var guids = AssetDatabase.FindAssets($"Player_{nombre} t:AnimationClip", new[]{"Assets/Animators"});
         if (guids.Length > 0)
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
 
-        // Crear clip placeholder vacío
-        var clip = new AnimationClip { name = nombre };
-        string ruta = $"Assets/Animators/{nombre}_placeholder.anim";
-        AssetDatabase.CreateAsset(clip, ruta);
-        return clip;
+        guids = AssetDatabase.FindAssets($"{nombre} t:AnimationClip", new[]{"Assets/Animators"});
+        if (guids.Length > 0)
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
+
+        // 3. Placeholder vacío (Unity lo acepta sin error)
+        var ph   = new AnimationClip { name = nombre };
+        string r = $"Assets/Animators/{nombre}_placeholder.anim";
+        if (!System.IO.File.Exists(System.IO.Path.GetFullPath(r.Replace("Assets/",
+            UnityEngine.Application.dataPath + "/"))))
+            AssetDatabase.CreateAsset(ph, r);
+        return AssetDatabase.LoadAssetAtPath<AnimationClip>(r) ?? ph;
     }
 }
 #endif
