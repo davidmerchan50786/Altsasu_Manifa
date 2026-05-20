@@ -49,7 +49,10 @@ public class GeneradorFachadasAAA : MonoBehaviour
 
     void Start()
     {
-        GeneradorMundoOSM.OnMundoGenerado += () => StartCoroutine(EnriquecerEdificios());
+        // SistemaEdificiosAAA.cs reemplaza este sistema con implementación más completa
+        // Solo activar si SistemaEdificiosAAA no existe en escena
+        if (FindFirstObjectByType<SistemaEdificiosAAA>() == null)
+            GeneradorMundoOSM.OnMundoGenerado += () => StartCoroutine(EnriquecerEdificios());
     }
 
     IEnumerator EnriquecerEdificios()
