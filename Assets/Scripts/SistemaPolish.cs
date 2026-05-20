@@ -131,7 +131,7 @@ public class SistemaPolish : MonoBehaviour
     {
         ControladorJugador.OnDanoRecibido     += OnJugadorDano;
         GameManagerAltsasua.OnEstrellasCambia += OnWantedCambia;
-        ControladorVehiculoJugador.OnJugadorEntro += _ => SlowMoEntradaVehiculo();
+        ControladorVehiculoJugador.OnJugadorEntro += OnEntroVehiculo;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -282,6 +282,8 @@ public class SistemaPolish : MonoBehaviour
     }
 
     /// <summary>Slow motion al entrar en vehículo.</summary>
+    void OnEntroVehiculo(ControladorVehiculoJugador _) => SlowMoEntradaVehiculo();
+
     public static void SlowMoEntradaVehiculo()
     {
         if (I == null) return;
@@ -326,6 +328,6 @@ public class SistemaPolish : MonoBehaviour
     {
         ControladorJugador.OnDanoRecibido     -= OnJugadorDano;
         GameManagerAltsasua.OnEstrellasCambia -= OnWantedCambia;
-        ControladorVehiculoJugador.OnJugadorEntro -= _ => SlowMoEntradaVehiculo();
+        ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
     }
 }

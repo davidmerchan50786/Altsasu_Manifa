@@ -191,8 +191,7 @@ public class AudioManager : MonoBehaviour
             ["motor"] = Clip.MotorAceleracion, ["engine"] = Clip.MotorAceleracion,
         };
 
-        var guids = UnityEngine.AddressableAssets.Addressables.LoadResourceLocationsAsync("t:AudioClip");
-        // Fallback: buscar en Resources si no hay Addressables
+        // Cargar desde Resources/Audio (no requiere Addressables)
         var clips = Resources.LoadAll<AudioClip>("Audio");
         foreach (var c in clips)
         {
@@ -502,22 +501,25 @@ public class AudioManager : MonoBehaviour
     }
 
     // ── Suscripción a eventos del juego ───────────────────────────────────
+    // Handlers con nombre para poder desuscribir correctamente
+    void OnDano(int _)      => Play(Clip.DanoRecibido);
+    void OnMisionStart(string _) => Play(Clip.MisionIniciada);
+    void OnMisionEnd(string _)   => Play(Clip.MisionCompletada);
+    void OnWanted(int nivel)     => SetSirena(nivel >= 2);
 
     void OnEnable()
     {
-        ControladorJugador.OnDanoRecibido     += _ => Play(Clip.DanoRecibido);
+        ControladorJugador.OnDanoRecibido     += OnDano;
         GameManagerAltsasua.OnEstrellasCambia += OnWanted;
-        SistemaMisiones.OnMisionIniciada      += _ => Play(Clip.MisionIniciada);
-        SistemaMisiones.OnMisionCompletada    += _ => Play(Clip.MisionCompletada);
+        SistemaMisiones.OnMisionIniciada      += OnMisionStart;
+        SistemaMisiones.OnMisionCompletada    += OnMisionEnd;
     }
 
     void OnDisable()
     {
-        ControladorJugador.OnDanoRecibido     -= _ => Play(Clip.DanoRecibido);
+        ControladorJugador.OnDanoRecibido     -= OnDano;
         GameManagerAltsasua.OnEstrellasCambia -= OnWanted;
-        SistemaMisiones.OnMisionIniciada      -= _ => Play(Clip.MisionIniciada);
-        SistemaMisiones.OnMisionCompletada    -= _ => Play(Clip.MisionCompletada);
+        SistemaMisiones.OnMisionIniciada      -= OnMisionStart;
+        SistemaMisiones.OnMisionCompletada    -= OnMisionEnd;
     }
-
-    void OnWanted(int nivel) => SetSirena(nivel >= 2);
 }

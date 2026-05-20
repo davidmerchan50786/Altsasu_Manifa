@@ -72,11 +72,15 @@ public class SistemaTutorial : MonoBehaviour
         SuscribirEventos();
     }
 
+    void OnMisionStart(string _)                 => Mostrar(Pista.MisionIniciada);
+    void OnWanted(int n)                         { if (n==1) Mostrar(Pista.Wanted1); if (n==3) Mostrar(Pista.Wanted3); }
+    void OnEntroVehiculo(ControladorVehiculoJugador _) { Mostrar(Pista.Conducir); Mostrar(Pista.SalirVehiculo); }
+
     void SuscribirEventos()
     {
-        SistemaMisiones.OnMisionIniciada      += _ => Mostrar(Pista.MisionIniciada);
-        GameManagerAltsasua.OnEstrellasCambia += n => { if (n==1) Mostrar(Pista.Wanted1); if (n==3) Mostrar(Pista.Wanted3); };
-        ControladorVehiculoJugador.OnJugadorEntro += _ => { Mostrar(Pista.Conducir); Mostrar(Pista.SalirVehiculo); };
+        SistemaMisiones.OnMisionIniciada          += OnMisionStart;
+        GameManagerAltsasua.OnEstrellasCambia     += OnWanted;
+        ControladorVehiculoJugador.OnJugadorEntro += OnEntroVehiculo;
     }
 
     void Start()
@@ -179,8 +183,8 @@ public class SistemaTutorial : MonoBehaviour
 
     void OnDestroy()
     {
-        SistemaMisiones.OnMisionIniciada      -= _ => Mostrar(Pista.MisionIniciada);
-        GameManagerAltsasua.OnEstrellasCambia -= n => { if (n==1) Mostrar(Pista.Wanted1); if (n==3) Mostrar(Pista.Wanted3); };
-        ControladorVehiculoJugador.OnJugadorEntro -= _ => { Mostrar(Pista.Conducir); Mostrar(Pista.SalirVehiculo); };
+        SistemaMisiones.OnMisionIniciada          -= OnMisionStart;
+        GameManagerAltsasua.OnEstrellasCambia     -= OnWanted;
+        ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
     }
 }

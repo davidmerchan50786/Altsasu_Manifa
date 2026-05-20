@@ -99,6 +99,12 @@ public class GameManagerAltsasua : MonoBehaviour
 
     private bool _enPausa = false;
 
+    // ─── Eventos estáticos ────────────────────────────────────────────────────
+    /// <summary>Se dispara cuando cambia el nivel de búsqueda (0-5 estrellas).</summary>
+    public static event System.Action<int> OnEstrellasCambia;
+    /// <summary>Se dispara cuando el jugador hace respawn.</summary>
+    public static event System.Action OnRespawn;
+
     // ─── Estado ───────────────────────────────────────────────────────────────
     private bool  _jugadorVivo = false;
     private HUDAAA _hudCache;  // HUDAAA es el HUD del juego — GUISystem no existe
@@ -208,9 +214,11 @@ public class GameManagerAltsasua : MonoBehaviour
     /// <summary>Aumentar el nivel de búsqueda (llamar al atacar civiles/policía).</summary>
     public void AumentarBusqueda(int cantidad = 1)
     {
+        int anterior = nivelBusqueda;
         nivelBusqueda = Mathf.Clamp(nivelBusqueda + cantidad, 0, 5);
-        _timerBajarNivel = tiempoBajarNivel; // reinicia el timer
-        Debug.Log($"[GameManager] Nivel búsqueda: {nivelBusqueda}★");
+        if (cantidad > 0) _timerBajarNivel = tiempoBajarNivel;
+        if (nivelBusqueda != anterior) OnEstrellasCambia?.Invoke(nivelBusqueda);
+        AlsasuaLogger.Info("GameManager", $"Nivel búsqueda: {nivelBusqueda}★");
     }
 
     void GestionarNivelBusqueda()
@@ -220,7 +228,9 @@ public class GameManagerAltsasua : MonoBehaviour
         _timerBajarNivel -= Time.deltaTime;
         if (_timerBajarNivel <= 0f)
         {
+            int prev = nivelBusqueda;
             nivelBusqueda = Mathf.Max(0, nivelBusqueda - 1);
+            if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
             _timerBajarNivel = tiempoBajarNivel;
 
             // Desactivar helicóptero si baja del umbral

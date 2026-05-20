@@ -85,16 +85,19 @@ public class SistemaLogros : MonoBehaviour
         SuscribirEventos();
     }
 
+    // Handlers con nombre para poder desuscribir
+    void OnEntroVehiculo(ControladorVehiculoJugador _) => Todos.Find(l=>l.Id=="primer_coche")?.Desbloquear();
+    void OnVehiculoDestruido(VehiculoNPC _)            => Todos.Find(l=>l.Id=="coche_destruido")?.Desbloquear();
+
     void SuscribirEventos()
     {
         SistemaGrafitis.OnPintadaRealizada    += OnGraffiti;
         SistemaMisiones.OnMisionCompletada    += OnMisionCompletada;
         SistemaMisiones.OnMisionIniciada      += OnMisionIniciada;
         GameManagerAltsasua.OnEstrellasCambia += OnWanted;
-        ControladorVehiculoJugador.OnJugadorEntro += _ => Todos.Find(l=>l.Id=="primer_coche")?.Desbloquear();
-        SistemaGrafitis.OnPintadaRealizada    += () => Todos.Find(l=>l.Id=="primer_graffiti")?.Desbloquear();
-        VehiculoNPC.OnVehiculoDestruido       += _ => Todos.Find(l=>l.Id=="coche_destruido")?.Desbloquear();
-        OnLogroDesbloqueado                   += MostrarNotificacion;
+        ControladorVehiculoJugador.OnJugadorEntro += OnEntroVehiculo;
+        VehiculoNPC.OnVehiculoDestruido           += OnVehiculoDestruido;
+        OnLogroDesbloqueado                       += MostrarNotificacion;
     }
 
     void Update()
@@ -228,6 +231,8 @@ public class SistemaLogros : MonoBehaviour
         SistemaMisiones.OnMisionCompletada    -= OnMisionCompletada;
         SistemaMisiones.OnMisionIniciada      -= OnMisionIniciada;
         GameManagerAltsasua.OnEstrellasCambia -= OnWanted;
-        OnLogroDesbloqueado                   -= MostrarNotificacion;
+        ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
+        VehiculoNPC.OnVehiculoDestruido           -= OnVehiculoDestruido;
+        OnLogroDesbloqueado                       -= MostrarNotificacion;
     }
 }
