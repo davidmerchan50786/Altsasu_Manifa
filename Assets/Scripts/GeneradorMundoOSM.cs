@@ -124,7 +124,12 @@ public class GeneradorMundoOSM : MonoBehaviour
         mr.sharedMaterial = MaterialParaTipo(e.type);
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
-        go.AddComponent<MeshCollider>().sharedMesh = mesh;
+        // MeshCollider solo para los primeros 300 edificios — el resto es visual
+        if (_edificiosCreados < 300)
+            go.AddComponent<MeshCollider>().sharedMesh = mesh;
+
+        // LODGroup — 3 niveles de detalle
+        AnadirLOD(go, mr, mesh);
 
         if (!string.IsNullOrEmpty(e.name))
             go.name = $"Edif_{e.name.Replace(" ", "_")}";
@@ -389,6 +394,58 @@ public class GeneradorMundoOSM : MonoBehaviour
             "industrial" or "warehouse"           => _matEdifIndustrial,
             _                                     => _matEdifResidencial,
         };
+    }
+
+    // ── LOD Groups ────────────────────────────────────────────────────────
+    void AnadirLOD(GameObject go, MeshRenderer mr, Mesh meshCompleto)
+    {
+        var lod = go.AddComponent<LODGroup>();
+        lod.fadeMode = LODFadeMode.CrossFade;
+
+        // LOD 0 — completo hasta 80m
+        // LOD 1 — solo caja simplificada de 80-300m
+        // LOD 2 — culled > 300m
+
+        // Crear mesh simplificado (caja del AABB) para LOD 1
+        var rendLOD1 = CrearRendererSimplificado(go, mr.sharedMaterial, meshCompleto.bounds);
+
+        lod.SetLODs(new LOD[]
+        {
+            new LOD(0.04f, new Renderer[] { mr }),           // < 80m  (4% altura pantalla)
+            new LOD(0.01f, new Renderer[] { rendLOD1 }),     // < 300m (1%)
+            new LOD(0f,    new Renderer[0])                  // culled
+        });
+        lod.RecalculateBounds();
+
+        // Desactivar el renderer LOD1 al principio (LODGroup lo gestiona)
+        rendLOD1.enabled = false;
+    }
+
+    MeshRenderer CrearRendererSimplificado(GameObject parent, Material mat, Bounds b)
+    {
+        var go = new GameObject("LOD1_Box");
+        go.transform.SetParent(parent.transform);
+        go.transform.localPosition = b.center - parent.transform.position;
+        go.transform.localScale    = b.size;
+
+        var mf = go.AddComponent<MeshFilter>();
+        mf.sharedMesh = CuboMeshUnitario();
+
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = mat;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        return mr;
+    }
+
+    static Mesh _cuboCache;
+    static Mesh CuboMeshUnitario()
+    {
+        if (_cuboCache != null) return _cuboCache;
+        // Cubo 1×1×1 centrado en (0,0,0) — reutilizado para todos los LOD1
+        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        _cuboCache = go.GetComponent<MeshFilter>().sharedMesh;
+        Object.Destroy(go);
+        return _cuboCache;
     }
 
     float AlturaTerreno(float x, float z)

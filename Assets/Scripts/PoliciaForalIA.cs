@@ -113,17 +113,29 @@ public class PoliciaForalIA : MonoBehaviour
     private void Awake()
     {
         agente = GetComponent<NavMeshAgent>();
-
-        // Desactivar el agente hasta que el NavMesh esté horneado.
-        // Sin NavMesh, NavMeshAgent lanza errores cada frame y no navega.
-        agente.enabled = false;
-
+        agente.enabled = false; // esperar NavMesh
         maskObstaculo = capasObstaculo & ~LayerMask.GetMask("Player");
-        _atmosfera    = FindFirstObjectByType<SistemaAtmosfera>();
+        // _atmosfera se busca en Start y con retry — AltsasuCore puede crearla después
+    }
+
+    private IEnumerator BuscarAtmosfera()
+    {
+        float t = 0f;
+        while (_atmosfera == null && t < 10f)
+        {
+            _atmosfera = AltsasuCore.I?.atmosferaSystem
+                      ?? FindFirstObjectByType<SistemaAtmosfera>();
+            if (_atmosfera != null) yield break;
+            t += 0.5f;
+            yield return new WaitForSeconds(0.5f);
+        }
+        if (_atmosfera == null)
+            AlsasuaLogger.Warn("PoliciaForal", "SistemaAtmosfera no encontrado — noche desactivada");
     }
 
     private void Start()
     {
+        StartCoroutine(BuscarAtmosfera());
         var jGO = GameObject.FindGameObjectWithTag("Player");
         if (jGO != null)
         {
