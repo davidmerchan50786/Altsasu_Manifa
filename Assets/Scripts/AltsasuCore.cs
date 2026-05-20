@@ -84,6 +84,8 @@ public sealed class AltsasuCore : MonoBehaviour
     public SistemaLogros         logrosSystem;
     public SistemaAgendaNPC      agendaNPCSystem;
     public SistemaTutorial       tutorialSystem;
+    public GeneradorMundoOSM     generadorMundoSystem;
+    public IntegradorAssets      integradorAssetsSystem;
 
     // ── Configuración ──────────────────────────────────────────────────────
     [Header("Mundo")]
@@ -165,7 +167,9 @@ public sealed class AltsasuCore : MonoBehaviour
         EnsureOn(ref audioManagerSystem, "AudioManager");
         EnsureOn(ref logrosSystem,       "SistemaLogros");
         EnsureOn(ref agendaNPCSystem,    "SistemaAgendaNPC");
-        EnsureOn(ref tutorialSystem,     "SistemaTutorial");
+        EnsureOn(ref tutorialSystem,          "SistemaTutorial");
+        EnsureOn(ref generadorMundoSystem,   "GeneradorMundoOSM");
+        EnsureOn(ref integradorAssetsSystem, "IntegradorAssets");
 
         yield return null;
 
