@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// GameManagerAltsasua — Núcleo del juego estilo GTA ambientado en Alsasua.
@@ -99,7 +100,8 @@ public class GameManagerAltsasua : MonoBehaviour
     private bool _enPausa = false;
 
     // ─── Estado ───────────────────────────────────────────────────────────────
-    private bool _jugadorVivo = false;
+    private bool  _jugadorVivo = false;
+    private HUDAAA _hudCache;  // HUDAAA es el HUD del juego — GUISystem no existe
 
     // =========================================================================
     //  UNITY LIFECYCLE
@@ -134,8 +136,8 @@ public class GameManagerAltsasua : MonoBehaviour
         GestionarSpawnEnemigos();
         LimpiarListasMuertas();
 
-        // Pausa con Escape
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Pausa con Escape — nuevo Input System
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             TogglePausa();
 
         ActualizarHUD();
@@ -179,13 +181,28 @@ public class GameManagerAltsasua : MonoBehaviour
         yield return new WaitForSeconds(delay);
         if (jugadorActivo != null) Destroy(jugadorActivo);
         SpawnJugador();
-        // Restaurar salud
-        var health = jugadorActivo != null ? jugadorActivo.GetComponent<Health>() : null;
-        if (health != null) health.CurrentHealth = 100f;
+        // Restaurar salud usando ControladorJugador (Health no existe — usa Curar)
+        var ctrl = jugadorActivo?.GetComponent<ControladorJugador>();
+        ctrl?.Curar(9999); // Curar(max) = vida llena
+        OnRespawn?.Invoke();
     }
 
     // =========================================================================
     //  NIVEL DE BÚSQUEDA
+    // =========================================================================
+
+    // ── Estado de vehículo ────────────────────────────────────────────────────
+    /// <summary>True mientras el jugador conduce un vehículo.</summary>
+    public bool JugadorEnVehiculo { get; private set; }
+
+    /// <summary>Llamar desde ControladorVehiculoJugador al entrar/salir.</summary>
+    public void SetJugadorEnVehiculo(bool enVehiculo)
+    {
+        JugadorEnVehiculo = enVehiculo;
+        // La IA de persecución puede comprobar esta bandera para elegir
+        // si perseguir al GO del jugador (a pie) o al vehículo activo
+    }
+
     // =========================================================================
 
     /// <summary>Aumentar el nivel de búsqueda (llamar al atacar civiles/policía).</summary>
@@ -336,22 +353,39 @@ public class GameManagerAltsasua : MonoBehaviour
     //  ECONOMÍA
     // =========================================================================
 
+<<<<<<< HEAD
+=======
+    HUDAAA ObtenerHUD()
+    {
+        if (_hudCache == null) _hudCache = FindFirstObjectByType<HUDAAA>();
+        return _hudCache;
+    }
+
+>>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
     public void GanarDinero(int cantidad)
     {
         dinero += cantidad;
         puntuacion += cantidad;
+<<<<<<< HEAD
 
         // Sincronizar con GUISystem si existe
         var gui = FindFirstObjectByType<GUISystem>();
         if (gui != null) gui.Money = dinero;
+=======
+        OnDineroCambia?.Invoke(dinero);
+        // HUDAAA se actualiza vía evento — no necesita referencia directa
+>>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
     }
 
     public bool GastarDinero(int cantidad)
     {
         if (dinero < cantidad) return false;
         dinero -= cantidad;
+<<<<<<< HEAD
         var gui = FindFirstObjectByType<GUISystem>();
         if (gui != null) { gui.Cost = cantidad; gui.CostShow = true; }
+=======
+>>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
         return true;
     }
 
