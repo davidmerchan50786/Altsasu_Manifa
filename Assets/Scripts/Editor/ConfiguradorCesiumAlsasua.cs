@@ -99,7 +99,7 @@ public static class ConfiguradorCesiumAlsasua
         if (sunSkyType != null)
         {
             var sunGO = FindOrCreateGO("CesiumSunSky");
-            sunGO.GetComponent(sunSkyType) ?? sunGO.AddComponent(sunSkyType);
+            if (sunGO.GetComponent(sunSkyType) == null) sunGO.AddComponent(sunSkyType);
             var sunSky = sunGO.GetComponent(sunSkyType);
             SetProp(sunSky, "timeZone", 2); // Europa/Madrid UTC+2
         }

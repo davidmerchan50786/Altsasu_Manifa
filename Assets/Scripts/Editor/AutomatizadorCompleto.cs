@@ -513,22 +513,7 @@ public static class AutomatizadorCompleto
             }
         }
 
-        // ── SistemaFarolas.prefabsFarola ──────────────────────────────────
-        var farolas = Object.FindFirstObjectByType<SistemaFarolas>();
-        if (farolas != null)
-        {
-            var f = typeof(SistemaFarolas).GetField("prefabsFarola",
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f?.GetValue(farolas) == null)
-            {
-                var pfs = new[] {
-                    "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound1A.prefab",
-                    "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound2A.prefab",
-                }.Select(r => AssetDatabase.LoadAssetAtPath<GameObject>(r))
-                 .Where(p => p != null).ToArray();
-                if (pfs.Length > 0) { f.SetValue(farolas, pfs); EditorUtility.SetDirty(farolas); }
-            }
-        }
+        // SistemaFarolas eliminado en v4 (gestionado por SistemaZonas)
 
         // ── SistemaBarricadas / SistemaManifestacion.prefabBarricada ──────
         var manif = Object.FindFirstObjectByType<SistemaManifestacion>();
@@ -623,39 +608,7 @@ public static class AutomatizadorCompleto
             }
         }
 
-        // ── SistemaFerroviario: waypoints de la vía ───────────────────────
-        var ferro = Object.FindFirstObjectByType<SistemaFerroviario>();
-        if (ferro != null)
-        {
-            // Las coordenadas de la vía vienen de GeoDataAlsasua.ViaFerreaNorte
-            // Son coordenadas de terreno: Herriko Plaza ≈ (1918, y, 8570)
-            var viaCoords = new Vector3[] {
-                new(-500f+1918f, 240f, -1400f+8570f),
-                new(-510f+1918f, 241f, -780f+8570f),   // Estación Alsasua
-                new(-520f+1918f, 242f, -200f+8570f),
-                new(-530f+1918f, 243f, 400f+8570f),
-                new(-540f+1918f, 244f, 1200f+8570f),
-            };
-            var fVia = typeof(SistemaFerroviario).GetField("puntosVia",
-                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            if (fVia?.GetValue(ferro) == null)
-            {
-                var viaGO = new GameObject("Via_Ferrea_WP");
-                Undo.RegisterCreatedObjectUndo(viaGO, "WP Via Ferrea");
-                var wps = new Transform[viaCoords.Length];
-                for (int i = 0; i < viaCoords.Length; i++)
-                {
-                    var wp = new GameObject($"WP_{i}");
-                    wp.transform.SetParent(viaGO.transform, false);
-                    wp.transform.position = viaCoords[i];
-                    wps[i] = wp.transform;
-                }
-                Undo.RecordObject(ferro, "Asignar via ferrea");
-                fVia.SetValue(ferro, wps);
-                EditorUtility.SetDirty(ferro);
-                Debug.Log("[Auto] 🚂 Waypoints vía férrea asignados a SistemaFerroviario");
-            }
-        }
+        // SistemaFerroviario eliminado en v4 (sin datos de vía férrea en OSM)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -198,45 +198,8 @@ public static class IntegradorAssetsNuevos
         return 1;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  4. FAROLAS → SistemaFarolas
-    // ─────────────────────────────────────────────────────────────────────────
-
-    [MenuItem("Tools/Alsasua/💡 Conectar Farolas", priority = 14)]
-    public static int ConectarFarolas()
-    {
-        var sistemaFarolas = Object.FindFirstObjectByType<SistemaFarolas>();
-        if (sistemaFarolas == null)
-        {
-            Debug.LogWarning("[IntegradorAssets] SistemaFarolas no encontrado en escena.");
-            return 0;
-        }
-
-        // Recopilar los 4 prefabs de farolas
-        string[] prefabPaths = {
-            "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound1A.prefab",
-            "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound1B.prefab",
-            "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound2A.prefab",
-            "Assets/SpaceZeta_StreetLamps2/Prefabs/StreetLampRound2B.prefab",
-        };
-
-        var prefabs = prefabPaths
-            .Select(p => AssetDatabase.LoadAssetAtPath<GameObject>(p))
-            .Where(p => p != null)
-            .ToArray();
-
-        if (prefabs.Length == 0)
-        {
-            Debug.LogWarning("[IntegradorAssets] No se encontraron prefabs de farola en SpaceZeta_StreetLamps2/Prefabs/");
-            return 0;
-        }
-
-        // SistemaFarolas tiene un array de prefabs de farolas
-        SetFieldPorReflexion(sistemaFarolas, "prefabsFarola", prefabs);
-        EditorUtility.SetDirty(sistemaFarolas);
-        Debug.Log($"[IntegradorAssets] 💡 {prefabs.Length} prefabs de farola → SistemaFarolas");
-        return prefabs.Length;
-    }
+    // SistemaFarolas eliminado en v4 — farolas gestionadas por SistemaZonas al cargar cada chunk
+    public static int ConectarFarolas() { Debug.Log("[IntegradorAssets] SistemaFarolas eliminado en v4."); return 0; }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  5. FLORA FBX → AlsasuaTreeStreamer (treePrefabs)

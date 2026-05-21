@@ -41,7 +41,7 @@ public static class CreadorEscenaPrincipal
         var gmGO = Nuevo("GameManager");
         gmGO.AddComponent<GameManagerAltsasua>();
         gmGO.AddComponent<AudioManager>();
-        gmGO.AddComponent<SistemaOpciones>();
+        // SistemaOpciones es static — AltsasuCore llama SistemaOpciones.AplicarTodo() directamente
         gmGO.AddComponent<SistemaApoyoPopular>();
 
         // ── 3. AltsasuCore (coordinador -100) ─────────────────────────────
@@ -106,8 +106,7 @@ public static class CreadorEscenaPrincipal
         var destruccion= destrucGO.AddComponent<SistemaDestruccion>();
         var barricadas = destrucGO.AddComponent<SistemaBarricadas>();
         var impactos   = destrucGO.AddComponent<SistemaImpactos>();
-        destrucGO.AddComponent<SistemaExplosion>();
-        destrucGO.AddComponent<SistemaRagdoll>();
+        // SistemaExplosion y SistemaRagdoll son clases static — no se añaden como componente
 
         var grafGO     = HijoNuevo("Grafitis",      gameplayGO);
         var grafitis   = grafGO.AddComponent<SistemaGrafitis>();
