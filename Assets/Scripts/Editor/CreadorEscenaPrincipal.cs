@@ -71,6 +71,8 @@ public static class CreadorEscenaPrincipal
         terrenoGO.AddComponent<SistemaSueloAAA>();
         terrenoGO.AddComponent<OptimizadorTerreno>();
         terrenoGO.AddComponent<AplicadorOrtofoto>(); // ortofoto IGN PNOA 25cm/px
+        var gestorMat  = terrenoGO.AddComponent<GestorMaterialesAlsasua>();
+        AsignarMaterialesAlGestor(gestorMat);         // carga los 280 mats PBR
 
         var treesGO    = HijoNuevo("TreeStreamer",  mundoGO);
         var trees      = treesGO.AddComponent<AlsasuaTreeStreamer>();
@@ -247,6 +249,72 @@ public static class CreadorEscenaPrincipal
         var lista = new System.Collections.Generic.List<EditorBuildSettingsScene>(scenes);
         lista.Add(new EditorBuildSettingsScene(ruta, true));
         EditorBuildSettings.scenes = lista.ToArray();
+    }
+
+    // ── Asigna los 280 materiales PBR al GestorMaterialesAlsasua ──────────────
+
+    static Material Cargar(string path)
+        => AssetDatabase.LoadAssetAtPath<Material>(path);
+
+    static void AsignarMaterialesAlGestor(GestorMaterialesAlsasua g)
+    {
+        const string E  = "Assets/Materials/Edificios/";
+        const string R  = "Assets/Materials/Roads/";
+
+        // Paredes
+        g.matParedRevoco      = Cargar(E + "rough_plaster_03.mat")
+                             ?? Cargar(E + "clay_plaster.mat");
+        g.matParedRevocoBeis  = Cargar(E + "beige_wall_001.mat")
+                             ?? Cargar(E + "beige_wall_002.mat");
+        g.matParedArcilaPlast = Cargar(E + "clay_plaster.mat");
+        g.matParedPiedra      = Cargar(E + "sandstone_brick_wall_01.mat")
+                             ?? Cargar(E + "sandstone_blocks_04.mat");
+        g.matParedSilleria    = Cargar(E + "stone_brick_wall_001.mat");
+        g.matParedLadrillo    = Cargar(E + "brick_wall_001.mat")
+                             ?? Cargar(E + "worn_brick_wall.mat");
+        g.matParedIglesia     = Cargar(E + "church_bricks_02.mat")
+                             ?? Cargar(E + "church_bricks_03.mat");
+        g.matParedHormigon    = Cargar(E + "brushed_concrete.mat");
+        g.matParedHormigonMod = Cargar(E + "brushed_concrete_2.mat")
+                             ?? Cargar(E + "brushed_concrete_03.mat");
+
+        // Tejados
+        g.matTejadoPizarra    = Cargar(E + "castle_wall_slates.mat");
+        g.matTejadoHormigon   = Cargar(E + "anti_slip_concrete.mat");
+        g.matTejadoHormigonTex= Cargar(E + "brushed_concrete_03.mat");
+        g.matTejadoTeja       = Cargar(E + "clay_roof_tiles_02.mat")
+                             ?? Cargar(E + "clay_roof_tiles.mat");
+        g.matTejadoCeramica   = Cargar(E + "ceramic_roof_01.mat");
+        g.matTejadoFibro      = Cargar(E + "asbestos_sheet_02.mat")
+                             ?? Cargar(E + "asbestos_sheet.mat");
+
+        // Aceras
+        g.matAceraAdoquin     = Cargar(E + "cobblestone_floor_001.mat")
+                             ?? Cargar(E + "cobblestone_02.mat");
+        g.matAceraAdoquinGrande= Cargar(E + "cobblestone_large_01.mat")
+                             ?? Cargar(E + "cobblestone_floor_02.mat");
+        g.matAceraHormigon    = Cargar(E + "anti_slip_concrete.mat");
+        g.matAceraBaldosa     = Cargar(E + "brick_pavement_02.mat")
+                             ?? Cargar(E + "brick_pavement_03.mat");
+        g.matAceraEmpedrado   = Cargar(E + "cobblestone_pavement.mat")
+                             ?? Cargar(E + "cobblestone_01.mat");
+
+        // Calzadas
+        g.matCalzadaAsfalto   = Cargar(R + "M_Asfalto_Carretera.mat");
+        g.matCalzadaAdoquin   = Cargar(E + "cobblestone_01.mat");
+        g.matCalzadaTierra    = Cargar(E + "brown_mud_dry.mat")
+                             ?? Cargar(E + "brown_mud.mat");
+
+        // Bordillo
+        g.matBordillo         = Cargar(E + "brushed_concrete_03.mat")
+                             ?? Cargar(E + "anti_slip_concrete.mat");
+
+        int asignados = 0;
+        foreach (var f in typeof(GestorMaterialesAlsasua).GetFields(
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            if (f.FieldType == typeof(Material) && f.GetValue(g) != null) asignados++;
+
+        Debug.Log($"[GestorMat] {asignados} materiales PBR asignados al gestor");
     }
 }
 #endif

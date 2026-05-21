@@ -484,6 +484,18 @@ public class GeneradorMundoOSM : MonoBehaviour
     public int    levels;
     public float  height;
     public Vert[] vertices;
+    // Campos extendidos — presentes en buildings_final.json / buildings_completo.json
+    public string material;         // building:material OSM
+    public string roof_material;    // roof:material OSM
+    public string roof_colour;      // roof:colour OSM (#RRGGBB o nombre)
+    public string roof_shape;       // roof:shape OSM (gabled, flat, hipped…)
+    public string colour;           // building:colour OSM
+    public string amenity;          // amenity/uso
+    public string addr_street;      // dirección
+    // Campos del análisis fotogramétrico (buildings_rico.json / buildings_final.json)
+    public int    roof_r_real, roof_g_real, roof_b_real;  // color real tejado (0-255)
+    public string roof_tipo_real;   // cemento_gris_claro, pizarra_gris, etc.
+    public float  mat_r, mat_g, mat_b;                    // color real pared (0-1)
 }
 [System.Serializable] public class Vert { public float x; public float z; }
 
@@ -495,6 +507,11 @@ public class GeneradorMundoOSM : MonoBehaviour
     public float  width;
     public bool   oneway;
     public Vert[] points;
+    // Campos extendidos — calles_superficie.json
+    public string surface;     // surface OSM (asphalt, cobblestone, paving_stones…)
+    public string sidewalk;    // sidewalk OSM
+    public int    lanes;       // número de carriles
+    public string maxspeed;    // velocidad máxima
 }
 
 [System.Serializable] public class ArbolData
