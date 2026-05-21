@@ -55,9 +55,18 @@ public class SceneBootstrapper : MonoBehaviour
 
         Debug.Log("[Bootstrap] Comprobando escena…");
 
-        // 1. Terrain
-        bool terrenoOK = EnsureTerrain();
-        if (terrenoOK) yield return null; // frame para que el terrain se procese
+        // 1. Terrain — omitir si Cesium Georeference está activo (evita z-fighting)
+        bool cesiumActivo = IsCesiumPresente();
+        bool terrenoOK = false;
+        if (!cesiumActivo)
+        {
+            terrenoOK = EnsureTerrain();
+            if (terrenoOK) yield return null;
+        }
+        else
+        {
+            Debug.Log("[Bootstrap] Cesium detectado — terreno DEM omitido (Cesium provee el terreno).");
+        }
 
         // 2. Sol
         EnsureSol();
@@ -497,6 +506,16 @@ public class SceneBootstrapper : MonoBehaviour
     // =========================================================================
     //  UTILIDADES
     // =========================================================================
+
+    static bool IsCesiumPresente()
+    {
+        // Comprobar si hay un CesiumGeoreference en escena (sin depender del assembly de Cesium)
+        foreach (var go in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+            if (go != null && go.GetType().FullName != null &&
+                go.GetType().FullName.Contains("CesiumGeoreference"))
+                return true;
+        return false;
+    }
 
     static float ObtenerAltura(float x, float z)
     {

@@ -44,7 +44,7 @@ public static class BUILD_TODO
         _pasos.Enqueue(("Escena principal v4",           () => CreadorEscenaPrincipal.Crear()));
         _pasos.Enqueue(("Cesium + Google 3D Tiles",      () => ConfiguradorCesiumAlsasua.Configurar()));
         _pasos.Enqueue(("Animator Controller jugador",   () => ConfiguradorAnimatorJugador.Configurar()));
-        _pasos.Enqueue(("Prefabs NPC",                   () => ConstructorNPCsPrefabs.Construir()));
+        _pasos.Enqueue(("Personajes MeshyAI (10 modelos PBR)", () => ConstructorPersonajesMeshyAI.Construir()));
         _pasos.Enqueue(("Prefabs vehículos",             () => ConstructorVehiculosPrefabs.Construir()));
         _pasos.Enqueue(("Tags y capas",                  CrearTagsYCapas));
         _pasos.Enqueue(("Quality settings 60fps",        ConfigurarQuality));
