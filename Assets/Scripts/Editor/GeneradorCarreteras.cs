@@ -124,7 +124,11 @@ public static class GeneradorCarreteras
     {
         float w = seg.ancho * 0.5f;
         float uAcum = 0f;
-        var pts = seg.pts;
+
+        // Suavizar waypoints OSM con Catmull-Rom antes de generar la malla
+        var pts = seg.pts.Count >= 4
+            ? IntegradorMatematicas.SuavizarCarretera(seg.pts, divisiones: 6)
+            : seg.pts;
 
         for (int i = 0; i < pts.Count - 1; i++)
         {

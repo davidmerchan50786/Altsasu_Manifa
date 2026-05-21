@@ -118,10 +118,22 @@ public class SistemaSueloAAA : MonoBehaviour
         td.terrainLayers = layers.ToArray();
         yield return null;
 
-        // Pintar automáticamente por pendiente
+        // Pintar automáticamente por pendiente + fBm multifrecuencia
         int res   = td.alphamapResolution;
-        var alpha = new float[res, res, layers.Count];
 
+        // fBm: 6 octavas, variación a múltiples escalas (mejor que Perlin 1 octava)
+        var alphaFBM = IntegradorMatematicas.GenerarAlphamapFBM(
+            _terrain, layers.Count,
+            frecuenciaBase: 0.0018f, octavas: 6, persistencia: 0.45f, lacunaridad: 2.1f);
+
+        var alpha = alphaFBM ?? new float[res, res, layers.Count];
+        if (alphaFBM != null)
+        {
+            td.SetAlphamaps(0, 0, alpha);
+            yield break; // fBm calculó el alphamap completo
+        }
+
+        // Fallback si fBm falló: Perlin de una octava
         for (int z = 0; z < res; z++)
         {
             for (int x = 0; x < res; x++)
@@ -286,12 +298,18 @@ public class SistemaSueloAAA : MonoBehaviour
         };
 
         int total = 0;
+        uint semillaBase = (uint)(System.DateTime.Now.Millisecond + 1);
+
         foreach (var zona in zonasVeg)
         {
-            for (int i = 0; i < 80; i++)  // 80 árboles por zona = 320 total
+            // Poisson Disk Sampling: distribución natural, sin clumping artificial
+            // Radio 300m, separación mínima 12m entre árboles, máx 80 por zona
+            var posicionesPoisson = IntegradorMatematicas.GenerarPosicionesArbolesPoisson(
+                zona, radio: 300f, separacionMin: 12f, max: 80, semilla: semillaBase++);
+
+            foreach (var posPois in posicionesPoisson)
             {
-                float rx = zona.x + Random.Range(-300f, 300f);
-                float rz = zona.z + Random.Range(-300f, 300f);
+                float rx = posPois.x, rz = posPois.z;
 
                 // No plantar dentro del pueblo
                 float distPueblo = Vector2.Distance(new Vector2(rx, rz), new Vector2(OX, OZ));

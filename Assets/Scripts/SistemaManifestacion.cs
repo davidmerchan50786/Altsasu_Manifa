@@ -8,9 +8,67 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Collections;
+using Unity.Mathematics;
 
 public class SistemaManifestacion : MonoBehaviour
 {
+    // ── Boids coordinator ─────────────────────────────────────────────────
+    readonly List<ManifestanteIA> _agentes = new();
+    NativeArray<float3> _bPosiciones;
+    NativeArray<float3> _bVelocidades;
+    bool _boidsActivo;
+    float _timerBoids;
+    const float BOIDS_TICK = 0.1f; // 10 Hz
+
+    public void RegistrarAgente(ManifestanteIA agente) => _agentes.Add(agente);
+    public void DesregistrarAgente(ManifestanteIA agente) => _agentes.Remove(agente);
+
+    void Update()
+    {
+        if (!_activa || _agentes.Count < 2) return;
+        _timerBoids -= Time.deltaTime;
+        if (_timerBoids > 0) return;
+        _timerBoids = BOIDS_TICK;
+        TickBoids();
+    }
+
+    void TickBoids()
+    {
+        int n = _agentes.Count;
+        var pos = new NativeArray<float3>(n, Allocator.TempJob);
+        var vel = new NativeArray<float3>(n, Allocator.TempJob);
+
+        for (int i = 0; i < n; i++)
+        {
+            if (_agentes[i] == null) continue;
+            var p = _agentes[i].transform.position;
+            var v = _agentes[i].VelocidadBoids;
+            pos[i] = new float3(p.x, p.y, p.z);
+            vel[i] = new float3(v.x, v.y, v.z);
+        }
+
+        var cfg = _agentes[0].tipo == TipoManifestante.Disturbios
+            ? IntegradorMatematicas.BOIDS_DISTURBIOS
+            : IntegradorMatematicas.BOIDS_MANIFESTANTE;
+
+        var (nPos, nVel) = IntegradorMatematicas.TickBoids(pos, vel,
+            centroManifestacion, cfg, BOIDS_TICK);
+
+        for (int i = 0; i < n; i++)
+            if (_agentes[i] != null)
+                _agentes[i].AplicarBoids(
+                    new Vector3(nPos[i].x, nPos[i].y, nPos[i].z),
+                    new Vector3(nVel[i].x, nVel[i].y, nVel[i].z));
+
+        pos.Dispose(); vel.Dispose(); nPos.Dispose(); nVel.Dispose();
+    }
+
+    void OnDestroy()
+    {
+        if (_bPosiciones.IsCreated) _bPosiciones.Dispose();
+        if (_bVelocidades.IsCreated) _bVelocidades.Dispose();
+    }
     // ─── Inspector ─────────────────────────────────────────────────────────
     [Header("Prefabs manifestantes")]
     public GameObject prefabManifestante;   // civil con keffiyeh/pañuelo palestino
@@ -264,22 +322,43 @@ public enum TipoManifestante { Pacifico, Disturbios }
 
 public class ManifestanteIA : MonoBehaviour
 {
-    public TipoManifestante   tipo;
-    public Vector3            centro;
+    public TipoManifestante    tipo;
+    public Vector3             centro;
     public SistemaApoyoPopular apoyoSistema;
+
+    // ── Boids API ─────────────────────────────────────────────────────────
+    public Vector3 VelocidadBoids { get; private set; }
+    bool _usandoBoids;
+
+    public void AplicarBoids(Vector3 nuevaPos, Vector3 nuevaVel)
+    {
+        VelocidadBoids = nuevaVel;
+        _usandoBoids   = true;
+        _objetivo      = nuevaPos; // Boids da la dirección
+    }
 
     Rigidbody _rb;
     float     _timer;
     Vector3   _objetivo;
     bool      _huyendo;
+    SistemaManifestacion _sistema;
 
     void Start()
     {
         _rb = GetComponent<Rigidbody>() ?? gameObject.AddComponent<Rigidbody>();
-        _rb.mass = 70f; _rb.linearDamping = 8f; _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        if (GetComponent<CapsuleCollider>() == null) { var col = gameObject.AddComponent<CapsuleCollider>(); col.height = 1.8f; col.radius = 0.3f; col.center = new Vector3(0, 0.9f, 0); }
+        _rb.mass = 70f; _rb.linearDamping = 8f;
+        _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        if (GetComponent<CapsuleCollider>() == null)
+        {
+            var col = gameObject.AddComponent<CapsuleCollider>();
+            col.height = 1.8f; col.radius = 0.3f; col.center = new Vector3(0, 0.9f, 0);
+        }
+        _sistema = FindFirstObjectByType<SistemaManifestacion>();
+        _sistema?.RegistrarAgente(this);
         ElegirObjetivo();
     }
+
+    void OnDestroy() => _sistema?.DesregistrarAgente(this);
 
     void FixedUpdate()
     {
@@ -295,13 +374,27 @@ public class ManifestanteIA : MonoBehaviour
             _objetivo = transform.position; // se queda
         }
 
-        var dir = (_objetivo - transform.position); dir.y = 0;
-        if (dir.magnitude < 1f) return;
-        dir.Normalize();
-        float speed = tipo == TipoManifestante.Disturbios ? 2.5f : 1.2f;
-        var vel = dir * speed; vel.y = _rb.linearVelocity.y;
-        _rb.linearVelocity = Vector3.Lerp(_rb.linearVelocity, vel, Time.fixedDeltaTime * 4f);
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.fixedDeltaTime * 5f);
+        Vector3 moveVel;
+        if (_usandoBoids && VelocidadBoids.sqrMagnitude > 0.01f)
+        {
+            // Usar velocidad calculada por Boids (comportamiento de grupo)
+            moveVel = VelocidadBoids;
+            moveVel.y = _rb.linearVelocity.y;
+        }
+        else
+        {
+            // Fallback: movimiento directo al objetivo
+            var dir = (_objetivo - transform.position); dir.y = 0;
+            if (dir.magnitude < 0.5f) return;
+            float speed = tipo == TipoManifestante.Disturbios ? 2.5f : 1.2f;
+            moveVel = dir.normalized * speed;
+            moveVel.y = _rb.linearVelocity.y;
+        }
+        _rb.linearVelocity = Vector3.Lerp(_rb.linearVelocity, moveVel, Time.fixedDeltaTime * 4f);
+        var moveDir = new Vector3(moveVel.x, 0, moveVel.z);
+        if (moveDir.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                Quaternion.LookRotation(moveDir), Time.fixedDeltaTime * 5f);
     }
 
     void ElegirObjetivo()
