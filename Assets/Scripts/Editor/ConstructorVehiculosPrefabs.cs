@@ -115,7 +115,7 @@ public static class ConstructorVehiculosPrefabs
                 // Rigidbody
                 var rb      = go.AddComponent<Rigidbody>();
                 rb.mass     = cfg.masa;
-                rb.drag     = 0.05f;
+                rb.linearDamping     = 0.05f;
                 rb.angularDamping = 0.2f;
                 rb.centerOfMass = new Vector3(0, -cfg.alturaRueda * 0.4f, 0);
 
