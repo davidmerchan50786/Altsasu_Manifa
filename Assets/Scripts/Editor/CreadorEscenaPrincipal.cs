@@ -127,6 +127,7 @@ public static class CreadorEscenaPrincipal
         var optGO      = HijoNuevo("Optimizacion",  gameplayGO);
         var optimiz    = optGO.AddComponent<SistemaOptimizacion>();
         var diagnos    = optGO.AddComponent<SistemaDiagnostico>();
+        optGO.AddComponent<SistemaSeguridad>(); // monitor de salud runtime
 
         // ── 7. UI ─────────────────────────────────────────────────────────
         var uiGO    = Nuevo("UI");

@@ -130,56 +130,69 @@ public sealed class AltsasuCore : MonoBehaviour
         AlsasuaLogger.Info("Core", "▶ Boot v4 iniciado");
 
         // ── FASE 1: Core (sin dependencias) ──────────────────────────────
-        EnsureOn(ref audioManagerSystem, "AudioManager");
-        EnsureOn(ref wantedSystem,       "GameManager");
-        EnsureOn(ref apoyoSystem,        "SistemaApoyoPopular");
-        SistemaOpciones.AplicarTodo();
-
-        Application.targetFrameRate = fpsMeta;
-        QualitySettings.vSyncCount  = 0;
-        AplicarGraficos();
+        BootFase(1, () =>
+        {
+            EnsureOn(ref audioManagerSystem, "AudioManager");
+            EnsureOn(ref wantedSystem,       "GameManager");
+            EnsureOn(ref apoyoSystem,        "SistemaApoyoPopular");
+            SistemaOpciones.AplicarTodo();
+            Application.targetFrameRate = fpsMeta;
+            QualitySettings.vSyncCount  = 0;
+            AplicarGraficos();
+        });
 
         yield return null;
 
         // ── FASE 2: Mundo (requiere terreno) ─────────────────────────────
-        // Esperar a que el terreno exista (SceneBootstrapper lo crea antes)
         float tw = 0f;
-        while (Terrain.activeTerrain == null && tw < 8f) { tw += 0.25f; yield return new WaitForSeconds(0.25f); }
+        while (Terrain.activeTerrain == null && tw < 12f)
+        {
+            tw += 0.25f;
+            yield return new WaitForSeconds(0.25f);
+        }
+        if (Terrain.activeTerrain == null)
+            AlsasuaLogger.Warn("Core", "Terreno no disponible tras 12s — continuando sin él");
 
-        EnsureOn(ref atmosferaSystem,     "SistemaAtmosfera");
-        EnsureOn(ref terrenoSystem,       "SistemaTerreno");     // pinta alphamap + árboles
-        EnsureOn(ref navMeshSystem,       "SistemaNavMesh");
-        EnsureOn(ref edificiosAAASystem,  "SistemaEdificiosAAA");// materiales listos antes de zonas
-        EnsureOn(ref zonasSystem,         "SistemaZonas");
-        EnsureOn(ref generadorMundoSystem,"GeneradorMundoOSM");  // indexa → avisa a SistemaZonas
-        EnsureOn(ref traficoSystem,       "SistemaTrafico");
-        EnsureOn(ref vegetacionSystem,    "SistemaVegetacion");
-        EnsureOn(ref faunaSystem,         "SistemaFauna");
-        EnsureOn(ref multitudSystem,      "SistemaMultitud");
-        EnsureOn(ref climaSystem,         "SistemaClima");
-        EnsureOn(ref paranoiaSystem,      "SistemaParanoia");
+        BootFase(2, () =>
+        {
+            EnsureOn(ref atmosferaSystem,     "SistemaAtmosfera");
+            EnsureOn(ref terrenoSystem,       "SistemaTerreno");
+            EnsureOn(ref navMeshSystem,       "SistemaNavMesh");
+            EnsureOn(ref edificiosAAASystem,  "SistemaEdificiosAAA");
+            EnsureOn(ref zonasSystem,         "SistemaZonas");
+            EnsureOn(ref generadorMundoSystem,"GeneradorMundoOSM");
+            EnsureOn(ref traficoSystem,       "SistemaTrafico");
+            EnsureOn(ref vegetacionSystem,    "SistemaVegetacion");
+            EnsureOn(ref faunaSystem,         "SistemaFauna");
+            EnsureOn(ref multitudSystem,      "SistemaMultitud");
+            EnsureOn(ref climaSystem,         "SistemaClima");
+            EnsureOn(ref paranoiaSystem,      "SistemaParanoia");
 
-        if (climaSystem != null && climaSystem.solDireccional == null)
-            climaSystem.solDireccional = FindFirstObjectByType<Light>();
+            if (climaSystem != null && climaSystem.solDireccional == null)
+                climaSystem.solDireccional = FindFirstObjectByType<Light>();
+        });
 
         yield return null;
 
         // ── FASE 3: Gameplay ─────────────────────────────────────────────
-        EnsureOn(ref destruccionSystem,   "SistemaDestruccion");
-        EnsureOn(ref grafitisSystem,      "SistemaGrafitis");
-        EnsureOn(ref manifestacionSystem, "SistemaManifestacion");
-        EnsureOn(ref polishSystem,        "SistemaPolish");
-        EnsureOn(ref impactosSystem,      "SistemaImpactos");
-        EnsureOn(ref guardadoSystem,      "SistemaGuardado");
-        EnsureOn(ref logrosSystem,        "SistemaLogros");
-        EnsureOn(ref reverbSystem,        "SistemaReverbZonas");
-        EnsureOn(ref tutorialSystem,      "SistemaTutorial");
-        EnsureOn(ref misionesSystem,      "SistemaMisiones");
-        EnsureOn(ref misionesSecSystem,   "GestorMisionesSecundarias");
-        EnsureOn(ref hudCanvasSystem,     "HUDCanvas");
-        EnsureOn(ref menuPausaSystem,     "MenuPausa");
-        EnsureOn(ref optimizacionSystem,  "SistemaOptimizacion");
-        EnsureOn(ref diagnosticoSystem,   "SistemaDiagnostico");
+        BootFase(3, () =>
+        {
+            EnsureOn(ref destruccionSystem,   "SistemaDestruccion");
+            EnsureOn(ref grafitisSystem,      "SistemaGrafitis");
+            EnsureOn(ref manifestacionSystem, "SistemaManifestacion");
+            EnsureOn(ref polishSystem,        "SistemaPolish");
+            EnsureOn(ref impactosSystem,      "SistemaImpactos");
+            EnsureOn(ref guardadoSystem,      "SistemaGuardado");
+            EnsureOn(ref logrosSystem,        "SistemaLogros");
+            EnsureOn(ref reverbSystem,        "SistemaReverbZonas");
+            EnsureOn(ref tutorialSystem,      "SistemaTutorial");
+            EnsureOn(ref misionesSystem,      "SistemaMisiones");
+            EnsureOn(ref misionesSecSystem,   "GestorMisionesSecundarias");
+            EnsureOn(ref hudCanvasSystem,     "HUDCanvas");
+            EnsureOn(ref menuPausaSystem,     "MenuPausa");
+            EnsureOn(ref optimizacionSystem,  "SistemaOptimizacion");
+            EnsureOn(ref diagnosticoSystem,   "SistemaDiagnostico");
+        });
 
         yield return null;
 
@@ -192,18 +205,40 @@ public sealed class AltsasuCore : MonoBehaviour
         AlsasuaLogger.Info("Core", "✅ Boot completo — mundo listo");
     }
 
+    /// <summary>Ejecuta una fase de boot con try/catch — un fallo no detiene el boot.</summary>
+    static void BootFase(int num, System.Action accion)
+    {
+        try
+        {
+            accion();
+            AlsasuaLogger.Info("Core", $"  Fase {num} OK");
+        }
+        catch (System.Exception e)
+        {
+            AlsasuaLogger.Error("Core", $"  Fase {num} ERROR: {e.Message} — continuando");
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     //  HELPERS DE BOOT
     // ══════════════════════════════════════════════════════════════════════
 
     void EnsureOn<T>(ref T campo, string log) where T : MonoBehaviour
     {
-        if (campo != null) return;
-        campo = FindFirstObjectByType<T>();
-        if (campo == null)
+        if (campo != null && campo.gameObject.activeInHierarchy) return;
+        try
         {
-            campo = gameObject.AddComponent<T>();
-            AlsasuaLogger.Info("Core", $"  [+] {typeof(T).Name}");
+            campo = FindFirstObjectByType<T>();
+            if (campo == null)
+            {
+                campo = gameObject.AddComponent<T>();
+                AlsasuaLogger.Info("Core", $"  [+] {typeof(T).Name} (creado en CoreGO)");
+            }
+        }
+        catch (System.Exception e)
+        {
+            AlsasuaLogger.Error("Core", $"  [!] EnsureOn<{typeof(T).Name}> falló: {e.Message}");
+            // No relanzar — un sistema fallido no debe detener el boot
         }
     }
 

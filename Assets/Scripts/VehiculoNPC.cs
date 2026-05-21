@@ -188,7 +188,7 @@ public class VehiculoNPC : MonoBehaviour
             var mpbR = new MaterialPropertyBlock();
             mpbR.SetColor("_BaseColor", new Color(0.1f, 0.1f, 0.1f));
             mpbR.SetColor("_Color",     new Color(0.1f, 0.1f, 0.1f));
-            rueda.GetComponent<Renderer>().SetPropertyBlock(mpbR);
+            rueda.GetSafe<Renderer>()?.SetPropertyBlock(mpbR);
             { var c = rueda.GetComponent<Collider>(); if (c != null) { if (Application.isPlaying) Object.Destroy(c); else Object.DestroyImmediate(c); } }
         }
 
@@ -412,7 +412,7 @@ public class VehiculoNPC : MonoBehaviour
             var mpbRueda = new MaterialPropertyBlock();
             mpbRueda.SetColor("_BaseColor", new Color(0.1f, 0.1f, 0.1f));
             mpbRueda.SetColor("_Color",     new Color(0.1f, 0.1f, 0.1f));
-            rueda.GetComponent<Renderer>().SetPropertyBlock(mpbRueda);
+            rueda.GetSafe<Renderer>()?.SetPropertyBlock(mpbRueda);
             { var c = rueda.GetComponent<Collider>(); if (c != null) { if (Application.isPlaying) Object.Destroy(c); else Object.DestroyImmediate(c); } }
         }
 
