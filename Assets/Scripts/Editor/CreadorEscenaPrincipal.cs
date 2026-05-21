@@ -70,6 +70,7 @@ public static class CreadorEscenaPrincipal
         var terreno    = terrenoGO.AddComponent<SistemaTerreno>();
         terrenoGO.AddComponent<SistemaSueloAAA>();
         terrenoGO.AddComponent<OptimizadorTerreno>();
+        terrenoGO.AddComponent<AplicadorOrtofoto>(); // ortofoto IGN PNOA 25cm/px
 
         var treesGO    = HijoNuevo("TreeStreamer",  mundoGO);
         var trees      = treesGO.AddComponent<AlsasuaTreeStreamer>();
