@@ -1,11 +1,9 @@
 // Assets/Scripts/Editor/ImportadorAssetsLocales.cs
 // Tools → Alsasua → 📦 Importar Assets Locales
+// Tools → Alsasua → 🔗 Conectar Assets a Sistemas
 //
-// Importa los .unitypackage del Asset Store cache local y los conecta
-// automáticamente a los sistemas del simulador.
-//
-// PASO 1: Importa todos los packages (interactivo — Unity pregunta qué importar)
-// PASO 2: Conecta assets importados a sus sistemas correspondientes
+// Detecta TODOS los .unitypackage del cache local del Asset Store
+// e importa + conecta automáticamente a los sistemas del simulador.
 
 #if UNITY_EDITOR
 using UnityEngine;
@@ -17,89 +15,81 @@ using System.Reflection;
 
 public static class ImportadorAssetsLocales
 {
-    // Ruta base del cache del Asset Store
     static readonly string CACHE = Path.Combine(
         System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
         "Unity", "Asset Store-5.x");
 
-    // Packages a importar con su ruta relativa dentro del cache
-    static readonly (string label, string ruta)[] PACKAGES =
+    // Packages que no aportan nada al simulador
+    static readonly HashSet<string> IGNORAR = new(System.StringComparer.OrdinalIgnoreCase)
     {
-        // Personajes
-        ("Police Car & Helicopter",  @"SICS Games\3D ModelsVehiclesLand\Police Car Helicopter.unitypackage"),
-        ("City People FREE",         @"Denys Almaral\3D ModelsCharacters\City People FREE Samples.unitypackage"),
-        ("Bodyguards",               @"Batewar\3D ModelsCharactersHumanoidsHumans\Bodyguards.unitypackage"),
-        ("Survivalist Character",    @"Slayver\3D ModelsCharacters\Survivalist character.unitypackage"),
-        // Vehículos
-        ("Hatchback and Sedan",      @"RCC Design\3D ModelsVehiclesLand\Hatchback and Sedan.unitypackage"),
-        ("UAA City Vehicles",        @"Testmobile\3D ModelsVehiclesLand\UAA - City Props - Vehicles.unitypackage"),
-        // Entorno urbano
-        ("Street Assets",            @"Rem Storms\3D ModelsPropsExterior\Street Assets.unitypackage"),
-        ("Polygon City Pack Free",   @"WAND AND CIRCLES\3D Models\Polygon City Pack - Environment and Interior Free.unitypackage"),
-        // Vegetación y fauna
-        ("Realistic Tree 9",         @"Pixel Games\3D ModelsVegetationTrees\Realistic Tree 9 Rainbow Tree.unitypackage"),
-        ("Realistic Tree 10",        @"Pixel Games\3D ModelsVegetationTrees\Realistic Tree 10.unitypackage"),
-        ("German Shepherd",          @"RetroStyle Games\3D ModelsCharactersAnimals\German Shepherd 3D Model.unitypackage"),
-        // Efectos
-        ("HQ Explosions FREE",       @"SparkFlow\Particle SystemsFire\HQ Explosions Pack FREE.unitypackage"),
-        ("Cinematic Explosions",     @"Mirza Beig\Particle SystemsFire\Cinematic Explosions FREE.unitypackage"),
-        ("Procedural Fire",          @"Hovl Studio\Particle SystemsFire\Procedural fire.unitypackage"),
-        // Audio
-        ("Free Sound Effects Pack",  @"Olivier Girardot\AudioSound FX\Free Sound Effects Pack.unitypackage"),
-        ("Free Ambience Sounds",     @"Gregor Quendel\AudioAmbientUrban\Free General Ambience Sounds.unitypackage"),
-        // Animaciones
-        ("Fighting Motions Vol1",    @"Magicpot Inc\AnimationBipedal\Fighting Motions Vol1.unitypackage"),
-        ("Ragdoll & Mecanim",        @"Stas Bz\Complete ProjectsSystems\Ragdoll and Transition to Mecanim.unitypackage"),
-        // Herramientas
-        ("EasyRoads3D Free",         @"AndaSoft\3D ModelsCharacters\EasyRoads3D Free v3.unitypackage"),
+        "Free Island Collection",
+        "Free Lava Shader",
+        "Pirate Music Pack",
+        "Western Audio Music",
+        "Horror Ambient Album - 082318",
+        "Dark Ambient Music - Into Insanity Vol 2 Freebie",
+        "Homing Missile",
+        "H70 Air-to-Ground Rocket PBR",
+        "Mobile Missiles Pack",
+        "Free 3D Missile",
+        "Eci Forge Uma Armours Pack1",
+        "Free Lava Shader",
     };
 
-    // ── PASO 1: Importar packages ──────────────────────────────────────────
+    // ── PASO 1: Importar todos ────────────────────────────────────────────
 
     [MenuItem("Tools/Alsasua/📦 Importar Assets Locales", priority = 1)]
     public static void ImportarTodo()
     {
-        var faltantes = new List<string>();
-        var disponibles = new List<(string label, string fullPath)>();
-
-        foreach (var (label, ruta) in PACKAGES)
+        if (!Directory.Exists(CACHE))
         {
-            string full = Path.Combine(CACHE, ruta);
-            if (File.Exists(full))
-                disponibles.Add((label, full));
-            else
-                faltantes.Add(label);
-        }
-
-        if (disponibles.Count == 0)
-        {
-            EditorUtility.DisplayDialog("📦 Sin packages",
-                "No se encontraron packages en el cache del Asset Store:\n" + CACHE,
-                "OK");
+            EditorUtility.DisplayDialog("Cache no encontrado",
+                $"No se encontró:\n{CACHE}\n\nDescarga assets desde el Package Manager primero.", "OK");
             return;
         }
 
-        string lista = string.Join("\n", disponibles.Select(d => $"  ✓ {d.label}"));
-        string aviso = faltantes.Count > 0
-            ? "\n\nNo encontrados:\n" + string.Join("\n", faltantes.Select(f => $"  ✗ {f}"))
-            : "";
+        var packages = Directory
+            .GetFiles(CACHE, "*.unitypackage", SearchOption.AllDirectories)
+            .Select(p => (nombre: Path.GetFileNameWithoutExtension(p), path: p))
+            .Where(x => !IGNORAR.Contains(x.nombre))
+            .OrderBy(x => x.nombre)
+            .ToList();
 
-        bool ok = EditorUtility.DisplayDialog("📦 Importar Assets",
-            $"Se importarán {disponibles.Count} packages:\n\n{lista}{aviso}\n\n" +
-            "Unity mostrará un diálogo por cada package.\n" +
-            "Pulsa 'Import' en cada uno para aceptar.",
+        if (packages.Count == 0)
+        {
+            EditorUtility.DisplayDialog("Sin packages", "No hay packages en el cache.", "OK");
+            return;
+        }
+
+        // Agrupar por categoría para mostrar resumen
+        var chars   = packages.Where(p => p.path.Contains("Characters") || p.path.Contains("Humanoid") || p.path.Contains("AnimationBipedal")).Select(p => p.nombre).ToList();
+        var vehs    = packages.Where(p => p.path.Contains("Vehicles")).Select(p => p.nombre).ToList();
+        var nature  = packages.Where(p => p.path.Contains("Vegetation") || p.path.Contains("Trees") || p.path.Contains("Environments") || p.path.Contains("Landscapes")).Select(p => p.nombre).ToList();
+        var effects = packages.Where(p => p.path.Contains("Particle") || p.path.Contains("Fire")).Select(p => p.nombre).ToList();
+        var audio   = packages.Where(p => p.path.Contains("Audio")).Select(p => p.nombre).ToList();
+        var props   = packages.Where(p => p.path.Contains("Props") || p.path.Contains("Exterior")).Select(p => p.nombre).ToList();
+        var tools   = packages.Where(p => p.path.Contains("Editor")).Select(p => p.nombre).ToList();
+
+        bool ok = EditorUtility.DisplayDialog("📦 Importar Assets — " + packages.Count + " packages",
+            $"PERSONAJES ({chars.Count}): {string.Join(", ", chars.Take(3))}{(chars.Count > 3 ? "..." : "")}\n" +
+            $"VEHÍCULOS ({vehs.Count}): {string.Join(", ", vehs.Take(3))}{(vehs.Count > 3 ? "..." : "")}\n" +
+            $"NATURALEZA ({nature.Count}): {string.Join(", ", nature.Take(3))}{(nature.Count > 3 ? "..." : "")}\n" +
+            $"EFECTOS ({effects.Count}): {string.Join(", ", effects.Take(3))}{(effects.Count > 3 ? "..." : "")}\n" +
+            $"AUDIO ({audio.Count}): {string.Join(", ", audio.Take(3))}{(audio.Count > 3 ? "..." : "")}\n" +
+            $"PROPS ({props.Count}): {string.Join(", ", props.Take(3))}{(props.Count > 3 ? "..." : "")}\n" +
+            $"HERRAMIENTAS ({tools.Count}): {string.Join(", ", tools)}\n\n" +
+            "Unity mostrará un diálogo por cada package.\nPulsa 'Import' en cada uno.",
             "Importar todos", "Cancelar");
 
         if (!ok) return;
 
-        _queue    = new Queue<(string, string)>(disponibles);
-        _total    = disponibles.Count;
+        _queue    = new Queue<(string, string)>(packages);
+        _total    = packages.Count;
         _imported = 0;
-
         EditorApplication.delayCall += ImportarSiguiente;
     }
 
-    static Queue<(string label, string path)> _queue;
+    static Queue<(string nombre, string path)> _queue;
     static int _total, _imported;
 
     static void ImportarSiguiente()
@@ -109,309 +99,304 @@ public static class ImportadorAssetsLocales
             EditorUtility.ClearProgressBar();
             EditorUtility.DisplayDialog("✅ Importación completada",
                 $"{_imported}/{_total} packages importados.\n\n" +
-                "SIGUIENTE PASO:\n" +
+                "SIGUIENTE:\n" +
                 "Tools → Alsasua → 🔗 Conectar Assets a Sistemas\n\n" +
-                "Esto conectará los assets importados a:\n" +
-                "• AlsasuaTreeStreamer → prefabs de árbol\n" +
-                "• NPCCivil → modelos de personaje\n" +
-                "• WizardCochePrefab → Police Car + Hatchback\n" +
-                "• AudioManager → clips reales\n" +
-                "• SistemaExplosion → efectos de partículas",
+                "Después:\n" +
+                "Tools → Alsasua → ██ BUILD TODO ██",
                 "OK");
             return;
         }
 
-        var (label, path) = _queue.Dequeue();
-        float p = (float)_imported / _total;
-        EditorUtility.DisplayProgressBar($"📦 Importando [{_imported+1}/{_total}]", label, p);
+        var (nombre, path) = _queue.Dequeue();
+        EditorUtility.DisplayProgressBar(
+            $"📦 Importando [{_imported + 1}/{_total}]", nombre,
+            (float)_imported / _total);
 
-        AssetDatabase.ImportPackage(path, true); // true = interactivo
+        AssetDatabase.ImportPackage(path, true);
         _imported++;
-
         EditorApplication.delayCall += ImportarSiguiente;
     }
 
-    // ── PASO 2: Conectar assets a sistemas ────────────────────────────────
+    // ── PASO 2: Conectar assets a sistemas ───────────────────────────────
 
     [MenuItem("Tools/Alsasua/🔗 Conectar Assets a Sistemas", priority = 2)]
     public static void ConectarAssets()
     {
         AssetDatabase.Refresh();
+        int total = 0;
 
-        int conexiones = 0;
-        conexiones += ConectarArboles();
-        conexiones += ConectarPersonajes();
-        conexiones += ConectarVehiculos();
-        conexiones += ConectarAudio();
-        conexiones += ConectarExplosiones();
-        conexiones += ConectarFauna();
+        total += ConectarArboles();
+        total += ConectarPersonajes();
+        total += ConectarAudio();
+        total += ConectarExplosiones();
+        total += ConectarFauna();
+        total += ConectarProps();
+        total += ConectarVehiculos();
 
         AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
 
-        EditorUtility.DisplayDialog("🔗 Assets conectados",
-            $"{conexiones} conexiones realizadas.\n\n" +
-            "Ejecuta Tools → Alsasua → ██ BUILD TODO ██\n" +
-            "para reconstruir la escena con todos los assets.",
+        EditorUtility.DisplayDialog("🔗 Conexiones completadas",
+            $"{total} assets conectados.\n\n" +
+            "Tools → Alsasua → ██ BUILD TODO ██  para reconstruir la escena.",
             "OK");
     }
 
-    // ── Árboles → AlsasuaTreeStreamer ──────────────────────────────────────
+    // ── Árboles ──────────────────────────────────────────────────────────
 
     static int ConectarArboles()
     {
         var streamer = Object.FindFirstObjectByType<AlsasuaTreeStreamer>();
-        if (streamer == null)
-        {
-            // Buscar también el script en Assets si no hay escena abierta
-            var go = new GameObject("_TempTreeConfig");
-            streamer = go.AddComponent<AlsasuaTreeStreamer>();
-        }
+        if (streamer == null) return 0;
 
         var prefabs = new List<GameObject>();
-
-        // Buscar prefabs de árbol importados
-        string[] patrones = {
-            "t:Prefab", "Tree", "Pine", "Oak", "Arbol", "Pino", "Roble"
-        };
-
-        // Realistic Trees de Pixel Games
-        foreach (var g in AssetDatabase.FindAssets("t:Prefab", new[]{ "Assets/RealisticPine", "Assets/Realistic Tree", "Assets/PixelGames" }))
-        {
-            var p = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(g));
-            if (p != null) prefabs.Add(p);
-        }
-
-        // Buscar por nombre si la carpeta es distinta
-        if (prefabs.Count == 0)
-        {
-            foreach (var g in AssetDatabase.FindAssets("t:Prefab Tree"))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(g);
-                if (path.Contains("Realistic") || path.Contains("Tree") || path.Contains("Pine") || path.Contains("Oak"))
-                {
-                    var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    if (p != null) prefabs.Add(p);
-                }
-            }
-        }
-
-        if (prefabs.Count == 0) return 0;
-
-        streamer.treePrefabs = prefabs.Take(8).ToArray();
-        EditorUtility.SetDirty(streamer);
-        Debug.Log($"[Importador] 🌲 {prefabs.Count} prefabs árbol → AlsasuaTreeStreamer");
-        return prefabs.Count;
-    }
-
-    // ── Personajes → NPCCivil prefabs ─────────────────────────────────────
-
-    static int ConectarPersonajes()
-    {
-        // Buscar prefabs de personajes importados
-        var personajePrefabs = new Dictionary<string, GameObject>();
-
-        string[] carpetas = {
-            "Assets/City People", "Assets/CityPeople", "Assets/Bodyguards",
-            "Assets/Survivalist", "Assets/Characters"
-        };
-
-        foreach (var g in AssetDatabase.FindAssets("t:Prefab", carpetas))
-        {
-            string path = AssetDatabase.GUIDToAssetPath(g);
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (prefab == null) continue;
-
-            // Solo prefabs con SkinnedMeshRenderer (personaje con mesh)
-            if (prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) != null)
-                personajePrefabs[prefab.name] = prefab;
-        }
-
-        if (personajePrefabs.Count == 0) return 0;
-
-        // Actualizar los prefabs de NPCCivil existentes
-        int cnt = 0;
-        string[] npcPaths = AssetDatabase.FindAssets("t:Prefab NPC_Civil", new[]{"Assets/Prefabs/NPCs"});
-        foreach (var g in npcPaths)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(g);
-            var npcPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (npcPrefab == null) continue;
-
-            var npc = npcPrefab.GetComponent<NPCCivil>();
-            if (npc != null && npc.prefabModelo == null && personajePrefabs.Count > cnt)
-            {
-                using var edit = new PrefabUtility.EditPrefabContentsScope(path);
-                var npcEd = edit.prefabContentsRoot.GetComponent<NPCCivil>();
-                if (npcEd != null)
-                {
-                    npcEd.prefabModelo = personajePrefabs.Values.ElementAt(cnt % personajePrefabs.Count);
-                    cnt++;
-                }
-            }
-        }
-
-        Debug.Log($"[Importador] 👥 {cnt} NPCs conectados con modelos de personaje");
-        return cnt;
-    }
-
-    // ── Vehículos → WizardCochePrefab ────────────────────────────────────
-
-    static int ConectarVehiculos()
-    {
-        // Police Car — WizardCochePrefab lo busca en esta ruta exacta
-        string interceptorPath = "Assets/Police Car & Helicopter/Prefabs/Interceptor.prefab";
-        string hatchbackSearch = "t:Prefab";
-
-        int cnt = 0;
-
-        // Verificar que el Interceptor existe
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(interceptorPath) != null)
-        {
-            Debug.Log("[Importador] 🚔 Police Car detectado — ejecuta 🚔 Crear Prefabs de Coche");
-            cnt++;
-        }
-
-        // Hatchback y Sedan de RCC Design
-        foreach (var g in AssetDatabase.FindAssets("t:Prefab", new[]{"Assets/RCC Assets", "Assets/Hatchback", "Assets/Sedan"}))
-        {
-            string path = AssetDatabase.GUIDToAssetPath(g);
-            if (path.Contains("Hatchback") || path.Contains("Sedan") || path.Contains("Car"))
-            {
-                Debug.Log($"[Importador] 🚗 Vehículo encontrado: {Path.GetFileName(path)}");
-                cnt++;
-            }
-        }
-
-        return cnt;
-    }
-
-    // ── Audio → AudioManager Resources ───────────────────────────────────
-
-    static int ConectarAudio()
-    {
-        // Copiar clips de audio útiles a Assets/Resources/Audio/
-        string destDir = "Assets/Resources/Audio";
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-            AssetDatabase.CreateFolder("Assets", "Resources");
-        if (!AssetDatabase.IsValidFolder(destDir))
-            AssetDatabase.CreateFolder("Assets/Resources", "Audio");
-
-        var clipMap = new Dictionary<string, string>
-        {
-            // nombre destino → substring para buscar en los imports
-            ["disparo"]       = "gunshot",
-            ["explosion"]     = "explosion",
-            ["sirena"]        = "siren",
-            ["motor"]         = "engine",
-            ["pasos"]         = "footstep",
-            ["lluvia"]        = "rain",
-            ["viento"]        = "wind",
-            ["pajaros"]       = "bird",
-            ["multitud"]      = "crowd",
-            ["click"]         = "click",
-        };
-
-        int cnt = 0;
-        foreach (var g in AssetDatabase.FindAssets("t:AudioClip"))
-        {
-            string srcPath = AssetDatabase.GUIDToAssetPath(g);
-            string fname   = Path.GetFileNameWithoutExtension(srcPath).ToLower();
-
-            foreach (var (destName, keyword) in clipMap)
-            {
-                string destPath = $"{destDir}/{destName}{Path.GetExtension(srcPath)}";
-                if (fname.Contains(keyword) && !File.Exists(
-                    Path.Combine(Application.dataPath.Replace("Assets",""), destPath)))
-                {
-                    AssetDatabase.CopyAsset(srcPath, destPath);
-                    cnt++;
-                    break;
-                }
-            }
-        }
-
-        if (cnt > 0)
-        {
-            AssetDatabase.Refresh();
-            Debug.Log($"[Importador] 🔊 {cnt} clips de audio → Resources/Audio/");
-        }
-        return cnt;
-    }
-
-    // ── Explosiones → SistemaExplosion ───────────────────────────────────
-
-    static int ConectarExplosiones()
-    {
-        // Buscar prefabs de explosión/fuego importados
-        var explosionPrefabs = new List<GameObject>();
+        string[] keywords = { "tree","pine","oak","conifer","fir","spruce","beech","birch","arbol","pino" };
 
         foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
         {
             string path = AssetDatabase.GUIDToAssetPath(g);
-            string name = Path.GetFileNameWithoutExtension(path).ToLower();
-            if (name.Contains("explo") || name.Contains("fire") || name.Contains("smoke") ||
-                name.Contains("blast") || name.Contains("fuego") || name.Contains("humo"))
-            {
-                var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (p != null && p.GetComponent<ParticleSystem>() != null)
-                    explosionPrefabs.Add(p);
-            }
+            if (path.StartsWith("Assets/Prefabs/") || path.StartsWith("Assets/_Extracted")) continue;
+            string low  = path.ToLower();
+            if (!keywords.Any(k => low.Contains(k))) continue;
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (p != null && !prefabs.Contains(p)) prefabs.Add(p);
+            if (prefabs.Count >= 12) break;
         }
 
-        if (explosionPrefabs.Count == 0) return 0;
+        if (prefabs.Count == 0) return 0;
+        streamer.treePrefabs = prefabs.ToArray();
+        EditorUtility.SetDirty(streamer);
+        Debug.Log($"[Importador] 🌲 {prefabs.Count} árboles → AlsasuaTreeStreamer");
+        return prefabs.Count;
+    }
 
-        // Guardar lista en un ScriptableObject o asset de referencia
-        // SistemaExplosion es static — los prefabs se asignan via Instantiate en runtime
-        // Creamos un prefab "ExplosionPrefabs" que SistemaExplosion puede cargar via Resources
-        string dir = "Assets/Resources/Efectos";
-        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets","Resources");
-        if (!AssetDatabase.IsValidFolder(dir)) AssetDatabase.CreateFolder("Assets/Resources","Efectos");
+    // ── Personajes ────────────────────────────────────────────────────────
 
-        // Copiar prefabs de explosión a Resources/Efectos/
-        int cnt = 0;
-        foreach (var ep in explosionPrefabs.Take(5))
+    static int ConectarPersonajes()
+    {
+        var humanoids = new List<GameObject>();
+        foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
         {
-            string dest = $"{dir}/{ep.name}.prefab";
-            if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), dest)))
+            string path = AssetDatabase.GUIDToAssetPath(g);
+            if (path.StartsWith("Assets/Prefabs/")) continue;
+            var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (go != null && go.GetComponentInChildren<SkinnedMeshRenderer>(true) != null)
+                humanoids.Add(go);
+        }
+
+        if (humanoids.Count == 0) return 0;
+
+        int cnt = 0;
+        var guids = AssetDatabase.FindAssets("t:Prefab NPC_", new[]{"Assets/Prefabs/NPCs"});
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string npcPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+            using var scope = new PrefabUtility.EditPrefabContentsScope(npcPath);
+            var npc = scope.prefabContentsRoot.GetComponent<NPCCivil>();
+            if (npc != null && npc.prefabModelo == null)
             {
-                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(ep), dest);
+                npc.prefabModelo = humanoids[i % humanoids.Count];
                 cnt++;
             }
         }
 
-        if (cnt > 0) AssetDatabase.Refresh();
-        Debug.Log($"[Importador] 💥 {cnt} prefabs de explosión → Resources/Efectos/");
+        Debug.Log($"[Importador] 👥 {cnt} NPCs ← modelos humanoides");
         return cnt;
     }
 
-    // ── Fauna → SistemaFauna ──────────────────────────────────────────────
+    // ── Audio ─────────────────────────────────────────────────────────────
 
-    static int ConectarFauna()
+    static int ConectarAudio()
     {
-        // German Shepherd → SistemaFauna (si existe el sistema)
-        var fauna = Object.FindFirstObjectByType<SistemaFauna>();
-        if (fauna == null) return 0;
+        string dest = "Assets/Resources/Audio";
+        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets","Resources");
+        if (!AssetDatabase.IsValidFolder(dest))               AssetDatabase.CreateFolder("Assets/Resources","Audio");
 
-        int cnt = 0;
-        foreach (var g in AssetDatabase.FindAssets("t:Prefab", new[]{"Assets/GermanShepherd", "Assets/German Shepherd", "Assets/Dog"}))
+        var mapa = new Dictionary<string, string[]>
         {
-            string path = AssetDatabase.GUIDToAssetPath(g);
-            var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (p == null) continue;
+            ["disparo"]      = new[]{ "gunshot","gun_shot","pistol","rifle","shot","shoot","bang" },
+            ["explosion"]    = new[]{ "explosion","explode","blast","detonate","boom" },
+            ["sirena"]       = new[]{ "siren","police","alarm","emergency","wail" },
+            ["motor"]        = new[]{ "engine","motor","car_idle","vehicle","car_loop" },
+            ["paso_asfalto"] = new[]{ "footstep","foot_step","paso","walk_concrete","walking" },
+            ["lluvia"]       = new[]{ "rain","lluvia","drizzle","rainfall" },
+            ["viento"]       = new[]{ "wind","viento","breeze","gust","howl" },
+            ["pajaros"]      = new[]{ "bird","pajaro","tweet","chirp","sparrow","crow","nightingale" },
+            ["multitud"]     = new[]{ "crowd","multitud","cheer","protest","people","mob","gathering" },
+            ["impacto"]      = new[]{ "impact","hit","punch","golpe","smash","collision" },
+            ["click_ui"]     = new[]{ "click","button","ui_click","select","menu" },
+            ["gritos"]       = new[]{ "scream","shout","yell","gritos","cry","pain" },
+        };
 
-            // Conectar vía reflexión al campo de prefab de perro
-            var f = typeof(SistemaFauna).GetField("prefabPerro",
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null && f.GetValue(fauna) == null)
+        var copied = new HashSet<string>();
+        int cnt = 0;
+
+        foreach (var g in AssetDatabase.FindAssets("t:AudioClip"))
+        {
+            string src  = AssetDatabase.GUIDToAssetPath(g);
+            string name = Path.GetFileNameWithoutExtension(src).ToLower();
+
+            foreach (var (destName, keys) in mapa)
             {
-                f.SetValue(fauna, p);
-                EditorUtility.SetDirty(fauna);
-                cnt++;
-                Debug.Log($"[Importador] 🐕 German Shepherd → SistemaFauna.prefabPerro");
+                if (copied.Contains(destName)) continue;
+                if (!keys.Any(k => name.Contains(k))) continue;
+                string destPath = $"{dest}/{destName}{Path.GetExtension(src)}";
+                if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), destPath)))
+                {
+                    AssetDatabase.CopyAsset(src, destPath);
+                    cnt++;
+                }
+                copied.Add(destName);
                 break;
             }
         }
 
+        if (cnt > 0) { AssetDatabase.Refresh(); Debug.Log($"[Importador] 🔊 {cnt} clips → Resources/Audio/"); }
+        return cnt;
+    }
+
+    // ── Explosiones ───────────────────────────────────────────────────────
+
+    static int ConectarExplosiones()
+    {
+        string dest = "Assets/Resources/Efectos";
+        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets","Resources");
+        if (!AssetDatabase.IsValidFolder(dest))               AssetDatabase.CreateFolder("Assets/Resources","Efectos");
+
+        int cnt = 0;
+        foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
+        {
+            string src  = AssetDatabase.GUIDToAssetPath(g);
+            string low  = Path.GetFileNameWithoutExtension(src).ToLower();
+            if (!low.Contains("explo") && !low.Contains("fire") && !low.Contains("smoke") &&
+                !low.Contains("blast") && !low.Contains("flame") && !low.Contains("spark") &&
+                !low.Contains("blood") && !low.Contains("impact_fx")) continue;
+
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>(src);
+            if (p == null || p.GetComponent<ParticleSystem>() == null) continue;
+
+            string destPath = $"{dest}/{p.name}.prefab";
+            if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), destPath)))
+            {
+                AssetDatabase.CopyAsset(src, destPath);
+                cnt++;
+            }
+            if (cnt >= 10) break;
+        }
+
+        if (cnt > 0) { AssetDatabase.Refresh(); Debug.Log($"[Importador] 💥 {cnt} efectos → Resources/Efectos/"); }
+        return cnt;
+    }
+
+    // ── Fauna ─────────────────────────────────────────────────────────────
+
+    static int ConectarFauna()
+    {
+        var fauna = Object.FindFirstObjectByType<SistemaFauna>();
+        if (fauna == null) return 0;
+
+        var campos = new (string field, string[] keys)[]
+        {
+            ("prefabPerro",    new[]{ "dog","shepherd","perro","hound","k9" }),
+            ("prefabLobo",     new[]{ "wolf","lobo","dire_wolf" }),
+            ("prefabCaballo",  new[]{ "horse","caballo","stallion","mare" }),
+            ("prefabCiervo",   new[]{ "deer","ciervo","stag","doe" }),
+            ("prefabOveja",    new[]{ "sheep","oveja","lamb" }),
+            ("prefabConejo",   new[]{ "rabbit","conejo","bunny","hare" }),
+        };
+
+        int cnt = 0;
+        foreach (var (campo, keys) in campos)
+        {
+            var f = typeof(SistemaFauna).GetField(campo,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (f == null || f.GetValue(fauna) != null) continue;
+
+            foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                string low  = Path.GetFileNameWithoutExtension(path).ToLower();
+                if (!keys.Any(k => low.Contains(k))) continue;
+                var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (p == null) continue;
+                f.SetValue(fauna, p);
+                EditorUtility.SetDirty(fauna);
+                Debug.Log($"[Importador] 🐾 {p.name} → SistemaFauna.{campo}");
+                cnt++;
+                break;
+            }
+        }
+        return cnt;
+    }
+
+    // ── Props urbanos ─────────────────────────────────────────────────────
+
+    static int ConectarProps()
+    {
+        string dest = "Assets/Resources/Props";
+        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets","Resources");
+        if (!AssetDatabase.IsValidFolder(dest))               AssetDatabase.CreateFolder("Assets/Resources","Props");
+
+        string[] keys = { "bench","lamp","barrier","barrel","crate","rock","fence",
+                           "sign","trash","bin","bollard","hydrant","mailbox",
+                           "barricada","farola","banco","valla","contenedor" };
+        int cnt = 0;
+        foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
+        {
+            string src = AssetDatabase.GUIDToAssetPath(g);
+            string low = Path.GetFileNameWithoutExtension(src).ToLower();
+            if (!keys.Any(k => low.Contains(k))) continue;
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>(src);
+            if (p == null) continue;
+            string destPath = $"{dest}/{p.name}.prefab";
+            if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), destPath)))
+            {
+                AssetDatabase.CopyAsset(src, destPath);
+                cnt++;
+            }
+            if (cnt >= 25) break;
+        }
+        if (cnt > 0) { AssetDatabase.Refresh(); Debug.Log($"[Importador] 🏙️ {cnt} props → Resources/Props/"); }
+        return cnt;
+    }
+
+    // ── Vehículos — detectar Police Car y coches civiles ─────────────────
+
+    static int ConectarVehiculos()
+    {
+        int cnt = 0;
+
+        // Police Car — WizardCochePrefab lo busca en esta ruta exacta
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Police Car & Helicopter/Prefabs/Interceptor.prefab") != null)
+        {
+            Debug.Log("[Importador] 🚔 Interceptor detectado — listo para WizardCochePrefab");
+            cnt++;
+        }
+
+        // Coches civiles adicionales → Resources/Coches/ para ControladorTrafico
+        string dest = "Assets/Resources/Coches";
+        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets","Resources");
+        if (!AssetDatabase.IsValidFolder(dest))               AssetDatabase.CreateFolder("Assets/Resources","Coches");
+
+        string[] carKeys = { "car","vehicle","sedan","hatchback","truck","van","bus","taxi","police" };
+        foreach (var g in AssetDatabase.FindAssets("t:Prefab"))
+        {
+            string src = AssetDatabase.GUIDToAssetPath(g);
+            string low = Path.GetFileNameWithoutExtension(src).ToLower();
+            if (!carKeys.Any(k => low.Contains(k))) continue;
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>(src);
+            if (p == null) continue;
+            string destPath = $"{dest}/{p.name}.prefab";
+            if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), destPath)))
+            {
+                AssetDatabase.CopyAsset(src, destPath);
+                cnt++;
+            }
+            if (cnt >= 15) break;
+        }
+
+        if (cnt > 0) { AssetDatabase.Refresh(); Debug.Log($"[Importador] 🚗 {cnt} coches → Resources/Coches/"); }
         return cnt;
     }
 }
