@@ -155,36 +155,42 @@ public static class ConstructorPersonajesMeshyAI
 
     static void ConfigurarRigsHumanoid()
     {
-        // Todos los FBX de personajes → Humanoid
-        var fbxPaths = new List<string>();
+        // Modelos Meshy AI → Generic (no tienen bones con nombres humanoid estándar)
         foreach (var p in PERSONAJES)
-            fbxPaths.Add($"{BASE_PERSONAJES}/{p.carpeta}/{p.fbxPrincipal}");
+        {
+            string path = $"{BASE_PERSONAJES}/{p.carpeta}/{p.fbxPrincipal}";
+            ConfigurarRig(path, ModelImporterAnimationType.Generic);
+        }
 
-        // Animaciones XBot
+        // XBot (Mixamo) → Humanoid (sí tienen skeleton estándar)
         foreach (var (_, fbx, _) in ANIMS_CIVIL)
-            fbxPaths.Add($"Assets/_ExtractedAssets/Personajes/Animaciones/{fbx}");
+            ConfigurarRig($"Assets/_ExtractedAssets/Personajes/Animaciones/{fbx}",
+                          ModelImporterAnimationType.Human);
 
-        // Animaciones Guardia Civil biped
+        // GuardiaCivil biped → Humanoid (skeleton biped estándar)
         string animDir = $"{BASE_PERSONAJES}/GuardiaCivil_Biped_Anims";
         if (AssetDatabase.IsValidFolder(animDir))
             foreach (var g in AssetDatabase.FindAssets("t:GameObject", new[]{animDir}))
-                fbxPaths.Add(AssetDatabase.GUIDToAssetPath(g));
+                ConfigurarRig(AssetDatabase.GUIDToAssetPath(g),
+                              ModelImporterAnimationType.Human);
 
-        foreach (var path in fbxPaths)
-        {
-            if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), path))) continue;
-            var importer = AssetImporter.GetAtPath(path) as ModelImporter;
-            if (importer == null) continue;
-            if (importer.animationType == ModelImporterAnimationType.Human) continue;
-            importer.animationType          = ModelImporterAnimationType.Human;
-            importer.avatarSetup            = ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.optimizeGameObjects    = false;
-            importer.importBlendShapes      = true;
-            importer.importAnimation        = true;
-            importer.animationCompression   = ModelImporterAnimationCompression.Optimal;
-            importer.SaveAndReimport();
-        }
-        Debug.Log("[Personajes] Rigs Humanoid configurados.");
+        Debug.Log("[Personajes] Rigs configurados (Meshy AI=Generic, XBot/Guardia=Humanoid).");
+    }
+
+    static void ConfigurarRig(string path, ModelImporterAnimationType tipo)
+    {
+        if (!File.Exists(Path.Combine(Application.dataPath.Replace("Assets",""), path))) return;
+        var imp = AssetImporter.GetAtPath(path) as ModelImporter;
+        if (imp == null || imp.animationType == tipo) return;
+        imp.animationType        = tipo;
+        imp.avatarSetup          = tipo == ModelImporterAnimationType.Human
+                                    ? ModelImporterAvatarSetup.CreateFromThisModel
+                                    : ModelImporterAvatarSetup.NoAvatar;
+        imp.optimizeGameObjects  = false;
+        imp.importBlendShapes    = true;
+        imp.importAnimation      = true;
+        imp.animationCompression = ModelImporterAnimationCompression.Optimal;
+        imp.SaveAndReimport();
     }
 
     // ════════════════════════════════════════════════════════════════════════
