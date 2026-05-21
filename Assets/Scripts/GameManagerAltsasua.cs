@@ -156,9 +156,13 @@ public class GameManagerAltsasua : MonoBehaviour
     {
         if (prefabJugador == null)
         {
-            Debug.LogWarning("[GameManager] prefabJugador no asignado. Buscando 'Player' en escena.");
             jugadorActivo = GameObject.FindGameObjectWithTag("Player");
-            if (jugadorActivo == null) { Debug.LogError("[GameManager] No hay jugador en la escena."); return; }
+            if (jugadorActivo == null)
+            {
+                // SceneBootstrapper crea el jugador en corrutina — esperar señal de AltsasuCore
+                AltsasuCore.OnJugadorSpawned += OnJugadorListoDesdeCore;
+                return;
+            }
         }
         else
         {
@@ -168,7 +172,15 @@ public class GameManagerAltsasua : MonoBehaviour
         }
         jugadorActivo.tag = "Player";
         _jugadorVivo = true;
-        Debug.Log("[GameManager] Jugador spawneado en " + jugadorActivo.transform.position);
+        Debug.Log("[GameManager] ✓ Jugador listo en " + jugadorActivo.transform.position);
+    }
+
+    void OnJugadorListoDesdeCore(UnityEngine.Transform t)
+    {
+        AltsasuCore.OnJugadorSpawned -= OnJugadorListoDesdeCore;
+        jugadorActivo = t.gameObject;
+        _jugadorVivo  = true;
+        Debug.Log("[GameManager] ✓ Jugador recibido desde AltsasuCore: " + t.position);
     }
 
     /// <summary>Llamar desde Health cuando el jugador muere.</summary>

@@ -151,7 +151,8 @@ public static class CreadorEscenaPrincipal
         audioAmbGO.AddComponent<SistemaMusica>(); // requerido por SistemaExplosion.Instance
 
         var cesiumGO = HijoNuevo("CesiumCapas", ambGO);
-        cesiumGO.AddComponent<CesiumCapasAlsasua>();
+        var cesiumCapas = cesiumGO.AddComponent<CesiumCapasAlsasua>();
+        Set(cesiumCapas, "treeStreamer", trees); // AlsasuaTreeStreamer del GO Mundo/TreeStreamer
 
         // ── 9. Cablear AltsasuCore ────────────────────────────────────────
         Set(core, "audioManagerSystem",   gmGO.GetComponent<AudioManager>());
