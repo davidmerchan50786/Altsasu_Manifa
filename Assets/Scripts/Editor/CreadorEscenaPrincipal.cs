@@ -60,6 +60,7 @@ public static class CreadorEscenaPrincipal
         var zonasGO    = HijoNuevo("Zonas",         mundoGO);
         var zonas      = zonasGO.AddComponent<SistemaZonas>();
         zonasGO.AddComponent<GestorZonasAlsasua>();
+        zonasGO.AddComponent<SistemaChunks>(); // requerido por GestorZonasAlsasua.Awake()
 
         var edificGO   = HijoNuevo("Edificios",     mundoGO);
         var edificios  = edificGO.AddComponent<SistemaEdificiosAAA>();
@@ -148,6 +149,7 @@ public static class CreadorEscenaPrincipal
 
         var audioAmbGO = HijoNuevo("SonidosAmbiente", ambGO);
         audioAmbGO.AddComponent<SonidosAmbienteAltsasu>();
+        audioAmbGO.AddComponent<SistemaMusica>(); // requerido por SistemaExplosion.Instance
 
         var cesiumGO = HijoNuevo("CesiumCapas", ambGO);
         cesiumGO.AddComponent<CesiumCapasAlsasua>();

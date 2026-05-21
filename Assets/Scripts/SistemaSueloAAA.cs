@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-[DefaultExecutionOrder(-70)]
+[DefaultExecutionOrder(-65)] // después de SistemaTerreno (-70) para leer alphamap ya pintado
 public class SistemaSueloAAA : MonoBehaviour
 {
     public static SistemaSueloAAA Instance { get; private set; }

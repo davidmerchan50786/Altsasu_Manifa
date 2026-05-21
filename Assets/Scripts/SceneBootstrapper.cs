@@ -489,7 +489,8 @@ public class SceneBootstrapper : MonoBehaviour
         if (FindFirstObjectByType<SistemaClima>() == null)
             gmGO.AddComponent<SistemaClima>();
 
-        if (FindFirstObjectByType<HUDAAA>() == null)
+        // Usar HUDCanvas (UGUI) si está en escena; HUDAAA solo como fallback legacy
+        if (FindFirstObjectByType<HUDCanvas>() == null && FindFirstObjectByType<HUDAAA>() == null)
             gmGO.AddComponent<HUDAAA>();
     }
 

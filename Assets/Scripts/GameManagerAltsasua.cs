@@ -107,7 +107,6 @@ public class GameManagerAltsasua : MonoBehaviour
 
     // ─── Estado ───────────────────────────────────────────────────────────────
     private bool  _jugadorVivo = false;
-    private HUDAAA _hudCache;  // HUDAAA es el HUD del juego — GUISystem no existe
 
     // =========================================================================
     //  UNITY LIFECYCLE
@@ -362,12 +361,6 @@ public class GameManagerAltsasua : MonoBehaviour
     // =========================================================================
     //  ECONOMÍA
     // =========================================================================
-
-    HUDAAA ObtenerHUD()
-    {
-        if (_hudCache == null) _hudCache = FindFirstObjectByType<HUDAAA>();
-        return _hudCache;
-    }
 
     public void GanarDinero(int cantidad)
     {
