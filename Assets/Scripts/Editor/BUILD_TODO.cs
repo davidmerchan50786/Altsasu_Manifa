@@ -49,8 +49,8 @@ public static class BUILD_TODO
         _pasos.Enqueue(("Tags y capas",                  CrearTagsYCapas));
         _pasos.Enqueue(("Quality settings 60fps",        ConfigurarQuality));
         _pasos.Enqueue(("Build Settings",                ConfigurarBuildSettings));
-        _pasos.Enqueue(("Conectar assets locales",        ImportadorAssetsLocales.ConectarAssets));
         _pasos.Enqueue(("Prefabs Police Car + Hatchback", () => WizardCochePrefab.CrearPrefabs()));
+        _pasos.Enqueue(("Conectar TODOS los sistemas",   ConectorSistemas.ConectarTodo));
         _pasos.Enqueue(("Guardar todo",                  GuardarTodo));
 
         _total   = _pasos.Count;
