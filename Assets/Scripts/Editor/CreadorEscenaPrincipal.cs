@@ -1,76 +1,144 @@
 // Assets/Scripts/Editor/CreadorEscenaPrincipal.cs
 // Tools → Alsasua → 🎬 Crear Escena Principal Alsasua
 //
-// Crea Assets/#Scenes/Alsasua_Main.unity con todos los GameObjects
-// necesarios para que el juego arranque y funcione.
+// Construye Assets/#Scenes/Alsasua_Main.unity con jerarquía completa v4:
+//   SceneBootstrapper  → terreno DEM, jugador, cámara, NavMesh (en Play)
+//   GameManager        → AudioManager, GameManagerAltsasua, SistemaOpciones
+//   AltsasuCore        → coordinador central con todos los sistemas cableados
+//   Mundo/             → Terreno, NavMesh, OSM, Zonas, Edificios, Árboles
+//   Simulacion/        → Atmósfera, Clima, Tráfico, Vegetación, Fauna, Multitud
+//   Gameplay/          → Disparo, Armas, Destrucción, Misiones, Polish, UI
+//   Ambiente/          → Sol, Audio ambiente, Cesium
 
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine.SceneManagement;
 using System.IO;
+using System.Reflection;
 
 public static class CreadorEscenaPrincipal
 {
-    private const string RUTA_ESCENA = "Assets/#Scenes/Alsasua_Main.unity";
+    const string RUTA_ESCENA = "Assets/#Scenes/Alsasua_Main.unity";
 
     [MenuItem("Tools/Alsasua/🎬 Crear Escena Principal", priority = 2)]
     public static void Crear()
     {
-        // Guardar escena actual
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-        // Crear escena nueva
         var escena = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        // ── 1. SceneBootstrapper ─────────────────────────────────────────
-        var bootstrap = new GameObject("SceneBootstrapper");
-        var sb = bootstrap.AddComponent<SceneBootstrapper>();
-        // centroX/centroZ = Herriko Plaza en coordenadas de terreno
-        SetField(sb, "centroX", 1918f);
-        SetField(sb, "centroZ", 8570f);
-        SetField(sb, "generarTerrenoDesdeDEM", true);
-        SetField(sb, "usarPlanoCuadradoFallback", true);
-        SetField(sb, "crearJugadorSiNoHay", true);
+        // ── 1. SceneBootstrapper (ejecución -200, lo primero) ─────────────
+        var bootstrapGO = Nuevo("SceneBootstrapper");
+        var sb = bootstrapGO.AddComponent<SceneBootstrapper>();
+        Set(sb, "centroX",                  1918f);
+        Set(sb, "centroZ",                  8570f);
+        Set(sb, "generarTerrenoDesdeDEM",   true);
+        Set(sb, "usarPlanoCuadradoFallback", true);
+        Set(sb, "crearJugadorSiNoHay",      true);
 
-        // ── 2. GameManager ───────────────────────────────────────────────
-        var gmGO = new GameObject("GameManager");
+        // ── 2. GameManager (core sin dependencias) ────────────────────────
+        var gmGO = Nuevo("GameManager");
         gmGO.AddComponent<GameManagerAltsasua>();
         gmGO.AddComponent<AudioManager>();
+        gmGO.AddComponent<SistemaOpciones>();
+        gmGO.AddComponent<SistemaApoyoPopular>();
 
-        // ── 3. AltsasuCore ───────────────────────────────────────────────
-        var coreGO = new GameObject("AltsasuCore");
-        coreGO.AddComponent<AltsasuCore>();
+        // ── 3. AltsasuCore (coordinador -100) ─────────────────────────────
+        var coreGO = Nuevo("AltsasuCore");
+        var core   = coreGO.AddComponent<AltsasuCore>();
 
-        // ── 4. NavMeshManager ────────────────────────────────────────────
-        var nmGO = new GameObject("NavMeshManager");
-        nmGO.AddComponent<SistemaNavMesh>();
+        // ── 4. Mundo ──────────────────────────────────────────────────────
+        var mundoGO = Nuevo("Mundo");
 
-        // ── 5. WorldManager (zonas + streaming) ──────────────────────────
-        var worldGO = new GameObject("WorldManager");
-        worldGO.AddComponent<GestorZonasAlsasua>();
-        worldGO.AddComponent<SistemaChunks>();
+        var navGO      = HijoNuevo("NavMesh",       mundoGO);
+        var navMesh    = navGO.AddComponent<SistemaNavMesh>();
 
-        // ── 6. Audio ambiente ────────────────────────────────────────────
-        var audioGO = new GameObject("SonidosAmbiente");
-        audioGO.AddComponent<SonidosAmbienteAltsasu>();
+        var osmGO      = HijoNuevo("WorldOSM",      mundoGO);
+        var genMundo   = osmGO.AddComponent<GeneradorMundoOSM>();
 
-        // ── 7. Sistemas de juego ─────────────────────────────────────────
-        var sistGO = new GameObject("Sistemas");
-        sistGO.AddComponent<SistemaBarricadas>();
-        sistGO.AddComponent<SistemaFarolas>();
-        sistGO.AddComponent<SistemaManifestacion>();
+        var zonasGO    = HijoNuevo("Zonas",         mundoGO);
+        var zonas      = zonasGO.AddComponent<SistemaZonas>();
+        zonasGO.AddComponent<GestorZonasAlsasua>();
 
-        // ── 8. Misiones ──────────────────────────────────────────────────
-        var misionesGO = new GameObject("SistemaMisiones");
-        misionesGO.AddComponent<SistemaMisiones>();
+        var edificGO   = HijoNuevo("Edificios",     mundoGO);
+        var edificios  = edificGO.AddComponent<SistemaEdificiosAAA>();
 
-        // ── 9. Árbol streamer (20.000 árboles OSM) ───────────────────────
-        var treesGO = new GameObject("AlsasuaTreeStreamer");
-        treesGO.AddComponent<AlsasuaTreeStreamer>();
+        var terrenoGO  = HijoNuevo("Terreno",       mundoGO);
+        var terreno    = terrenoGO.AddComponent<SistemaTerreno>();
+        terrenoGO.AddComponent<SistemaSueloAAA>();
+        terrenoGO.AddComponent<OptimizadorTerreno>();
 
-        // ── 10. Luz solar mínima (bootstrap la reemplazará si no hay) ────
-        var solGO = new GameObject("Sol_Directional");
+        var treesGO    = HijoNuevo("TreeStreamer",  mundoGO);
+        var trees      = treesGO.AddComponent<AlsasuaTreeStreamer>();
+
+        // ── 5. Simulación ─────────────────────────────────────────────────
+        var simGO = Nuevo("Simulacion");
+
+        var atmosGO    = HijoNuevo("Atmosfera",     simGO);
+        var atmosfera  = atmosGO.AddComponent<SistemaAtmosfera>();
+        var clima      = atmosGO.AddComponent<SistemaClima>();
+        var paranoia   = atmosGO.AddComponent<SistemaParanoia>();
+
+        var trafGO     = HijoNuevo("Trafico",       simGO);
+        var trafico    = trafGO.AddComponent<SistemaTrafico>();
+
+        var vegGO      = HijoNuevo("Vegetacion",    simGO);
+        var vegetacion = vegGO.AddComponent<SistemaVegetacion>();
+
+        var faunaGO    = HijoNuevo("Fauna",         simGO);
+        var fauna      = faunaGO.AddComponent<SistemaFauna>();
+
+        var multGO     = HijoNuevo("Multitud",      simGO);
+        var multitud   = multGO.AddComponent<SistemaMultitud>();
+        multGO.AddComponent<SistemaManifestacion>();
+
+        // ── 6. Gameplay ───────────────────────────────────────────────────
+        var gameplayGO = Nuevo("Gameplay");
+
+        var disparoGO  = HijoNuevo("Disparo",       gameplayGO);
+        var disparo    = disparoGO.AddComponent<SistemaDisparo>();
+        var armas      = disparoGO.AddComponent<SistemaArmasExtendido>();
+        var bombas     = disparoGO.AddComponent<SistemaBombas>();
+
+        var destrucGO  = HijoNuevo("Destruccion",   gameplayGO);
+        var destruccion= destrucGO.AddComponent<SistemaDestruccion>();
+        var barricadas = destrucGO.AddComponent<SistemaBarricadas>();
+        var impactos   = destrucGO.AddComponent<SistemaImpactos>();
+        destrucGO.AddComponent<SistemaExplosion>();
+        destrucGO.AddComponent<SistemaRagdoll>();
+
+        var grafGO     = HijoNuevo("Grafitis",      gameplayGO);
+        var grafitis   = grafGO.AddComponent<SistemaGrafitis>();
+
+        var misGO      = HijoNuevo("Misiones",      gameplayGO);
+        var misiones   = misGO.AddComponent<SistemaMisiones>();
+        var misionesSec= misGO.AddComponent<GestorMisionesSecundarias>();
+        var logros     = misGO.AddComponent<SistemaLogros>();
+        misGO.AddComponent<SistemaTutorial>();
+
+        var polishGO   = HijoNuevo("Polish",        gameplayGO);
+        var polish     = polishGO.AddComponent<SistemaPolish>();
+        var reverb     = polishGO.AddComponent<SistemaReverbZonas>();
+
+        var savedGO    = HijoNuevo("Guardado",      gameplayGO);
+        var guardado   = savedGO.AddComponent<SistemaGuardado>();
+
+        var optGO      = HijoNuevo("Optimizacion",  gameplayGO);
+        var optimiz    = optGO.AddComponent<SistemaOptimizacion>();
+        var diagnos    = optGO.AddComponent<SistemaDiagnostico>();
+
+        // ── 7. UI ─────────────────────────────────────────────────────────
+        var uiGO    = Nuevo("UI");
+        var hudGO   = HijoNuevo("HUD",      uiGO);
+        var hud     = hudGO.AddComponent<HUDCanvas>();
+        var pausaGO = HijoNuevo("Pausa",    uiGO);
+        var pausa   = pausaGO.AddComponent<MenuPausa>();
+
+        // ── 8. Ambiente ───────────────────────────────────────────────────
+        var ambGO = Nuevo("Ambiente");
+
+        var solGO = HijoNuevo("Sol_Directional", ambGO);
         var luz   = solGO.AddComponent<Light>();
         luz.type      = LightType.Directional;
         luz.intensity = 4f;
@@ -78,46 +146,102 @@ public static class CreadorEscenaPrincipal
         luz.shadows   = LightShadows.Soft;
         solGO.transform.rotation = Quaternion.Euler(52f, -30f, 0f);
 
-        // ── Guardar escena ───────────────────────────────────────────────
-        if (!Directory.Exists(Path.GetDirectoryName(
-                Path.GetFullPath(Path.Combine(Application.dataPath, "..", RUTA_ESCENA)))))
-            Directory.CreateDirectory(Path.GetDirectoryName(
-                Path.GetFullPath(Path.Combine(Application.dataPath, "..", RUTA_ESCENA))));
+        var audioAmbGO = HijoNuevo("SonidosAmbiente", ambGO);
+        audioAmbGO.AddComponent<SonidosAmbienteAltsasu>();
 
+        var cesiumGO = HijoNuevo("CesiumCapas", ambGO);
+        cesiumGO.AddComponent<CesiumCapasAlsasua>();
+
+        // ── 9. Cablear AltsasuCore ────────────────────────────────────────
+        Set(core, "audioManagerSystem",   gmGO.GetComponent<AudioManager>());
+        Set(core, "wantedSystem",         gmGO.GetComponent<GameManagerAltsasua>());
+        Set(core, "apoyoSystem",          gmGO.GetComponent<SistemaApoyoPopular>());
+        Set(core, "atmosferaSystem",      atmosfera);
+        Set(core, "navMeshSystem",        navMesh);
+        Set(core, "generadorMundoSystem", genMundo);
+        Set(core, "zonasSystem",          zonas);
+        Set(core, "traficoSystem",        trafico);
+        Set(core, "vegetacionSystem",     vegetacion);
+        Set(core, "faunaSystem",          fauna);
+        Set(core, "multitudSystem",       multitud);
+        Set(core, "climaSystem",          clima);
+        Set(core, "paranoiaSystem",       paranoia);
+        Set(core, "disparoSystem",        disparo);
+        Set(core, "armasSystem",          armas);
+        Set(core, "bombasSystem",         bombas);
+        Set(core, "barricadasSystem",     barricadas);
+        Set(core, "destruccionSystem",    destruccion);
+        Set(core, "grafitisSystem",       grafitis);
+        Set(core, "manifestacionSystem",  multGO.GetComponent<SistemaManifestacion>());
+        Set(core, "polishSystem",         polish);
+        Set(core, "impactosSystem",       impactos);
+        Set(core, "guardadoSystem",       guardado);
+        Set(core, "logrosSystem",         logros);
+        Set(core, "reverbSystem",         reverb);
+        Set(core, "tutorialSystem",       misGO.GetComponent<SistemaTutorial>());
+        Set(core, "misionesSystem",       misiones);
+        Set(core, "misionesSecSystem",    misionesSec);
+        Set(core, "hudCanvasSystem",      hud);
+        Set(core, "menuPausaSystem",      pausa);
+        Set(core, "optimizacionSystem",   optimiz);
+        Set(core, "diagnosticoSystem",    diagnos);
+        Set(core, "edificiosAAASystem",   edificios);
+        Set(core, "terrenoSystem",        terreno);
+        Set(core, "centroX",              1918f);
+        Set(core, "centroZ",              8570f);
+
+        // ── 10. SistemaClima necesita el sol ──────────────────────────────
+        Set(clima, "solDireccional", luz);
+
+        // ── Guardar ───────────────────────────────────────────────────────
+        Directory.CreateDirectory(Path.GetDirectoryName(
+            Path.GetFullPath(Path.Combine(Application.dataPath, "..", RUTA_ESCENA))));
         EditorSceneManager.SaveScene(escena, RUTA_ESCENA);
+        AnadirBuildSettings(RUTA_ESCENA);
         AssetDatabase.Refresh();
 
-        // Añadir a Build Settings
-        AnadirABuildSettings(RUTA_ESCENA);
-
-        Debug.Log($"[Escena] ✅ Alsasua_Main.unity creada en {RUTA_ESCENA}");
-        EditorUtility.DisplayDialog("Escena creada",
-            $"✅ Alsasua_Main.unity creada con todos los sistemas.\n\n" +
-            "SIGUIENTE:\n" +
-            "Tools → Alsasua → ⚡ AUTOMATIZAR TODO\n\n" +
-            "Luego dale Play — el SceneBootstrapper generará el terreno,\n" +
-            "el jugador y todos los sistemas automáticamente.", "OK");
+        Debug.Log("[Escena] ✅ Alsasua_Main.unity creada con jerarquía v4 completa.");
+        EditorUtility.DisplayDialog("✅ Escena creada",
+            "Alsasua_Main.unity lista con:\n\n" +
+            "• SceneBootstrapper — terreno DEM + jugador al Play\n" +
+            "• AltsasuCore v4 — 30 sistemas cableados\n" +
+            "• Mundo: NavMesh, OSM, Zonas, Edificios, Árboles\n" +
+            "• Simulación: Clima, Tráfico, Fauna, Multitud\n" +
+            "• Gameplay: Disparo, Destrucción, Misiones, Polish\n" +
+            "• UI: HUD, Menú pausa\n" +
+            "• Ambiente: Sol, Audio, Cesium\n\n" +
+            "Dale Play — SceneBootstrapper construye el terreno\n" +
+            "y spawn el jugador automáticamente.", "OK");
     }
 
-    static void AnadirABuildSettings(string ruta)
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    static GameObject Nuevo(string nombre)
+        => new GameObject(nombre);
+
+    static GameObject HijoNuevo(string nombre, GameObject padre)
+    {
+        var go = new GameObject(nombre);
+        go.transform.SetParent(padre.transform, false);
+        return go;
+    }
+
+    static void Set(object target, string campo, object valor)
+    {
+        if (target == null || valor == null) return;
+        var f = target.GetType().GetField(campo,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        f?.SetValue(target, valor);
+    }
+
+    static void AnadirBuildSettings(string ruta)
     {
         var scenes = EditorBuildSettings.scenes;
         foreach (var s in scenes)
-            if (s.path == ruta) return; // ya está
-
-        var lista = new System.Collections.Generic.List<EditorBuildSettingsScene>(scenes)
-        {
-            new EditorBuildSettingsScene(ruta, true)
-        };
+            if (s.path == ruta) return;
+        var lista = new System.Collections.Generic.List<EditorBuildSettingsScene>(scenes);
+        lista.Add(new EditorBuildSettingsScene(ruta, true));
         EditorBuildSettings.scenes = lista.ToArray();
     }
-
-    static void SetField(object target, string field, object value)
-    {
-        var f = target.GetType().GetField(field,
-            System.Reflection.BindingFlags.Instance |
-            System.Reflection.BindingFlags.Public |
-            System.Reflection.BindingFlags.NonPublic);
-        f?.SetValue(target, value);
-    }
 }
+#endif
