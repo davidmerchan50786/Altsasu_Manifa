@@ -23,7 +23,7 @@ public static class ConfiguradorAnimatorJugador
 {
     const string RUTA = "Assets/Animators/JugadorAnimator.controller";
 
-    [MenuItem("Tools/Alsasua/🎭 Configurar Animator Jugador", priority = 15)]
+    [MenuItem("Tools/Alsasua/Assets/🎭 Animator Jugador", priority = 13)]
     public static void Configurar()
     {
         // Crear carpeta si no existe

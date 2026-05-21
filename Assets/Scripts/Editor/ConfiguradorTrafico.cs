@@ -18,7 +18,7 @@ public static class ConfiguradorTrafico
     private const string JSON_PATH = "Assets/AlsasuaData/roads_unity.json";
     private const float  CENTRO_X  = 1918f, CENTRO_Z = 8570f, RADIO = 400f;
 
-    [MenuItem("Tools/Alsasua/🚗 Configurar Tráfico desde OSM", priority = 36)]
+    [MenuItem("Tools/Alsasua/Mundo/🚗 Trafico OSM", priority = 14)]
     public static void Configurar()
     {
         string ruta = Path.GetFullPath(Path.Combine(Application.dataPath, "..", JSON_PATH));

@@ -21,7 +21,7 @@ public static class CreadorEscenaPrincipal
 {
     const string RUTA_ESCENA = "Assets/#Scenes/Alsasua_Main.unity";
 
-    [MenuItem("Tools/Alsasua/🎬 Crear Escena Principal", priority = 2)]
+    [MenuItem("Tools/Alsasua/Escena/🎬 Crear Escena Principal", priority = 10)]
     public static void Crear()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

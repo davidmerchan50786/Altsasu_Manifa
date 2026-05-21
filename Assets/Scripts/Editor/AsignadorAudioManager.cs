@@ -17,7 +17,7 @@ using System.Linq;
 
 public static class AsignadorAudioManager
 {
-    [MenuItem("Tools/Alsasua/🔊 Asignar Audio (mapear clips reales)", priority = 7)]
+    [MenuItem("Tools/Alsasua/Conectar/🔊 Asignar Audio", priority = 7)]
     public static void AsignarTodos()
     {
         string audioDir = "Assets/Resources/Audio";
@@ -134,7 +134,7 @@ public static class AsignadorAudioManager
         EditorUtility.DisplayDialog("🔊 Audio asignado", resumen, "OK");
     }
 
-    [MenuItem("Tools/Alsasua/🔊 Verificar Audio en Resources", priority = 8)]
+    [MenuItem("Tools/Alsasua/Debug/🔊 Verificar Audio", priority = 12)]
     public static void Verificar()
     {
         var clips = Resources.LoadAll<AudioClip>("Audio");

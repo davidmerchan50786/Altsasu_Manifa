@@ -25,7 +25,7 @@ public static class ConstructorNPCsPrefabs
         ("Periodista",     new Color(0.2f, 0.7f, 0.2f), 1.4f, 40f),
     };
 
-    [MenuItem("Tools/Alsasua/👥 Construir Prefabs NPC", priority = 25)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/👥 Construir Prefabs NPC", priority = 25)]
     public static void Construir()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))

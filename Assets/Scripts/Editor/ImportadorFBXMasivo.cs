@@ -20,7 +20,7 @@ using System.Linq;
 
 public static class ImportadorFBXMasivo
 {
-    [MenuItem("Tools/Alsasua/📦 Importar y configurar todos los FBX", priority = 5)]
+    [MenuItem("Tools/Alsasua/Importar/📦 Importar FBX masivo", priority = 5)]
     public static void ImportarTodos()
     {
         var guids = AssetDatabase.FindAssets("t:Model", new[]{"Assets/_ExtractedAssets"});

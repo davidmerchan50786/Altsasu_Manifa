@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 public static class BUILD_TODO
 {
-    [MenuItem("Tools/Alsasua/██ BUILD TODO ██", priority = 0)]
+    [MenuItem("Tools/Alsasua/Utilidades/██ BUILD_TODO (legacy) ██", priority = 200)]
     public static void EjecutarTodo()
     {
         bool ok = EditorUtility.DisplayDialog(

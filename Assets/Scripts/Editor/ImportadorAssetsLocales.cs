@@ -38,7 +38,7 @@ public static class ImportadorAssetsLocales
 
     // ── PASO 1: Importar todos ────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/📦 Importar Assets Locales", priority = 1)]
+    [MenuItem("Tools/Alsasua/Importar/📦 Importar Assets Locales", priority = 10)]
     public static void ImportarTodo()
     {
         if (!Directory.Exists(CACHE))
@@ -119,7 +119,7 @@ public static class ImportadorAssetsLocales
 
     // ── PASO 2: Conectar assets a sistemas ───────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🔗 Conectar Assets a Sistemas", priority = 2)]
+    [MenuItem("Tools/Alsasua/Importar/🔗 Conectar Assets (legacy)", priority = 11)]
     public static void ConectarAssets()
     {
         AssetDatabase.Refresh();

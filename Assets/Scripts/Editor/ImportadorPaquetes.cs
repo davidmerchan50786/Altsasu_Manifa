@@ -41,7 +41,7 @@ public class ImportadorPaquetes : EditorWindow
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/📦 Importar Paquetes", priority = 5)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/📦 Importar Paquetes", priority = 5)]
     public static void Abrir()
     {
         var ventana = GetWindow<ImportadorPaquetes>("📦 Importar Paquetes");
@@ -371,7 +371,7 @@ public class ImportadorPaquetes : EditorWindow
     //  ACCESO RÁPIDO POR GRUPO (MenuItem para importar sin abrir ventana)
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Paquetes/⚡ Importar solo CRÍTICOS (P1 · rápido)", priority = 6)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/Paquetes/⚡ Importar solo CRÍTICOS (P1 · rápido)", priority = 6)]
     static void ImportarSoloCriticos()
     {
         string[] criticos = {
@@ -386,7 +386,7 @@ public class ImportadorPaquetes : EditorWindow
         ImportarLista(criticos, "Paquetes Críticos P1");
     }
 
-    [MenuItem("Tools/Alsasua/Paquetes/🌿 Importar solo Naturaleza (vegetación)", priority = 7)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/Paquetes/🌿 Importar solo Naturaleza (vegetación)", priority = 7)]
     static void ImportarNaturaleza()
     {
         string[] naturaleza = {
@@ -401,7 +401,7 @@ public class ImportadorPaquetes : EditorWindow
         ImportarLista(naturaleza, "Pack Naturaleza");
     }
 
-    [MenuItem("Tools/Alsasua/Paquetes/🔊 Importar solo Audio", priority = 8)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/Paquetes/🔊 Importar solo Audio", priority = 8)]
     static void ImportarSoloAudio()
     {
         string[] audio = {

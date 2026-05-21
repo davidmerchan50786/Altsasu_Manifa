@@ -32,7 +32,7 @@ public static class IntegradorAssetsNuevos
     //  MENÚ PRINCIPAL
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🔌 Integrar Assets Nuevos (Todo)", priority = 10)]
+    [MenuItem("Tools/Alsasua/Conectar/🔌 Integrar Assets (legacy)", priority = 10)]
     public static void IntegrarTodo()
     {
         int total = 0;
@@ -57,7 +57,7 @@ public static class IntegradorAssetsNuevos
     //  1. CONVERSIÓN DE MATERIALES STANDARD → HDRP/Lit
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🎨 Convertir Materiales → HDRP", priority = 11)]
+    [MenuItem("Tools/Alsasua/Mundo/🎨 Convertir Materiales HDRP", priority = 11)]
     public static int ConvertirMaterialesAHDRP()
     {
         EditorUtility.DisplayProgressBar("Convirtiendo materiales", "Buscando materiales Standard...", 0f);
@@ -140,7 +140,7 @@ public static class IntegradorAssetsNuevos
     //  2. COCHE POLICIAL + HELICÓPTERO → GameManagerAltsasua
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🚔 Conectar Policía y Helicóptero", priority = 12)]
+    [MenuItem("Tools/Alsasua/Conectar/🚔 Policia y Helicoptero", priority = 12)]
     public static int ConectarPoliciaYHelicoptero()
     {
         var gm = FindOrWarn<GameManagerAltsasua>("GameManagerAltsasua");
@@ -175,7 +175,7 @@ public static class IntegradorAssetsNuevos
     //  3. SOLDADOS LOW POLY → GameManagerAltsasua (prefabEnemigo)
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🪖 Conectar Soldados / Enemigos", priority = 13)]
+    [MenuItem("Tools/Alsasua/Conectar/🪖 Soldados y Enemigos", priority = 13)]
     public static int ConectarSoldadosEnemigos()
     {
         var gm = FindOrWarn<GameManagerAltsasua>("GameManagerAltsasua");
@@ -205,7 +205,7 @@ public static class IntegradorAssetsNuevos
     //  5. FLORA FBX → AlsasuaTreeStreamer (treePrefabs)
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🌲 Conectar Flora a TreeStreamer", priority = 15)]
+    [MenuItem("Tools/Alsasua/Conectar/🌲 Flora a TreeStreamer", priority = 15)]
     public static int ConectarFloraPrefabs()
     {
         var streamer = Object.FindFirstObjectByType<AlsasuaTreeStreamer>();
@@ -247,7 +247,7 @@ public static class IntegradorAssetsNuevos
     //  6. AUDIO WAV → AudioManager
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🔊 Conectar Audio", priority = 16)]
+    [MenuItem("Tools/Alsasua/Conectar/🔊 Conectar Audio", priority = 16)]
     public static int ConectarAudio()
     {
         // Verificar que los WAVs existen
@@ -336,7 +336,7 @@ public static class IntegradorAssetsNuevos
     //  MENÚ: CONVERSIONES INDIVIDUALES RÁPIDAS
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Assets/Ver inventario en Consola", priority = 50)]
+    [MenuItem("Tools/Alsasua/Debug/📋 Ver Inventario Assets", priority = 50)]
     static void MostrarInventario()
     {
         var sb = new System.Text.StringBuilder();

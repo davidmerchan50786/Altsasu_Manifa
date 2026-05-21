@@ -30,7 +30,7 @@ using System.Collections.Generic;
 
 public static class AutomatizadorCompleto
 {
-    [MenuItem("Tools/Alsasua/⚡ AUTOMATIZAR TODO", priority = 1)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/⚡ AUTOMATIZAR TODO", priority = 1)]
     public static void AutomatizarTodo()
     {
         int pasos = 19, ok = 0;

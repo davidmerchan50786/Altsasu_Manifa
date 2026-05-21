@@ -52,7 +52,7 @@ public static class SETUP_MAESTRO
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/★ SETUP MAESTRO COMPLETO ★", priority = 0)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/★ SETUP MAESTRO COMPLETO ★", priority = 0)]
     public static void EjecutarTodo()
     {
         bool confirmar = EditorUtility.DisplayDialog(

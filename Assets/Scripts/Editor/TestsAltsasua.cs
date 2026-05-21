@@ -39,7 +39,7 @@ public static class TestsAltsasua
     //  MENÚ
     // ════════════════════════════════════════════════════════════════════════
 
-    [MenuItem("Tools/Alsasua/🧪 Ejecutar Tests", priority = 10)]
+    [MenuItem("Tools/Alsasua/Debug/🧪 Ejecutar Tests", priority = 10)]
     public static void EjecutarTodos()
     {
         _resultados.Clear(); _ok = 0; _fail = 0;

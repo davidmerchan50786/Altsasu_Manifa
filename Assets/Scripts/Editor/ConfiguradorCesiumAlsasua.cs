@@ -26,7 +26,7 @@ public static class ConfiguradorCesiumAlsasua
     const float UX_PLAZA = 1918f;
     const float UZ_PLAZA = 8570f;
 
-    [MenuItem("Tools/Alsasua/🌍 Configurar Cesium Alsasua", priority = 5)]
+    [MenuItem("Tools/Alsasua/Escena/🌍 Configurar Cesium", priority = 11)]
     public static void Configurar()
     {
         // ── 1. Scripting define ───────────────────────────────────────────

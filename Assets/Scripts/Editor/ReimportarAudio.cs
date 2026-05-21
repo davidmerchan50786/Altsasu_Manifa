@@ -7,7 +7,7 @@ using UnityEditor;
 
 public static class ReimportarAudio
 {
-    [MenuItem("Tools/Alsasua/🔊 Reimportar Audio (fix FMOD)", priority = 50)]
+    [MenuItem("Tools/Alsasua/Debug/🔊 Reimportar Audio", priority = 50)]
     public static void Reimportar()
     {
         var guids = AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets" });

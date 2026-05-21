@@ -50,7 +50,7 @@ public static class GeneradorEdificiosZona
     //  MENÚS
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🏠 Generar Edificios Zone_01 (AAA)", priority = 30)]
+    [MenuItem("Tools/Alsasua/Mundo/🏠 Generar Edificios Zone_01", priority = 30)]
     public static void GenerarEdificios() => GenerarEdificios(silencioso: false);
     public static void GenerarEdificios(bool silencioso)
     {
@@ -101,7 +101,7 @@ public static class GeneradorEdificiosZona
                 "Siguiente: Tools → Alsasua → 👁 Zonas → 01 · Herriko Plaza", "OK");
     }
 
-    [MenuItem("Tools/Alsasua/🗑 Limpiar Edificios Zone_01", priority = 31)]
+    [MenuItem("Tools/Alsasua/Mundo/🗑 Limpiar Edificios Zone_01", priority = 11)]
     public static void LimpiarEdificios()
     {
         var z = GameObject.Find(ZONA_NOMBRE); if (z == null) return;

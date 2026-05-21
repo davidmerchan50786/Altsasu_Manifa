@@ -25,7 +25,7 @@ public static class AplicadorTexturasAAA
     private const string TEX_DIR  = "Assets/Textures_AAA";
     private const string HDRI_DIR = "Assets/HDRIs";
 
-    [MenuItem("Tools/Alsasua/🎨 Aplicar Texturas AAA", priority = 37)]
+    [MenuItem("Tools/Alsasua/Mundo/🎨 Texturas AAA PBR", priority = 15)]
     public static void Aplicar()
     {
         // Verificar que hay texturas descargadas

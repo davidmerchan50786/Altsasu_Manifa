@@ -37,7 +37,7 @@ public class ImportadorExtractedAssets : EditorWindow
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/📥 Importar Assets Extraídos", priority = 9)]
+    [MenuItem("Tools/Alsasua/Importar/📥 Importar Assets Extraidos", priority = 9)]
     public static void Abrir()
     {
         var v = GetWindow<ImportadorExtractedAssets>("📥 Assets Extraídos");
@@ -45,7 +45,7 @@ public class ImportadorExtractedAssets : EditorWindow
         v.Escanear();
     }
 
-    [MenuItem("Tools/Alsasua/📥 Importar Assets Extraídos", true)]
+    [MenuItem("Tools/Alsasua/Importar/📥 Importar Assets Extraidos", true)]
     static bool ValidarMenu() =>
         AssetDatabase.IsValidFolder(EXTRACTED) ||
         Directory.Exists(Path.GetFullPath(Path.Combine(Application.dataPath, "..", EXTRACTED)));

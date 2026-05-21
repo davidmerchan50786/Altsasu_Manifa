@@ -102,7 +102,7 @@ public static class ConstructorPersonajesMeshyAI
         ("RifleAim",    "Rifle_Aim_Turn",       1f),
     };
 
-    [MenuItem("Tools/Alsasua/🧍 Construir Personajes MeshyAI", priority = 20)]
+    [MenuItem("Tools/Alsasua/Assets/🧍 Personajes MeshyAI", priority = 10)]
     public static void Construir()
     {
         EnsureDirectories();

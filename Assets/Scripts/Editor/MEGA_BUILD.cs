@@ -40,7 +40,7 @@ public static class MEGA_BUILD
     static int    _step, _totalSteps = 12;
     static string _stepName;
 
-    [MenuItem("Tools/Alsasua/⚡ MEGA BUILD (Construir todo ahora)", priority = 0)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/⚡ MEGA BUILD (Construir todo ahora)", priority = 0)]
     public static void EjecutarTodo()
     {
         bool ok = EditorUtility.DisplayDialog("⚡ MEGA BUILD",

@@ -40,7 +40,7 @@ public static class ConstructorProyectoCompleto
         "Build Settings",   "Pipeline Asset",  "Verificación"
     };
 
-    [MenuItem("Tools/Alsasua/🏗 Construir TODO el proyecto", priority = 1)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/🏗 Construir TODO el proyecto", priority = 1)]
     public static void ConstruirTodo()
     {
         if (!EditorUtility.DisplayDialog("Construir proyecto completo",

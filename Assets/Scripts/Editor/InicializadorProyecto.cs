@@ -100,7 +100,7 @@ public static class InicializadorProyecto
         }
     }
 
-    [MenuItem("Tools/Alsasua/🔄 Comprobar y reparar proyecto", priority = 2)]
+    // [DESACTIVADO] [MenuItem("Tools/Alsasua/🔄 Comprobar y reparar proyecto", priority = 2)]
     public static void ComprobarYReparar()
     {
         SessionState.SetBool(KEY_INIT, false);

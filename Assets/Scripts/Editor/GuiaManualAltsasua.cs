@@ -42,7 +42,7 @@ public class GuiaManualAltsasua : EditorWindow
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/📋 Guía Manual Paso a Paso", priority = 3)]
+    [MenuItem("Tools/Alsasua/📋 Guia Manual", priority = 50)]
     public static void Abrir()
     {
         var w = GetWindow<GuiaManualAltsasua>("📋 Guía Manual");
@@ -333,7 +333,7 @@ public class GuiaManualAltsasua : EditorWindow
 
         Titulo("Pasos automáticos:");
         if (GUILayout.Button("🧹 Limpiar Missing Scripts ahora", GUILayout.Height(32)))
-            EditorApplication.ExecuteMenuItem("Tools/Alsasua/🧹 Limpiar Missing Scripts");
+            EditorApplication.ExecuteMenuItem("Tools/Alsasua/Debug/🧹 Limpiar Missing Scripts");
 
         Titulo("O manualmente:");
         Cmd("Tools → Alsasua → 🧹 Limpiar Missing Scripts");
@@ -516,7 +516,7 @@ public class GuiaManualAltsasua : EditorWindow
             Cmd("5. En la Hierarchy selecciona el jugador");
             Cmd("6. Inspector → Animator → Controller → arrastra JugadorAnimator");
             if (GUILayout.Button("Configurar Animator automáticamente", GUILayout.Height(32)))
-                EditorApplication.ExecuteMenuItem("Tools/Alsasua/🎭 Configurar Animator Jugador");
+                EditorApplication.ExecuteMenuItem("Tools/Alsasua/Assets/🎭 Animator Jugador");
         }
         else
         {

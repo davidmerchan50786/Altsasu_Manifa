@@ -22,7 +22,7 @@ public static class AsignadorAnimacionesJugador
     const string CTRL_PATH  = "Assets/Animators/JugadorAnimator.controller";
     const string PREFAB_JUG = "Assets/Prefabs/Personajes/Jugador_Altsasua.prefab";
 
-    [MenuItem("Tools/Alsasua/🎭 Asignar Animaciones Jugador (Player_*.fbx)", priority = 17)]
+    [MenuItem("Tools/Alsasua/Assets/🎭 Asignar Animaciones Jugador", priority = 17)]
     public static void Asignar()
     {
         // 1. Cargar clips Player_* de los FBX procedurales

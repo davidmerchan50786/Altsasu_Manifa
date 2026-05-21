@@ -27,7 +27,7 @@ using System.Reflection;
 
 public static class ConectorSistemas
 {
-    [MenuItem("Tools/Alsasua/🔌 Conectar Todos los Sistemas", priority = 3)]
+    [MenuItem("Tools/Alsasua/Conectar/🔌 Conectar Todos los Sistemas", priority = 10)]
     public static void ConectarTodo()
     {
         AssetDatabase.Refresh();

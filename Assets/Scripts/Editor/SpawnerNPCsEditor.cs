@@ -11,7 +11,7 @@ public static class SpawnerNPCsEditor
     private const float  CENTRO_X  = 1918f, CENTRO_Z = 8570f;
     private const float  RADIO     = 200f;
 
-    [MenuItem("Tools/Alsasua/👥 Poblar Zone_01 con Civiles", priority = 33)]
+    [MenuItem("Tools/Alsasua/Mundo/👥 Poblar Zone_01", priority = 16)]
     public static void PoblarCiviles()
     {
         var zona = GameObject.Find("Zone_01_HerrikoPlaza_Centro");

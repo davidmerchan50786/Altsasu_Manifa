@@ -24,7 +24,7 @@ public static class FixEventSystem
         UpgradeAllEventSystems();
     }
 
-    [MenuItem("Tools/Alsasua/🔧 Fix EventSystem (Input System)")]
+    [MenuItem("Tools/Alsasua/Debug/🔧 Fix EventSystem")]
     public static void UpgradeAllEventSystems()
     {
         var eventSystems = Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
