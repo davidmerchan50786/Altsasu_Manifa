@@ -105,3 +105,9 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Unity backup/recovery scenes (pueden superar 100MB — ignorar siempre)
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_recovery/
+/[Aa]ssets/_Staging/
+/[Aa]ssets/_staging/
