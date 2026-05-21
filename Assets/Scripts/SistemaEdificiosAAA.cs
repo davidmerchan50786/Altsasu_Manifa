@@ -132,7 +132,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
     /// Construye un edificio AAA completo (base + detalles) y lo añade bajo <paramref name="parent"/>.
     /// Reemplaza GeneradorMundoOSM.ConstruirEdificio() con calidad visual superior.
     /// </summary>
-    public void ConstruirEdificio(GeneradorMundoOSM.EdificioData e, Transform parent)
+    public void ConstruirEdificio(EdificioData e, Transform parent)
     {
         if (e.vertices == null || e.vertices.Length < 3) return;
 

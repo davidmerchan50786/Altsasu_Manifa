@@ -473,35 +473,35 @@ public class GeneradorMundoOSM : MonoBehaviour
         return 240f;
     }
 
-    // ── Data types ────────────────────────────────────────────────────────
+}
 
-    [Serializable] public class EdificioData
-    {
-        public int    id;
-        public string type;
-        public string name;
-        public int    levels;
-        public float  height;
-        public Vert[] vertices;
-    }
-    [Serializable] public class Vert { public float x; public float z; }
+// ── Tipos de datos OSM — nivel superior para acceso desde cualquier script ──
+[System.Serializable] public class EdificioData
+{
+    public int    id;
+    public string type;
+    public string name;
+    public int    levels;
+    public float  height;
+    public Vert[] vertices;
+}
+[System.Serializable] public class Vert { public float x; public float z; }
 
-    [Serializable] public class RoadData
-    {
-        public int    id;
-        public string type;
-        public string name;
-        public float  width;
-        public bool   oneway;
-        public Vert[] points;
-    }
+[System.Serializable] public class RoadData
+{
+    public int    id;
+    public string type;
+    public string name;
+    public float  width;
+    public bool   oneway;
+    public Vert[] points;
+}
 
-    [Serializable] public class ArbolData
-    {
-        public float  x, z;
-        public string especie;
-        public float  radio;
-    }
+[System.Serializable] public class ArbolData
+{
+    public float  x, z;
+    public string especie;
+    public float  radio;
 }
 
 // ── JSON Array helper ─────────────────────────────────────────────────────

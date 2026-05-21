@@ -49,7 +49,7 @@ public class SistemaZonas : MonoBehaviour
     // Clave: celda (x, z) en espacio de cuadrícula.
     // Valor: lista de datos de edificios que hay en esa celda.
     readonly Dictionary<Vector2Int, List<EdificioData>> _datosPorZona  = new();
-    readonly Dictionary<Vector2Int, List<GeneradorMundoOSM.RoadData>> _callesPorZona = new();
+    readonly Dictionary<Vector2Int, List<RoadData>> _callesPorZona = new();
 
     // ── Estado de zonas activas ────────────────────────────────────────────
     readonly Dictionary<Vector2Int, ZonaInfo>           _zonas         = new();
@@ -136,12 +136,12 @@ public class SistemaZonas : MonoBehaviour
     }
 
     /// <summary>Registra un tramo de calle en su celda.</summary>
-    public void RegistrarCalle(GeneradorMundoOSM.RoadData r, Vector3 centroMundo)
+    public void RegistrarCalle(RoadData r, Vector3 centroMundo)
     {
         var key = MundoAZona(centroMundo);
         if (!_callesPorZona.TryGetValue(key, out var lista))
         {
-            lista = new List<GeneradorMundoOSM.RoadData>();
+            lista = new List<RoadData>();
             _callesPorZona[key] = lista;
         }
         lista.Add(r);
