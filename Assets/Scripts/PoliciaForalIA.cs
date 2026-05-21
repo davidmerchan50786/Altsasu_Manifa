@@ -17,6 +17,7 @@
 //    · La IA llama a GameManagerAltsasua.AumentarBusqueda() al confirmar avistamiento
 // ═══════════════════════════════════════════════════════════════════════════
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 

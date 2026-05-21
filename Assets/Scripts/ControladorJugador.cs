@@ -737,8 +737,8 @@ public class ControladorJugador : MonoBehaviour
         _timerPaso -= Time.deltaTime;
         if (_timerPaso > 0f) return;
 
-        AudioManager.I?.Play(
-            estaCorriendo ? AudioManager.Clip.PasoCorrer : AudioManager.Clip.PasoNormal,
+        AudioManager.Play(
+            estaCorriendo ? AudioManager.Clip.PasoAsfalto : AudioManager.Clip.PasoTierra,
             transform.position);
         _timerPaso = intervalo;
     }

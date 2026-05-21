@@ -38,10 +38,10 @@ public class CarCam : MonoBehaviour
         rootNode.position = Vector3.Lerp(rootNode.position, car.position, cameraStickiness * Time.fixedDeltaTime);
 
         // If the car isn't moving, default to looking forwards. Prevents camera from freaking out with a zero velocity getting put into a Quaternion.LookRotation
-        if (carPhysics.velocity.magnitude < rotationThreshold)
+        if (carPhysics.linearVelocity.magnitude < rotationThreshold)
             look = Quaternion.LookRotation(car.forward);
         else
-            look = Quaternion.LookRotation(carPhysics.velocity.normalized);
+            look = Quaternion.LookRotation(carPhysics.linearVelocity.normalized);
         
         // Rotate the camera towards the velocity vector.
         look = Quaternion.Slerp(rootNode.rotation, look, cameraRotationSpeed * Time.fixedDeltaTime);                

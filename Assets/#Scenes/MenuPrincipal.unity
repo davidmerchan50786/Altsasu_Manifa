@@ -130,7 +130,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 100000000}
+  - component: {fileID: 100000010}
   - component: {fileID: 200000000}
   - component: {fileID: 300000000}
   m_Layer: 0
@@ -140,7 +140,7 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &100000000
+--- !u!4 &100000010
 Transform:
   m_ObjectHideFlags: 0
   m_LocalPosition: {x: 0, y: 0, z: -10}
@@ -208,12 +208,12 @@ AudioListener:
 GameObject:
   m_ObjectHideFlags: 0
   m_Component:
-  - component: {fileID: 100000001}
+  - component: {fileID: 100000011}
   m_Layer: 0
   m_Name: MenuPrincipal
   m_TagString: Untagged
   m_IsActive: 1
---- !u!4 &100000001
+--- !u!4 &100000011
 Transform:
   m_ObjectHideFlags: 0
   m_LocalPosition: {x: 0, y: 0, z: 0}

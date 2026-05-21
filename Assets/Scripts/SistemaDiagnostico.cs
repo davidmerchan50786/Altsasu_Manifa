@@ -79,26 +79,26 @@ public class SistemaDiagnostico : MonoBehaviour
         sb.AppendLine("\nGAMEPLAY:");
         Chequear(sb, errores, "GameManager",       GameManagerAltsasua.Instance != null);
         Chequear(sb, errores, "SistemaMisiones",   SistemaMisiones.Instance != null);
-        Chequear(sb, errors:  errores,
-            nombre: "SistemaApoyoPopular", ok: SistemaApoyoPopular.Instance != null);
+        Chequear(sb, errores, "SistemaApoyoPopular", SistemaApoyoPopular.Instance != null);
         Chequear(sb, errores, "SistemaGuardado",   SistemaGuardado.Instance != null);
         Chequear(sb, errores, "AudioManager",      AudioManager.I != null);
         Chequear(sb, errores, "SistemaLogros",     SistemaLogros.Instance != null);
 
         // ── Mundo ─────────────────────────────────────────────────────────
-        sb.AppendLine("\nMUNDO:");
-        bool edifOSM = GameObject.Find("Edificios_OSM") != null;
-        bool callesOSM = GameObject.Find("Calles_OSM") != null;
-        Chequear(sb, errores, "Edificios OSM generados", edifOSM);
-        Chequear(sb, errores, "Calles OSM generadas",    callesOSM);
-        if (edifOSM)
-        {
-            int nEdif = GameObject.Find("Edificios_OSM").transform.childCount;
-            Chequear(sb, warnings, $"Cantidad edificios ({nEdif})",
-                nEdif > 100, nEdif > 100 ? "OK" : "Muy pocos — JSON no cargó?");
-        }
-        Chequear(sb, warnings, "GeneradorMundoOSM listo", GeneradorMundoOSM.MundoListo);
-        Chequear(sb, warnings, "SistemaEdificiosAAA listo", SistemaEdificiosAAA.Listo);
+        sb.AppendLine("\nMUNDO (Zone Streaming):");
+        Chequear(sb, errores, "SistemaZonas activo",        SistemaZonas.Instance != null);
+        Chequear(sb, warnings,"GeneradorMundoOSM indexado", GeneradorMundoOSM.MundoListo);
+        Chequear(sb, warnings,"SistemaEdificiosAAA listo",  SistemaEdificiosAAA.Listo);
+        Chequear(sb, warnings,"SistemaTerreno pintado",     SistemaTerreno.Listo);
+
+        // Contar edificios activos en escena (zona streaming — no hay parent único)
+        var zonaRoots = GameObject.FindGameObjectsWithTag("Untagged");
+        int nEdifActivos = 0;
+        foreach (var go in zonaRoots)
+            if (go.name.StartsWith("Zona_")) nEdifActivos += go.transform.childCount;
+        Chequear(sb, warnings, $"Edificios en zonas activas ({nEdifActivos})",
+            nEdifActivos > 0 || !GeneradorMundoOSM.MundoListo,
+            nEdifActivos > 0 ? "OK" : "Jugador fuera del área o indexado incompleto");
 
         // ── Animaciones ───────────────────────────────────────────────────
         sb.AppendLine("\nANIMACIONES:");

@@ -267,8 +267,8 @@ public class GuiaManualAltsasua : EditorWindow
         Cmd("3. Si no gira → pulsa Ctrl+R o ve a Assets → Refresh");
 
         Titulo("Verificación automática:");
-        Texto($"Texturas importadas en Textures_AAA: " +
-              $"{AssetDatabase.FindAssets(\"t:Texture2D\", new[]{\"Assets/Textures_AAA\"}).Length}");
+        var texCount = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Textures_AAA" }).Length;
+        Texto($"Texturas importadas en Textures_AAA: {texCount}");
         Texto("✅ Se activa automáticamente cuando hay más de 100 texturas importadas.");
 
         if (GUILayout.Button("Abrir carpeta Textures_AAA en Project", GUILayout.Height(28)))

@@ -91,12 +91,140 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
     void Start()
     {
-        GeneradorMundoOSM.OnMundoGenerado += OnMundoGenerado;
+        // Cargar materiales inmediatamente (no esperar al mundo)
+        CargarMateriales();
+
+        // Hook con SistemaZonas — enriquecer edificios al cargarse cada zona
+        SistemaZonas.OnZonaCargada += OnZonaCargada;
+
+        // Hook legado por si GeneradorMundoOSM crea directamente (fallback)
+        GeneradorMundoOSM.OnMundoGenerado += OnMundoGeneradoLegado;
+
+        Listo = true;
+        AlsasuaLogger.Info("EdificiosAAA", "Listo — materiales PBR cargados");
     }
 
-    void OnMundoGenerado()
+    void OnZonaCargada(Vector2Int _)
     {
+        // Opcional: enriquecer edificios básicos que llegaran sin pasar por ConstruirEdificio
+        // (ej. si SistemaZonas usó el fallback de GeneradorMundoOSM)
+    }
+
+    void OnMundoGeneradoLegado()
+    {
+        // Solo aplica si no se usa zone streaming (escenas antiguas)
+        var parent = GameObject.Find("Edificios_OSM");
+        if (parent == null) return;
         StartCoroutine(EnriquecerTodo());
+    }
+
+    void OnDestroy()
+    {
+        SistemaZonas.OnZonaCargada            -= OnZonaCargada;
+        GeneradorMundoOSM.OnMundoGenerado     -= OnMundoGeneradoLegado;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  API PÚBLICA — llamada por SistemaZonas para cada edificio de zona
+    // ════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Construye un edificio AAA completo (base + detalles) y lo añade bajo <paramref name="parent"/>.
+    /// Reemplaza GeneradorMundoOSM.ConstruirEdificio() con calidad visual superior.
+    /// </summary>
+    public void ConstruirEdificio(GeneradorMundoOSM.EdificioData e, Transform parent)
+    {
+        if (e.vertices == null || e.vertices.Length < 3) return;
+
+        // ── Base mesh (misma lógica que GeneradorMundoOSM pero con material AAA) ──
+        var verts2D = new List<Vector2>();
+        foreach (var v in e.vertices)
+            verts2D.Add(new Vector2(v.x + 1918f, v.z + 8570f)); // OFFSET_X / OFFSET_Z
+
+        float cx = 0, cz = 0;
+        foreach (var v in verts2D) { cx += v.x; cz += v.y; }
+        cx /= verts2D.Count; cz /= verts2D.Count;
+
+        float suelo  = AlturaTerreno(cx, cz);
+        float altura = Mathf.Max(3.2f, e.height > 0 ? e.height : e.levels * 3.2f);
+
+        var mesh = GeneradorMundoOSM.Instance != null
+            ? GenerarMeshEdificio(verts2D, suelo, altura)
+            : null;
+
+        if (mesh == null) return;
+
+        string nombre = string.IsNullOrEmpty(e.name)
+            ? $"Edif_{e.id}" : $"Edif_{e.name.Replace(" ", "_")}";
+        var go = new GameObject(nombre);
+        go.transform.SetParent(parent);
+        go.isStatic = true;
+
+        var mf = go.AddComponent<MeshFilter>();
+        mf.sharedMesh = mesh;
+
+        bool esHistorico = e.levels <= 3 && (cx + cz) % 2 < 1.1f;
+        bool esComercial = e.type is "commercial" or "retail" or "office";
+        var matFachada   = ElegirMaterialFachada(esHistorico, esComercial);
+
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = matFachada;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+
+        // Collider solo cercanos al centro de la ciudad
+        if (Vector2.Distance(new Vector2(cx, cz), new Vector2(1918f, 8570f)) < 200f)
+            go.AddComponent<MeshCollider>().sharedMesh = mesh;
+
+        // ── Enriquecimiento AAA ───────────────────────────────────────────────
+        EnriquecerEdificio(go.transform);
+
+        _totalEdificios++;
+    }
+
+    // Genera el mesh del edificio (duplicado local para no depender de GM en runtime)
+    Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
+    {
+        int n = planta.Count;
+        if (n < 3) return null;
+
+        var verts = new List<Vector3>();
+        var tris  = new List<int>();
+        var uvs   = new List<Vector2>();
+
+        for (int i = 0; i < n; i++)
+        {
+            int j = (i + 1) % n;
+            var p0 = new Vector3(planta[i].x, suelo,          planta[i].y);
+            var p1 = new Vector3(planta[j].x, suelo,          planta[j].y);
+            var p2 = new Vector3(planta[j].x, suelo + altura, planta[j].y);
+            var p3 = new Vector3(planta[i].x, suelo + altura, planta[i].y);
+            float u = Vector2.Distance(planta[i], planta[j]) / 4f;
+            int b = verts.Count;
+            verts.AddRange(new[]{p0,p1,p2,p3});
+            uvs.AddRange(new[]{ new Vector2(0,0),new Vector2(u,0),new Vector2(u,1),new Vector2(0,1) });
+            tris.AddRange(new[]{b,b+2,b+1, b,b+3,b+2});
+        }
+        // Techo fan
+        int tb = verts.Count;
+        foreach (var v in planta) verts.Add(new Vector3(v.x, suelo + altura, v.y));
+        uvs.AddRange(planta.ConvertAll(v => new Vector2(v.x*0.1f, v.y*0.1f)));
+        for (int i = 1; i < n-1; i++) tris.AddRange(new[]{tb, tb+i, tb+i+1});
+
+        var mesh = new Mesh { name = "EdifAAA" };
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(tris, 0);
+        mesh.SetUVs(0, uvs);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    float AlturaTerreno(float x, float z)
+    {
+        var t = Terrain.activeTerrain;
+        if (t != null) return t.SampleHeight(new Vector3(x, 0, z)) + t.transform.position.y;
+        if (Physics.Raycast(new Vector3(x, 1000f, z), Vector3.down, out var h, 2000f)) return h.point.y;
+        return 240f;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -106,8 +234,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
     IEnumerator EnriquecerTodo()
     {
         yield return new WaitForSeconds(0.5f);
-
-        CargarMateriales();
+        // CargarMateriales() ya fue llamado en Start() — no repetir
         yield return null;
 
         _parentEdificios = GameObject.Find("Edificios_OSM")?.transform;
@@ -659,8 +786,4 @@ public class SistemaEdificiosAAA : MonoBehaviour
         return go;
     }
 
-    void OnDestroy()
-    {
-        GeneradorMundoOSM.OnMundoGenerado -= OnMundoGenerado;
-    }
 }

@@ -29,7 +29,7 @@ public class MisionSec_Fotografo : Mision
     public override System.Action AlIniciar => () =>
     {
         AlsasuaLogger.Info("MS01", $"Fotógrafo: acércate a {META} puntos de interés y pulsa F");
-        SistemaLogros.OnLogroDesbloqueado?.Invoke(null); // placeholder
+        AlsasuaLogger.Info("MS01", "Modo fotógrafo activo"); // logro se dispara al completar
     };
 
     public override List<Objetivo> Objetivos => new()

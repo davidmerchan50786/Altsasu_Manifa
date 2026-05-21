@@ -363,39 +363,23 @@ public class GameManagerAltsasua : MonoBehaviour
     //  ECONOMÍA
     // =========================================================================
 
-<<<<<<< HEAD
-=======
     HUDAAA ObtenerHUD()
     {
         if (_hudCache == null) _hudCache = FindFirstObjectByType<HUDAAA>();
         return _hudCache;
     }
 
->>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
     public void GanarDinero(int cantidad)
     {
         dinero += cantidad;
         puntuacion += cantidad;
-<<<<<<< HEAD
-
-        // Sincronizar con GUISystem si existe
-        var gui = FindFirstObjectByType<GUISystem>();
-        if (gui != null) gui.Money = dinero;
-=======
-        OnDineroCambia?.Invoke(dinero);
-        // HUDAAA se actualiza vía evento — no necesita referencia directa
->>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
+        ActualizarHUD();
     }
 
     public bool GastarDinero(int cantidad)
     {
         if (dinero < cantidad) return false;
         dinero -= cantidad;
-<<<<<<< HEAD
-        var gui = FindFirstObjectByType<GUISystem>();
-        if (gui != null) { gui.Cost = cantidad; gui.CostShow = true; }
-=======
->>>>>>> 390955f (feat: misiones M03-M12, accesibilidad, polish AAA)
         return true;
     }
 

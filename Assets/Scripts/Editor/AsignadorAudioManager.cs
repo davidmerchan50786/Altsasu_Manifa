@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 public static class AsignadorAudioManager
 {
@@ -111,7 +112,6 @@ public static class AsignadorAudioManager
 
             imp.defaultSampleSettings = settings;
             imp.loadInBackground  = true;
-            imp.preloadAudioData  = !esAmbiente;
             imp.SaveAndReimport();
             configurados++;
         }
@@ -123,8 +123,11 @@ public static class AsignadorAudioManager
         resumen += $"Clips encontrados: {clips.Count}\n";
         resumen += $"Import configurado: {configurados}\n\n";
         resumen += "MAPEO (archivo → AudioManager.Clip):\n";
-        foreach (var (clipName, enumName, _) in clips.Take(20))
+        foreach (var entry in clips.Take(20))
+        {
+            string clipName = entry.clipName, enumName = entry.enumName;
             resumen += $"  {clipName} → {enumName}\n";
+        }
         resumen += "\nEl AudioManager carga automáticamente todos los clips\nde Assets/Resources/Audio/ al arrancar el juego.";
 
         Debug.Log($"[AsignadorAudio] {resumen}");

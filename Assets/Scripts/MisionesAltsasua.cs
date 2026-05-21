@@ -24,7 +24,7 @@ using UnityEngine;
 //  Herriko Plaza ≈ (1918, y, 8570) — referencia central
 // ═════════════════════════════════════════════════════════════════════════════
 
-internal static class PuntosAlsasua
+public static class PuntosAlsasua
 {
     // Puntos clave del pueblo — aproximados en coordenadas terreno
     public static readonly Vector3 HerrikoPlaza       = new(1918f, 0f, 8570f);

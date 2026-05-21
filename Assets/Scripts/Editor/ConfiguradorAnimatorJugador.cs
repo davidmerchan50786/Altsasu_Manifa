@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 using System.IO;
+using System.Linq;
 
 public static class ConfiguradorAnimatorJugador
 {

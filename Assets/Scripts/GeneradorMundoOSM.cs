@@ -47,33 +47,39 @@ public class GeneradorMundoOSM : MonoBehaviour
 
     IEnumerator GenerarMundo()
     {
-        AlsasuaLogger.Info("OSM", "Iniciando generación del mundo desde datos OSM reales…");
+        AlsasuaLogger.Info("OSM", "Indexando datos OSM para zone streaming…");
 
-        // Esperar al terreno
+        // Esperar al terreno y a SistemaZonas
         float t = 0;
-        while (Terrain.activeTerrain == null && t < 5f) { t += 0.5f; yield return new WaitForSeconds(0.5f); }
+        while ((Terrain.activeTerrain == null || SistemaZonas.Instance == null) && t < 8f)
+            { t += 0.5f; yield return new WaitForSeconds(0.5f); }
 
-        CrearParents();
         CargarMateriales();
 
+        // Parent para árboles (los únicos que se construyen directamente aquí)
+        if (_parentArboles == null) _parentArboles = new GameObject("Arboles_OSM").transform;
+
+        // ── FASE 1: Indexar edificios en zonas (sin construir meshes) ─────
+        yield return StartCoroutine(IndexarEdificios());
         yield return null;
 
-        yield return StartCoroutine(GenerarEdificios());
+        // ── FASE 2: Indexar calles en zonas ──────────────────────────────
+        yield return StartCoroutine(IndexarCalles());
         yield return null;
-        yield return StartCoroutine(GenerarCalles());
-        yield return null;
+
+        // ── FASE 3: Árboles (pocos, construir directamente) ──────────────
         yield return StartCoroutine(GenerarArboles());
+
+        // Avisar a SistemaZonas que el índice está completo
+        SistemaZonas.Instance?.MarcarIndexadoListo();
 
         MundoListo = true;
         OnMundoGenerado?.Invoke();
-        AlsasuaLogger.Info("OSM", $"✅ Mundo generado: {_edificiosCreados} edificios, {_callesCreadas} tramos, {_arbolesCreados} árboles");
+        AlsasuaLogger.Info("OSM",
+            $"✅ Índice OSM listo: {_edificiosCreados} edificios, {_callesCreadas} tramos indexados");
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  EDIFICIOS
-    // ════════════════════════════════════════════════════════════════════════
-
-    IEnumerator GenerarEdificios()
+    IEnumerator IndexarEdificios()
     {
         string path = Path.Combine(Application.dataPath, "AlsasuaData", "buildings_unity.json");
         if (!File.Exists(path)) { AlsasuaLogger.Warn("OSM", "buildings_unity.json no encontrado"); yield break; }
@@ -86,54 +92,109 @@ public class GeneradorMundoOSM : MonoBehaviour
         foreach (var e in edificios)
         {
             if (e.vertices == null || e.vertices.Length < 3) continue;
-            CrearEdificio(e);
+
+            // Calcular centro del edificio para asignarlo a la zona correcta
+            float cx = 0, cz = 0;
+            foreach (var v in e.vertices) { cx += v.x + OFFSET_X; cz += v.z + OFFSET_Z; }
+            cx /= e.vertices.Length; cz /= e.vertices.Length;
+
+            SistemaZonas.Instance?.RegistrarEdificio(e, new Vector3(cx, 0, cz));
             _edificiosCreados++;
-            if (++lote >= 30) { lote = 0; yield return null; }
+            if (++lote >= 60) { lote = 0; yield return null; }
         }
     }
 
-    void CrearEdificio(EdificioData e)
+    IEnumerator IndexarCalles()
     {
-        // Convertir vértices OSM → Unity (añadir offsets)
+        string path = Path.Combine(Application.dataPath, "AlsasuaData", "roads_unity.json");
+        if (!File.Exists(path)) yield break;
+
+        string json = File.ReadAllText(path);
+        var roads = JsonHelper.ParseArray<RoadData>(json);
+        if (roads == null) yield break;
+
+        int lote = 0;
+        foreach (var r in roads)
+        {
+            if (r.points == null || r.points.Length < 2) continue;
+
+            // Centro del tramo
+            float cx = (r.points[0].x + r.points[^1].x) * 0.5f + OFFSET_X;
+            float cz = (r.points[0].z + r.points[^1].z) * 0.5f + OFFSET_Z;
+
+            SistemaZonas.Instance?.RegistrarCalle(r, new Vector3(cx, 0, cz));
+            _callesCreadas++;
+            if (++lote >= 40) { lote = 0; yield return null; }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  API PÚBLICA — llamada por SistemaZonas al cargar cada zona
+    // ════════════════════════════════════════════════════════════════════════
+
+    /// <summary>Construye el mesh de un edificio y lo añade bajo <paramref name="parent"/>.</summary>
+    public void ConstruirEdificio(EdificioData e, Transform parent)
+    {
+        if (e.vertices == null || e.vertices.Length < 3) return;
+
         var verts2D = new List<Vector2>();
         foreach (var v in e.vertices)
             verts2D.Add(new Vector2(v.x + OFFSET_X, v.z + OFFSET_Z));
 
-        if (verts2D.Count < 3) return;
-
-        // Altura del suelo en el centro del edificio
         float cx = 0, cz = 0;
         foreach (var v in verts2D) { cx += v.x; cz += v.y; }
         cx /= verts2D.Count; cz /= verts2D.Count;
 
-        float suelo = AlturaTerreno(cx, cz);
+        float suelo  = AlturaTerreno(cx, cz);
         float altura = Mathf.Max(3.2f, e.height > 0 ? e.height : e.levels * 3.2f);
 
-        // Generar mesh de edificio extruido
         var mesh = GenerarMeshEdificio(verts2D, suelo, altura);
         if (mesh == null) return;
 
-        var go = new GameObject($"Edif_{e.id}");
-        go.transform.SetParent(_parentEdificios);
+        var go = new GameObject(string.IsNullOrEmpty(e.name)
+            ? $"Edif_{e.id}" : $"Edif_{e.name.Replace(" ", "_")}");
+        go.transform.SetParent(parent);
         go.isStatic = true;
 
-        var mf = go.AddComponent<MeshFilter>();
-        mf.sharedMesh = mesh;
-
-        var mr = go.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = MaterialParaTipo(e.type);
+        var mf = go.AddComponent<MeshFilter>();  mf.sharedMesh = mesh;
+        var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = MaterialParaTipo(e.type);
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
-        // MeshCollider solo para los primeros 300 edificios — el resto es visual
-        if (_edificiosCreados < 300)
+        // Collider solo para edificios cercanos al centro (<150m de Herriko Plaza)
+        if (Vector2.Distance(new Vector2(cx, cz), new Vector2(OFFSET_X, OFFSET_Z)) < 150f)
             go.AddComponent<MeshCollider>().sharedMesh = mesh;
 
-        // LODGroup — 3 niveles de detalle
         AnadirLOD(go, mr, mesh);
-
-        if (!string.IsNullOrEmpty(e.name))
-            go.name = $"Edif_{e.name.Replace(" ", "_")}";
     }
+
+    /// <summary>Construye el mesh de un tramo de calle y lo añade bajo <paramref name="parent"/>.</summary>
+    public void ConstruirCalle(RoadData r, Transform parent)
+    {
+        float ancho = Mathf.Max(2f, r.width);
+        var pts = Array.ConvertAll(r.points, p =>
+            new Vector3(p.x + OFFSET_X, 0, p.z + OFFSET_Z));
+        for (int i = 0; i < pts.Length; i++)
+            pts[i].y = AlturaTerreno(pts[i].x, pts[i].z) + 0.03f;
+
+        var mesh = GenerarMeshCalle(pts, ancho);
+        if (mesh == null) return;
+
+        string nombre = string.IsNullOrEmpty(r.name)
+            ? $"Calle_{r.id}" : $"Calle_{r.name.Replace(" ", "_")}";
+        var go = new GameObject(nombre);
+        go.transform.SetParent(parent);
+        go.isStatic = true;
+
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = r.type is "pedestrian" or "path" ? _matAcera : _matAsfalto;
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        go.AddComponent<MeshCollider>().sharedMesh = mesh;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  MESH GENERATION — shared por ConstruirEdificio y ConstruirCalle
+    // ════════════════════════════════════════════════════════════════════════
 
     Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
     {
@@ -181,51 +242,6 @@ public class GeneradorMundoOSM : MonoBehaviour
     //  CALLES
     // ════════════════════════════════════════════════════════════════════════
 
-    IEnumerator GenerarCalles()
-    {
-        string path = Path.Combine(Application.dataPath, "AlsasuaData", "roads_unity.json");
-        if (!File.Exists(path)) yield break;
-
-        string json = File.ReadAllText(path);
-        var roads = JsonHelper.ParseArray<RoadData>(json);
-        if (roads == null) yield break;
-
-        int lote = 0;
-        foreach (var r in roads)
-        {
-            if (r.points == null || r.points.Length < 2) continue;
-            CrearTramoCarretera(r);
-            _callesCreadas++;
-            if (++lote >= 20) { lote = 0; yield return null; }
-        }
-    }
-
-    void CrearTramoCarretera(RoadData r)
-    {
-        float ancho = Mathf.Max(2f, r.width);
-        var pts = Array.ConvertAll(r.points, p =>
-            new Vector3(p.x + OFFSET_X, 0, p.z + OFFSET_Z));
-
-        for (int i = 0; i < pts.Length; i++)
-            pts[i].y = AlturaTerreno(pts[i].x, pts[i].z) + 0.03f;
-
-        var mesh = GenerarMeshCalle(pts, ancho);
-        if (mesh == null) return;
-
-        var go = new GameObject($"Calle_{r.id}");
-        go.transform.SetParent(_parentCalles);
-        go.isStatic = true;
-        if (!string.IsNullOrEmpty(r.name)) go.name = $"Calle_{r.name.Replace(" ","_")}";
-
-        var mf = go.AddComponent<MeshFilter>(); mf.sharedMesh = mesh;
-        var mr = go.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = r.type == "pedestrian" || r.type == "path" ? _matAcera : _matAsfalto;
-        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        go.AddComponent<MeshCollider>().sharedMesh = mesh;
-
-        // Tag de carretera para el sistema de tráfico
-        go.layer = LayerMask.NameToLayer("Default");
-    }
 
     Mesh GenerarMeshCalle(Vector3[] pts, float ancho)
     {
@@ -444,7 +460,7 @@ public class GeneradorMundoOSM : MonoBehaviour
         // Cubo 1×1×1 centrado en (0,0,0) — reutilizado para todos los LOD1
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         _cuboCache = go.GetComponent<MeshFilter>().sharedMesh;
-        Object.Destroy(go);
+        UnityEngine.Object.Destroy(go);
         return _cuboCache;
     }
 
@@ -459,7 +475,7 @@ public class GeneradorMundoOSM : MonoBehaviour
 
     // ── Data types ────────────────────────────────────────────────────────
 
-    [Serializable] class EdificioData
+    [Serializable] public class EdificioData
     {
         public int    id;
         public string type;
@@ -468,9 +484,9 @@ public class GeneradorMundoOSM : MonoBehaviour
         public float  height;
         public Vert[] vertices;
     }
-    [Serializable] class Vert { public float x; public float z; }
+    [Serializable] public class Vert { public float x; public float z; }
 
-    [Serializable] class RoadData
+    [Serializable] public class RoadData
     {
         public int    id;
         public string type;
@@ -480,7 +496,7 @@ public class GeneradorMundoOSM : MonoBehaviour
         public Vert[] points;
     }
 
-    [Serializable] class ArbolData
+    [Serializable] public class ArbolData
     {
         public float  x, z;
         public string especie;

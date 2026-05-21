@@ -176,7 +176,7 @@ public class SistemaImpactos : MonoBehaviour
         main.startSize     = new ParticleSystem.MinMaxCurve(cfg.tamano * 0.6f, cfg.tamano * fuerzaMult);
         main.startSpeed    = new ParticleSystem.MinMaxCurve(cfg.velocidad * 0.5f, cfg.velocidad * fuerzaMult);
         main.startLifetime = new ParticleSystem.MinMaxCurve(cfg.duracion * 0.5f, cfg.duracion);
-        main.gravityModifier.Override(cfg.gravedad);
+        main.gravityModifier = new ParticleSystem.MinMaxCurve(cfg.gravedad);
         main.maxParticles = 60;
 
         var emit = ps.emission;
@@ -206,7 +206,7 @@ public class SistemaImpactos : MonoBehaviour
         main.startSize     = new ParticleSystem.MinMaxCurve(0.01f, 0.025f);
         main.startSpeed    = new ParticleSystem.MinMaxCurve(3f, 9f);
         main.startLifetime = new ParticleSystem.MinMaxCurve(0.15f, 0.45f);
-        main.gravityModifier.Override(3f);
+        main.gravityModifier = new ParticleSystem.MinMaxCurve(3f);
         main.maxParticles = 30;
 
         var trails = ps.trails;

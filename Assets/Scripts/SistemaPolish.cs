@@ -109,7 +109,7 @@ public class SistemaPolish : MonoBehaviour
         _vignette.intensity.Override(_vignetteIntensBase);
         _vignette.color.Override(_vignetteColorBase);
         _motionBlur.intensity.Override(0f);
-        _motionBlur.sampleCount.Override(8);
+        _motionBlur.sampleCount = 8;
         _lensDistortion.intensity.Override(0f);
         _bloom.intensity.Override(0.6f);
     }

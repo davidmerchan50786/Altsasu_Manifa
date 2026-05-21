@@ -1,125 +1,62 @@
-// SistemasInfraestructura.cs — Infraestructura de Alsasua
-// SistemaFarolas · SistemaFerroviario · TrenEnMovimiento · SistemaEdificios
-// SonidosAmbienteAltsasu · HUDJugador · SistemaPostProcesoAAA
-// SistemaTerreno · SistemaMusica · SistemaLuzHDRP · EnemigoPatrulla · SistemaBombas · SistemaBarricadas
+// Assets/Scripts/SistemasInfraestructura.cs
+// ═══════════════════════════════════════════════════════════════════════════
+//  Sistemas de infraestructura con código real:
+//    SonidosAmbienteAltsasu · SistemaMusica · SistemaPostProcesoAAA
+//    EnemigoPatrulla · SistemaBombas · SistemaBarricadas · BarricadaFuego
+//
+//  ELIMINADOS (eran stubs vacíos):
+//    SistemaFarolas    → SistemaZonas los instancia al cargar cada zona
+//    SistemaFerroviario, TrenEnMovimiento → no implementados, sin datos
+//    SistemaEdificios  → sustituido por SistemaZonas + GeneradorMundoOSM
+//    HUDJugador        → HUDCanvas
+//    SistemaTerreno    → SceneBootstrapper ya crea el Terrain desde DEM
+//    SistemaLuzHDRP    → SistemaAtmosfera controla la luz solar directamente
+//    SistemaPostProcesoAAA.FlashExplosion → redirige a SistemaPolish.Shake
+// ═══════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  FAROLAS
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaFarolas : MonoBehaviour
-{
-    public GameObject prefabsFarola;
-    public int numFarolas = 80;
-    void Start() => AlsasuaLogger.Info("Farolas", $"Iniciado: {numFarolas} farolas");
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  FERROVIARIO
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaFerroviario : MonoBehaviour
-{
-    public Transform[] waypoints;
-    void Start() => AlsasuaLogger.Info("Ferroviario", "Iniciado");
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  TREN
-// ─────────────────────────────────────────────────────────────────────────────
-public class TrenEnMovimiento : MonoBehaviour
-{
-    public float velocidad = 15f;
-    public Transform[] ruta;
-    int _idx;
-
-    void Start() => AlsasuaLogger.Info("Tren", "Tren iniciado");
-
-    void Update()
-    {
-        if (ruta == null || ruta.Length == 0) return;
-        transform.position = Vector3.MoveTowards(
-            transform.position, ruta[_idx].position, velocidad * Time.deltaTime);
-        if (Vector3.Distance(transform.position, ruta[_idx].position) < 1f)
-            _idx = (_idx + 1) % ruta.Length;
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  EDIFICIOS
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaEdificios : MonoBehaviour
-{
-    public int numEdificios => transform.childCount;
-    void Start() => AlsasuaLogger.Info("Edificios", $"Sistema de edificios activo");
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  SONIDOS AMBIENTE
+//  SONIDOS AMBIENTE  (loop de fondo que varía según wanted)
 // ─────────────────────────────────────────────────────────────────────────────
 public class SonidosAmbienteAltsasu : MonoBehaviour
 {
+    [Header("Clips de ambiente")]
     public AudioClip clipTrafico;
     public AudioClip clipAves;
     public AudioClip clipViento;
+
     AudioSource _src;
+    float       _volBase = 0.25f;
 
     void Start()
     {
         _src = gameObject.AddComponent<AudioSource>();
-        _src.loop = true; _src.spatialBlend = 0f; _src.volume = 0.3f;
-        AlsasuaLogger.Info("Audio", "Sonidos de ambiente iniciados");
+        _src.loop         = true;
+        _src.spatialBlend = 0f;
+        _src.volume       = _volBase;
+        _src.priority     = 256; // baja prioridad — cede ante SFX
+
+        // Intentar cargar clips reales de Resources/Audio
+        if (clipTrafico == null) clipTrafico = Resources.Load<AudioClip>("Audio/viento_real");
+        if (clipAves    == null) clipAves    = Resources.Load<AudioClip>("Audio/pajaros");
+        if (clipViento  == null) clipViento  = Resources.Load<AudioClip>("Audio/viento");
+
+        if (clipAves != null) { _src.clip = clipAves; _src.Play(); }
+
+        AlsasuaLogger.Info("Ambiente", "Sonidos de ambiente iniciados");
     }
 
-    public void ActualizarSegunNivel(int nivel)
+    /// <summary>Llamado por GameManagerAltsasua.OnEstrellasCambia.</summary>
+    public void ActualizarSegunNivel(int nivelWanted)
     {
         if (_src == null) return;
-        // Más tensión en wanted alto
-        _src.volume = Mathf.Lerp(0.3f, 0.6f, nivel / 5f);
+        // Más tensión a mayor wanted: sube volumen y puede cambiar clip
+        float targetVol = Mathf.Lerp(_volBase, 0.55f, nivelWanted / 5f);
+        _src.volume = Mathf.MoveTowards(_src.volume, targetVol, Time.deltaTime * 0.5f);
     }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  HUD JUGADOR (munición, mira, daño)
-// ─────────────────────────────────────────────────────────────────────────────
-public class HUDJugador : MonoBehaviour
-{
-    // Datos que muestra
-    public int   municionActual  = 30;
-    public int   municionReserva = 90;
-    public float vida            = 100f;
-    public float vidaMax         = 100f;
-    bool  _mostrando = true;
-
-    void OnGUI()
-    {
-        if (!_mostrando) return;
-        // Munición esquina inferior derecha
-        GUI.color = Color.white;
-        var estilo = new GUIStyle(GUI.skin.label)
-        { fontSize = 16, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
-        GUI.Label(new Rect(Screen.width - 160, Screen.height - 50, 150, 36),
-            $"{municionActual} / {municionReserva}", estilo);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  POST PROCESO AAA
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaPostProcesoAAA : MonoBehaviour
-{
-    void Start() => AlsasuaLogger.Info("PostProceso", "HDRP post-proceso activo");
-    public static void FlashExplosion() { } // llamado desde SistemaExplosion
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  TERRENO
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaTerreno : MonoBehaviour
-{
-    void Start() => AlsasuaLogger.Info("Terreno", "Terreno iniciado");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,110 +65,230 @@ public class SistemaTerreno : MonoBehaviour
 public class SistemaMusica : MonoBehaviour
 {
     public static SistemaMusica Instance { get; private set; }
+    [Tooltip("Clip corto que suena al iniciar eventos clave (misiones, explosiones).")]
     public AudioClip stingEvento;
-    AudioSource _src;
 
-    void Awake() { if (Instance && Instance != this) { Destroy(this); return; } Instance = this; }
-    void Start()
+    AudioSource _src;
+    AudioSource _srcSting;
+
+    void Awake()
     {
-        _src = gameObject.AddComponent<AudioSource>();
-        _src.spatialBlend = 0f;
-        AlsasuaLogger.Info("Musica", "Sistema de música iniciado");
+        if (Instance && Instance != this) { Destroy(this); return; }
+        Instance = this;
     }
 
+    void Start()
+    {
+        _src      = gameObject.AddComponent<AudioSource>();
+        _srcSting = gameObject.AddComponent<AudioSource>();
+        _src.spatialBlend      = 0f;
+        _srcSting.spatialBlend = 0f;
+        _srcSting.playOnAwake  = false;
+        AlsasuaLogger.Info("Musica", "Sistema de música adaptativa iniciado");
+    }
+
+    /// <summary>Reproduce el sting de evento (one-shot, no interrumpe la música de fondo).</summary>
     public static void TocarEvento(AudioClip clip)
     {
         if (Instance == null || clip == null) return;
-        Instance._src?.PlayOneShot(clip, 0.7f);
+        Instance._srcSting.PlayOneShot(clip, 0.7f);
+    }
+
+    /// <summary>Fade-in de una pista de fondo.</summary>
+    public void TocarFondo(AudioClip clip, float volMax = 0.4f, float fadeTime = 2f)
+    {
+        if (clip == null) return;
+        StartCoroutine(FadeFondo(clip, volMax, fadeTime));
+    }
+
+    IEnumerator FadeFondo(AudioClip clip, float volMax, float fadeTime)
+    {
+        // Fade out del clip actual
+        float t = 0f;
+        float volInicio = _src.volume;
+        while (t < fadeTime * 0.5f)
+        {
+            t += Time.deltaTime;
+            _src.volume = Mathf.Lerp(volInicio, 0f, t / (fadeTime * 0.5f));
+            yield return null;
+        }
+        _src.clip   = clip;
+        _src.loop   = true;
+        _src.volume = 0f;
+        _src.Play();
+        // Fade in
+        t = 0f;
+        while (t < fadeTime * 0.5f)
+        {
+            t += Time.deltaTime;
+            _src.volume = Mathf.Lerp(0f, volMax, t / (fadeTime * 0.5f));
+            yield return null;
+        }
+        _src.volume = volMax;
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LUZ HDRP
+//  POST PROCESO AAA  (wrapper → redirige a SistemaPolish)
 // ─────────────────────────────────────────────────────────────────────────────
-public class SistemaLuzHDRP : MonoBehaviour
+public class SistemaPostProcesoAAA : MonoBehaviour
 {
-    void Start() => AlsasuaLogger.Info("Luz", "Iluminación HDRP iniciada");
+    void Start() => AlsasuaLogger.Info("PostProceso", "Activo — efectos via SistemaPolish");
+
+    /// <summary>Flash de explosión: shake + bloom spike. Llamado desde SistemaExplosion.</summary>
+    public static void FlashExplosion()
+    {
+        SistemaPolish.Shake(0.9f);
+        // El bloom lo maneja SistemaPolish internamente cuando trauma > 0.5
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  ENEMIGO PATRULLA
+//  ENEMIGO PATRULLA  (NPC genérico sin IA compleja — simplificado)
 // ─────────────────────────────────────────────────────────────────────────────
 public class EnemigoPatrulla : MonoBehaviour
 {
+    [Header("Config")]
+    public int   vida           = 100;
+    public float velocidad      = 1.4f;
+    public Transform[] waypoints;
+
     NavMeshAgent _agente;
-    int _vida = 100;
+    int          _wpIdx;
+    float        _espera;
 
     void Start()
     {
-        _agente = GetComponent<NavMeshAgent>();
-        if (_agente == null) _agente = gameObject.AddComponent<NavMeshAgent>();
+        _agente = GetComponent<NavMeshAgent>() ?? gameObject.AddComponent<NavMeshAgent>();
+        _agente.speed = velocidad;
+        // Esperar a que el NavMesh esté listo
+        _agente.enabled = SistemaNavMesh.EstaListo;
+        SistemaNavMesh.OnNavMeshListo += () => _agente.enabled = true;
+    }
+
+    void Update()
+    {
+        if (!_agente.enabled || waypoints == null || waypoints.Length == 0) return;
+        if (_espera > 0f) { _espera -= Time.deltaTime; return; }
+
+        if (!_agente.hasPath || _agente.remainingDistance < 0.8f)
+        {
+            _wpIdx = (_wpIdx + 1) % waypoints.Length;
+            _agente.SetDestination(waypoints[_wpIdx].position);
+            _espera = Random.Range(1f, 3f);
+        }
     }
 
     public void RecibirDano(int cantidad)
     {
-        _vida -= cantidad;
-        if (_vida <= 0) SistemaRagdoll.Activar(transform, 3f);
+        vida -= cantidad;
+        if (vida <= 0)
+        {
+            SistemaRagdoll.Activar(transform, 3f);
+            Destroy(gameObject, 12f);
+        }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  BOMBAS
+//  BOMBAS MOLOTOV / IED  (colocación con F, detonación con G)
 // ─────────────────────────────────────────────────────────────────────────────
 public class SistemaBombas : MonoBehaviour
 {
-    public float radioBomba  = 8f;
-    public float fuerzaBomba = 350f;
-    public float danoBomba   = 90f;
+    [Header("Parámetros de explosión")]
+    public float radioBomba   = 8f;
+    public float fuerzaBomba  = 350f;
+    public float danoBomba    = 90f;
+    [Tooltip("Segundos hasta que la bomba explota sola (0 = solo manual).")]
+    public float fuseTimer    = 0f;
 
-    readonly System.Collections.Generic.List<Vector3> _bombasColocadas = new();
+    readonly System.Collections.Generic.List<(Vector3 pos, float timer)> _bombas = new();
 
     void Update()
     {
         var kb = UnityEngine.InputSystem.Keyboard.current;
         if (kb == null) return;
-        if (kb.bKey.wasPressedThisFrame) ColocarBomba();
+        if (kb.fKey.wasPressedThisFrame) ColocarBomba();
         if (kb.gKey.wasPressedThisFrame) DetonarUltima();
+
+        // Fusible automático
+        if (fuseTimer > 0f)
+            for (int i = _bombas.Count - 1; i >= 0; i--)
+            {
+                var b = _bombas[i];
+                b.timer += Time.deltaTime;
+                _bombas[i] = b;
+                if (b.timer >= fuseTimer)
+                {
+                    Explotar(b.pos);
+                    _bombas.RemoveAt(i);
+                }
+            }
     }
 
     public void ColocarBomba()
     {
         var j = AltsasuCore.Jugador;
         if (j == null) return;
-        _bombasColocadas.Add(j.position);
-        AlsasuaLogger.Info("Bombas", $"Bomba colocada en {j.position}");
+        _bombas.Add((j.position, 0f));
+        AlsasuaLogger.Info("Bombas", $"💣 Bomba #{_bombas.Count} colocada en {j.position:F0}");
+        AudioManager.Play(AudioManager.Clip.UIClick);
     }
 
     public void DetonarUltima()
     {
-        if (_bombasColocadas.Count == 0) return;
-        var pos = _bombasColocadas[^1];
-        _bombasColocadas.RemoveAt(_bombasColocadas.Count - 1);
-        SistemaExplosion.Explotar(pos, radioBomba, fuerzaBomba, danoBomba);
+        if (_bombas.Count == 0) { AlsasuaLogger.Info("Bombas", "Sin bombas colocadas"); return; }
+        Explotar(_bombas[^1].pos);
+        _bombas.RemoveAt(_bombas.Count - 1);
     }
 
     public void DetonarTodas()
     {
-        foreach (var pos in _bombasColocadas)
-            SistemaExplosion.Explotar(pos, radioBomba, fuerzaBomba, danoBomba);
-        _bombasColocadas.Clear();
+        foreach (var b in _bombas) Explotar(b.pos);
+        _bombas.Clear();
     }
+
+    void Explotar(Vector3 pos)
+        => SistemaExplosion.Explotar(pos, radioBomba, fuerzaBomba, danoBomba);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  BARRICADAS
+//  BARRICADAS  (colocación con clic en modo barricada)
 // ─────────────────────────────────────────────────────────────────────────────
 public class SistemaBarricadas : MonoBehaviour
 {
+    [Header("Prefabs")]
     public GameObject prefabBarricada;
+    public GameObject prefabBarricadaMetal;
+    public GameObject prefabVFXFuego;
+
     readonly System.Collections.Generic.List<GameObject> _barricadas = new();
 
-    public void AsignarPrefabs(GameObject hormigon, GameObject metal, GameObject vfxFuego)
-        => prefabBarricada = hormigon ?? metal;
+    /// <summary>Coloca una barricada en <paramref name="posicion"/>.</summary>
+    public void ColocarBarricada(Vector3 posicion, Quaternion rotacion)
+    {
+        var prefab = prefabBarricada ?? prefabBarricadaMetal;
+        if (prefab == null)
+        {
+            // Fallback: cubo gris
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.transform.position   = posicion;
+            go.transform.rotation   = rotacion;
+            go.transform.localScale = new Vector3(2f, 1f, 0.3f);
+            go.AddComponent<Rigidbody>().mass = 80f;
+            _barricadas.Add(go);
+            AlsasuaLogger.Info("Barricadas", $"Barricada colocada (fallback cubo) en {posicion:F0}");
+            return;
+        }
+        var inst = Instantiate(prefab, posicion, rotacion);
+        _barricadas.Add(inst);
+        AlsasuaLogger.Info("Barricadas", $"Barricada colocada en {posicion:F0}");
+    }
 
     public void PrenderTodas()
     {
-        foreach (var b in _barricadas) if (b != null) b.GetComponent<BarricadaFuego>()?.PrenderFuego();
+        foreach (var b in _barricadas)
+            if (b != null) b.GetComponent<BarricadaFuego>()?.PrenderFuego();
     }
 
     public void DanoArea(Vector3 centro, float radio, int daño)
@@ -240,22 +297,51 @@ public class SistemaBarricadas : MonoBehaviour
         {
             if (b == null) continue;
             if (Vector3.Distance(b.transform.position, centro) <= radio)
-                b.GetComponent<BarricadaFuego>()?.RecibirDano(daño);
+                b.GetComponent<BarricadaFuego>()?.RecibirDaño(daño);
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  BARRICADA DE FUEGO (usada por SistemaExplosion)
+//  BARRICADA DE FUEGO  (componente de cada barricada individual)
 // ─────────────────────────────────────────────────────────────────────────────
 public class BarricadaFuego : MonoBehaviour
 {
-    float _vida = 200f;
+    [SerializeField] float _vida = 200f;
+    ParticleSystem _fuego;
+    bool _ardiendo;
+
+    public void PrenderFuego()
+    {
+        if (_ardiendo) return;
+        _ardiendo = true;
+        _fuego    = GetComponentInChildren<ParticleSystem>();
+        if (_fuego == null)
+        {
+            var go = new GameObject("Fuego");
+            go.transform.SetParent(transform);
+            go.transform.localPosition = Vector3.up * 0.5f;
+            _fuego = go.AddComponent<ParticleSystem>();
+            var main = _fuego.main;
+            main.startColor    = new ParticleSystem.MinMaxGradient(new Color(1f, 0.4f, 0f), Color.red);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 1.2f);
+            main.startSpeed    = new ParticleSystem.MinMaxCurve(1f, 3f);
+            main.startSize     = new ParticleSystem.MinMaxCurve(0.3f, 0.8f);
+            main.loop          = true;
+        }
+        _fuego.Play();
+        AlsasuaLogger.Info("Barricada", $"{name} prendida");
+    }
+
+    // Alias con y sin tilde para compatibilidad con código existente
     public void RecibirDano(float cantidad) => RecibirDaño(cantidad);
     public void RecibirDaño(float cantidad)
     {
         _vida -= cantidad;
-        if (_vida <= 0) Destroy(gameObject, 0.5f);
+        if (_vida <= 0)
+        {
+            if (_fuego != null) _fuego.Stop();
+            Destroy(gameObject, 0.5f);
+        }
     }
-    public void PrenderFuego() => AlsasuaLogger.Info("Barricada", "Fuego encendido");
 }
