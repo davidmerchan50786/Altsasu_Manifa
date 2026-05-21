@@ -15,6 +15,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 
 [DefaultExecutionOrder(-95)]
 public class SistemaOptimizacion : MonoBehaviour
@@ -133,23 +136,54 @@ public class SistemaOptimizacion : MonoBehaviour
 
     IEnumerator CullZonasLejanas(Vector3 posJugador)
     {
-        const float DIST_CULL = 600f;
+        const float DIST_LOD0 = 150f;  // full quality
+        const float DIST_LOD1 = 300f;  // medium
+        const float DIST_LOD2 = 600f;  // low / culled > 600m
 
-        // Edificios: desactivar a > 600m
         var edifParent = GameObject.Find("Edificios_OSM");
-        if (edifParent != null)
+        if (edifParent == null) yield break;
+
+        // Recoger posiciones en NativeArray para Burst
+        var children = new List<Transform>();
+        foreach (Transform t in edifParent.transform)
+            if (t != null) children.Add(t);
+
+        if (children.Count == 0) yield break;
+
+        var posArr    = new NativeArray<float3>(children.Count, Allocator.TempJob);
+        var niveles   = new NativeArray<byte>(children.Count,   Allocator.TempJob);
+        var pj        = new float3(posJugador.x, posJugador.y, posJugador.z);
+
+        for (int i = 0; i < children.Count; i++)
         {
-            int i = 0;
-            foreach (Transform edif in edifParent.transform)
-            {
-                if (edif == null) continue;
-                float dist = Vector3.Distance(edif.position, posJugador);
-                bool deberia = dist < DIST_CULL;
-                if (edif.gameObject.activeSelf != deberia)
-                    edif.gameObject.SetActive(deberia);
-                if (++i % 50 == 0) yield return null;
-            }
+            var p = children[i].position;
+            posArr[i] = new float3(p.x, p.y, p.z);
         }
+
+        // Burst calcula todos los niveles LOD en paralelo
+        var job = new JobCalcularNivelesLOD
+        {
+            posicionesObjetos = posArr,
+            posJugador        = pj,
+            dist0             = DIST_LOD0,
+            dist1             = DIST_LOD1,
+            dist2             = DIST_LOD2,
+            nivelLOD          = niveles,
+        };
+        job.Schedule(children.Count, 64).Complete();
+
+        // Aplicar resultados en el hilo principal por lotes
+        for (int i = 0; i < children.Count; i++)
+        {
+            if (children[i] == null) continue;
+            bool activo = niveles[i] < 3;
+            if (children[i].gameObject.activeSelf != activo)
+                children[i].gameObject.SetActive(activo);
+            if (i % 100 == 0) yield return null;
+        }
+
+        posArr.Dispose();
+        niveles.Dispose();
     }
 
     // ════════════════════════════════════════════════════════════════════════

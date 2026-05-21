@@ -12,6 +12,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 
 public class AlsasuaTreeStreamer : MonoBehaviour
 {
@@ -95,6 +98,25 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         }
     }
 
+    // ── Cache NativeArrays (reutilizados entre frames) ─────────────────────
+    NativeArray<float3> _posicionesNative;
+    bool                _nativeInit;
+
+    void OnDestroy()
+    {
+        if (_nativeInit && _posicionesNative.IsCreated)
+            _posicionesNative.Dispose();
+    }
+
+    void InicializarNative()
+    {
+        if (_nativeInit || _posiciones.Count == 0) return;
+        _posicionesNative = new NativeArray<float3>(_posiciones.Count, Allocator.Persistent);
+        for (int i = 0; i < _posiciones.Count; i++)
+            _posicionesNative[i] = new float3(_posiciones[i].x, 0f, _posiciones[i].z);
+        _nativeInit = true;
+    }
+
     IEnumerator BucleSteaming()
     {
         while (true)
@@ -103,7 +125,6 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
             if (!_cargado || treePrefabs == null || treePrefabs.Length == 0) continue;
 
-            // Buscar jugador si no se tiene
             if (_jugador == null)
             {
                 var jGO = GameObject.FindGameObjectWithTag("Player");
@@ -111,52 +132,117 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                 else continue;
             }
 
-            Vector3 posJ = _jugador.position;
+            // Inicializar NativeArray la primera vez
+            if (!_nativeInit) InicializarNative();
 
-            // Destruir instancias fuera del radio
-            for (int i = _instancias.Count - 1; i >= 0; i--)
+            Vector3 posJ3 = _jugador.position;
+            float3  posJ  = new float3(posJ3.x, 0f, posJ3.z);
+
+            // ── FASE 1: Burst — marcar instancias a destruir ──────────────
+            var instanciasValidas = new List<GameObject>();
+            foreach (var inst in _instancias)
+                if (inst != null) instanciasValidas.Add(inst);
+            _instancias = instanciasValidas;
+
+            if (_instancias.Count > 0)
             {
-                if (_instancias[i] == null) { _instancias.RemoveAt(i); continue; }
-                float d = Vector3.Distance(_instancias[i].transform.position, posJ);
-                if (d > radioDestroir)
+                var posInst = new NativeArray<float3>(_instancias.Count, Allocator.TempJob);
+                for (int i = 0; i < _instancias.Count; i++)
                 {
-                    Destroy(_instancias[i]);
-                    _instancias.RemoveAt(i);
+                    var p = _instancias[i].transform.position;
+                    posInst[i] = new float3(p.x, 0f, p.z);
                 }
+                var aDestruir = new NativeArray<byte>(_instancias.Count, Allocator.TempJob);
+
+                var jobDestruir = new JobMarcarArbolesADestruir
+                {
+                    posicionesInstancias = posInst,
+                    posJugador           = posJ,
+                    radioDestruirSq      = radioDestroir * radioDestroir,
+                    aDestruir            = aDestruir,
+                };
+                jobDestruir.Schedule(_instancias.Count, 64).Complete();
+
+                for (int i = _instancias.Count - 1; i >= 0; i--)
+                    if (aDestruir[i] == 1) { Destroy(_instancias[i]); _instancias.RemoveAt(i); }
+
+                posInst.Dispose();
+                aDestruir.Dispose();
             }
 
-            // Instanciar árboles cercanos que falten
             if (_instancias.Count >= maxArboles) continue;
 
-            foreach (var pos in _posiciones)
+            // ── FASE 2: Burst — filtrar posiciones en rango ───────────────
+            var resultadoRango = new NativeArray<int>(_posicionesNative.Length, Allocator.TempJob);
+            var jobRango = new JobFiltrarArbolesEnRango
+            {
+                posiciones  = _posicionesNative,
+                posJugador  = posJ,
+                radioMin    = radioMinimo,
+                radioMax    = radioVisible,
+                radioMaxSq  = radioVisible * radioVisible,
+                radioMinSq  = radioMinimo  * radioMinimo,
+                resultado   = resultadoRango,
+            };
+            jobRango.Schedule(_posicionesNative.Length, 128).Complete();
+
+            // ── FASE 3: Burst — comprobar ocupación (anti-duplicado) ──────
+            var candidatos = new List<int>();
+            for (int i = 0; i < resultadoRango.Length && candidatos.Count < 200; i++)
+                if (resultadoRango[i] >= 0) candidatos.Add(resultadoRango[i]);
+            resultadoRango.Dispose();
+
+            if (candidatos.Count == 0) continue;
+
+            // Posiciones de instancias existentes para ocupación
+            var posExist = new NativeArray<float3>(_instancias.Count + 1, Allocator.TempJob);
+            for (int i = 0; i < _instancias.Count; i++)
+            {
+                var p = _instancias[i].transform.position;
+                posExist[i] = new float3(p.x, 0f, p.z);
+            }
+            var posCand = new NativeArray<float3>(candidatos.Count, Allocator.TempJob);
+            for (int i = 0; i < candidatos.Count; i++)
+                posCand[i] = _posicionesNative[candidatos[i]];
+
+            var ocupado = new NativeArray<byte>(candidatos.Count, Allocator.TempJob);
+            var jobOcup = new JobComprobarOcupacion
+            {
+                candidatos           = posCand,
+                posicionesExistentes = posExist,
+                radioOcupacionSq     = 9f, // 3m²
+                ocupado              = ocupado,
+            };
+            jobOcup.Schedule(candidatos.Count, 32).Complete();
+
+            // ── FASE 4: Instanciar en hilo principal (required by Unity) ──
+            var terrain = Terrain.activeTerrain;
+            for (int i = 0; i < candidatos.Count; i++)
             {
                 if (_instancias.Count >= maxArboles) break;
-                float d = Vector3.Distance(pos, posJ);
-                if (d < radioMinimo || d > radioVisible) continue;
+                if (ocupado[i] == 1) continue;
 
-                // Comprobar si ya hay un árbol cerca
-                bool yaExiste = false;
-                foreach (var inst in _instancias)
-                    if (inst != null && Vector3.Distance(inst.transform.position, pos) < 3f)
-                    { yaExiste = true; break; }
-                if (yaExiste) continue;
-
-                // Snap al terreno
-                float y = Terrain.activeTerrain != null
-                    ? Terrain.activeTerrain.SampleHeight(pos) + pos.y
-                    : pos.y;
+                var pos = _posicionesNative[candidatos[i]];
+                float y = terrain != null
+                    ? terrain.SampleHeight(new Vector3(pos.x, 0, pos.z))
+                    : 240f;
 
                 var prefab = treePrefabs[Random.Range(0, treePrefabs.Length)];
                 if (prefab == null) continue;
+
                 var go = Instantiate(prefab,
                     new Vector3(pos.x, y, pos.z),
                     Quaternion.Euler(0, Random.Range(0f, 360f), 0),
                     transform);
-                go.isStatic = false; // no estático — se destruye al salir del radio
+                go.isStatic = false;
                 _instancias.Add(go);
 
-                yield return null; // distribuir instantiate en frames
+                yield return null; // distribuir en frames
             }
+
+            posExist.Dispose();
+            posCand.Dispose();
+            ocupado.Dispose();
         }
     }
 
