@@ -86,7 +86,7 @@ public static class ConfiguradorCesiumAlsasua
         if (tilesetType != null)
         {
             var googleGO = FindOrCreateChildGO("Google_Photorealistic_3DTiles", georefGO);
-            googleGO.GetComponent(tilesetType) ?? googleGO.AddComponent(tilesetType);
+            if (googleGO.GetComponent(tilesetType) == null) googleGO.AddComponent(tilesetType);
             var tileset = googleGO.GetComponent(tilesetType);
             // Ion Asset ID 2275207 = Google Photorealistic 3D Tiles
             SetProp(tileset, "ionAssetID",  2275207L);
