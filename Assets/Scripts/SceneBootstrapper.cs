@@ -265,7 +265,14 @@ public class SceneBootstrapper : MonoBehaviour
         RenderSettings.ambientGroundColor = new Color(0.25f, 0.32f, 0.18f); // suelo oscuro
         RenderSettings.ambientIntensity   = 1.5f;
 
-        Debug.Log("[Bootstrap] ✓ Sol creado.");
+        // HDRP requiere HDAdditionalLightData en luces direccionales
+        var hdLightType = System.Type.GetType(
+            "UnityEngine.Rendering.HighDefinition.HDAdditionalLightData, " +
+            "Unity.RenderPipelines.HighDefinition.Runtime");
+        if (hdLightType != null && go.GetComponent(hdLightType) == null)
+            go.AddComponent(hdLightType);
+
+        Debug.Log("[Bootstrap] ✓ Sol creado (HDRP).");
     }
 
     // =========================================================================
@@ -432,10 +439,6 @@ public class SceneBootstrapper : MonoBehaviour
 
     void EnsureCamera()
     {
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null) return;
-
-        // Eliminar cámaras duplicadas/huérfanas
         Camera camExistente = Camera.main;
 
         if (camExistente == null)
@@ -444,20 +447,47 @@ public class SceneBootstrapper : MonoBehaviour
             camGO.tag = "MainCamera";
             var cam = camGO.AddComponent<Camera>();
             camGO.AddComponent<AudioListener>();
-            cam.fieldOfView    = 65f;
-            cam.nearClipPlane  = 0.15f;
-            cam.farClipPlane   = 2000f;
+            cam.fieldOfView   = 65f;
+            cam.nearClipPlane = 0.15f;
+            cam.farClipPlane  = 2000f;
             camExistente = cam;
         }
 
-        // Si la cámara no tiene seguidor, añadir CameraFollow
+        // HDRP requiere HDAdditionalCameraData para renderizar
+        AnadirHDRPCameraData(camExistente.gameObject);
+
+        // CameraFollow — si no hay jugador aún, se conectará cuando llegue
         if (camExistente.GetComponent<CameraFollowGTA>() == null)
             camExistente.gameObject.AddComponent<CameraFollowGTA>();
 
         var follow = camExistente.GetComponent<CameraFollowGTA>();
-        follow.objetivo = player.transform;
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            follow.objetivo = player.transform;
+        }
+        else
+        {
+            // Esperar a que AltsasuCore emita el jugador
+            AltsasuCore.OnJugadorSpawned += t =>
+            {
+                if (follow != null) follow.objetivo = t;
+            };
+        }
 
-        Debug.Log("[Bootstrap] ✓ Cámara configurada.");
+        Debug.Log("[Bootstrap] ✓ Cámara configurada (HDRP).");
+    }
+
+    static void AnadirHDRPCameraData(GameObject camGO)
+    {
+        // HDAdditionalCameraData es el componente que HDRP necesita para renderizar.
+        // Lo añadimos via reflexión para no romper si HDRP no está instalado.
+        var hdType = System.Type.GetType(
+            "UnityEngine.Rendering.HighDefinition.HDAdditionalCameraData, " +
+            "Unity.RenderPipelines.HighDefinition.Runtime");
+        if (hdType == null) return;
+        if (camGO.GetComponent(hdType) == null)
+            camGO.AddComponent(hdType);
     }
 
     // =========================================================================
