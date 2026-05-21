@@ -64,6 +64,7 @@ public static class CreadorEscenaPrincipal
 
         var edificGO   = HijoNuevo("Edificios",     mundoGO);
         var edificios  = edificGO.AddComponent<SistemaEdificiosAAA>();
+        edificGO.AddComponent<GeneradorGeometriaPrecisa>(); // geometría exacta OSM
 
         var terrenoGO  = HijoNuevo("Terreno",       mundoGO);
         var terreno    = terrenoGO.AddComponent<SistemaTerreno>();
