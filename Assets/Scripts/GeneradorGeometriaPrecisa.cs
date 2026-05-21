@@ -114,9 +114,52 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     //  1. EDIFICIOS
     // ══════════════════════════════════════════════════════════════════════
 
+    // Cache de datos enriquecidos con colores reales de tejado
+    readonly Dictionary<long, EdificioRicoData> _coloresReales = new();
+
+    [System.Serializable] class EdificioRicoData
+    {
+        public int    roof_r_real, roof_g_real, roof_b_real;
+        public string roof_tipo_real;
+        public float  mat_r, mat_g, mat_b;
+    }
+    [System.Serializable] class BuildingsRicoWrapper { public EdificioRicoWrapper[] items; }
+    [System.Serializable] class EdificioRicoWrapper
+    {
+        public long   id;
+        public int    roof_r_real, roof_g_real, roof_b_real;
+        public string roof_tipo_real;
+        public float  mat_r, mat_g, mat_b;
+    }
+
+    void CargarColoresReales()
+    {
+        var json = CargarJSON("Assets/AlsasuaData/buildings_rico.json");
+        if (json == null) return;
+        try
+        {
+            var wrapped = JsonUtility.FromJson<BuildingsRicoWrapper>("{\"items\":" + json + "}");
+            if (wrapped?.items == null) return;
+            foreach (var w in wrapped.items)
+                if (w.roof_r_real > 0 || w.mat_r > 0)
+                    _coloresReales[w.id] = new EdificioRicoData
+                    {
+                        roof_r_real=w.roof_r_real, roof_g_real=w.roof_g_real,
+                        roof_b_real=w.roof_b_real, roof_tipo_real=w.roof_tipo_real,
+                        mat_r=w.mat_r, mat_g=w.mat_g, mat_b=w.mat_b
+                    };
+            AlsasuaLogger.Info("GeomPrecisa",
+                $"Colores reales: {_coloresReales.Count} edificios cargados");
+        }
+        catch (System.Exception e)
+        { AlsasuaLogger.Warn("GeomPrecisa", $"buildings_rico.json parse error: {e.Message}"); }
+    }
+
     IEnumerator GenerarEdificios()
     {
-        var json = CargarJSON("Assets/AlsasuaData/buildings_unity.json");
+        CargarColoresReales();
+        var json = CargarJSON("Assets/AlsasuaData/buildings_rico.json")
+                ?? CargarJSON("Assets/AlsasuaData/buildings_unity.json");
         if (json == null) yield break;
 
         var edificios = JsonHelper.ParseArray<EdificioData>(json);
@@ -155,22 +198,22 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         go.isStatic = true;
 
         // ── a) PAREDES con ventanas y puerta ─────────────────────────────
-        GenerarParedes(go, verts2D, yBase, altura, niveles, ed.type);
+        GenerarParedes(go, verts2D, yBase, altura, niveles, ed.type, ed.id);
 
         // ── b) SUELO del edificio ─────────────────────────────────────────
         GenerarSuelo(go, verts2D, yBase);
 
         // ── c) TEJADO según tipo ──────────────────────────────────────────
         if (generarTejados)
-            GenerarTejado(go, verts2D, yBase + altura, ed.type, altura);
+            GenerarTejado(go, verts2D, yBase + altura, ed.type, altura, ed.id);
     }
 
     // ── Paredes con ventanas y puerta ─────────────────────────────────────
 
     void GenerarParedes(GameObject parent, Vector2[] verts, float yBase,
-                         float altura, int niveles, string tipo)
+                         float altura, int niveles, string tipo, long id = 0)
     {
-        var mat = MatParedes(tipo);
+        var mat = MatParedes(tipo, id);
         int n   = verts.Length;
 
         // Identificar pared más larga (candidata a puerta)
@@ -320,27 +363,55 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
 
     // ── Tejados ───────────────────────────────────────────────────────────
 
-    void GenerarTejado(GameObject parent, Vector2[] footprint, float y, string tipo, float altEdif)
+    void GenerarTejado(GameObject parent, Vector2[] footprint, float y,
+                        string tipo, float altEdif, long id = 0)
     {
+        // Material con color real del tejado (desde ortofoto IGN)
+        Material matReal = null;
+        string tipoReal  = null;
+
+        if (id != 0 && _coloresReales.TryGetValue(id, out var d))
+        {
+            if (d.roof_r_real > 0 || d.roof_g_real > 0 || d.roof_b_real > 0)
+                matReal = MatHDRP(new Color(d.roof_r_real / 255f,
+                                            d.roof_g_real / 255f,
+                                            d.roof_b_real / 255f));
+            tipoReal = d.roof_tipo_real;
+        }
+
+        // Decidir forma del tejado: prioridad → tipo real fotogramétrico → tipo OSM
+        switch (tipoReal)
+        {
+            case "cemento_gris_claro":
+                GenerarTejadoPlano(parent, footprint, y, matReal);
+                return;
+            case "pizarra_gris": case "pizarra_negra": case "teja_marron":
+                GenerarTejadoDosAguas(parent, footprint, y, 28f, matReal);
+                return;
+            case "cubierta_vegetal":
+                GenerarTejadoHip(parent, footprint, y, 15f, matReal);
+                return;
+        }
+
+        // Fallback: forma por tipo OSM
         switch (tipo)
         {
             case "apartments": case "school": case "industrial":
-                GenerarTejadoPlano(parent, footprint, y);
+                GenerarTejadoPlano(parent, footprint, y, matReal);
                 break;
             case "house": case "detached":
-                GenerarTejadoDosAguas(parent, footprint, y, 28f);
+                GenerarTejadoDosAguas(parent, footprint, y, 28f, matReal);
                 break;
             case "chapel": case "church":
-                GenerarTejadoDosAguas(parent, footprint, y, 55f);
+                GenerarTejadoDosAguas(parent, footprint, y, 55f, matReal);
                 break;
             default: // yes, terrace, public, etc.
-                // Hip roof (cuatro aguas) simplificado
-                GenerarTejadoHip(parent, footprint, y, 25f);
+                GenerarTejadoHip(parent, footprint, y, 25f, matReal);
                 break;
         }
     }
 
-    void GenerarTejadoPlano(GameObject parent, Vector2[] verts, float y)
+    void GenerarTejadoPlano(GameObject parent, Vector2[] verts, float y, Material matReal = null)
     {
         const float PRETIL = 0.3f;
         var vm = new List<Vector3>();
@@ -373,10 +444,10 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
             AnadirQuad(tm, base_);
         }
 
-        ConstruirMesh(parent, "Tejado", vm, tm, um, matTejado);
+        ConstruirMesh(parent, "Tejado", vm, tm, um, matReal ?? matTejado);
     }
 
-    void GenerarTejadoDosAguas(GameObject parent, Vector2[] verts, float y, float angulo)
+    void GenerarTejadoDosAguas(GameObject parent, Vector2[] verts, float y, float angulo, Material matReal = null)
     {
         if (verts.Length < 3) return;
 
@@ -457,10 +528,10 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
             um.Add(new Vector2(0,0)); um.Add(new Vector2(1,0)); um.Add(new Vector2(0.5f,1));
         }
 
-        ConstruirMesh(parent, "Tejado", vm, tm, um, matTejado);
+        ConstruirMesh(parent, "Tejado", vm, tm, um, matReal ?? matTejado);
     }
 
-    void GenerarTejadoHip(GameObject parent, Vector2[] verts, float y, float angulo)
+    void GenerarTejadoHip(GameObject parent, Vector2[] verts, float y, float angulo, Material matReal = null)
     {
         // Simplified hip roof via uniform inward offset (straight skeleton approx)
         float offset = 0f;
@@ -496,7 +567,7 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
             um.Add(new Vector2(0,0)); um.Add(new Vector2(1,0)); um.Add(new Vector2(0.5f,1));
         }
 
-        ConstruirMesh(parent, "Tejado", vm, tm, um, matTejado);
+        ConstruirMesh(parent, "Tejado", vm, tm, um, matReal ?? matTejado);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -702,19 +773,28 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     static bool EsCalleUrbanaPeatonal(string tipo)
         => tipo == "pedestrian" || tipo == "footway" || tipo == "living_street";
 
-    Material MatParedes(string tipo) => tipo switch
+    Material MatParedes(string tipo, long id = 0)
     {
-        "apartments" or "yes" or "terrace" => matLadrillo  ?? matParedes_Default(),
-        "house" or "detached"              => matCasa      ?? matParedes_Default(),
-        "industrial" or "farm_auxiliary"   => matIndustrial?? matParedes_Default(),
-        "chapel" or "church" or "public"   => matPiedra    ?? matParedes_Default(),
-        _ => matLadrillo ?? matParedes_Default()
-    };
+        // Prioridad: color real de ortofoto IGN → tipo genérico por clase OSM
+        if (id != 0 && _coloresReales.TryGetValue(id, out var d)
+            && (d.mat_r > 0f || d.mat_g > 0f || d.mat_b > 0f))
+            return MatHDRP(new Color(d.mat_r, d.mat_g, d.mat_b));
 
-    Material matParedes_Default()
+        return tipo switch
+        {
+            "apartments" or "yes" or "terrace" => matLadrillo   ?? MatHDRP(new Color(0.72f, 0.45f, 0.35f)),
+            "house" or "detached"              => matCasa       ?? MatHDRP(new Color(0.85f, 0.80f, 0.70f)),
+            "industrial" or "farm_auxiliary"   => matIndustrial ?? MatHDRP(new Color(0.60f, 0.60f, 0.62f)),
+            "chapel" or "church" or "public"   => matPiedra     ?? MatHDRP(new Color(0.65f, 0.63f, 0.58f)),
+            _                                  => matLadrillo   ?? MatHDRP(new Color(0.82f, 0.72f, 0.62f))
+        };
+    }
+
+    // Crea un material HDRP/Lit instanciado con el color dado
+    static Material MatHDRP(Color c)
     {
         var m = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"));
-        m.color = new Color(0.82f, 0.72f, 0.62f); // crema vasco
+        m.color = c;
         return m;
     }
 
@@ -735,14 +815,13 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
 
     void AsignarMaterialesFallback()
     {
-        Material HDRPLit() => new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"));
-        if (matLadrillo  == null) { matLadrillo   = HDRPLit(); matLadrillo.color   = new Color(0.72f,0.45f,0.35f); }
-        if (matCasa      == null) { matCasa       = HDRPLit(); matCasa.color       = new Color(0.85f,0.80f,0.70f); }
-        if (matIndustrial== null) { matIndustrial = HDRPLit(); matIndustrial.color = new Color(0.60f,0.60f,0.62f); }
-        if (matPiedra    == null) { matPiedra     = HDRPLit(); matPiedra.color     = new Color(0.65f,0.63f,0.58f); }
-        if (matAsfalto   == null) { matAsfalto    = HDRPLit(); matAsfalto.color    = new Color(0.25f,0.25f,0.26f); }
-        if (matAcera     == null) { matAcera      = HDRPLit(); matAcera.color      = new Color(0.75f,0.74f,0.70f); }
-        if (matBordillo  == null) { matBordillo   = HDRPLit(); matBordillo.color   = new Color(0.55f,0.55f,0.55f); }
-        if (matTejado    == null) { matTejado     = HDRPLit(); matTejado.color     = new Color(0.40f,0.25f,0.18f); }
+        if (matLadrillo  == null) matLadrillo   = MatHDRP(new Color(0.72f,0.45f,0.35f));
+        if (matCasa      == null) matCasa       = MatHDRP(new Color(0.85f,0.80f,0.70f));
+        if (matIndustrial== null) matIndustrial = MatHDRP(new Color(0.60f,0.60f,0.62f));
+        if (matPiedra    == null) matPiedra     = MatHDRP(new Color(0.65f,0.63f,0.58f));
+        if (matAsfalto   == null) matAsfalto    = MatHDRP(new Color(0.25f,0.25f,0.26f));
+        if (matAcera     == null) matAcera      = MatHDRP(new Color(0.75f,0.74f,0.70f));
+        if (matBordillo  == null) matBordillo   = MatHDRP(new Color(0.55f,0.55f,0.55f));
+        if (matTejado    == null) matTejado     = MatHDRP(new Color(0.40f,0.40f,0.42f)); // gris pizarra (color real predominante)
     }
 }
