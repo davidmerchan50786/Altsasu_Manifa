@@ -261,17 +261,19 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             float ux = terrPos.x + (float)hx / (hRes - 1) * terrW;
             float uz = terrPos.z + (float)hy / (hRes - 1) * terrH;
 
-            // Unity XZ → lat/lon
-            float lon_ = (ux - 1918f) / M_LON + LON0;
-            float lat_ = (uz - 8570f) / M_LAT + LAT0;
+            // Unity XZ → lat/lon  (LON0=-2.1677, LAT0=42.8987, M_LON_PROJ=76400, M_LAT=111320)
+            const float LON0_ = -2.1677f, LAT0_ = 42.8987f;
+            const float M_LON_ = 76400f;
+            float lon_ = (ux - 1918f) / M_LON_ + LON0_;
+            float lat_ = (uz - 8570f) / M_LAT  + LAT0_;
 
             // lat/lon → índice en el grid
             int col, row;
             if (coordsUTM)
             {
-                // Conversión aproximada lat/lon → UTM 30N
-                float utm_e = (lon_ - LON0) * M_LON + 574900f;
-                float utm_n = (lat_ - LAT0) * M_LAT + 4751600f;
+                // Conversión aproximada lat/lon → UTM 30N (E_ORIG=567951, N_ORIG=4749902)
+                float utm_e = (lon_ - LON0_) * M_LON_REAL + E_ORIG;
+                float utm_n = (lat_ - LAT0_) * M_LAT      + N_ORIG;
                 col = Mathf.FloorToInt((utm_e - xll) / cell);
                 row = nrows - 1 - Mathf.FloorToInt((utm_n - yll) / cell);
             }
