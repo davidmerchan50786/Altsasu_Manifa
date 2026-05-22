@@ -251,9 +251,6 @@ public static class ConectorSistemas
     static int ConectarFauna(AssetCache c)
     {
         var sf = Object.FindFirstObjectByType<SistemaFauna>();
-
-        // También buscar en SistemasSimulacion
-        var sim = Object.FindFirstObjectByType<SistemasSimulacion>();
         int n = 0;
 
         var animalMap = new (string campo, string[] keys)[]
@@ -284,19 +281,6 @@ public static class ConectorSistemas
             if (n > 0) EditorUtility.SetDirty(sf);
         }
 
-        // SistemasSimulacion tiene prefabsAnimales[]
-        if (sim != null)
-        {
-            var f = typeof(SistemasSimulacion).GetField("prefabsAnimales",
-                BindingFlags.Public | BindingFlags.Instance);
-            if (f != null && (f.GetValue(sim) as GameObject[])?.Length == 0)
-            {
-                var lista = animalMap.Select(x => c.FindPrefab(x.keys))
-                                     .Where(p => p != null).ToArray();
-                if (lista.Length > 0) { f.SetValue(sim, lista); n += lista.Length; EditorUtility.SetDirty(sim); }
-            }
-        }
-
         Debug.Log($"[Conector] Fauna: {n} animales");
         return n;
     }
@@ -325,19 +309,8 @@ public static class ConectorSistemas
             }
         }
 
-        // SistemasSimulacion.materialesArbol
-        var sim = Object.FindFirstObjectByType<SistemasSimulacion>();
-        if (sim != null)
-        {
-            var f = typeof(SistemasSimulacion).GetField("materialesArbol",
-                BindingFlags.Public | BindingFlags.Instance);
-            if (f != null && (f.GetValue(sim) as Material[])?.Length == 0)
-            {
-                var mats = c.FindAllMaterials("bark","leaf","tree","wood","pine_mat","oak_mat")
-                            .Take(4).ToArray();
-                if (mats.Length > 0) { f.SetValue(sim, mats); n += mats.Length; EditorUtility.SetDirty(sim); }
-            }
-        }
+        // La vegetación la gestiona PosicionadorPrecisionUrbana (LIDAR + GreenForest)
+        // SistemaVegetacion ya no tiene meshesArbol ni materialesArbol
 
         return n;
     }

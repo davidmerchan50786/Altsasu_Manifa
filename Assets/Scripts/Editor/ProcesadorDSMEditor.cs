@@ -283,12 +283,7 @@ public static class ProcesadorDSMEditor
 
     static Mesh GenerarMeshDelaunay(List<Vector3> pts, float yBase)
     {
-        var pts2D = pts.Select(p => new Vector2(p.x, p.z)).ToList();
-        var tris  = ProcesadorNubePuntos.DelaunayBowyerWatson != null
-            ? null // en editor usar método directo
-            : null;
-
-        // Triangulación fan simple como fallback
+        // Triangulación fan simple (Delaunay completo requiere runtime ProcesadorNubePuntos)
         if (pts.Count < 3) return null;
         Vector2 c = new Vector2(pts.Average(p=>p.x), pts.Average(p=>p.z));
         var ordered = pts.OrderBy(p => Mathf.Atan2(p.z - c.y, p.x - c.x)).ToList();

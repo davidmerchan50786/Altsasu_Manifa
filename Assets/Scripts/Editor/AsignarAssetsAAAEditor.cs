@@ -246,16 +246,8 @@ public static class AsignarAssetsAAAEditor
             EditorUtility.SetDirty(fauna);
         }
 
-        // SistemaExplosion ← prefabs explosión
-        var explo = FindComponent<SistemaExplosion>();
-        if (explo != null && cfg.prefabsExplosion?.Length > 0)
-        {
-            SetField(explo, "prefabExplosionPequena",  cfg.prefabsExplosion[0]);
-            SetField(explo, "prefabExplosionMediana",  cfg.prefabsExplosion[2]);
-            SetField(explo, "prefabExplosionGrande",   cfg.prefabsExplosion[4]);
-            SetField(explo, "prefabFuego",             cfg.prefabFuego);
-            EditorUtility.SetDirty(explo);
-        }
+        // SistemaExplosion es static class — accede a ConfiguradorAssetsAAA.Instance
+        // en runtime directamente, no necesita campos serializados en Inspector
 
         // SistemaImpactos ← bullet holes
         var impactos = FindComponent<SistemaImpactos>();
