@@ -12,6 +12,7 @@
 //  También genera un MeshCollider de alta resolución en zonas urbanas.
 // ═══════════════════════════════════════════════════════════════════════════
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -148,10 +149,11 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         var td = terrain.terrainData;
         td.heightmapResolution = hRes;
         td.size = new Vector3(terrainW, zRange, terrainW);
+        // Centrar el terreno en Herriko Plaza (OX=1918, OZ=8570)
         terrain.transform.position = new Vector3(
-            OX - terrainW * 0.5f,
+            1918f - terrainW * 0.5f,
             zMin,
-            OZ - terrainW * 0.5f);
+            8570f - terrainW * 0.5f);
 
         float[,] heights = new float[hRes, hRes];
         for (int i = 0; i < hRes * hRes && i < rawData.Length; i++)

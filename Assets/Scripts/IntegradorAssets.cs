@@ -230,14 +230,9 @@ public class IntegradorAssets : MonoBehaviour
         var trafico = AltsasuCore.I?.traficoSystem;
         // trafico gestiona sus propios VehiculoNPC internamente
 
-        // SistemaVegetacion — usar meshes de árboles importados
-        var veg = AltsasuCore.I?.vegetacionSystem;
-        if (veg != null && (veg.meshesArbol == null || veg.meshesArbol.Length == 0))
-        {
-            // Buscar meshes de árboles en la escena
-            // Los modelos de Vegetation están en _ExtractedAssets
-            AlsasuaLogger.Info("Integrador", "Vegetacion: usando GPU instancing con meshes procedurales");
-        }
+        // SistemaVegetacion — la vegetación la gestiona PosicionadorPrecisionUrbana
+        // (LIDAR trees + GreenForest prefabs). No hay meshesArbol aquí.
+        AlsasuaLogger.Info("Integrador", "Vegetacion: gestionada por PosicionadorPrecisionUrbana (LIDAR+GreenForest)");
 
         AlsasuaLogger.Info("Integrador", "FBX integrados en sistemas de gameplay");
     }

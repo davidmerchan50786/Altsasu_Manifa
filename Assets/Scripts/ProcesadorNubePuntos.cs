@@ -355,13 +355,13 @@ public class ProcesadorNubePuntos : MonoBehaviour
 
     int UnityXToCol(float x)
     {
-        float lon = (x - OX) / M_PER_DEG_LON + LON0;
+        float lon = (x - OX) / M_PER_DEG_LON + (float)LON0;
         return Mathf.RoundToInt((lon - _dsmXllCorner) / _dsmCellSize);
     }
 
     int UnityZToRow(float z)
     {
-        float lat = (z - OZ) / M_PER_DEG_LAT + LAT0;
+        float lat = (z - OZ) / M_PER_DEG_LAT + (float)LAT0;
         return _dsmNrows - 1 - Mathf.RoundToInt((lat - _dsmYllCorner) / _dsmCellSize);
     }
 

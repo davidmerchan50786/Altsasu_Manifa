@@ -123,7 +123,7 @@ public class SistemaSueloAAA : MonoBehaviour
 
         // fBm: 6 octavas, variación a múltiples escalas (mejor que Perlin 1 octava)
         var alphaFBM = IntegradorMatematicas.GenerarAlphamapFBM(
-            _terrain, layers.Count,
+            terrain, layers.Count,
             frecuenciaBase: 0.0018f, octavas: 6, persistencia: 0.45f, lacunaridad: 2.1f);
 
         var alpha = alphaFBM ?? new float[res, res, layers.Count];

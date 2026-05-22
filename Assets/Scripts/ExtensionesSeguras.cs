@@ -35,7 +35,7 @@ public static class ExtensionesSeguras
     {
         if (go == null) throw new System.NullReferenceException($"Require<{typeof(T).Name}>: GameObject es null");
         var c = go.GetComponent<T>();
-        if (c == null) throw new System.MissingComponentException($"{go.name} requiere componente {typeof(T).Name}");
+        if (c == null) throw new UnityEngine.MissingComponentException($"{go.name} requiere componente {typeof(T).Name}");
         return c;
     }
 

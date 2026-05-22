@@ -405,12 +405,12 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
             float cx = footprint.Aggregate(Vector2.zero, (a,v)=>a+v).x / footprint.Length;
             float cz = footprint.Aggregate(Vector2.zero, (a,v)=>a+v).y / footprint.Length;
 
-            var matReal = GestorMaterialesAlsasua.Instance != null
+            var matLIDAR = GestorMaterialesAlsasua.Instance != null
                 ? GestorMaterialesAlsasua.Instance.GetTejado(
                     ed.roof_tipo_real ?? "", ed.roof_material ?? "", default)
                 : matTejado;
 
-            GenerarTejadoDesdeNubeLIDAR(parent, roofPts, cx, y, cz, matReal);
+            GenerarTejadoDesdeNubeLIDAR(parent, roofPts, cx, y, cz, matLIDAR);
             return;
         }
 

@@ -192,10 +192,8 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             float3  posJ  = new float3(posJ3.x, 0f, posJ3.z);
 
             // ── FASE 1: Burst — marcar instancias a destruir ──────────────
-            var instanciasValidas = new List<GameObject>();
-            foreach (var inst in _instancias)
-                if (inst != null) instanciasValidas.Add(inst);
-            _instancias = instanciasValidas;
+            // Limpiar referencias nulas sin reasignar el readonly (usar RemoveAll)
+            _instancias.RemoveAll(inst => inst == null);
 
             if (_instancias.Count > 0)
             {
@@ -280,12 +278,12 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                     ? terrain.SampleHeight(new Vector3(pos.x, 0, pos.z))
                     : 240f;
 
-                var prefab = treePrefabs[Random.Range(0, treePrefabs.Length)];
+                var prefab = treePrefabs[UnityEngine.Random.Range(0, treePrefabs.Length)];
                 if (prefab == null) continue;
 
                 var go = Instantiate(prefab,
                     new Vector3(pos.x, y, pos.z),
-                    Quaternion.Euler(0, Random.Range(0f, 360f), 0),
+                    Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0),
                     transform);
                 go.isStatic = false;
                 _instancias.Add(go);

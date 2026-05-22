@@ -169,7 +169,7 @@ public class SistemaManifestacion : MonoBehaviour
             GameObject barricada;
             if (prefabBarricada != null)
             {
-                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, Random.Range(-20f, 20f), 0));
+                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, UnityEngine.Random.Range(-20f, 20f), 0));
             }
             else
             {
@@ -180,7 +180,7 @@ public class SistemaManifestacion : MonoBehaviour
                 {
                     var cubo = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cubo.transform.SetParent(barricada.transform);
-                    cubo.transform.localPosition = new Vector3(Random.Range(-1.5f, 1.5f), b * 0.55f, Random.Range(-0.3f, 0.3f));
+                    cubo.transform.localPosition = new Vector3(UnityEngine.Random.Range(-1.5f, 1.5f), b * 0.55f, UnityEngine.Random.Range(-0.3f, 0.3f));
                     cubo.transform.localScale = new Vector3(1.2f, 0.5f, 0.6f);
                     cubo.GetComponent<MeshRenderer>().material.color = new Color(0.15f, 0.15f, 0.15f); // neumático
                 }
@@ -198,14 +198,14 @@ public class SistemaManifestacion : MonoBehaviour
         {
             // Formar en bloque detrás de las barricadas
             float angle = (i / (float)numManifestantes) * 360f * Mathf.Deg2Rad;
-            float radio = Random.Range(8f, 40f);
+            float radio = UnityEngine.Random.Range(8f, 40f);
             var pos = centroManifestacion + new Vector3(Mathf.Cos(angle) * radio, 0, Mathf.Sin(angle) * radio + 30f);
             float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
             pos.y = py;
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, Random.Range(0f, 360f), 0));
+            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
             go.name = $"Manifestante_{i}";
-            go.transform.localScale = Vector3.one * Random.Range(0.85f, 1.05f);
+            go.transform.localScale = Vector3.one * UnityEngine.Random.Range(0.85f, 1.05f);
 
             var ia = go.AddComponent<ManifestanteIA>();
             ia.tipo = TipoManifestante.Pacifico;
@@ -223,11 +223,11 @@ public class SistemaManifestacion : MonoBehaviour
         for (int i = 0; i < numDisturbios; i++)
         {
             // Grupo de disturbios en la zona de barricadas
-            var pos = centroManifestacion + new Vector3(Random.Range(-15f, 15f), 0, Random.Range(-20f, 20f));
+            var pos = centroManifestacion + new Vector3(UnityEngine.Random.Range(-15f, 15f), 0, UnityEngine.Random.Range(-20f, 20f));
             float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
             pos.y = py;
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, Random.Range(0f, 360f), 0));
+            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
             go.name = $"Encapuchado_{i}";
 
             var ia = go.AddComponent<ManifestanteIA>();
@@ -398,11 +398,11 @@ public class ManifestanteIA : MonoBehaviour
 
     void ElegirObjetivo()
     {
-        _timer = Random.Range(3f, 10f);
+        _timer = UnityEngine.Random.Range(3f, 10f);
         if (tipo == TipoManifestante.Pacifico)
-            _objetivo = centro + new Vector3(Random.Range(-30f, 30f), 0, Random.Range(-15f, 50f));
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-30f, 30f), 0, UnityEngine.Random.Range(-15f, 50f));
         else
-            _objetivo = centro + new Vector3(Random.Range(-20f, 20f), 0, Random.Range(-25f, 15f));
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-20f, 20f), 0, UnityEngine.Random.Range(-25f, 15f));
         float y = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(_objetivo) : 240f;
         _objetivo.y = y;
     }
