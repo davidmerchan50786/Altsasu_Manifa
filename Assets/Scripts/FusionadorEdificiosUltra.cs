@@ -67,12 +67,6 @@ public class FusionadorEdificiosUltra : MonoBehaviour
     bool _cargado;
     public bool Cargado => _cargado;
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
-
     // Carga síncrona en Awake: los datos están listos antes de que Start() de
     // GeneradorGeometriaPrecisa (-60) los necesite, incluso si ambos están en
     // el mismo frame. Start() sólo reporta el resultado.

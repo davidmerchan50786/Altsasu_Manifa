@@ -47,7 +47,7 @@ public class AplicadorOrtofoto : MonoBehaviour
         public int    width_px, height_px;
     }
 
-    class TiloRuntime
+    public class TiloRuntime
     {
         public TiloMeta   meta;
         public GameObject go;

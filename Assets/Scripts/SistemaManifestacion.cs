@@ -26,6 +26,14 @@ public class SistemaManifestacion : MonoBehaviour
 
     void Update()
     {
+        // Tecla M para alternar manifestación
+        if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
+        {
+            if (_activa) TerminarManifestacion();
+            else StartCoroutine(IniciarManifestacion());
+        }
+
+        // Tick Boids a 10Hz
         if (!_activa || _agentes.Count < 2) return;
         _timerBoids -= Time.deltaTime;
         if (_timerBoids > 0) return;
@@ -112,15 +120,6 @@ public class SistemaManifestacion : MonoBehaviour
         _apoyo = SistemaApoyoPopular.Instance;
         InicializarAudio();
         if (activaAlInicio) StartCoroutine(IniciarManifestacion());
-    }
-
-    void Update()
-    {
-        if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
-        {
-            if (_activa) TerminarManifestacion();
-            else StartCoroutine(IniciarManifestacion());
-        }
     }
 
     // ── Inicio de manifestación ───────────────────────────────────────────
