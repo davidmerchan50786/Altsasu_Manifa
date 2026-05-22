@@ -1,0 +1,3994 @@
+[
+  {
+    "id": 242585217,
+    "lidar_z_min": 519.17,
+    "lidar_z_max": 519.55,
+    "lidar_altura": 0.39,
+    "lidar_forma": "flat",
+    "lidar_pts": 31
+  },
+  {
+    "id": 297602139,
+    "lidar_z_min": 520.7,
+    "lidar_z_max": 526.12,
+    "lidar_altura": 5.42,
+    "lidar_forma": "gabled",
+    "lidar_pts": 6486
+  },
+  {
+    "id": 297602143,
+    "lidar_z_min": 520.29,
+    "lidar_z_max": 521.02,
+    "lidar_altura": 0.73,
+    "lidar_forma": "flat",
+    "lidar_pts": 165
+  },
+  {
+    "id": 427820128,
+    "lidar_z_min": 519.35,
+    "lidar_z_max": 524.8,
+    "lidar_altura": 5.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4174
+  },
+  {
+    "id": 760502521,
+    "lidar_z_min": 520.93,
+    "lidar_z_max": 527.98,
+    "lidar_altura": 7.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2751
+  },
+  {
+    "id": 1227121259,
+    "lidar_z_min": 519.4,
+    "lidar_z_max": 526.72,
+    "lidar_altura": 7.32,
+    "lidar_forma": "gabled",
+    "lidar_pts": 10727
+  },
+  {
+    "id": 1227121260,
+    "lidar_z_min": 519.6,
+    "lidar_z_max": 524.67,
+    "lidar_altura": 5.07,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3470
+  },
+  {
+    "id": 1227121270,
+    "lidar_z_min": 520.26,
+    "lidar_z_max": 522.05,
+    "lidar_altura": 1.8,
+    "lidar_forma": "gabled",
+    "lidar_pts": 824
+  },
+  {
+    "id": 1227121273,
+    "lidar_z_min": 520.1,
+    "lidar_z_max": 520.51,
+    "lidar_altura": 0.41,
+    "lidar_forma": "flat",
+    "lidar_pts": 47
+  },
+  {
+    "id": 1227121276,
+    "lidar_z_min": 521.04,
+    "lidar_z_max": 521.99,
+    "lidar_altura": 0.95,
+    "lidar_forma": "flat",
+    "lidar_pts": 669
+  },
+  {
+    "id": 91927762,
+    "lidar_z_min": 533.35,
+    "lidar_z_max": 547.57,
+    "lidar_altura": 14.22,
+    "lidar_forma": "hipped",
+    "lidar_pts": 5740
+  },
+  {
+    "id": 102837531,
+    "lidar_z_min": 532.61,
+    "lidar_z_max": 545.67,
+    "lidar_altura": 13.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 7234
+  },
+  {
+    "id": 102837568,
+    "lidar_z_min": 531.79,
+    "lidar_z_max": 543.52,
+    "lidar_altura": 11.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5149
+  },
+  {
+    "id": 103528495,
+    "lidar_z_min": 535.17,
+    "lidar_z_max": 547.73,
+    "lidar_altura": 12.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9931
+  },
+  {
+    "id": 103530809,
+    "lidar_z_min": 534.95,
+    "lidar_z_max": 548.55,
+    "lidar_altura": 13.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1444
+  },
+  {
+    "id": 103561441,
+    "lidar_z_min": 536.9,
+    "lidar_z_max": 538.49,
+    "lidar_altura": 1.58,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1452
+  },
+  {
+    "id": 103561447,
+    "lidar_z_min": 536.89,
+    "lidar_z_max": 538.48,
+    "lidar_altura": 1.58,
+    "lidar_forma": "hipped",
+    "lidar_pts": 691
+  },
+  {
+    "id": 103563090,
+    "lidar_z_min": 534.48,
+    "lidar_z_max": 535.55,
+    "lidar_altura": 1.07,
+    "lidar_forma": "flat",
+    "lidar_pts": 277
+  },
+  {
+    "id": 103563249,
+    "lidar_z_min": 534.43,
+    "lidar_z_max": 534.97,
+    "lidar_altura": 0.54,
+    "lidar_forma": "flat",
+    "lidar_pts": 67
+  },
+  {
+    "id": 103565588,
+    "lidar_z_min": 535.24,
+    "lidar_z_max": 550.26,
+    "lidar_altura": 15.01,
+    "lidar_forma": "gabled",
+    "lidar_pts": 11230
+  },
+  {
+    "id": 103571626,
+    "lidar_z_min": 534.33,
+    "lidar_z_max": 538.28,
+    "lidar_altura": 3.95,
+    "lidar_forma": "gabled",
+    "lidar_pts": 402
+  },
+  {
+    "id": 200577846,
+    "lidar_z_min": 534.77,
+    "lidar_z_max": 547.1,
+    "lidar_altura": 12.33,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2119
+  },
+  {
+    "id": 200578084,
+    "lidar_z_min": 526.15,
+    "lidar_z_max": 539.98,
+    "lidar_altura": 13.83,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2389
+  },
+  {
+    "id": 297053428,
+    "lidar_z_min": 542.04,
+    "lidar_z_max": 545.2,
+    "lidar_altura": 3.16,
+    "lidar_forma": "gabled",
+    "lidar_pts": 709
+  },
+  {
+    "id": 297055048,
+    "lidar_z_min": 533.14,
+    "lidar_z_max": 545.54,
+    "lidar_altura": 12.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2006
+  },
+  {
+    "id": 297055050,
+    "lidar_z_min": 533.15,
+    "lidar_z_max": 545.6,
+    "lidar_altura": 12.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2204
+  },
+  {
+    "id": 297055051,
+    "lidar_z_min": 533.25,
+    "lidar_z_max": 546.67,
+    "lidar_altura": 13.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5923
+  },
+  {
+    "id": 297055411,
+    "lidar_z_min": 533.94,
+    "lidar_z_max": 546.49,
+    "lidar_altura": 12.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1019
+  },
+  {
+    "id": 297057684,
+    "lidar_z_min": 532.07,
+    "lidar_z_max": 546.51,
+    "lidar_altura": 14.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9998
+  },
+  {
+    "id": 297067224,
+    "lidar_z_min": 532.91,
+    "lidar_z_max": 542.97,
+    "lidar_altura": 10.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1630
+  },
+  {
+    "id": 297067225,
+    "lidar_z_min": 531.75,
+    "lidar_z_max": 542.98,
+    "lidar_altura": 11.22,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1500
+  },
+  {
+    "id": 297067226,
+    "lidar_z_min": 533.1,
+    "lidar_z_max": 546.47,
+    "lidar_altura": 13.37,
+    "lidar_forma": "gabled",
+    "lidar_pts": 6246
+  },
+  {
+    "id": 297067227,
+    "lidar_z_min": 535.9,
+    "lidar_z_max": 542.98,
+    "lidar_altura": 7.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1387
+  },
+  {
+    "id": 297067228,
+    "lidar_z_min": 541.79,
+    "lidar_z_max": 543.42,
+    "lidar_altura": 1.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1240
+  },
+  {
+    "id": 297067229,
+    "lidar_z_min": 541.78,
+    "lidar_z_max": 543.39,
+    "lidar_altura": 1.61,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1801
+  },
+  {
+    "id": 297067230,
+    "lidar_z_min": 541.75,
+    "lidar_z_max": 543.35,
+    "lidar_altura": 1.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 479
+  },
+  {
+    "id": 297067231,
+    "lidar_z_min": 536.2,
+    "lidar_z_max": 543.37,
+    "lidar_altura": 7.17,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1034
+  },
+  {
+    "id": 297071824,
+    "lidar_z_min": 541.76,
+    "lidar_z_max": 543.37,
+    "lidar_altura": 1.61,
+    "lidar_forma": "gabled",
+    "lidar_pts": 771
+  },
+  {
+    "id": 297071827,
+    "lidar_z_min": 541.78,
+    "lidar_z_max": 543.41,
+    "lidar_altura": 1.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 534
+  },
+  {
+    "id": 297071829,
+    "lidar_z_min": 533.13,
+    "lidar_z_max": 543.39,
+    "lidar_altura": 10.26,
+    "lidar_forma": "gabled",
+    "lidar_pts": 318
+  },
+  {
+    "id": 297071831,
+    "lidar_z_min": 531.84,
+    "lidar_z_max": 544.52,
+    "lidar_altura": 12.67,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1321
+  },
+  {
+    "id": 297071837,
+    "lidar_z_min": 533.71,
+    "lidar_z_max": 545.53,
+    "lidar_altura": 11.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 968
+  },
+  {
+    "id": 297071839,
+    "lidar_z_min": 533.75,
+    "lidar_z_max": 546.06,
+    "lidar_altura": 12.31,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1505
+  },
+  {
+    "id": 297071840,
+    "lidar_z_min": 532.56,
+    "lidar_z_max": 545.96,
+    "lidar_altura": 13.4,
+    "lidar_forma": "hipped",
+    "lidar_pts": 2829
+  },
+  {
+    "id": 297071841,
+    "lidar_z_min": 532.73,
+    "lidar_z_max": 541.28,
+    "lidar_altura": 8.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1953
+  },
+  {
+    "id": 297071842,
+    "lidar_z_min": 531.62,
+    "lidar_z_max": 545.78,
+    "lidar_altura": 14.16,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2551
+  },
+  {
+    "id": 297071843,
+    "lidar_z_min": 533.33,
+    "lidar_z_max": 545.76,
+    "lidar_altura": 12.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1443
+  },
+  {
+    "id": 297071844,
+    "lidar_z_min": 531.64,
+    "lidar_z_max": 545.49,
+    "lidar_altura": 13.85,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3112
+  },
+  {
+    "id": 297076420,
+    "lidar_z_min": 532.37,
+    "lidar_z_max": 538.72,
+    "lidar_altura": 6.35,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1573
+  },
+  {
+    "id": 297076423,
+    "lidar_z_min": 532.3,
+    "lidar_z_max": 539.33,
+    "lidar_altura": 7.04,
+    "lidar_forma": "gabled",
+    "lidar_pts": 835
+  },
+  {
+    "id": 297076433,
+    "lidar_z_min": 528.23,
+    "lidar_z_max": 531.64,
+    "lidar_altura": 3.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 40
+  },
+  {
+    "id": 297082259,
+    "lidar_z_min": 533.09,
+    "lidar_z_max": 546.77,
+    "lidar_altura": 13.68,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1752
+  },
+  {
+    "id": 297082260,
+    "lidar_z_min": 541.42,
+    "lidar_z_max": 542.9,
+    "lidar_altura": 1.48,
+    "lidar_forma": "flat",
+    "lidar_pts": 267
+  },
+  {
+    "id": 297082261,
+    "lidar_z_min": 532.87,
+    "lidar_z_max": 542.7,
+    "lidar_altura": 9.83,
+    "lidar_forma": "gabled",
+    "lidar_pts": 6397
+  },
+  {
+    "id": 297085420,
+    "lidar_z_min": 529.65,
+    "lidar_z_max": 539.87,
+    "lidar_altura": 10.21,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1684
+  },
+  {
+    "id": 297092152,
+    "lidar_z_min": 526.91,
+    "lidar_z_max": 527.94,
+    "lidar_altura": 1.03,
+    "lidar_forma": "flat",
+    "lidar_pts": 149
+  },
+  {
+    "id": 297094485,
+    "lidar_z_min": 522.85,
+    "lidar_z_max": 528.93,
+    "lidar_altura": 6.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 235
+  },
+  {
+    "id": 297094486,
+    "lidar_z_min": 522.85,
+    "lidar_z_max": 528.93,
+    "lidar_altura": 6.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 521
+  },
+  {
+    "id": 297097880,
+    "lidar_z_min": 533.48,
+    "lidar_z_max": 535.7,
+    "lidar_altura": 2.22,
+    "lidar_forma": "gabled",
+    "lidar_pts": 303
+  },
+  {
+    "id": 297097881,
+    "lidar_z_min": 540.54,
+    "lidar_z_max": 542.47,
+    "lidar_altura": 1.93,
+    "lidar_forma": "hipped",
+    "lidar_pts": 649
+  },
+  {
+    "id": 297097882,
+    "lidar_z_min": 536.06,
+    "lidar_z_max": 542.2,
+    "lidar_altura": 6.14,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1545
+  },
+  {
+    "id": 297097886,
+    "lidar_z_min": 531.21,
+    "lidar_z_max": 543.48,
+    "lidar_altura": 12.26,
+    "lidar_forma": "hipped",
+    "lidar_pts": 2511
+  },
+  {
+    "id": 297097887,
+    "lidar_z_min": 530.1,
+    "lidar_z_max": 541.51,
+    "lidar_altura": 11.41,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2784
+  },
+  {
+    "id": 297097889,
+    "lidar_z_min": 530.78,
+    "lidar_z_max": 540.71,
+    "lidar_altura": 9.93,
+    "lidar_forma": "hipped",
+    "lidar_pts": 3708
+  },
+  {
+    "id": 297100824,
+    "lidar_z_min": 528.33,
+    "lidar_z_max": 542.33,
+    "lidar_altura": 14.0,
+    "lidar_forma": "gabled",
+    "lidar_pts": 851
+  },
+  {
+    "id": 297100827,
+    "lidar_z_min": 528.32,
+    "lidar_z_max": 543.17,
+    "lidar_altura": 14.85,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1590
+  },
+  {
+    "id": 297100829,
+    "lidar_z_min": 528.33,
+    "lidar_z_max": 543.72,
+    "lidar_altura": 15.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1905
+  },
+  {
+    "id": 297100832,
+    "lidar_z_min": 531.18,
+    "lidar_z_max": 543.1,
+    "lidar_altura": 11.92,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1097
+  },
+  {
+    "id": 297100834,
+    "lidar_z_min": 526.87,
+    "lidar_z_max": 543.11,
+    "lidar_altura": 16.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2371
+  },
+  {
+    "id": 297100837,
+    "lidar_z_min": 526.73,
+    "lidar_z_max": 538.97,
+    "lidar_altura": 12.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2269
+  },
+  {
+    "id": 297100840,
+    "lidar_z_min": 532.72,
+    "lidar_z_max": 540.84,
+    "lidar_altura": 8.13,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1147
+  },
+  {
+    "id": 297100842,
+    "lidar_z_min": 535.76,
+    "lidar_z_max": 542.77,
+    "lidar_altura": 7.0,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1481
+  },
+  {
+    "id": 297100843,
+    "lidar_z_min": 531.1,
+    "lidar_z_max": 542.78,
+    "lidar_altura": 11.69,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2403
+  },
+  {
+    "id": 297100855,
+    "lidar_z_min": 533.44,
+    "lidar_z_max": 540.65,
+    "lidar_altura": 7.2,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1612
+  },
+  {
+    "id": 297100858,
+    "lidar_z_min": 534.49,
+    "lidar_z_max": 541.78,
+    "lidar_altura": 7.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1262
+  },
+  {
+    "id": 297100861,
+    "lidar_z_min": 534.39,
+    "lidar_z_max": 538.87,
+    "lidar_altura": 4.48,
+    "lidar_forma": "gabled",
+    "lidar_pts": 471
+  },
+  {
+    "id": 297100864,
+    "lidar_z_min": 534.46,
+    "lidar_z_max": 541.46,
+    "lidar_altura": 7.0,
+    "lidar_forma": "gabled",
+    "lidar_pts": 181
+  },
+  {
+    "id": 297102366,
+    "lidar_z_min": 535.77,
+    "lidar_z_max": 541.46,
+    "lidar_altura": 5.7,
+    "lidar_forma": "gabled",
+    "lidar_pts": 787
+  },
+  {
+    "id": 297102367,
+    "lidar_z_min": 535.69,
+    "lidar_z_max": 538.11,
+    "lidar_altura": 2.42,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1586
+  },
+  {
+    "id": 297102368,
+    "lidar_z_min": 528.56,
+    "lidar_z_max": 537.02,
+    "lidar_altura": 8.46,
+    "lidar_forma": "gabled",
+    "lidar_pts": 288
+  },
+  {
+    "id": 297102369,
+    "lidar_z_min": 535.24,
+    "lidar_z_max": 537.94,
+    "lidar_altura": 2.7,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1020
+  },
+  {
+    "id": 297102370,
+    "lidar_z_min": 538.66,
+    "lidar_z_max": 539.34,
+    "lidar_altura": 0.68,
+    "lidar_forma": "flat",
+    "lidar_pts": 29
+  },
+  {
+    "id": 297102371,
+    "lidar_z_min": 532.92,
+    "lidar_z_max": 536.5,
+    "lidar_altura": 3.59,
+    "lidar_forma": "gabled",
+    "lidar_pts": 310
+  },
+  {
+    "id": 297102372,
+    "lidar_z_min": 533.77,
+    "lidar_z_max": 537.54,
+    "lidar_altura": 3.77,
+    "lidar_forma": "gabled",
+    "lidar_pts": 815
+  },
+  {
+    "id": 297102373,
+    "lidar_z_min": 539.11,
+    "lidar_z_max": 542.01,
+    "lidar_altura": 2.9,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1191
+  },
+  {
+    "id": 297102376,
+    "lidar_z_min": 532.11,
+    "lidar_z_max": 542.84,
+    "lidar_altura": 10.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1331
+  },
+  {
+    "id": 297102377,
+    "lidar_z_min": 534.86,
+    "lidar_z_max": 539.77,
+    "lidar_altura": 4.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1711
+  },
+  {
+    "id": 297103561,
+    "lidar_z_min": 534.5,
+    "lidar_z_max": 541.93,
+    "lidar_altura": 7.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1796
+  },
+  {
+    "id": 297103608,
+    "lidar_z_min": 535.72,
+    "lidar_z_max": 538.52,
+    "lidar_altura": 2.81,
+    "lidar_forma": "gabled",
+    "lidar_pts": 765
+  },
+  {
+    "id": 297139662,
+    "lidar_z_min": 535.2,
+    "lidar_z_max": 539.51,
+    "lidar_altura": 4.31,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2140
+  },
+  {
+    "id": 297139663,
+    "lidar_z_min": 535.54,
+    "lidar_z_max": 538.56,
+    "lidar_altura": 3.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 736
+  },
+  {
+    "id": 297142263,
+    "lidar_z_min": 531.38,
+    "lidar_z_max": 540.55,
+    "lidar_altura": 9.17,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2551
+  },
+  {
+    "id": 297142264,
+    "lidar_z_min": 531.38,
+    "lidar_z_max": 540.92,
+    "lidar_altura": 9.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1610
+  },
+  {
+    "id": 297142265,
+    "lidar_z_min": 531.4,
+    "lidar_z_max": 541.91,
+    "lidar_altura": 10.51,
+    "lidar_forma": "hipped",
+    "lidar_pts": 2363
+  },
+  {
+    "id": 297142266,
+    "lidar_z_min": 534.57,
+    "lidar_z_max": 542.13,
+    "lidar_altura": 7.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1181
+  },
+  {
+    "id": 297142267,
+    "lidar_z_min": 534.54,
+    "lidar_z_max": 541.5,
+    "lidar_altura": 6.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 843
+  },
+  {
+    "id": 297142268,
+    "lidar_z_min": 535.72,
+    "lidar_z_max": 537.62,
+    "lidar_altura": 1.9,
+    "lidar_forma": "hipped",
+    "lidar_pts": 237
+  },
+  {
+    "id": 297143825,
+    "lidar_z_min": 539.76,
+    "lidar_z_max": 541.56,
+    "lidar_altura": 1.8,
+    "lidar_forma": "gabled",
+    "lidar_pts": 429
+  },
+  {
+    "id": 297143826,
+    "lidar_z_min": 534.57,
+    "lidar_z_max": 541.94,
+    "lidar_altura": 7.36,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1728
+  },
+  {
+    "id": 297144838,
+    "lidar_z_min": 539.94,
+    "lidar_z_max": 542.0,
+    "lidar_altura": 2.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 891
+  },
+  {
+    "id": 297144840,
+    "lidar_z_min": 539.59,
+    "lidar_z_max": 540.61,
+    "lidar_altura": 1.02,
+    "lidar_forma": "flat",
+    "lidar_pts": 119
+  },
+  {
+    "id": 297145359,
+    "lidar_z_min": 528.97,
+    "lidar_z_max": 538.43,
+    "lidar_altura": 9.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1145
+  },
+  {
+    "id": 297145360,
+    "lidar_z_min": 528.97,
+    "lidar_z_max": 542.79,
+    "lidar_altura": 13.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 539
+  },
+  {
+    "id": 297145361,
+    "lidar_z_min": 529.26,
+    "lidar_z_max": 542.12,
+    "lidar_altura": 12.86,
+    "lidar_forma": "gabled",
+    "lidar_pts": 724
+  },
+  {
+    "id": 297145362,
+    "lidar_z_min": 535.37,
+    "lidar_z_max": 543.43,
+    "lidar_altura": 8.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1270
+  },
+  {
+    "id": 297145363,
+    "lidar_z_min": 534.89,
+    "lidar_z_max": 539.56,
+    "lidar_altura": 4.67,
+    "lidar_forma": "gabled",
+    "lidar_pts": 956
+  },
+  {
+    "id": 297145824,
+    "lidar_z_min": 538.51,
+    "lidar_z_max": 543.03,
+    "lidar_altura": 4.52,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1252
+  },
+  {
+    "id": 297145825,
+    "lidar_z_min": 537.02,
+    "lidar_z_max": 542.32,
+    "lidar_altura": 5.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 954
+  },
+  {
+    "id": 297145826,
+    "lidar_z_min": 534.91,
+    "lidar_z_max": 542.31,
+    "lidar_altura": 7.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1189
+  },
+  {
+    "id": 297145827,
+    "lidar_z_min": 531.75,
+    "lidar_z_max": 543.05,
+    "lidar_altura": 11.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1074
+  },
+  {
+    "id": 297145828,
+    "lidar_z_min": 531.83,
+    "lidar_z_max": 543.21,
+    "lidar_altura": 11.38,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1307
+  },
+  {
+    "id": 297145829,
+    "lidar_z_min": 532.06,
+    "lidar_z_max": 544.93,
+    "lidar_altura": 12.87,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1636
+  },
+  {
+    "id": 297145830,
+    "lidar_z_min": 532.15,
+    "lidar_z_max": 544.97,
+    "lidar_altura": 12.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2851
+  },
+  {
+    "id": 297146107,
+    "lidar_z_min": 533.39,
+    "lidar_z_max": 548.02,
+    "lidar_altura": 14.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1801
+  },
+  {
+    "id": 297146108,
+    "lidar_z_min": 533.3,
+    "lidar_z_max": 546.47,
+    "lidar_altura": 13.16,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1396
+  },
+  {
+    "id": 297146109,
+    "lidar_z_min": 533.3,
+    "lidar_z_max": 541.81,
+    "lidar_altura": 8.51,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1235
+  },
+  {
+    "id": 297146664,
+    "lidar_z_min": 532.07,
+    "lidar_z_max": 554.55,
+    "lidar_altura": 22.48,
+    "lidar_forma": "hipped",
+    "lidar_pts": 782
+  },
+  {
+    "id": 297146665,
+    "lidar_z_min": 532.46,
+    "lidar_z_max": 543.85,
+    "lidar_altura": 11.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1286
+  },
+  {
+    "id": 297146666,
+    "lidar_z_min": 532.52,
+    "lidar_z_max": 546.98,
+    "lidar_altura": 14.45,
+    "lidar_forma": "hipped",
+    "lidar_pts": 5173
+  },
+  {
+    "id": 297146667,
+    "lidar_z_min": 538.03,
+    "lidar_z_max": 540.23,
+    "lidar_altura": 2.2,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1407
+  },
+  {
+    "id": 297150864,
+    "lidar_z_min": 531.27,
+    "lidar_z_max": 536.5,
+    "lidar_altura": 5.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2288
+  },
+  {
+    "id": 297150865,
+    "lidar_z_min": 531.2,
+    "lidar_z_max": 536.48,
+    "lidar_altura": 5.29,
+    "lidar_forma": "gabled",
+    "lidar_pts": 536
+  },
+  {
+    "id": 297150866,
+    "lidar_z_min": 531.41,
+    "lidar_z_max": 539.83,
+    "lidar_altura": 8.42,
+    "lidar_forma": "gabled",
+    "lidar_pts": 561
+  },
+  {
+    "id": 297150867,
+    "lidar_z_min": 531.67,
+    "lidar_z_max": 540.8,
+    "lidar_altura": 9.12,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1229
+  },
+  {
+    "id": 297150868,
+    "lidar_z_min": 531.52,
+    "lidar_z_max": 545.91,
+    "lidar_altura": 14.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1288
+  },
+  {
+    "id": 297150869,
+    "lidar_z_min": 531.66,
+    "lidar_z_max": 540.89,
+    "lidar_altura": 9.23,
+    "lidar_forma": "gabled",
+    "lidar_pts": 531
+  },
+  {
+    "id": 297150870,
+    "lidar_z_min": 531.72,
+    "lidar_z_max": 552.27,
+    "lidar_altura": 20.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1572
+  },
+  {
+    "id": 297150871,
+    "lidar_z_min": 532.22,
+    "lidar_z_max": 536.54,
+    "lidar_altura": 4.32,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1007
+  },
+  {
+    "id": 297150872,
+    "lidar_z_min": 532.8,
+    "lidar_z_max": 536.54,
+    "lidar_altura": 3.74,
+    "lidar_forma": "gabled",
+    "lidar_pts": 648
+  },
+  {
+    "id": 297150948,
+    "lidar_z_min": 531.25,
+    "lidar_z_max": 532.91,
+    "lidar_altura": 1.66,
+    "lidar_forma": "hipped",
+    "lidar_pts": 221
+  },
+  {
+    "id": 297153264,
+    "lidar_z_min": 531.26,
+    "lidar_z_max": 536.65,
+    "lidar_altura": 5.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1197
+  },
+  {
+    "id": 297153265,
+    "lidar_z_min": 531.57,
+    "lidar_z_max": 537.01,
+    "lidar_altura": 5.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3322
+  },
+  {
+    "id": 297153267,
+    "lidar_z_min": 532.88,
+    "lidar_z_max": 537.18,
+    "lidar_altura": 4.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3007
+  },
+  {
+    "id": 297153268,
+    "lidar_z_min": 532.41,
+    "lidar_z_max": 537.13,
+    "lidar_altura": 4.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2574
+  },
+  {
+    "id": 297153269,
+    "lidar_z_min": 532.23,
+    "lidar_z_max": 537.15,
+    "lidar_altura": 4.92,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2149
+  },
+  {
+    "id": 297153270,
+    "lidar_z_min": 532.65,
+    "lidar_z_max": 537.39,
+    "lidar_altura": 4.74,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2471
+  },
+  {
+    "id": 297155398,
+    "lidar_z_min": 533.01,
+    "lidar_z_max": 537.41,
+    "lidar_altura": 4.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2059
+  },
+  {
+    "id": 297155399,
+    "lidar_z_min": 533.19,
+    "lidar_z_max": 537.39,
+    "lidar_altura": 4.2,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2454
+  },
+  {
+    "id": 297155400,
+    "lidar_z_min": 533.16,
+    "lidar_z_max": 537.33,
+    "lidar_altura": 4.17,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2132
+  },
+  {
+    "id": 297155401,
+    "lidar_z_min": 532.96,
+    "lidar_z_max": 535.37,
+    "lidar_altura": 2.41,
+    "lidar_forma": "gabled",
+    "lidar_pts": 427
+  },
+  {
+    "id": 297155402,
+    "lidar_z_min": 546.87,
+    "lidar_z_max": 550.6,
+    "lidar_altura": 3.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 393
+  },
+  {
+    "id": 297157154,
+    "lidar_z_min": 547.94,
+    "lidar_z_max": 550.76,
+    "lidar_altura": 2.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 477
+  },
+  {
+    "id": 297157155,
+    "lidar_z_min": 546.94,
+    "lidar_z_max": 551.35,
+    "lidar_altura": 4.41,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2125
+  },
+  {
+    "id": 297157156,
+    "lidar_z_min": 548.05,
+    "lidar_z_max": 551.37,
+    "lidar_altura": 3.33,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2262
+  },
+  {
+    "id": 297157157,
+    "lidar_z_min": 538.48,
+    "lidar_z_max": 551.29,
+    "lidar_altura": 12.81,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3384
+  },
+  {
+    "id": 297157158,
+    "lidar_z_min": 536.57,
+    "lidar_z_max": 551.28,
+    "lidar_altura": 14.71,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3476
+  },
+  {
+    "id": 297157162,
+    "lidar_z_min": 536.59,
+    "lidar_z_max": 551.16,
+    "lidar_altura": 14.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4002
+  },
+  {
+    "id": 297157163,
+    "lidar_z_min": 537.38,
+    "lidar_z_max": 550.09,
+    "lidar_altura": 12.71,
+    "lidar_forma": "gabled",
+    "lidar_pts": 955
+  },
+  {
+    "id": 297157165,
+    "lidar_z_min": 542.03,
+    "lidar_z_max": 549.07,
+    "lidar_altura": 7.04,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1452
+  },
+  {
+    "id": 297157166,
+    "lidar_z_min": 542.16,
+    "lidar_z_max": 550.15,
+    "lidar_altura": 7.99,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2285
+  },
+  {
+    "id": 297157698,
+    "lidar_z_min": 542.1,
+    "lidar_z_max": 550.02,
+    "lidar_altura": 7.92,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2392
+  },
+  {
+    "id": 297157699,
+    "lidar_z_min": 544.19,
+    "lidar_z_max": 550.08,
+    "lidar_altura": 5.89,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2824
+  },
+  {
+    "id": 297157700,
+    "lidar_z_min": 543.86,
+    "lidar_z_max": 550.01,
+    "lidar_altura": 6.15,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4537
+  },
+  {
+    "id": 297157701,
+    "lidar_z_min": 543.05,
+    "lidar_z_max": 550.02,
+    "lidar_altura": 6.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3627
+  },
+  {
+    "id": 297157702,
+    "lidar_z_min": 545.84,
+    "lidar_z_max": 550.13,
+    "lidar_altura": 4.29,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1469
+  },
+  {
+    "id": 297157703,
+    "lidar_z_min": 533.57,
+    "lidar_z_max": 549.06,
+    "lidar_altura": 15.49,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3230
+  },
+  {
+    "id": 297157704,
+    "lidar_z_min": 535.12,
+    "lidar_z_max": 547.97,
+    "lidar_altura": 12.86,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1352
+  },
+  {
+    "id": 297158484,
+    "lidar_z_min": 536.7,
+    "lidar_z_max": 547.76,
+    "lidar_altura": 11.05,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1646
+  },
+  {
+    "id": 297158485,
+    "lidar_z_min": 535.13,
+    "lidar_z_max": 547.84,
+    "lidar_altura": 12.71,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1233
+  },
+  {
+    "id": 297158486,
+    "lidar_z_min": 543.79,
+    "lidar_z_max": 547.22,
+    "lidar_altura": 3.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1519
+  },
+  {
+    "id": 297158487,
+    "lidar_z_min": 534.57,
+    "lidar_z_max": 547.98,
+    "lidar_altura": 13.41,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3145
+  },
+  {
+    "id": 297158488,
+    "lidar_z_min": 545.0,
+    "lidar_z_max": 550.75,
+    "lidar_altura": 5.74,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1358
+  },
+  {
+    "id": 297158741,
+    "lidar_z_min": 531.62,
+    "lidar_z_max": 541.64,
+    "lidar_altura": 10.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2081
+  },
+  {
+    "id": 297160853,
+    "lidar_z_min": 535.8,
+    "lidar_z_max": 547.75,
+    "lidar_altura": 11.94,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2628
+  },
+  {
+    "id": 297160854,
+    "lidar_z_min": 535.75,
+    "lidar_z_max": 547.32,
+    "lidar_altura": 11.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2791
+  },
+  {
+    "id": 297160855,
+    "lidar_z_min": 534.47,
+    "lidar_z_max": 547.07,
+    "lidar_altura": 12.59,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3050
+  },
+  {
+    "id": 297160856,
+    "lidar_z_min": 535.78,
+    "lidar_z_max": 546.82,
+    "lidar_altura": 11.04,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1813
+  },
+  {
+    "id": 297160857,
+    "lidar_z_min": 535.6,
+    "lidar_z_max": 537.14,
+    "lidar_altura": 1.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1330
+  },
+  {
+    "id": 297160858,
+    "lidar_z_min": 535.58,
+    "lidar_z_max": 537.91,
+    "lidar_altura": 2.33,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1348
+  },
+  {
+    "id": 297160859,
+    "lidar_z_min": 535.48,
+    "lidar_z_max": 538.68,
+    "lidar_altura": 3.2,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1512
+  },
+  {
+    "id": 297160860,
+    "lidar_z_min": 534.92,
+    "lidar_z_max": 538.78,
+    "lidar_altura": 3.86,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1533
+  },
+  {
+    "id": 297160862,
+    "lidar_z_min": 534.89,
+    "lidar_z_max": 536.8,
+    "lidar_altura": 1.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 926
+  },
+  {
+    "id": 297160863,
+    "lidar_z_min": 535.98,
+    "lidar_z_max": 547.35,
+    "lidar_altura": 11.37,
+    "lidar_forma": "gabled",
+    "lidar_pts": 12532
+  },
+  {
+    "id": 297160865,
+    "lidar_z_min": 536.83,
+    "lidar_z_max": 550.64,
+    "lidar_altura": 13.81,
+    "lidar_forma": "gabled",
+    "lidar_pts": 18443
+  },
+  {
+    "id": 297162224,
+    "lidar_z_min": 534.76,
+    "lidar_z_max": 536.05,
+    "lidar_altura": 1.28,
+    "lidar_forma": "flat",
+    "lidar_pts": 271
+  },
+  {
+    "id": 297164759,
+    "lidar_z_min": 535.66,
+    "lidar_z_max": 536.63,
+    "lidar_altura": 0.97,
+    "lidar_forma": "flat",
+    "lidar_pts": 547
+  },
+  {
+    "id": 297165188,
+    "lidar_z_min": 534.91,
+    "lidar_z_max": 548.17,
+    "lidar_altura": 13.26,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1957
+  },
+  {
+    "id": 297165189,
+    "lidar_z_min": 533.15,
+    "lidar_z_max": 548.1,
+    "lidar_altura": 14.95,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2075
+  },
+  {
+    "id": 297165190,
+    "lidar_z_min": 531.76,
+    "lidar_z_max": 547.51,
+    "lidar_altura": 15.75,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2079
+  },
+  {
+    "id": 297165191,
+    "lidar_z_min": 532.36,
+    "lidar_z_max": 544.98,
+    "lidar_altura": 12.62,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2284
+  },
+  {
+    "id": 297167107,
+    "lidar_z_min": 538.78,
+    "lidar_z_max": 543.18,
+    "lidar_altura": 4.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 549
+  },
+  {
+    "id": 297167109,
+    "lidar_z_min": 538.73,
+    "lidar_z_max": 542.11,
+    "lidar_altura": 3.38,
+    "lidar_forma": "gabled",
+    "lidar_pts": 734
+  },
+  {
+    "id": 297167110,
+    "lidar_z_min": 534.84,
+    "lidar_z_max": 541.39,
+    "lidar_altura": 6.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1208
+  },
+  {
+    "id": 297167111,
+    "lidar_z_min": 535.73,
+    "lidar_z_max": 541.57,
+    "lidar_altura": 5.84,
+    "lidar_forma": "gabled",
+    "lidar_pts": 27
+  },
+  {
+    "id": 297167112,
+    "lidar_z_min": 534.82,
+    "lidar_z_max": 542.72,
+    "lidar_altura": 7.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1085
+  },
+  {
+    "id": 297167113,
+    "lidar_z_min": 537.82,
+    "lidar_z_max": 542.92,
+    "lidar_altura": 5.1,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1713
+  },
+  {
+    "id": 297167114,
+    "lidar_z_min": 535.32,
+    "lidar_z_max": 542.8,
+    "lidar_altura": 7.48,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2137
+  },
+  {
+    "id": 297167115,
+    "lidar_z_min": 535.03,
+    "lidar_z_max": 543.11,
+    "lidar_altura": 8.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1466
+  },
+  {
+    "id": 297167116,
+    "lidar_z_min": 535.05,
+    "lidar_z_max": 542.55,
+    "lidar_altura": 7.5,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1901
+  },
+  {
+    "id": 297167117,
+    "lidar_z_min": 536.29,
+    "lidar_z_max": 541.08,
+    "lidar_altura": 4.79,
+    "lidar_forma": "gabled",
+    "lidar_pts": 947
+  },
+  {
+    "id": 297167118,
+    "lidar_z_min": 534.33,
+    "lidar_z_max": 541.96,
+    "lidar_altura": 7.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5823
+  },
+  {
+    "id": 297187230,
+    "lidar_z_min": 542.46,
+    "lidar_z_max": 544.28,
+    "lidar_altura": 1.82,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1033
+  },
+  {
+    "id": 297187231,
+    "lidar_z_min": 542.39,
+    "lidar_z_max": 544.22,
+    "lidar_altura": 1.84,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1904
+  },
+  {
+    "id": 297187232,
+    "lidar_z_min": 542.15,
+    "lidar_z_max": 544.01,
+    "lidar_altura": 1.86,
+    "lidar_forma": "gabled",
+    "lidar_pts": 693
+  },
+  {
+    "id": 297187233,
+    "lidar_z_min": 542.02,
+    "lidar_z_max": 543.84,
+    "lidar_altura": 1.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1750
+  },
+  {
+    "id": 297187234,
+    "lidar_z_min": 542.25,
+    "lidar_z_max": 543.85,
+    "lidar_altura": 1.6,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1215
+  },
+  {
+    "id": 297187235,
+    "lidar_z_min": 542.26,
+    "lidar_z_max": 543.84,
+    "lidar_altura": 1.58,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1176
+  },
+  {
+    "id": 297187236,
+    "lidar_z_min": 542.26,
+    "lidar_z_max": 543.86,
+    "lidar_altura": 1.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 958
+  },
+  {
+    "id": 297187237,
+    "lidar_z_min": 542.26,
+    "lidar_z_max": 543.87,
+    "lidar_altura": 1.61,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1017
+  },
+  {
+    "id": 297187238,
+    "lidar_z_min": 542.26,
+    "lidar_z_max": 543.84,
+    "lidar_altura": 1.58,
+    "lidar_forma": "hipped",
+    "lidar_pts": 989
+  },
+  {
+    "id": 297187239,
+    "lidar_z_min": 542.25,
+    "lidar_z_max": 543.87,
+    "lidar_altura": 1.62,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2183
+  },
+  {
+    "id": 297187240,
+    "lidar_z_min": 542.22,
+    "lidar_z_max": 543.83,
+    "lidar_altura": 1.6,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1205
+  },
+  {
+    "id": 297187241,
+    "lidar_z_min": 542.21,
+    "lidar_z_max": 543.84,
+    "lidar_altura": 1.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 560
+  },
+  {
+    "id": 297187242,
+    "lidar_z_min": 536.19,
+    "lidar_z_max": 543.78,
+    "lidar_altura": 7.59,
+    "lidar_forma": "gabled",
+    "lidar_pts": 417
+  },
+  {
+    "id": 297187243,
+    "lidar_z_min": 533.95,
+    "lidar_z_max": 543.38,
+    "lidar_altura": 9.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 924
+  },
+  {
+    "id": 297190273,
+    "lidar_z_min": 541.7,
+    "lidar_z_max": 543.78,
+    "lidar_altura": 2.07,
+    "lidar_forma": "gabled",
+    "lidar_pts": 730
+  },
+  {
+    "id": 297190274,
+    "lidar_z_min": 541.67,
+    "lidar_z_max": 543.72,
+    "lidar_altura": 2.05,
+    "lidar_forma": "gabled",
+    "lidar_pts": 654
+  },
+  {
+    "id": 297190275,
+    "lidar_z_min": 532.37,
+    "lidar_z_max": 542.75,
+    "lidar_altura": 10.38,
+    "lidar_forma": "gabled",
+    "lidar_pts": 318
+  },
+  {
+    "id": 297190276,
+    "lidar_z_min": 541.95,
+    "lidar_z_max": 543.19,
+    "lidar_altura": 1.24,
+    "lidar_forma": "flat",
+    "lidar_pts": 255
+  },
+  {
+    "id": 297190277,
+    "lidar_z_min": 542.29,
+    "lidar_z_max": 543.87,
+    "lidar_altura": 1.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 838
+  },
+  {
+    "id": 297190279,
+    "lidar_z_min": 542.3,
+    "lidar_z_max": 543.9,
+    "lidar_altura": 1.59,
+    "lidar_forma": "hipped",
+    "lidar_pts": 295
+  },
+  {
+    "id": 297190280,
+    "lidar_z_min": 541.93,
+    "lidar_z_max": 543.33,
+    "lidar_altura": 1.4,
+    "lidar_forma": "flat",
+    "lidar_pts": 559
+  },
+  {
+    "id": 297190987,
+    "lidar_z_min": 533.52,
+    "lidar_z_max": 543.33,
+    "lidar_altura": 9.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1188
+  },
+  {
+    "id": 297190990,
+    "lidar_z_min": 533.49,
+    "lidar_z_max": 543.37,
+    "lidar_altura": 9.88,
+    "lidar_forma": "gabled",
+    "lidar_pts": 777
+  },
+  {
+    "id": 297190992,
+    "lidar_z_min": 533.46,
+    "lidar_z_max": 542.8,
+    "lidar_altura": 9.34,
+    "lidar_forma": "gabled",
+    "lidar_pts": 513
+  },
+  {
+    "id": 297190994,
+    "lidar_z_min": 533.58,
+    "lidar_z_max": 533.65,
+    "lidar_altura": 0.07,
+    "lidar_forma": "flat",
+    "lidar_pts": 111
+  },
+  {
+    "id": 297192117,
+    "lidar_z_min": 533.58,
+    "lidar_z_max": 533.67,
+    "lidar_altura": 0.08,
+    "lidar_forma": "flat",
+    "lidar_pts": 457
+  },
+  {
+    "id": 297205306,
+    "lidar_z_min": 533.59,
+    "lidar_z_max": 533.67,
+    "lidar_altura": 0.07,
+    "lidar_forma": "flat",
+    "lidar_pts": 303
+  },
+  {
+    "id": 297205307,
+    "lidar_z_min": 533.08,
+    "lidar_z_max": 533.66,
+    "lidar_altura": 0.58,
+    "lidar_forma": "flat",
+    "lidar_pts": 161
+  },
+  {
+    "id": 297205309,
+    "lidar_z_min": 533.34,
+    "lidar_z_max": 535.84,
+    "lidar_altura": 2.5,
+    "lidar_forma": "hipped",
+    "lidar_pts": 862
+  },
+  {
+    "id": 297205310,
+    "lidar_z_min": 533.39,
+    "lidar_z_max": 535.84,
+    "lidar_altura": 2.46,
+    "lidar_forma": "gabled",
+    "lidar_pts": 534
+  },
+  {
+    "id": 297205311,
+    "lidar_z_min": 532.97,
+    "lidar_z_max": 543.33,
+    "lidar_altura": 10.37,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1621
+  },
+  {
+    "id": 297205312,
+    "lidar_z_min": 533.45,
+    "lidar_z_max": 544.68,
+    "lidar_altura": 11.23,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2820
+  },
+  {
+    "id": 297205313,
+    "lidar_z_min": 535.98,
+    "lidar_z_max": 546.51,
+    "lidar_altura": 10.53,
+    "lidar_forma": "gabled",
+    "lidar_pts": 747
+  },
+  {
+    "id": 297205316,
+    "lidar_z_min": 533.51,
+    "lidar_z_max": 546.08,
+    "lidar_altura": 12.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1801
+  },
+  {
+    "id": 297206007,
+    "lidar_z_min": 534.47,
+    "lidar_z_max": 547.77,
+    "lidar_altura": 13.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2230
+  },
+  {
+    "id": 297206451,
+    "lidar_z_min": 535.28,
+    "lidar_z_max": 548.08,
+    "lidar_altura": 12.8,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2179
+  },
+  {
+    "id": 297206452,
+    "lidar_z_min": 534.55,
+    "lidar_z_max": 547.94,
+    "lidar_altura": 13.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2315
+  },
+  {
+    "id": 297206453,
+    "lidar_z_min": 535.03,
+    "lidar_z_max": 548.16,
+    "lidar_altura": 13.12,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1686
+  },
+  {
+    "id": 297214464,
+    "lidar_z_min": 535.23,
+    "lidar_z_max": 548.1,
+    "lidar_altura": 12.88,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1565
+  },
+  {
+    "id": 297214465,
+    "lidar_z_min": 535.24,
+    "lidar_z_max": 546.45,
+    "lidar_altura": 11.22,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1447
+  },
+  {
+    "id": 297214468,
+    "lidar_z_min": 534.2,
+    "lidar_z_max": 549.45,
+    "lidar_altura": 15.25,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1151
+  },
+  {
+    "id": 297214469,
+    "lidar_z_min": 534.46,
+    "lidar_z_max": 547.49,
+    "lidar_altura": 13.04,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5639
+  },
+  {
+    "id": 297214470,
+    "lidar_z_min": 534.93,
+    "lidar_z_max": 548.28,
+    "lidar_altura": 13.35,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4459
+  },
+  {
+    "id": 297214471,
+    "lidar_z_min": 534.91,
+    "lidar_z_max": 548.43,
+    "lidar_altura": 13.52,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2313
+  },
+  {
+    "id": 297214472,
+    "lidar_z_min": 533.17,
+    "lidar_z_max": 547.95,
+    "lidar_altura": 14.78,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1846
+  },
+  {
+    "id": 297214473,
+    "lidar_z_min": 533.17,
+    "lidar_z_max": 545.93,
+    "lidar_altura": 12.76,
+    "lidar_forma": "hipped",
+    "lidar_pts": 4100
+  },
+  {
+    "id": 297214474,
+    "lidar_z_min": 537.76,
+    "lidar_z_max": 543.75,
+    "lidar_altura": 5.99,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1650
+  },
+  {
+    "id": 297217474,
+    "lidar_z_min": 542.36,
+    "lidar_z_max": 544.12,
+    "lidar_altura": 1.76,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1051
+  },
+  {
+    "id": 297217479,
+    "lidar_z_min": 534.98,
+    "lidar_z_max": 548.17,
+    "lidar_altura": 13.2,
+    "lidar_forma": "gabled",
+    "lidar_pts": 969
+  },
+  {
+    "id": 297217482,
+    "lidar_z_min": 535.04,
+    "lidar_z_max": 548.28,
+    "lidar_altura": 13.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1514
+  },
+  {
+    "id": 297217484,
+    "lidar_z_min": 534.98,
+    "lidar_z_max": 548.27,
+    "lidar_altura": 13.29,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1800
+  },
+  {
+    "id": 297217487,
+    "lidar_z_min": 535.3,
+    "lidar_z_max": 548.27,
+    "lidar_altura": 12.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1588
+  },
+  {
+    "id": 297217492,
+    "lidar_z_min": 535.74,
+    "lidar_z_max": 548.34,
+    "lidar_altura": 12.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 631
+  },
+  {
+    "id": 297217494,
+    "lidar_z_min": 537.35,
+    "lidar_z_max": 548.33,
+    "lidar_altura": 10.98,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3487
+  },
+  {
+    "id": 297217496,
+    "lidar_z_min": 535.87,
+    "lidar_z_max": 548.43,
+    "lidar_altura": 12.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2339
+  },
+  {
+    "id": 297218287,
+    "lidar_z_min": 535.34,
+    "lidar_z_max": 548.5,
+    "lidar_altura": 13.15,
+    "lidar_forma": "gabled",
+    "lidar_pts": 46862
+  },
+  {
+    "id": 297220748,
+    "lidar_z_min": 543.57,
+    "lidar_z_max": 549.06,
+    "lidar_altura": 5.49,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9322
+  },
+  {
+    "id": 297220749,
+    "lidar_z_min": 535.33,
+    "lidar_z_max": 548.2,
+    "lidar_altura": 12.88,
+    "lidar_forma": "gabled",
+    "lidar_pts": 11749
+  },
+  {
+    "id": 297221724,
+    "lidar_z_min": 542.49,
+    "lidar_z_max": 547.23,
+    "lidar_altura": 4.74,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1383
+  },
+  {
+    "id": 297221725,
+    "lidar_z_min": 534.86,
+    "lidar_z_max": 547.33,
+    "lidar_altura": 12.46,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5844
+  },
+  {
+    "id": 297221726,
+    "lidar_z_min": 534.83,
+    "lidar_z_max": 547.17,
+    "lidar_altura": 12.34,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9177
+  },
+  {
+    "id": 297221727,
+    "lidar_z_min": 534.7,
+    "lidar_z_max": 536.38,
+    "lidar_altura": 1.68,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1323
+  },
+  {
+    "id": 297221728,
+    "lidar_z_min": 534.67,
+    "lidar_z_max": 544.11,
+    "lidar_altura": 9.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1476
+  },
+  {
+    "id": 297222291,
+    "lidar_z_min": 534.61,
+    "lidar_z_max": 546.54,
+    "lidar_altura": 11.93,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2681
+  },
+  {
+    "id": 297222292,
+    "lidar_z_min": 534.69,
+    "lidar_z_max": 547.74,
+    "lidar_altura": 13.05,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3371
+  },
+  {
+    "id": 297222293,
+    "lidar_z_min": 534.71,
+    "lidar_z_max": 547.76,
+    "lidar_altura": 13.05,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3332
+  },
+  {
+    "id": 297222294,
+    "lidar_z_min": 544.32,
+    "lidar_z_max": 547.88,
+    "lidar_altura": 3.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2339
+  },
+  {
+    "id": 297222295,
+    "lidar_z_min": 544.05,
+    "lidar_z_max": 548.14,
+    "lidar_altura": 4.09,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2261
+  },
+  {
+    "id": 297222296,
+    "lidar_z_min": 535.67,
+    "lidar_z_max": 548.27,
+    "lidar_altura": 12.59,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1870
+  },
+  {
+    "id": 297222297,
+    "lidar_z_min": 535.0,
+    "lidar_z_max": 548.28,
+    "lidar_altura": 13.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3211
+  },
+  {
+    "id": 297222298,
+    "lidar_z_min": 535.32,
+    "lidar_z_max": 550.5,
+    "lidar_altura": 15.18,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2958
+  },
+  {
+    "id": 297226310,
+    "lidar_z_min": 541.29,
+    "lidar_z_max": 550.62,
+    "lidar_altura": 9.33,
+    "lidar_forma": "hipped",
+    "lidar_pts": 2175
+  },
+  {
+    "id": 297226311,
+    "lidar_z_min": 535.89,
+    "lidar_z_max": 548.33,
+    "lidar_altura": 12.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1524
+  },
+  {
+    "id": 297226312,
+    "lidar_z_min": 535.62,
+    "lidar_z_max": 544.6,
+    "lidar_altura": 8.98,
+    "lidar_forma": "hipped",
+    "lidar_pts": 865
+  },
+  {
+    "id": 297271235,
+    "lidar_z_min": 536.04,
+    "lidar_z_max": 543.46,
+    "lidar_altura": 7.42,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1269
+  },
+  {
+    "id": 297271237,
+    "lidar_z_min": 536.09,
+    "lidar_z_max": 541.72,
+    "lidar_altura": 5.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5607
+  },
+  {
+    "id": 297271238,
+    "lidar_z_min": 536.12,
+    "lidar_z_max": 539.91,
+    "lidar_altura": 3.79,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1608
+  },
+  {
+    "id": 297271239,
+    "lidar_z_min": 536.77,
+    "lidar_z_max": 540.02,
+    "lidar_altura": 3.25,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1386
+  },
+  {
+    "id": 297274403,
+    "lidar_z_min": 533.84,
+    "lidar_z_max": 534.82,
+    "lidar_altura": 0.98,
+    "lidar_forma": "flat",
+    "lidar_pts": 9
+  },
+  {
+    "id": 297274404,
+    "lidar_z_min": 534.81,
+    "lidar_z_max": 534.81,
+    "lidar_altura": 0.0,
+    "lidar_forma": "flat",
+    "lidar_pts": 1
+  },
+  {
+    "id": 297283760,
+    "lidar_z_min": 517.28,
+    "lidar_z_max": 518.12,
+    "lidar_altura": 0.84,
+    "lidar_forma": "flat",
+    "lidar_pts": 342
+  },
+  {
+    "id": 297328549,
+    "lidar_z_min": 529.4,
+    "lidar_z_max": 538.48,
+    "lidar_altura": 9.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 557
+  },
+  {
+    "id": 297328550,
+    "lidar_z_min": 535.52,
+    "lidar_z_max": 535.63,
+    "lidar_altura": 0.11,
+    "lidar_forma": "flat",
+    "lidar_pts": 4
+  },
+  {
+    "id": 297328551,
+    "lidar_z_min": 530.32,
+    "lidar_z_max": 537.91,
+    "lidar_altura": 7.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 71
+  },
+  {
+    "id": 297340708,
+    "lidar_z_min": 519.06,
+    "lidar_z_max": 519.26,
+    "lidar_altura": 0.2,
+    "lidar_forma": "flat",
+    "lidar_pts": 156
+  },
+  {
+    "id": 297360044,
+    "lidar_z_min": 517.24,
+    "lidar_z_max": 517.42,
+    "lidar_altura": 0.19,
+    "lidar_forma": "flat",
+    "lidar_pts": 24
+  },
+  {
+    "id": 297503960,
+    "lidar_z_min": 515.69,
+    "lidar_z_max": 515.98,
+    "lidar_altura": 0.3,
+    "lidar_forma": "flat",
+    "lidar_pts": 27
+  },
+  {
+    "id": 297503961,
+    "lidar_z_min": 515.23,
+    "lidar_z_max": 516.2,
+    "lidar_altura": 0.97,
+    "lidar_forma": "flat",
+    "lidar_pts": 26
+  },
+  {
+    "id": 297518880,
+    "lidar_z_min": 531.88,
+    "lidar_z_max": 541.13,
+    "lidar_altura": 9.25,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1214
+  },
+  {
+    "id": 297518881,
+    "lidar_z_min": 531.69,
+    "lidar_z_max": 540.95,
+    "lidar_altura": 9.26,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1038
+  },
+  {
+    "id": 297518882,
+    "lidar_z_min": 534.66,
+    "lidar_z_max": 541.62,
+    "lidar_altura": 6.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1363
+  },
+  {
+    "id": 297518883,
+    "lidar_z_min": 539.09,
+    "lidar_z_max": 540.87,
+    "lidar_altura": 1.77,
+    "lidar_forma": "gabled",
+    "lidar_pts": 325
+  },
+  {
+    "id": 297518884,
+    "lidar_z_min": 531.93,
+    "lidar_z_max": 541.84,
+    "lidar_altura": 9.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 788
+  },
+  {
+    "id": 297518885,
+    "lidar_z_min": 531.38,
+    "lidar_z_max": 542.96,
+    "lidar_altura": 11.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1091
+  },
+  {
+    "id": 297518886,
+    "lidar_z_min": 530.89,
+    "lidar_z_max": 544.03,
+    "lidar_altura": 13.14,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1477
+  },
+  {
+    "id": 297518887,
+    "lidar_z_min": 533.63,
+    "lidar_z_max": 542.86,
+    "lidar_altura": 9.23,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1162
+  },
+  {
+    "id": 297518888,
+    "lidar_z_min": 533.38,
+    "lidar_z_max": 538.97,
+    "lidar_altura": 5.59,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1560
+  },
+  {
+    "id": 297518890,
+    "lidar_z_min": 531.98,
+    "lidar_z_max": 538.67,
+    "lidar_altura": 6.69,
+    "lidar_forma": "gabled",
+    "lidar_pts": 725
+  },
+  {
+    "id": 297518892,
+    "lidar_z_min": 535.49,
+    "lidar_z_max": 540.04,
+    "lidar_altura": 4.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 386
+  },
+  {
+    "id": 297522422,
+    "lidar_z_min": 534.72,
+    "lidar_z_max": 539.19,
+    "lidar_altura": 4.47,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1552
+  },
+  {
+    "id": 297522423,
+    "lidar_z_min": 534.56,
+    "lidar_z_max": 540.02,
+    "lidar_altura": 5.46,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1465
+  },
+  {
+    "id": 297522424,
+    "lidar_z_min": 534.65,
+    "lidar_z_max": 541.47,
+    "lidar_altura": 6.82,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1613
+  },
+  {
+    "id": 297522425,
+    "lidar_z_min": 534.22,
+    "lidar_z_max": 541.51,
+    "lidar_altura": 7.29,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1256
+  },
+  {
+    "id": 297522426,
+    "lidar_z_min": 532.05,
+    "lidar_z_max": 539.98,
+    "lidar_altura": 7.93,
+    "lidar_forma": "gabled",
+    "lidar_pts": 609
+  },
+  {
+    "id": 297522427,
+    "lidar_z_min": 534.07,
+    "lidar_z_max": 539.71,
+    "lidar_altura": 5.64,
+    "lidar_forma": "gabled",
+    "lidar_pts": 549
+  },
+  {
+    "id": 297522428,
+    "lidar_z_min": 537.58,
+    "lidar_z_max": 539.72,
+    "lidar_altura": 2.15,
+    "lidar_forma": "hipped",
+    "lidar_pts": 712
+  },
+  {
+    "id": 297522429,
+    "lidar_z_min": 537.4,
+    "lidar_z_max": 539.72,
+    "lidar_altura": 2.32,
+    "lidar_forma": "gabled",
+    "lidar_pts": 882
+  },
+  {
+    "id": 297522430,
+    "lidar_z_min": 537.32,
+    "lidar_z_max": 542.44,
+    "lidar_altura": 5.12,
+    "lidar_forma": "gabled",
+    "lidar_pts": 607
+  },
+  {
+    "id": 297522431,
+    "lidar_z_min": 537.51,
+    "lidar_z_max": 543.91,
+    "lidar_altura": 6.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 642
+  },
+  {
+    "id": 297522432,
+    "lidar_z_min": 540.64,
+    "lidar_z_max": 551.12,
+    "lidar_altura": 10.48,
+    "lidar_forma": "gabled",
+    "lidar_pts": 690
+  },
+  {
+    "id": 297522433,
+    "lidar_z_min": 533.0,
+    "lidar_z_max": 551.37,
+    "lidar_altura": 18.37,
+    "lidar_forma": "gabled",
+    "lidar_pts": 638
+  },
+  {
+    "id": 297523800,
+    "lidar_z_min": 534.45,
+    "lidar_z_max": 538.88,
+    "lidar_altura": 4.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 400
+  },
+  {
+    "id": 297523801,
+    "lidar_z_min": 537.2,
+    "lidar_z_max": 539.24,
+    "lidar_altura": 2.04,
+    "lidar_forma": "hipped",
+    "lidar_pts": 158
+  },
+  {
+    "id": 297523802,
+    "lidar_z_min": 537.67,
+    "lidar_z_max": 539.13,
+    "lidar_altura": 1.47,
+    "lidar_forma": "flat",
+    "lidar_pts": 55
+  },
+  {
+    "id": 297523803,
+    "lidar_z_min": 536.88,
+    "lidar_z_max": 542.29,
+    "lidar_altura": 5.41,
+    "lidar_forma": "gabled",
+    "lidar_pts": 423
+  },
+  {
+    "id": 297646222,
+    "lidar_z_min": 534.36,
+    "lidar_z_max": 541.29,
+    "lidar_altura": 6.93,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1619
+  },
+  {
+    "id": 297646224,
+    "lidar_z_min": 531.73,
+    "lidar_z_max": 542.3,
+    "lidar_altura": 10.57,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1880
+  },
+  {
+    "id": 297646225,
+    "lidar_z_min": 531.73,
+    "lidar_z_max": 542.24,
+    "lidar_altura": 10.51,
+    "lidar_forma": "gabled",
+    "lidar_pts": 876
+  },
+  {
+    "id": 297647821,
+    "lidar_z_min": 526.9,
+    "lidar_z_max": 527.39,
+    "lidar_altura": 0.49,
+    "lidar_forma": "flat",
+    "lidar_pts": 39
+  },
+  {
+    "id": 297647823,
+    "lidar_z_min": 521.07,
+    "lidar_z_max": 523.56,
+    "lidar_altura": 2.48,
+    "lidar_forma": "hipped",
+    "lidar_pts": 59
+  },
+  {
+    "id": 297647826,
+    "lidar_z_min": 519.58,
+    "lidar_z_max": 524.32,
+    "lidar_altura": 4.74,
+    "lidar_forma": "gabled",
+    "lidar_pts": 679
+  },
+  {
+    "id": 297647831,
+    "lidar_z_min": 517.21,
+    "lidar_z_max": 524.22,
+    "lidar_altura": 7.01,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1204
+  },
+  {
+    "id": 297647834,
+    "lidar_z_min": 517.32,
+    "lidar_z_max": 517.8,
+    "lidar_altura": 0.48,
+    "lidar_forma": "flat",
+    "lidar_pts": 50
+  },
+  {
+    "id": 297647835,
+    "lidar_z_min": 517.33,
+    "lidar_z_max": 522.76,
+    "lidar_altura": 5.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 604
+  },
+  {
+    "id": 297648145,
+    "lidar_z_min": 517.48,
+    "lidar_z_max": 524.27,
+    "lidar_altura": 6.79,
+    "lidar_forma": "gabled",
+    "lidar_pts": 672
+  },
+  {
+    "id": 297648146,
+    "lidar_z_min": 517.2,
+    "lidar_z_max": 523.51,
+    "lidar_altura": 6.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 485
+  },
+  {
+    "id": 297648147,
+    "lidar_z_min": 516.13,
+    "lidar_z_max": 517.54,
+    "lidar_altura": 1.41,
+    "lidar_forma": "flat",
+    "lidar_pts": 125
+  },
+  {
+    "id": 303983009,
+    "lidar_z_min": 521.16,
+    "lidar_z_max": 540.13,
+    "lidar_altura": 18.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1470
+  },
+  {
+    "id": 303983011,
+    "lidar_z_min": 520.38,
+    "lidar_z_max": 521.23,
+    "lidar_altura": 0.85,
+    "lidar_forma": "flat",
+    "lidar_pts": 64
+  },
+  {
+    "id": 303983012,
+    "lidar_z_min": 534.71,
+    "lidar_z_max": 545.77,
+    "lidar_altura": 11.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4380
+  },
+  {
+    "id": 303983014,
+    "lidar_z_min": 533.63,
+    "lidar_z_max": 545.59,
+    "lidar_altura": 11.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 6290
+  },
+  {
+    "id": 303983016,
+    "lidar_z_min": 534.1,
+    "lidar_z_max": 538.29,
+    "lidar_altura": 4.19,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1160
+  },
+  {
+    "id": 303983018,
+    "lidar_z_min": 533.62,
+    "lidar_z_max": 545.68,
+    "lidar_altura": 12.07,
+    "lidar_forma": "gabled",
+    "lidar_pts": 8489
+  },
+  {
+    "id": 303983019,
+    "lidar_z_min": 533.9,
+    "lidar_z_max": 536.63,
+    "lidar_altura": 2.73,
+    "lidar_forma": "hipped",
+    "lidar_pts": 475
+  },
+  {
+    "id": 303983021,
+    "lidar_z_min": 532.03,
+    "lidar_z_max": 544.34,
+    "lidar_altura": 12.31,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3364
+  },
+  {
+    "id": 303983022,
+    "lidar_z_min": 542.48,
+    "lidar_z_max": 546.0,
+    "lidar_altura": 3.52,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3615
+  },
+  {
+    "id": 303983023,
+    "lidar_z_min": 537.08,
+    "lidar_z_max": 546.66,
+    "lidar_altura": 9.58,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4665
+  },
+  {
+    "id": 303983024,
+    "lidar_z_min": 531.94,
+    "lidar_z_max": 546.04,
+    "lidar_altura": 14.1,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4543
+  },
+  {
+    "id": 303983025,
+    "lidar_z_min": 520.83,
+    "lidar_z_max": 521.07,
+    "lidar_altura": 0.24,
+    "lidar_forma": "flat",
+    "lidar_pts": 9
+  },
+  {
+    "id": 303983028,
+    "lidar_z_min": 533.6,
+    "lidar_z_max": 547.06,
+    "lidar_altura": 13.46,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9788
+  },
+  {
+    "id": 590205681,
+    "lidar_z_min": 521.32,
+    "lidar_z_max": 540.14,
+    "lidar_altura": 18.83,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1225
+  },
+  {
+    "id": 760502519,
+    "lidar_z_min": 519.1,
+    "lidar_z_max": 519.54,
+    "lidar_altura": 0.44,
+    "lidar_forma": "flat",
+    "lidar_pts": 74
+  },
+  {
+    "id": 760502520,
+    "lidar_z_min": 526.76,
+    "lidar_z_max": 528.16,
+    "lidar_altura": 1.4,
+    "lidar_forma": "flat",
+    "lidar_pts": 1615
+  },
+  {
+    "id": 760502522,
+    "lidar_z_min": 526.17,
+    "lidar_z_max": 527.04,
+    "lidar_altura": 0.87,
+    "lidar_forma": "flat",
+    "lidar_pts": 170
+  },
+  {
+    "id": 760502524,
+    "lidar_z_min": 519.83,
+    "lidar_z_max": 520.59,
+    "lidar_altura": 0.76,
+    "lidar_forma": "flat",
+    "lidar_pts": 436
+  },
+  {
+    "id": 760502525,
+    "lidar_z_min": 525.96,
+    "lidar_z_max": 540.04,
+    "lidar_altura": 14.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4005
+  },
+  {
+    "id": 760502527,
+    "lidar_z_min": 534.79,
+    "lidar_z_max": 549.89,
+    "lidar_altura": 15.1,
+    "lidar_forma": "hipped",
+    "lidar_pts": 6365
+  },
+  {
+    "id": 760502528,
+    "lidar_z_min": 539.12,
+    "lidar_z_max": 541.46,
+    "lidar_altura": 2.34,
+    "lidar_forma": "gabled",
+    "lidar_pts": 724
+  },
+  {
+    "id": 760502529,
+    "lidar_z_min": 536.47,
+    "lidar_z_max": 541.93,
+    "lidar_altura": 5.47,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3553
+  },
+  {
+    "id": 760502537,
+    "lidar_z_min": 522.6,
+    "lidar_z_max": 524.54,
+    "lidar_altura": 1.94,
+    "lidar_forma": "hipped",
+    "lidar_pts": 441
+  },
+  {
+    "id": 760502538,
+    "lidar_z_min": 522.94,
+    "lidar_z_max": 523.83,
+    "lidar_altura": 0.89,
+    "lidar_forma": "flat",
+    "lidar_pts": 409
+  },
+  {
+    "id": 760502539,
+    "lidar_z_min": 522.44,
+    "lidar_z_max": 523.33,
+    "lidar_altura": 0.89,
+    "lidar_forma": "flat",
+    "lidar_pts": 117
+  },
+  {
+    "id": 760502540,
+    "lidar_z_min": 522.45,
+    "lidar_z_max": 524.91,
+    "lidar_altura": 2.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 290
+  },
+  {
+    "id": 760502542,
+    "lidar_z_min": 524.2,
+    "lidar_z_max": 525.22,
+    "lidar_altura": 1.02,
+    "lidar_forma": "flat",
+    "lidar_pts": 259
+  },
+  {
+    "id": 783770917,
+    "lidar_z_min": 525.52,
+    "lidar_z_max": 529.83,
+    "lidar_altura": 4.3,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1598
+  },
+  {
+    "id": 783770918,
+    "lidar_z_min": 527.67,
+    "lidar_z_max": 529.37,
+    "lidar_altura": 1.69,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1149
+  },
+  {
+    "id": 783770919,
+    "lidar_z_min": 533.97,
+    "lidar_z_max": 545.52,
+    "lidar_altura": 11.55,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3106
+  },
+  {
+    "id": 783770920,
+    "lidar_z_min": 533.09,
+    "lidar_z_max": 546.57,
+    "lidar_altura": 13.48,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9931
+  },
+  {
+    "id": 783770921,
+    "lidar_z_min": 529.2,
+    "lidar_z_max": 530.81,
+    "lidar_altura": 1.61,
+    "lidar_forma": "gabled",
+    "lidar_pts": 535
+  },
+  {
+    "id": 783770922,
+    "lidar_z_min": 529.89,
+    "lidar_z_max": 539.87,
+    "lidar_altura": 9.98,
+    "lidar_forma": "gabled",
+    "lidar_pts": 905
+  },
+  {
+    "id": 783770923,
+    "lidar_z_min": 529.65,
+    "lidar_z_max": 539.13,
+    "lidar_altura": 9.48,
+    "lidar_forma": "gabled",
+    "lidar_pts": 423
+  },
+  {
+    "id": 783874301,
+    "lidar_z_min": 515.6,
+    "lidar_z_max": 516.53,
+    "lidar_altura": 0.93,
+    "lidar_forma": "flat",
+    "lidar_pts": 131
+  },
+  {
+    "id": 783874302,
+    "lidar_z_min": 515.57,
+    "lidar_z_max": 516.39,
+    "lidar_altura": 0.82,
+    "lidar_forma": "flat",
+    "lidar_pts": 52
+  },
+  {
+    "id": 783874316,
+    "lidar_z_min": 520.08,
+    "lidar_z_max": 520.7,
+    "lidar_altura": 0.63,
+    "lidar_forma": "flat",
+    "lidar_pts": 119
+  },
+  {
+    "id": 783874319,
+    "lidar_z_min": 518.16,
+    "lidar_z_max": 520.53,
+    "lidar_altura": 2.38,
+    "lidar_forma": "gabled",
+    "lidar_pts": 82
+  },
+  {
+    "id": 783874323,
+    "lidar_z_min": 531.52,
+    "lidar_z_max": 544.96,
+    "lidar_altura": 13.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4588
+  },
+  {
+    "id": 783874324,
+    "lidar_z_min": 531.45,
+    "lidar_z_max": 543.09,
+    "lidar_altura": 11.64,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1451
+  },
+  {
+    "id": 783874325,
+    "lidar_z_min": 531.51,
+    "lidar_z_max": 538.8,
+    "lidar_altura": 7.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 348
+  },
+  {
+    "id": 783874326,
+    "lidar_z_min": 529.79,
+    "lidar_z_max": 529.97,
+    "lidar_altura": 0.18,
+    "lidar_forma": "flat",
+    "lidar_pts": 20
+  },
+  {
+    "id": 783874343,
+    "lidar_z_min": 531.41,
+    "lidar_z_max": 539.04,
+    "lidar_altura": 7.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1200
+  },
+  {
+    "id": 783874344,
+    "lidar_z_min": 536.29,
+    "lidar_z_max": 539.1,
+    "lidar_altura": 2.81,
+    "lidar_forma": "gabled",
+    "lidar_pts": 668
+  },
+  {
+    "id": 783874345,
+    "lidar_z_min": 531.32,
+    "lidar_z_max": 542.85,
+    "lidar_altura": 11.52,
+    "lidar_forma": "gabled",
+    "lidar_pts": 404
+  },
+  {
+    "id": 783874346,
+    "lidar_z_min": 536.18,
+    "lidar_z_max": 539.05,
+    "lidar_altura": 2.87,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1161
+  },
+  {
+    "id": 783874347,
+    "lidar_z_min": 530.95,
+    "lidar_z_max": 539.06,
+    "lidar_altura": 8.12,
+    "lidar_forma": "gabled",
+    "lidar_pts": 641
+  },
+  {
+    "id": 784673755,
+    "lidar_z_min": 522.73,
+    "lidar_z_max": 529.45,
+    "lidar_altura": 6.71,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1389
+  },
+  {
+    "id": 784673756,
+    "lidar_z_min": 525.92,
+    "lidar_z_max": 527.1,
+    "lidar_altura": 1.17,
+    "lidar_forma": "flat",
+    "lidar_pts": 432
+  },
+  {
+    "id": 784673757,
+    "lidar_z_min": 524.15,
+    "lidar_z_max": 525.19,
+    "lidar_altura": 1.04,
+    "lidar_forma": "flat",
+    "lidar_pts": 645
+  },
+  {
+    "id": 784673763,
+    "lidar_z_min": 523.32,
+    "lidar_z_max": 523.41,
+    "lidar_altura": 0.09,
+    "lidar_forma": "flat",
+    "lidar_pts": 4
+  },
+  {
+    "id": 784673764,
+    "lidar_z_min": 523.33,
+    "lidar_z_max": 525.11,
+    "lidar_altura": 1.78,
+    "lidar_forma": "gabled",
+    "lidar_pts": 137
+  },
+  {
+    "id": 784673765,
+    "lidar_z_min": 523.35,
+    "lidar_z_max": 524.81,
+    "lidar_altura": 1.46,
+    "lidar_forma": "flat",
+    "lidar_pts": 173
+  },
+  {
+    "id": 784673767,
+    "lidar_z_min": 517.81,
+    "lidar_z_max": 521.72,
+    "lidar_altura": 3.9,
+    "lidar_forma": "gabled",
+    "lidar_pts": 109
+  },
+  {
+    "id": 784673784,
+    "lidar_z_min": 534.79,
+    "lidar_z_max": 548.25,
+    "lidar_altura": 13.47,
+    "lidar_forma": "gabled",
+    "lidar_pts": 7290
+  },
+  {
+    "id": 784673785,
+    "lidar_z_min": 535.5,
+    "lidar_z_max": 548.51,
+    "lidar_altura": 13.01,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4535
+  },
+  {
+    "id": 784673786,
+    "lidar_z_min": 534.37,
+    "lidar_z_max": 543.25,
+    "lidar_altura": 8.88,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1378
+  },
+  {
+    "id": 784673787,
+    "lidar_z_min": 534.18,
+    "lidar_z_max": 534.74,
+    "lidar_altura": 0.56,
+    "lidar_forma": "flat",
+    "lidar_pts": 445
+  },
+  {
+    "id": 784673788,
+    "lidar_z_min": 534.42,
+    "lidar_z_max": 546.77,
+    "lidar_altura": 12.35,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5840
+  },
+  {
+    "id": 784673790,
+    "lidar_z_min": 535.01,
+    "lidar_z_max": 535.5,
+    "lidar_altura": 0.49,
+    "lidar_forma": "flat",
+    "lidar_pts": 196
+  },
+  {
+    "id": 784673792,
+    "lidar_z_min": 536.53,
+    "lidar_z_max": 538.16,
+    "lidar_altura": 1.63,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1138
+  },
+  {
+    "id": 784673793,
+    "lidar_z_min": 536.12,
+    "lidar_z_max": 540.96,
+    "lidar_altura": 4.83,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1624
+  },
+  {
+    "id": 784673796,
+    "lidar_z_min": 537.15,
+    "lidar_z_max": 548.23,
+    "lidar_altura": 11.09,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3844
+  },
+  {
+    "id": 784673797,
+    "lidar_z_min": 535.04,
+    "lidar_z_max": 535.52,
+    "lidar_altura": 0.48,
+    "lidar_forma": "flat",
+    "lidar_pts": 109
+  },
+  {
+    "id": 784673799,
+    "lidar_z_min": 544.89,
+    "lidar_z_max": 547.14,
+    "lidar_altura": 2.25,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1341
+  },
+  {
+    "id": 784673801,
+    "lidar_z_min": 543.93,
+    "lidar_z_max": 545.43,
+    "lidar_altura": 1.5,
+    "lidar_forma": "flat",
+    "lidar_pts": 154
+  },
+  {
+    "id": 784673802,
+    "lidar_z_min": 543.89,
+    "lidar_z_max": 544.22,
+    "lidar_altura": 0.33,
+    "lidar_forma": "flat",
+    "lidar_pts": 11
+  },
+  {
+    "id": 784673803,
+    "lidar_z_min": 546.44,
+    "lidar_z_max": 546.44,
+    "lidar_altura": 0.0,
+    "lidar_forma": "flat",
+    "lidar_pts": 1
+  },
+  {
+    "id": 784673804,
+    "lidar_z_min": 546.25,
+    "lidar_z_max": 546.49,
+    "lidar_altura": 0.24,
+    "lidar_forma": "flat",
+    "lidar_pts": 9
+  },
+  {
+    "id": 784673805,
+    "lidar_z_min": 546.29,
+    "lidar_z_max": 546.38,
+    "lidar_altura": 0.08,
+    "lidar_forma": "flat",
+    "lidar_pts": 2
+  },
+  {
+    "id": 784673806,
+    "lidar_z_min": 534.62,
+    "lidar_z_max": 549.53,
+    "lidar_altura": 14.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2089
+  },
+  {
+    "id": 784673807,
+    "lidar_z_min": 534.54,
+    "lidar_z_max": 549.54,
+    "lidar_altura": 15.0,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2871
+  },
+  {
+    "id": 784673808,
+    "lidar_z_min": 534.54,
+    "lidar_z_max": 549.04,
+    "lidar_altura": 14.5,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2679
+  },
+  {
+    "id": 784673809,
+    "lidar_z_min": 538.35,
+    "lidar_z_max": 548.03,
+    "lidar_altura": 9.68,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1136
+  },
+  {
+    "id": 784673810,
+    "lidar_z_min": 539.98,
+    "lidar_z_max": 548.37,
+    "lidar_altura": 8.39,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2549
+  },
+  {
+    "id": 784673811,
+    "lidar_z_min": 534.6,
+    "lidar_z_max": 547.68,
+    "lidar_altura": 13.09,
+    "lidar_forma": "gabled",
+    "lidar_pts": 7698
+  },
+  {
+    "id": 784673812,
+    "lidar_z_min": 534.6,
+    "lidar_z_max": 544.5,
+    "lidar_altura": 9.9,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1620
+  },
+  {
+    "id": 784673813,
+    "lidar_z_min": 534.59,
+    "lidar_z_max": 544.48,
+    "lidar_altura": 9.89,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1612
+  },
+  {
+    "id": 784673814,
+    "lidar_z_min": 534.29,
+    "lidar_z_max": 546.94,
+    "lidar_altura": 12.64,
+    "lidar_forma": "gabled",
+    "lidar_pts": 13386
+  },
+  {
+    "id": 784673815,
+    "lidar_z_min": 534.31,
+    "lidar_z_max": 546.76,
+    "lidar_altura": 12.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1291
+  },
+  {
+    "id": 784673816,
+    "lidar_z_min": 534.36,
+    "lidar_z_max": 542.89,
+    "lidar_altura": 8.53,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2027
+  },
+  {
+    "id": 784673817,
+    "lidar_z_min": 534.33,
+    "lidar_z_max": 543.3,
+    "lidar_altura": 8.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2099
+  },
+  {
+    "id": 784673818,
+    "lidar_z_min": 533.94,
+    "lidar_z_max": 543.01,
+    "lidar_altura": 9.07,
+    "lidar_forma": "gabled",
+    "lidar_pts": 971
+  },
+  {
+    "id": 784673819,
+    "lidar_z_min": 532.41,
+    "lidar_z_max": 542.99,
+    "lidar_altura": 10.58,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2387
+  },
+  {
+    "id": 784673820,
+    "lidar_z_min": 534.85,
+    "lidar_z_max": 547.02,
+    "lidar_altura": 12.17,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2985
+  },
+  {
+    "id": 784673821,
+    "lidar_z_min": 546.45,
+    "lidar_z_max": 549.52,
+    "lidar_altura": 3.07,
+    "lidar_forma": "hipped",
+    "lidar_pts": 781
+  },
+  {
+    "id": 784673822,
+    "lidar_z_min": 534.64,
+    "lidar_z_max": 549.55,
+    "lidar_altura": 14.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1471
+  },
+  {
+    "id": 784673823,
+    "lidar_z_min": 534.55,
+    "lidar_z_max": 549.31,
+    "lidar_altura": 14.76,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2342
+  },
+  {
+    "id": 784673824,
+    "lidar_z_min": 534.59,
+    "lidar_z_max": 548.12,
+    "lidar_altura": 13.53,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3712
+  },
+  {
+    "id": 784673825,
+    "lidar_z_min": 536.66,
+    "lidar_z_max": 548.45,
+    "lidar_altura": 11.79,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4118
+  },
+  {
+    "id": 784673826,
+    "lidar_z_min": 535.65,
+    "lidar_z_max": 546.93,
+    "lidar_altura": 11.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3869
+  },
+  {
+    "id": 784673827,
+    "lidar_z_min": 534.82,
+    "lidar_z_max": 546.35,
+    "lidar_altura": 11.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3749
+  },
+  {
+    "id": 784673828,
+    "lidar_z_min": 534.78,
+    "lidar_z_max": 547.01,
+    "lidar_altura": 12.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3301
+  },
+  {
+    "id": 784673829,
+    "lidar_z_min": 534.78,
+    "lidar_z_max": 546.99,
+    "lidar_altura": 12.21,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2757
+  },
+  {
+    "id": 784673841,
+    "lidar_z_min": 522.46,
+    "lidar_z_max": 522.93,
+    "lidar_altura": 0.48,
+    "lidar_forma": "flat",
+    "lidar_pts": 163
+  },
+  {
+    "id": 784673842,
+    "lidar_z_min": 522.46,
+    "lidar_z_max": 522.93,
+    "lidar_altura": 0.48,
+    "lidar_forma": "flat",
+    "lidar_pts": 165
+  },
+  {
+    "id": 784673844,
+    "lidar_z_min": 536.4,
+    "lidar_z_max": 539.13,
+    "lidar_altura": 2.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 14
+  },
+  {
+    "id": 784673846,
+    "lidar_z_min": 530.7,
+    "lidar_z_max": 540.07,
+    "lidar_altura": 9.37,
+    "lidar_forma": "gabled",
+    "lidar_pts": 655
+  },
+  {
+    "id": 784673848,
+    "lidar_z_min": 524.21,
+    "lidar_z_max": 527.12,
+    "lidar_altura": 2.91,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5
+  },
+  {
+    "id": 784673849,
+    "lidar_z_min": 524.81,
+    "lidar_z_max": 529.46,
+    "lidar_altura": 4.65,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1087
+  },
+  {
+    "id": 784673850,
+    "lidar_z_min": 532.36,
+    "lidar_z_max": 532.43,
+    "lidar_altura": 0.07,
+    "lidar_forma": "flat",
+    "lidar_pts": 2
+  },
+  {
+    "id": 784673851,
+    "lidar_z_min": 532.4,
+    "lidar_z_max": 533.37,
+    "lidar_altura": 0.97,
+    "lidar_forma": "flat",
+    "lidar_pts": 161
+  },
+  {
+    "id": 784673858,
+    "lidar_z_min": 539.11,
+    "lidar_z_max": 541.29,
+    "lidar_altura": 2.19,
+    "lidar_forma": "gabled",
+    "lidar_pts": 865
+  },
+  {
+    "id": 784673859,
+    "lidar_z_min": 539.09,
+    "lidar_z_max": 539.85,
+    "lidar_altura": 0.76,
+    "lidar_forma": "flat",
+    "lidar_pts": 50
+  },
+  {
+    "id": 784797100,
+    "lidar_z_min": 534.84,
+    "lidar_z_max": 549.23,
+    "lidar_altura": 14.4,
+    "lidar_forma": "hipped",
+    "lidar_pts": 4868
+  },
+  {
+    "id": 784797102,
+    "lidar_z_min": 520.41,
+    "lidar_z_max": 523.58,
+    "lidar_altura": 3.18,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1072
+  },
+  {
+    "id": 1225734400,
+    "lidar_z_min": 535.73,
+    "lidar_z_max": 537.76,
+    "lidar_altura": 2.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1534
+  },
+  {
+    "id": 1225734401,
+    "lidar_z_min": 535.73,
+    "lidar_z_max": 537.76,
+    "lidar_altura": 2.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1534
+  },
+  {
+    "id": 1470013164,
+    "lidar_z_min": 531.4,
+    "lidar_z_max": 538.38,
+    "lidar_altura": 6.98,
+    "lidar_forma": "gabled",
+    "lidar_pts": 280
+  },
+  {
+    "id": 1470013165,
+    "lidar_z_min": 531.43,
+    "lidar_z_max": 537.97,
+    "lidar_altura": 6.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 130
+  },
+  {
+    "id": 1470013166,
+    "lidar_z_min": 530.45,
+    "lidar_z_max": 536.39,
+    "lidar_altura": 5.94,
+    "lidar_forma": "gabled",
+    "lidar_pts": 72
+  },
+  {
+    "id": 1470013167,
+    "lidar_z_min": 529.73,
+    "lidar_z_max": 531.0,
+    "lidar_altura": 1.27,
+    "lidar_forma": "flat",
+    "lidar_pts": 139
+  },
+  {
+    "id": 1470013168,
+    "lidar_z_min": 529.73,
+    "lidar_z_max": 531.0,
+    "lidar_altura": 1.27,
+    "lidar_forma": "flat",
+    "lidar_pts": 43
+  },
+  {
+    "id": 784673795,
+    "lidar_z_min": 535.33,
+    "lidar_z_max": 544.12,
+    "lidar_altura": 8.79,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2456
+  },
+  {
+    "id": 784797028,
+    "lidar_z_min": 538.87,
+    "lidar_z_max": 539.22,
+    "lidar_altura": 0.35,
+    "lidar_forma": "flat",
+    "lidar_pts": 130
+  },
+  {
+    "id": 784797029,
+    "lidar_z_min": 539.16,
+    "lidar_z_max": 539.16,
+    "lidar_altura": 0.0,
+    "lidar_forma": "flat",
+    "lidar_pts": 1
+  },
+  {
+    "id": 784797036,
+    "lidar_z_min": 544.18,
+    "lidar_z_max": 544.45,
+    "lidar_altura": 0.28,
+    "lidar_forma": "flat",
+    "lidar_pts": 16
+  },
+  {
+    "id": 784797053,
+    "lidar_z_min": 531.71,
+    "lidar_z_max": 537.58,
+    "lidar_altura": 5.87,
+    "lidar_forma": "gabled",
+    "lidar_pts": 90
+  },
+  {
+    "id": 784797054,
+    "lidar_z_min": 522.97,
+    "lidar_z_max": 524.91,
+    "lidar_altura": 1.94,
+    "lidar_forma": "gabled",
+    "lidar_pts": 455
+  },
+  {
+    "id": 784797055,
+    "lidar_z_min": 523.0,
+    "lidar_z_max": 524.76,
+    "lidar_altura": 1.76,
+    "lidar_forma": "gabled",
+    "lidar_pts": 319
+  },
+  {
+    "id": 784797059,
+    "lidar_z_min": 520.47,
+    "lidar_z_max": 521.32,
+    "lidar_altura": 0.86,
+    "lidar_forma": "flat",
+    "lidar_pts": 419
+  },
+  {
+    "id": 1225734437,
+    "lidar_z_min": 523.07,
+    "lidar_z_max": 527.86,
+    "lidar_altura": 4.79,
+    "lidar_forma": "hipped",
+    "lidar_pts": 1334
+  },
+  {
+    "id": 1227104496,
+    "lidar_z_min": 528.07,
+    "lidar_z_max": 535.6,
+    "lidar_altura": 7.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 670
+  },
+  {
+    "id": 1227104501,
+    "lidar_z_min": 525.22,
+    "lidar_z_max": 530.55,
+    "lidar_altura": 5.32,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2160
+  },
+  {
+    "id": 103486726,
+    "lidar_z_min": 531.28,
+    "lidar_z_max": 535.52,
+    "lidar_altura": 4.24,
+    "lidar_forma": "gabled",
+    "lidar_pts": 94
+  },
+  {
+    "id": 103486727,
+    "lidar_z_min": 534.11,
+    "lidar_z_max": 536.63,
+    "lidar_altura": 2.53,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1928
+  },
+  {
+    "id": 297060217,
+    "lidar_z_min": 516.54,
+    "lidar_z_max": 516.54,
+    "lidar_altura": 0.0,
+    "lidar_forma": "flat",
+    "lidar_pts": 1
+  },
+  {
+    "id": 297085426,
+    "lidar_z_min": 535.99,
+    "lidar_z_max": 537.59,
+    "lidar_altura": 1.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 402
+  },
+  {
+    "id": 297085430,
+    "lidar_z_min": 533.05,
+    "lidar_z_max": 537.15,
+    "lidar_altura": 4.1,
+    "lidar_forma": "gabled",
+    "lidar_pts": 164
+  },
+  {
+    "id": 297085431,
+    "lidar_z_min": 520.72,
+    "lidar_z_max": 531.04,
+    "lidar_altura": 10.32,
+    "lidar_forma": "gabled",
+    "lidar_pts": 307
+  },
+  {
+    "id": 297085432,
+    "lidar_z_min": 522.57,
+    "lidar_z_max": 531.01,
+    "lidar_altura": 8.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 91
+  },
+  {
+    "id": 297092154,
+    "lidar_z_min": 517.31,
+    "lidar_z_max": 530.34,
+    "lidar_altura": 13.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 121
+  },
+  {
+    "id": 297092155,
+    "lidar_z_min": 521.84,
+    "lidar_z_max": 531.46,
+    "lidar_altura": 9.62,
+    "lidar_forma": "gabled",
+    "lidar_pts": 479
+  },
+  {
+    "id": 297092156,
+    "lidar_z_min": 516.37,
+    "lidar_z_max": 532.05,
+    "lidar_altura": 15.68,
+    "lidar_forma": "gabled",
+    "lidar_pts": 738
+  },
+  {
+    "id": 297092157,
+    "lidar_z_min": 516.32,
+    "lidar_z_max": 531.68,
+    "lidar_altura": 15.36,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1015
+  },
+  {
+    "id": 297092158,
+    "lidar_z_min": 517.19,
+    "lidar_z_max": 521.25,
+    "lidar_altura": 4.06,
+    "lidar_forma": "gabled",
+    "lidar_pts": 41
+  },
+  {
+    "id": 297092162,
+    "lidar_z_min": 517.5,
+    "lidar_z_max": 522.9,
+    "lidar_altura": 5.4,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1120
+  },
+  {
+    "id": 297097888,
+    "lidar_z_min": 532.77,
+    "lidar_z_max": 542.97,
+    "lidar_altura": 10.2,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3397
+  },
+  {
+    "id": 297361982,
+    "lidar_z_min": 519.18,
+    "lidar_z_max": 524.84,
+    "lidar_altura": 5.67,
+    "lidar_forma": "gabled",
+    "lidar_pts": 90
+  },
+  {
+    "id": 297389256,
+    "lidar_z_min": 520.13,
+    "lidar_z_max": 526.86,
+    "lidar_altura": 6.73,
+    "lidar_forma": "gabled",
+    "lidar_pts": 10905
+  },
+  {
+    "id": 297389260,
+    "lidar_z_min": 519.09,
+    "lidar_z_max": 528.38,
+    "lidar_altura": 9.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4843
+  },
+  {
+    "id": 297390695,
+    "lidar_z_min": 519.91,
+    "lidar_z_max": 526.45,
+    "lidar_altura": 6.53,
+    "lidar_forma": "gabled",
+    "lidar_pts": 9135
+  },
+  {
+    "id": 297390696,
+    "lidar_z_min": 519.52,
+    "lidar_z_max": 528.18,
+    "lidar_altura": 8.67,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5551
+  },
+  {
+    "id": 297392689,
+    "lidar_z_min": 518.37,
+    "lidar_z_max": 520.24,
+    "lidar_altura": 1.87,
+    "lidar_forma": "gabled",
+    "lidar_pts": 78
+  },
+  {
+    "id": 297392690,
+    "lidar_z_min": 524.85,
+    "lidar_z_max": 526.88,
+    "lidar_altura": 2.03,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3617
+  },
+  {
+    "id": 297392692,
+    "lidar_z_min": 519.8,
+    "lidar_z_max": 527.52,
+    "lidar_altura": 7.71,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3315
+  },
+  {
+    "id": 297392693,
+    "lidar_z_min": 520.19,
+    "lidar_z_max": 527.48,
+    "lidar_altura": 7.29,
+    "lidar_forma": "gabled",
+    "lidar_pts": 5034
+  },
+  {
+    "id": 297392694,
+    "lidar_z_min": 520.01,
+    "lidar_z_max": 523.24,
+    "lidar_altura": 3.23,
+    "lidar_forma": "gabled",
+    "lidar_pts": 7670
+  },
+  {
+    "id": 297448652,
+    "lidar_z_min": 518.93,
+    "lidar_z_max": 522.94,
+    "lidar_altura": 4.02,
+    "lidar_forma": "gabled",
+    "lidar_pts": 11396
+  },
+  {
+    "id": 297448654,
+    "lidar_z_min": 516.87,
+    "lidar_z_max": 526.62,
+    "lidar_altura": 9.74,
+    "lidar_forma": "gabled",
+    "lidar_pts": 22948
+  },
+  {
+    "id": 297448655,
+    "lidar_z_min": 517.97,
+    "lidar_z_max": 525.65,
+    "lidar_altura": 7.69,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1513
+  },
+  {
+    "id": 297519876,
+    "lidar_z_min": 533.55,
+    "lidar_z_max": 542.97,
+    "lidar_altura": 9.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 517
+  },
+  {
+    "id": 297519877,
+    "lidar_z_min": 534.32,
+    "lidar_z_max": 544.0,
+    "lidar_altura": 9.68,
+    "lidar_forma": "hipped",
+    "lidar_pts": 4279
+  },
+  {
+    "id": 297519879,
+    "lidar_z_min": 534.54,
+    "lidar_z_max": 538.98,
+    "lidar_altura": 4.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2043
+  },
+  {
+    "id": 297519880,
+    "lidar_z_min": 535.33,
+    "lidar_z_max": 538.88,
+    "lidar_altura": 3.54,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1374
+  },
+  {
+    "id": 297519881,
+    "lidar_z_min": 529.96,
+    "lidar_z_max": 540.52,
+    "lidar_altura": 10.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1481
+  },
+  {
+    "id": 297519882,
+    "lidar_z_min": 533.16,
+    "lidar_z_max": 542.59,
+    "lidar_altura": 9.43,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2068
+  },
+  {
+    "id": 297519883,
+    "lidar_z_min": 531.89,
+    "lidar_z_max": 537.87,
+    "lidar_altura": 5.98,
+    "lidar_forma": "gabled",
+    "lidar_pts": 578
+  },
+  {
+    "id": 297519884,
+    "lidar_z_min": 538.67,
+    "lidar_z_max": 540.29,
+    "lidar_altura": 1.62,
+    "lidar_forma": "gabled",
+    "lidar_pts": 70
+  },
+  {
+    "id": 297521079,
+    "lidar_z_min": 534.76,
+    "lidar_z_max": 537.33,
+    "lidar_altura": 2.56,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1169
+  },
+  {
+    "id": 297521081,
+    "lidar_z_min": 534.17,
+    "lidar_z_max": 540.45,
+    "lidar_altura": 6.27,
+    "lidar_forma": "gabled",
+    "lidar_pts": 8717
+  },
+  {
+    "id": 297523799,
+    "lidar_z_min": 530.45,
+    "lidar_z_max": 537.89,
+    "lidar_altura": 7.44,
+    "lidar_forma": "gabled",
+    "lidar_pts": 409
+  },
+  {
+    "id": 297523804,
+    "lidar_z_min": 534.46,
+    "lidar_z_max": 540.97,
+    "lidar_altura": 6.5,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1865
+  },
+  {
+    "id": 297646221,
+    "lidar_z_min": 535.11,
+    "lidar_z_max": 538.92,
+    "lidar_altura": 3.81,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1066
+  },
+  {
+    "id": 297646223,
+    "lidar_z_min": 538.78,
+    "lidar_z_max": 541.28,
+    "lidar_altura": 2.49,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1206
+  },
+  {
+    "id": 297646229,
+    "lidar_z_min": 534.73,
+    "lidar_z_max": 541.33,
+    "lidar_altura": 6.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 3616
+  },
+  {
+    "id": 297646230,
+    "lidar_z_min": 532.23,
+    "lidar_z_max": 540.31,
+    "lidar_altura": 8.08,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1601
+  },
+  {
+    "id": 297646232,
+    "lidar_z_min": 536.6,
+    "lidar_z_max": 545.05,
+    "lidar_altura": 8.45,
+    "lidar_forma": "gabled",
+    "lidar_pts": 4130
+  },
+  {
+    "id": 783874256,
+    "lidar_z_min": 520.28,
+    "lidar_z_max": 522.57,
+    "lidar_altura": 2.29,
+    "lidar_forma": "hipped",
+    "lidar_pts": 686
+  },
+  {
+    "id": 783874257,
+    "lidar_z_min": 519.23,
+    "lidar_z_max": 521.5,
+    "lidar_altura": 2.28,
+    "lidar_forma": "gabled",
+    "lidar_pts": 580
+  },
+  {
+    "id": 783874258,
+    "lidar_z_min": 519.5,
+    "lidar_z_max": 521.53,
+    "lidar_altura": 2.03,
+    "lidar_forma": "gabled",
+    "lidar_pts": 2457
+  },
+  {
+    "id": 783874266,
+    "lidar_z_min": 519.89,
+    "lidar_z_max": 521.47,
+    "lidar_altura": 1.58,
+    "lidar_forma": "gabled",
+    "lidar_pts": 50
+  },
+  {
+    "id": 783874277,
+    "lidar_z_min": 526.39,
+    "lidar_z_max": 532.38,
+    "lidar_altura": 5.99,
+    "lidar_forma": "gabled",
+    "lidar_pts": 57
+  },
+  {
+    "id": 783874278,
+    "lidar_z_min": 531.38,
+    "lidar_z_max": 533.33,
+    "lidar_altura": 1.95,
+    "lidar_forma": "gabled",
+    "lidar_pts": 165
+  },
+  {
+    "id": 783874279,
+    "lidar_z_min": 531.39,
+    "lidar_z_max": 534.36,
+    "lidar_altura": 2.97,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1144
+  },
+  {
+    "id": 783874280,
+    "lidar_z_min": 527.96,
+    "lidar_z_max": 538.31,
+    "lidar_altura": 10.35,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1643
+  },
+  {
+    "id": 783874281,
+    "lidar_z_min": 527.91,
+    "lidar_z_max": 539.09,
+    "lidar_altura": 11.18,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1373
+  },
+  {
+    "id": 783874282,
+    "lidar_z_min": 529.64,
+    "lidar_z_max": 541.73,
+    "lidar_altura": 12.09,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1615
+  },
+  {
+    "id": 783874283,
+    "lidar_z_min": 529.86,
+    "lidar_z_max": 541.45,
+    "lidar_altura": 11.6,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1526
+  },
+  {
+    "id": 783874284,
+    "lidar_z_min": 529.9,
+    "lidar_z_max": 539.96,
+    "lidar_altura": 10.07,
+    "lidar_forma": "gabled",
+    "lidar_pts": 998
+  },
+  {
+    "id": 783874285,
+    "lidar_z_min": 529.96,
+    "lidar_z_max": 540.0,
+    "lidar_altura": 10.05,
+    "lidar_forma": "gabled",
+    "lidar_pts": 1674
+  }
+]
