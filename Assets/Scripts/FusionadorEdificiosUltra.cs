@@ -48,11 +48,14 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         public float  lidar_z_min, lidar_z_max, lidar_altura;
         public string lidar_forma;
         public int    lidar_pts;
+        public float  lidar_eje_x, lidar_eje_z;   // eje PCA de la cumbrera
         public float  overture_height;
         public int    anio_construccion;
         public string material, roof_material, roof_tipo_real;
         public float  roof_r_real, roof_g_real, roof_b_real;
         public float  mat_r, mat_g, mat_b;
+        // Puntos reales del tejado: [dx, dy_elev, dz] relativos al centroide
+        public float[][] puntos_tejado;
     }
 
     readonly Dictionary<int, EdificioUltra> _ultra = new();
@@ -190,6 +193,32 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         if (!_ultra.TryGetValue(id, out var ed)) return false;
         if (ed.roof_r_real <= 0 && ed.roof_g_real <= 0 && ed.roof_b_real <= 0) return false;
         color = new Color(ed.roof_r_real / 255f, ed.roof_g_real / 255f, ed.roof_b_real / 255f);
+        return true;
+    }
+
+    /// Eje PCA de la cumbrera del tejado (vector normalizado en XZ planta).
+    public Vector2 GetRoofAxis(int id)
+    {
+        if (!_ultra.TryGetValue(id, out var ed)) return Vector2.right;
+        float ex = ed.lidar_eje_x, ez = ed.lidar_eje_z;
+        float len = Mathf.Sqrt(ex*ex + ez*ez);
+        return len > 0.01f ? new Vector2(ex/len, ez/len) : Vector2.right;
+    }
+
+    /// Nube de puntos del tejado en coordenadas relativas al centroide del edificio.
+    /// Devuelve true si hay datos; los puntos están en Unity coords (dx, dy_elev, dz).
+    public bool GetRoofPoints(int id, out UnityEngine.Vector3[] puntos)
+    {
+        puntos = null;
+        if (!_ultra.TryGetValue(id, out var ed)) return false;
+        if (ed.puntos_tejado == null || ed.puntos_tejado.Length < 3) return false;
+        puntos = new UnityEngine.Vector3[ed.puntos_tejado.Length];
+        for (int i = 0; i < ed.puntos_tejado.Length; i++)
+        {
+            var p = ed.puntos_tejado[i];
+            if (p == null || p.Length < 3) { puntos = null; return false; }
+            puntos[i] = new UnityEngine.Vector3(p[0], p[1], p[2]);
+        }
         return true;
     }
 

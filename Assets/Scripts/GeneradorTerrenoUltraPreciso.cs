@@ -30,13 +30,18 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     public int resolucionMax = 2049;
 
     // ── Constantes ────────────────────────────────────────────────────────
-    const string PATH_DTM_2M  = "Assets/AlsasuaData/terreno_2m.asc";
-    const string PATH_DTM_5M  = "Assets/AlsasuaData/dtm_alsasua_5m.asc";
-    const string PATH_LIDAR_G = "Assets/AlsasuaData/lidar_ground.xyz";
+    const string PATH_LIDAR_RAW = "Assets/AlsasuaData/lidar_dtm_05m.raw";   // 0.5m, generado por PipelineLIDAR_Completo.py
+    const string PATH_LIDAR_META= "Assets/AlsasuaData/lidar_dtm_meta.json"; // metadatos del RAW
+    const string PATH_DTM_2M    = "Assets/AlsasuaData/terreno_2m.asc";
+    const string PATH_DTM_5M    = "Assets/AlsasuaData/dtm_alsasua_5m.asc";
+    const string PATH_LIDAR_G   = "Assets/AlsasuaData/lidar_ground.xyz";
 
-    // Coordenadas del terreno
-    const float LAT0 = 42.8987f, LON0 = -2.1677f;
-    const float M_LAT = 111320f, M_LON = 76400f;
+    // Coordenadas — UTM 30N ETRS89 (fórmula rigurosa)
+    const float E_ORIG     = 567951f;   // UTM E de Herriko Plaza
+    const float N_ORIG     = 4749902f;  // UTM N de Herriko Plaza
+    const float M_LON_REAL = 81548f;    // cos(42.8987°) × 111320 m/grado
+    const float M_LON_PROJ = 76400f;    // escala del proyecto
+    const float M_LAT      = 111320f;
 
     bool _aplicado;
     public bool Aplicado => _aplicado;
@@ -60,12 +65,18 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
     public IEnumerator AplicarMejorDTM()
     {
-        string ruta2m = FullPath(PATH_DTM_2M);
-        string ruta5m = FullPath(PATH_DTM_5M);
-        string rutaXYZ= FullPath(PATH_LIDAR_G);
+        string rutaRaw = FullPath(PATH_LIDAR_RAW);
+        string ruta2m  = FullPath(PATH_DTM_2M);
+        string ruta5m  = FullPath(PATH_DTM_5M);
+        string rutaXYZ = FullPath(PATH_LIDAR_G);
 
-        // Prioridad: LIDAR > 2m > 5m
-        if (File.Exists(rutaXYZ) && new FileInfo(rutaXYZ).Length > 50_000)
+        // Prioridad: RAW 0.5m LIDAR > XYZ LIDAR > ASC 2m > ASC 5m
+        if (File.Exists(rutaRaw) && new FileInfo(rutaRaw).Length > 1_000_000)
+        {
+            AlsasuaLogger.Info("TerrenoHDR", "Aplicando DTM LIDAR 0.5m (lidar_dtm_05m.raw)...");
+            yield return StartCoroutine(AplicarDesdeRAW(rutaRaw));
+        }
+        else if (File.Exists(rutaXYZ) && new FileInfo(rutaXYZ).Length > 50_000)
         {
             AlsasuaLogger.Info("TerrenoHDR", "Aplicando DTM desde LIDAR ground.xyz (0.5m)...");
             yield return StartCoroutine(AplicarDesdeXYZ(rutaXYZ));
@@ -85,6 +96,81 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             AlsasuaLogger.Warn("TerrenoHDR",
                 "Sin DTM de alta resolución. Ejecuta PipelineDatosUltraprecisos.py");
         }
+    }
+
+    // ── RAW 16-bit (LIDAR 0.5m, generado por PipelineLIDAR_Completo.py) ─────
+
+    IEnumerator AplicarDesdeRAW(string path)
+    {
+        var terrain = Terrain.activeTerrain;
+        if (terrain == null) yield break;
+
+        // Leer metadatos
+        string metaPath = FullPath(PATH_LIDAR_META);
+        float terrainW = 1024f, terrainH_m = 900f, zMin = 300f, zRange = 700f;
+        int hRes = 2049;
+
+        if (File.Exists(metaPath))
+        {
+            try
+            {
+                var meta = JsonUtility.FromJson<LidarDtmMeta>(File.ReadAllText(metaPath));
+                terrainW   = meta.terrainWidth;
+                terrainH_m = meta.terrainHeight;
+                zMin       = meta.z_min;
+                zRange     = meta.z_max - meta.z_min;
+                hRes       = meta.heightmapResolution;
+            }
+            catch { }
+        }
+
+        // Leer .raw en thread (puede ser 8MB)
+        ushort[] rawData = null;
+        bool lecto = false;
+        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+        {
+            try
+            {
+                var bytes = File.ReadAllBytes(path);
+                rawData = new ushort[bytes.Length / 2];
+                Buffer.BlockCopy(bytes, 0, rawData, 0, bytes.Length);
+                lecto = true;
+            }
+            catch (System.Exception e)
+            { AlsasuaLogger.Warn("TerrenoHDR", $"RAW read error: {e.Message}"); lecto = true; }
+        });
+
+        while (!lecto) yield return new WaitForSeconds(0.05f);
+        if (rawData == null) yield break;
+
+        yield return null;
+
+        var td = terrain.terrainData;
+        td.heightmapResolution = hRes;
+        td.size = new Vector3(terrainW, zRange, terrainW);
+        terrain.transform.position = new Vector3(
+            OX - terrainW * 0.5f,
+            zMin,
+            OZ - terrainW * 0.5f);
+
+        float[,] heights = new float[hRes, hRes];
+        for (int i = 0; i < hRes * hRes && i < rawData.Length; i++)
+            heights[i / hRes, i % hRes] = rawData[i] / 65535f;
+
+        td.SetHeights(0, 0, heights);
+        terrain.Flush();
+
+        _aplicado = true;
+        AlsasuaLogger.Info("TerrenoHDR",
+            $"✅ DTM LIDAR 0.5m aplicado: {hRes}×{hRes}  {terrainW}m×{terrainW}m  Z={zMin:F0}-{zMin+zRange:F0}m");
+    }
+
+    [System.Serializable]
+    class LidarDtmMeta
+    {
+        public int   heightmapResolution;
+        public float terrainWidth, terrainLength, terrainHeight;
+        public float z_min, z_max, res_m;
     }
 
     // ── ASC Grid (IDENA 2m) ───────────────────────────────────────────────

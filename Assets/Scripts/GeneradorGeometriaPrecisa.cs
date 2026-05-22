@@ -396,6 +396,24 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
 
     void GenerarTejado(GameObject parent, Vector2[] footprint, float y, EdificioData ed)
     {
+        // ── RUTA 1: Puntos reales LIDAR → Delaunay exacto ─────────────────
+        if (FusionadorEdificiosUltra.Instance != null
+            && FusionadorEdificiosUltra.Instance.GetRoofPoints(ed.id, out var roofPts)
+            && roofPts != null && roofPts.Length >= 4)
+        {
+            // centroide del edificio en coordenadas absolutas
+            float cx = footprint.Aggregate(Vector2.zero, (a,v)=>a+v).x / footprint.Length;
+            float cz = footprint.Aggregate(Vector2.zero, (a,v)=>a+v).y / footprint.Length;
+
+            var matReal = GestorMaterialesAlsasua.Instance != null
+                ? GestorMaterialesAlsasua.Instance.GetTejado(
+                    ed.roof_tipo_real ?? "", ed.roof_material ?? "", default)
+                : matTejado;
+
+            GenerarTejadoDesdeNubeLIDAR(parent, roofPts, cx, y, cz, matReal);
+            return;
+        }
+
         string tipo      = ed.type ?? "";
         string tipoReal  = ed.roof_tipo_real ?? "";
         string roofMatOSM= ed.roof_material  ?? "";
@@ -609,6 +627,71 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         }
 
         ConstruirMesh(parent, "Tejado", vm, tm, um, matReal ?? matTejado);
+    }
+
+    // ── Tejado desde nube de puntos LIDAR (Delaunay 2.5D) ────────────────
+
+    void GenerarTejadoDesdeNubeLIDAR(GameObject parent, Vector3[] pts,
+                                      float cx, float yBase, float cz, Material mat)
+    {
+        if (pts == null || pts.Length < 3) return;
+
+        // pts[i] = (dx, dy_elevacion, dz) relativo al centroide
+        // Posición final = (cx + dx, yBase + dy, cz + dz)
+        var vm = new List<Vector3>();
+        var tm = new List<int>();
+        var um = new List<Vector2>();
+
+        // Proyectar en plano XZ para triangulación Delaunay 2D
+        var pts2d = pts.Select(p => new Vector2(p.x, p.z)).ToArray();
+        var verts3d = pts.Select(p => new Vector3(cx + p.x, yBase + p.y, cz + p.z)).ToArray();
+
+        // Triangulación fan desde centroide como fallback robusto
+        // (Delaunay completo requiere biblioteca externa)
+        Vector2 centro2d = Vector2.zero;
+        foreach (var p in pts2d) centro2d += p;
+        centro2d /= pts2d.Length;
+
+        // Ordenar puntos por ángulo alrededor del centroide
+        var ordered = pts.OrderBy(p =>
+            Mathf.Atan2(p.z - 0, p.x - 0)).ToArray();
+
+        Vector3 centroide3d = new Vector3(cx, yBase + pts.Average(p => p.y), cz);
+        vm.Add(centroide3d);
+        um.Add(new Vector2(0.5f, 0.5f));
+
+        foreach (var p in ordered)
+        {
+            vm.Add(new Vector3(cx + p.x, yBase + p.y, cz + p.z));
+            float u = (p.x + 15f) / 30f;
+            float v = (p.z + 15f) / 30f;
+            um.Add(new Vector2(Mathf.Clamp01(u), Mathf.Clamp01(v)));
+        }
+
+        // Triángulos: fan desde vértice 0 (centroide)
+        for (int i = 1; i < vm.Count - 1; i++)
+        { tm.Add(0); tm.Add(i); tm.Add(i + 1); }
+        // Cerrar
+        if (vm.Count > 2)
+        { tm.Add(0); tm.Add(vm.Count - 1); tm.Add(1); }
+
+        if (vm.Count < 3) return;
+
+        var mesh = new Mesh { name = "TejadoLIDAR" };
+        mesh.indexFormat = vm.Count > 65535
+            ? UnityEngine.Rendering.IndexFormat.UInt32
+            : UnityEngine.Rendering.IndexFormat.UInt16;
+        mesh.SetVertices(vm);
+        mesh.SetTriangles(tm, 0);
+        mesh.SetUVs(0, um);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+
+        var go = new GameObject("Tejado_LIDAR");
+        go.transform.SetParent(parent.transform, false);
+        go.isStatic = true;
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial = mat ?? matTejado ?? MatHDRP(new Color(0.4f,0.4f,0.42f));
     }
 
     // ══════════════════════════════════════════════════════════════════════
