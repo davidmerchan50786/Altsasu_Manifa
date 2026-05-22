@@ -283,20 +283,38 @@ public static class ProcesadorDSMEditor
 
     static Mesh GenerarMeshDelaunay(List<Vector3> pts, float yBase)
     {
-        // Triangulación fan simple (Delaunay completo requiere runtime ProcesadorNubePuntos)
         if (pts.Count < 3) return null;
-        Vector2 c = new Vector2(pts.Average(p=>p.x), pts.Average(p=>p.z));
-        var ordered = pts.OrderBy(p => Mathf.Atan2(p.z - c.y, p.x - c.x)).ToList();
 
-        var mesh = new Mesh { name = "TejadoDSM" };
-        var verts = ordered.Select(p => new Vector3(p.x, yBase + p.y, p.z)).ToList();
-        var triList = new List<int>();
-        for (int i = 1; i < verts.Count - 1; i++)
-        { triList.Add(0); triList.Add(i); triList.Add(i+1); }
+        // Usar el algoritmo Bowyer-Watson real de ProcesadorNubePuntos
+        var pts2D  = pts.Select(p => new Vector2(p.x, p.z)).ToList();
+        var tris   = ProcesadorNubePuntos.DelaunayBowyerWatson(pts2D);
 
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(triList, 0);
-        mesh.RecalculateNormals(); mesh.RecalculateBounds();
+        // Fallback fan si Delaunay falla (puntos colineales, etc.)
+        if (tris == null || tris.Count == 0)
+        {
+            Vector2 c = new Vector2(pts.Average(p => p.x), pts.Average(p => p.z));
+            var ordered = pts.OrderBy(p => Mathf.Atan2(p.z - c.y, p.x - c.x)).ToList();
+            tris = new System.Collections.Generic.List<int>();
+            for (int i = 1; i < ordered.Count - 1; i++)
+            { tris.Add(0); tris.Add(i); tris.Add(i + 1); }
+            pts = ordered;   // usar el orden para los vértices
+        }
+
+        var mesh  = new Mesh { name = "TejadoDSM" };
+        mesh.indexFormat = pts.Count > 65535
+            ? UnityEngine.Rendering.IndexFormat.UInt32
+            : UnityEngine.Rendering.IndexFormat.UInt16;
+        mesh.SetVertices(pts.Select(p => new Vector3(p.x, yBase + p.y, p.z)).ToList());
+        mesh.SetTriangles(tris, 0);
+
+        // UVs normalizadas desde posición XZ
+        float minX = pts2D.Min(p => p.x), dX = pts2D.Max(p => p.x) - minX + 0.001f;
+        float minZ = pts2D.Min(p => p.y), dZ = pts2D.Max(p => p.y) - minZ + 0.001f;
+        mesh.SetUVs(0, pts.Select(p =>
+            new Vector2((p.x - minX) / dX, (p.z - minZ) / dZ)).ToList());
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
         return mesh;
     }
 }

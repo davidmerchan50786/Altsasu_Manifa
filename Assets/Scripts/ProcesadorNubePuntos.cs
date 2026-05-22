@@ -254,7 +254,7 @@ public class ProcesadorNubePuntos : MonoBehaviour
     // Garantiza que ningún punto esté dentro del circuncírculo de ningún triángulo.
     // Resultado: indices de vértices (grupos de 3) para Unity.
 
-    static List<int> DelaunayBowyerWatson(List<Vector2> points)
+    public static List<int> DelaunayBowyerWatson(List<Vector2> points)
     {
         int n = points.Count;
         if (n < 3) return null;
