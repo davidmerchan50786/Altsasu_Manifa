@@ -70,9 +70,14 @@ public static class CreadorEscenaPrincipal
         var terreno    = terrenoGO.AddComponent<SistemaTerreno>();
         terrenoGO.AddComponent<SistemaSueloAAA>();
         terrenoGO.AddComponent<OptimizadorTerreno>();
-        terrenoGO.AddComponent<AplicadorOrtofoto>(); // ortofoto IGN PNOA 25cm/px
+        terrenoGO.AddComponent<AplicadorOrtofoto>();              // ortofoto PNOA 25cm/px
+        terrenoGO.AddComponent<GeneradorTerrenoUltraPreciso>();   // DTM 2m IDENA / LIDAR 0.5m
         var gestorMat  = terrenoGO.AddComponent<GestorMaterialesAlsasua>();
-        AsignarMaterialesAlGestor(gestorMat);         // carga los 280 mats PBR
+        AsignarMaterialesAlGestor(gestorMat);                     // 280 materiales PBR
+
+        var precisionGO = HijoNuevo("PrecisionUrbana", mundoGO);
+        precisionGO.AddComponent<PosicionadorPrecisionUrbana>();  // árboles LIDAR, farolas IDENA, portales
+        precisionGO.AddComponent<FusionadorEdificiosUltra>();     // alturas LIDAR+Overture, materiales por año
 
         var treesGO    = HijoNuevo("TreeStreamer",  mundoGO);
         var trees      = treesGO.AddComponent<AlsasuaTreeStreamer>();
