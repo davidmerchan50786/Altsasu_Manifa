@@ -1,26 +1,20 @@
 // Assets/Scripts/FusionadorEdificiosUltra.cs
 // ═══════════════════════════════════════════════════════════════════════════
-//  FUSIONADOR DE DATOS ULTRA-PRECISOS DE EDIFICIOS
+//  FUSIONADOR DE DATOS ULTRA-PRECISOS — proveedor de datos para GeneradorGeometriaPrecisa
 //
-//  Carga edificios_ultra.json (fusión de LIDAR + Overture + Catastro + OSM)
-//  y enriquece la geometría ya generada por GeneradorGeometriaPrecisa:
+//  Orden en el flujo:
+//    -62 FusionadorEdificiosUltra  ← carga datos en background thread (Awake→Start)
+//    -60 GeneradorGeometriaPrecisa ← espera Cargado, usa GetAlturaOptima / GetFormaOptima
+//                                     / GetMaterialParedConAnio durante la generación
 //
-//  1. ALTURA PRECISA: sustituye altura estimada (niveles×3.2m) por:
-//     - lidar_altura  si LIDAR disponible (precisión ~10cm)
-//     - overture_height si IA de Microsoft/Meta disponible
-//     - catastro height si datos catastrales disponibles
+//  Datos que proporciona por edificio (id OSM):
+//    GetAlturaOptima()          LIDAR > Overture > OSM estimada
+//    GetFormaOptima()           LIDAR medido > roof:shape OSM > tipo OSM
+//    GetMaterialParedConAnio()  material histórico por año de construcción
+//    GetRoofColor()             color real del tejado (para tinting del material PBR)
 //
-//  2. AÑO DE CONSTRUCCIÓN → Material histórico:
-//     - Pre-1940 → piedra/ladrillo expuesto (guerra civil, arquitectura vasca)
-//     - 1940-1970 → bloque enlucido (desarrollismo)
-//     - 1970-2000 → hormigón/ladrillo visto
-//     - Post-2000 → hormigón/vidrio moderno
-//
-//  3. TEJADO PRECISO: si lidar_forma disponible, usa la forma medida
-//     en lugar de la estimada por tipo OSM.
-//
-//  4. VALIDACIÓN CRUZADA: detecta discrepancias entre fuentes y las loguea
-//     para revisión manual.
+//  NO corrige geometría post-generación (eso rompía normales/UVs).
+//  ES un proveedor de datos puro: se consulta ANTES de generar.
 // ═══════════════════════════════════════════════════════════════════════════
 
 using System.Collections;
@@ -29,7 +23,7 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 
-[DefaultExecutionOrder(-53)]  // después de PosicionadorPrecisionUrbana (-54)
+[DefaultExecutionOrder(-62)]  // ANTES de GeneradorGeometriaPrecisa (-60) — provee datos
 public class FusionadorEdificiosUltra : MonoBehaviour
 {
     public static FusionadorEdificiosUltra Instance { get; private set; }
@@ -71,30 +65,38 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         Instance = this;
     }
 
+    // Carga síncrona en Awake: los datos están listos antes de que Start() de
+    // GeneradorGeometriaPrecisa (-60) los necesite, incluso si ambos están en
+    // el mismo frame. Start() sólo reporta el resultado.
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(this); return; }
+        Instance = this;
+
+        // Intentar carga síncrona (el archivo suele ser < 5MB, < 200ms)
+        try { CargarDatosUltra(); }
+        catch (System.Exception e)
+        { AlsasuaLogger.Warn("EdificiosUltra", $"Carga síncrona fallida: {e.Message}"); }
+    }
+
     IEnumerator Start()
     {
-        // Cargar datos en frame de fondo
-        bool lecto = false;
-        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+        // Si la carga síncrona falló, intentar en background
+        if (!_cargado)
         {
-            CargarDatosUltra();
-            lecto = true;
-        });
+            bool lecto = false;
+            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try { CargarDatosUltra(); } catch { }
+                lecto = true;
+            });
+            while (!lecto) yield return new WaitForSeconds(0.05f);
+        }
 
-        while (!lecto) yield return new WaitForSeconds(0.1f);
-
-        _cargado = true;
         AlsasuaLogger.Info("EdificiosUltra",
-            $"Cargados: {_totalEdificios} edificios | LIDAR:{_conDatosLIDAR} " +
-            $"Overture:{_conDatosOverture} Anio:{_conAnioConst}");
-
-        // Esperar a que GeneradorGeometriaPrecisa termine
-        yield return new WaitUntil(() =>
-            GeneradorGeometriaPrecisa.Instance == null ||
-            GeneradorGeometriaPrecisa.Instance.Terminado);
-
-        // Aplicar correcciones de altura a la geometría ya generada
-        yield return StartCoroutine(CorregirAlturasGeometria());
+            $"✅ {_totalEdificios} edificios | LIDAR:{_conDatosLIDAR} " +
+            $"Overture:{_conDatosOverture} Anio:{_conAnioConst} " +
+            $"Discrepancias:{_discrepanciasDetectadas}");
     }
 
     // ── Carga ─────────────────────────────────────────────────────────────
@@ -181,62 +183,36 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         return gm.GetPared(tipoOSM, matOSM, colorOrtofoto);
     }
 
-    static string MaterialPorAnio(int anio, string tipo)
+    /// Color real del tejado desde fotogrametría (para tint del material PBR).
+    public bool GetRoofColor(int id, out Color color)
     {
-        // Arquitectura vasca por época
-        if (tipo is "church" or "chapel") return "stone";  // siempre piedra
-        if (anio < 1939) return "stone";    // pre-guerra: piedra arenisca
-        if (anio < 1960) return "brick";    // autarquía: ladrillo
-        if (anio < 1980) return "plaster";  // desarrollismo: revoco
-        if (anio < 2000) return "concrete"; // transición: hormigón
-        return "render";                    // post-2000: revoco moderno
+        color = default;
+        if (!_ultra.TryGetValue(id, out var ed)) return false;
+        if (ed.roof_r_real <= 0 && ed.roof_g_real <= 0 && ed.roof_b_real <= 0) return false;
+        color = new Color(ed.roof_r_real / 255f, ed.roof_g_real / 255f, ed.roof_b_real / 255f);
+        return true;
     }
 
-    // ── Corrección de alturas en GameObjects ya generados ─────────────────
-
-    IEnumerator CorregirAlturasGeometria()
+    /// Color real de pared desde ortofoto.
+    public bool GetWallColor(int id, out Color color)
     {
-        if (_ultra.Count == 0) yield break;
+        color = default;
+        if (!_ultra.TryGetValue(id, out var ed)) return false;
+        if (ed.mat_r <= 0f && ed.mat_g <= 0f && ed.mat_b <= 0f) return false;
+        color = new Color(ed.mat_r, ed.mat_g, ed.mat_b);
+        return true;
+    }
 
-        var parentPreciso = GameObject.Find("Edificios_Precisos");
-        if (parentPreciso == null) yield break;
-
-        int corregidos = 0;
-
-        foreach (Transform edifGO in parentPreciso.transform)
-        {
-            if (edifGO == null) continue;
-
-            // Extraer id del nombre "Edif_12345_nombre"
-            var partes = edifGO.name.Split('_');
-            if (partes.Length < 2 || !int.TryParse(partes[1], out int id)) continue;
-
-            if (!_ultra.TryGetValue(id, out var ed)) continue;
-
-            float altOSM   = edifGO.GetComponentInChildren<MeshFilter>() != null
-                ? edifGO.GetComponentInChildren<MeshFilter>().sharedMesh?.bounds.size.y ?? 0
-                : 0;
-            float altLIDAR = ed.lidar_pts >= 5 ? ed.lidar_altura : 0;
-
-            // Sólo corregir si diferencia > 1m
-            if (altLIDAR > 1f && altOSM > 0.5f && Mathf.Abs(altLIDAR - altOSM) > 1f)
-            {
-                float escala = altLIDAR / altOSM;
-                // Escalar solo en Y preservando XZ
-                foreach (Transform hijo in edifGO)
-                {
-                    if (hijo == null) continue;
-                    Vector3 s = hijo.localScale;
-                    hijo.localScale = new Vector3(s.x, s.y * escala, s.z);
-                    corregidos++;
-                }
-            }
-
-            if (corregidos % 50 == 0) yield return null;
-        }
-
-        AlsasuaLogger.Info("EdificiosUltra",
-            $"✅ Alturas corregidas LIDAR: {corregidos} sub-meshes");
+    static string MaterialPorAnio(int anio, string tipo)
+    {
+        // Arquitectura vasca por época histórica
+        if (tipo is "church" or "chapel") return "stone";   // siempre piedra
+        if (anio > 0 && anio < 1939)      return "stone";   // pre-guerra: piedra arenisca local
+        if (anio < 1960)                  return "brick";   // autarquía: ladrillo rojizo
+        if (anio < 1980)                  return "plaster"; // desarrollismo: revoco gris
+        if (anio < 2000)                  return "concrete";// transición: hormigón visto
+        if (anio >= 2000)                 return "render";  // post-2000: revoco liso moderno
+        return "";
     }
 
     // ── Debug / diagnóstico ───────────────────────────────────────────────

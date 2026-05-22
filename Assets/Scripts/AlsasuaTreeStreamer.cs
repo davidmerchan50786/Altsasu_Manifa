@@ -52,9 +52,62 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     void Start()
     {
-        CargarPosicionesOSM();
+        // Si existen árboles LIDAR exactos, PosicionadorPrecisionUrbana los gestiona.
+        // El streamer OSM sirve de fallback cuando no hay datos LIDAR.
+        bool hayLIDAR = TieneArbolesLIDAR();
+
+        if (hayLIDAR)
+        {
+            AlsasuaLogger.Info("TreeStreamer",
+                "Árboles LIDAR detectados (lidar_trees.json) — " +
+                "AlsasuaTreeStreamer suspende colocación OSM para no duplicar.");
+            // Seguimos activos para streaming (ocultamos árboles lejanos),
+            // pero cargamos las posiciones LIDAR en lugar de las OSM.
+            CargarPosicionesLIDAR();
+        }
+        else
+        {
+            CargarPosicionesOSM();
+        }
+
         StartCoroutine(BucleSteaming());
     }
+
+    static bool TieneArbolesLIDAR()
+    {
+        string p = System.IO.Path.Combine(
+            Application.dataPath.Replace("Assets", ""),
+            "Assets/AlsasuaData/lidar_trees.json");
+        return System.IO.File.Exists(p)
+            && new System.IO.FileInfo(p).Length > 500; // al menos algunos árboles
+    }
+
+    void CargarPosicionesLIDAR()
+    {
+        string p = System.IO.Path.Combine(
+            Application.dataPath.Replace("Assets", ""),
+            "Assets/AlsasuaData/lidar_trees.json");
+        try
+        {
+            string json = System.IO.File.ReadAllText(p);
+            // Formato: [{"x":..., "z":..., "altura":..., "radio":...}, ...]
+            var arr = JsonHelper.ParseArray<LIDARTreeData>(json);
+            if (arr != null)
+            {
+                // lidar_trees.json → coordenadas relativas a Herriko Plaza, añadir offset Unity
+                const float OX = 1918f, OZ = 8570f;
+                foreach (var t in arr)
+                    _posiciones.Add(new Vector3(t.x + OX, 0f, t.z + OZ));
+                _cargado = true;
+                AlsasuaLogger.Info("TreeStreamer",
+                    $"{_posiciones.Count} árboles LIDAR exactos cargados para streaming.");
+            }
+        }
+        catch (System.Exception e)
+        { AlsasuaLogger.Warn("TreeStreamer", $"LIDAR trees parse: {e.Message}"); }
+    }
+
+    [System.Serializable] class LIDARTreeData { public float x, z, altura, radio; }
 
     void CargarPosicionesOSM()
     {

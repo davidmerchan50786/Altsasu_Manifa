@@ -228,7 +228,11 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                     if (float.TryParse(tok[0], out float x)
                      && float.TryParse(tok[1], out float y)
                      && float.TryParse(tok[2], out float z))
-                        puntos.Add(new Vector3(x, y, z));
+                    {
+                        // lidar_ground.xyz: X=relativo a Herriko Plaza, Y=altitud, Z=relativo
+                        // Convertir a Unity absoluto (+ OX, + OZ)
+                        puntos.Add(new Vector3(x + 1918f, y, z + 8570f));
+                    }
                 }
                 lecto = true;
             }

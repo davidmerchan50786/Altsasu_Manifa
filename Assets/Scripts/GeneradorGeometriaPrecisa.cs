@@ -95,9 +95,21 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         // Esperar terreno
         while (Terrain.activeTerrain == null) yield return new WaitForSeconds(0.5f);
 
-        // Ocultar geometría OSM básica inmediatamente — evita que ambas se vean a la vez.
-        // GeneradorMundoOSM puede seguir ejecutándose en paralelo (para índices/eventos),
-        // pero sus meshes no serán visibles mientras los precisos se generan.
+        // Esperar a que FusionadorEdificiosUltra (-62) haya cargado sus datos.
+        // Normalmente ya está listo (carga síncrona en Awake) — este yield es por seguridad.
+        float tw = 0f;
+        while (FusionadorEdificiosUltra.Instance != null
+               && !FusionadorEdificiosUltra.Instance.Cargado
+               && tw < 3f)
+        { tw += 0.1f; yield return new WaitForSeconds(0.1f); }
+
+        if (FusionadorEdificiosUltra.Instance != null && FusionadorEdificiosUltra.Instance.Cargado)
+            AlsasuaLogger.Info("GeomPrecisa",
+                $"FusionadorEdificiosUltra listo: " +
+                $"{FusionadorEdificiosUltra.Instance.TotalEdificios} eds, " +
+                $"{FusionadorEdificiosUltra.Instance.ConDatosLIDAR} con LIDAR");
+
+        // Ocultar geometría OSM básica inmediatamente — evita doble renderizado.
         OcultarGeometriaOSM();
 
         _parentEdif   = CrearParent("Edificios_Precisos");
@@ -171,8 +183,12 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     {
         if (ed.vertices == null || ed.vertices.Length < 3) return;
 
-        float altura = Mathf.Max(ed.height, ALT_PLANTA);
-        int   niveles= Mathf.Max(1, ed.levels);
+        // Altura: prioridad LIDAR > Overture > OSM estimada (niveles×3.2m)
+        float alturaOSM = Mathf.Max(ed.height, ALT_PLANTA);
+        float altura    = FusionadorEdificiosUltra.Instance != null
+            ? Mathf.Max(ALT_PLANTA, FusionadorEdificiosUltra.Instance.GetAlturaOptima(ed.id, alturaOSM))
+            : alturaOSM;
+        int   niveles   = Mathf.Max(1, Mathf.RoundToInt(altura / ALT_PLANTA));
 
         // Convertir vértices OSM → Unity XZ
         var verts2D = ed.vertices.Select(v =>
@@ -204,16 +220,25 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     void GenerarParedes(GameObject parent, Vector2[] verts, float yBase,
                          float altura, int niveles, EdificioData ed)
     {
-        string tipo      = ed.type ?? "";
-        string matOSM    = ed.material ?? "";
-        Color  colorReal = (ed.mat_r > 0f || ed.mat_g > 0f || ed.mat_b > 0f)
-                           ? new Color(ed.mat_r, ed.mat_g, ed.mat_b)
-                           : default;
+        string tipo   = ed.type     ?? "";
+        string matOSM = ed.material ?? "";
 
-        // Material gestor (PBR real) con tinte fotogramétrico
-        var mat = GestorMaterialesAlsasua.Instance != null
-            ? GestorMaterialesAlsasua.Instance.GetPared(tipo, matOSM, colorReal)
-            : MatParedes(tipo, ed.id);
+        // Color real: de ortofoto (buildings_rico) o del Fusionador
+        Color colorReal = default;
+        if (ed.mat_r > 0f || ed.mat_g > 0f || ed.mat_b > 0f)
+            colorReal = new Color(ed.mat_r, ed.mat_g, ed.mat_b);
+        else if (FusionadorEdificiosUltra.Instance != null)
+            FusionadorEdificiosUltra.Instance.GetWallColor(ed.id, out colorReal);
+
+        // Material: prioridad → año construcción (Fusionador) → material OSM → tipo OSM
+        Material mat;
+        if (FusionadorEdificiosUltra.Instance != null)
+            mat = FusionadorEdificiosUltra.Instance.GetMaterialParedConAnio(ed.id, tipo, matOSM, colorReal)
+               ?? MatParedes(tipo, ed.id);
+        else if (GestorMaterialesAlsasua.Instance != null)
+            mat = GestorMaterialesAlsasua.Instance.GetPared(tipo, matOSM, colorReal);
+        else
+            mat = MatParedes(tipo, ed.id);
 
         // Escala UV en metros/tile
         float uvS = GestorMaterialesAlsasua.GetUVScalePared(tipo, matOSM);
@@ -375,18 +400,22 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         string tipoReal  = ed.roof_tipo_real ?? "";
         string roofMatOSM= ed.roof_material  ?? "";
 
-        Color colorRealTejado = (ed.roof_r_real > 0 || ed.roof_g_real > 0 || ed.roof_b_real > 0)
-            ? new Color(ed.roof_r_real / 255f, ed.roof_g_real / 255f, ed.roof_b_real / 255f)
-            : default;
+        // Color del tejado: primero del Fusionador (preciso), luego de ortofoto
+        Color colorRealTejado = default;
+        if (FusionadorEdificiosUltra.Instance != null)
+            FusionadorEdificiosUltra.Instance.GetRoofColor(ed.id, out colorRealTejado);
+        if (colorRealTejado == default && (ed.roof_r_real > 0 || ed.roof_g_real > 0 || ed.roof_b_real > 0))
+            colorRealTejado = new Color(ed.roof_r_real / 255f, ed.roof_g_real / 255f, ed.roof_b_real / 255f);
 
         // Material desde gestor PBR
         Material matReal = GestorMaterialesAlsasua.Instance != null
             ? GestorMaterialesAlsasua.Instance.GetTejado(tipoReal, roofMatOSM, colorRealTejado)
             : null;
 
-        // Forma del tejado:
-        // 1. roof:shape OSM explícito
-        string roofShape = (ed.roof_shape ?? "").ToLower();
+        // Forma del tejado: LIDAR medida > roof:shape OSM
+        string roofShape = FusionadorEdificiosUltra.Instance != null
+            ? FusionadorEdificiosUltra.Instance.GetFormaOptima(ed.id, ed.roof_shape ?? "").ToLower()
+            : (ed.roof_shape ?? "").ToLower();
         if (roofShape == "flat" || tipoReal == "cemento_gris_claro"
             || tipo is "apartments" or "school" or "industrial" or "commercial" or "office"
             || (string.IsNullOrEmpty(roofShape) && string.IsNullOrEmpty(tipoReal)

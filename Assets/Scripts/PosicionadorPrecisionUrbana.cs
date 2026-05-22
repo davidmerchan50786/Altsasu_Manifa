@@ -107,18 +107,24 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         // Destruir árboles del terrain data (se reemplazarán con LIDAR exactos)
         LimpiarArbolesTerreno();
 
+        // lidar_trees.json usa coordenadas relativas a Herriko Plaza (sin offset Unity).
+        // Hay que añadir OX=1918, OZ=8570 para obtener posición Unity absoluta.
+        const float OX = 1918f, OZ = 8570f;
+
         int colocados = 0;
         for (int i = 0; i < arboles.Length; i++)
         {
-            var a = arboles[i];
-            float y = AlturaTerreno(a.x, a.z);
+            var a    = arboles[i];
+            float ux = a.x + OX;
+            float uz = a.z + OZ;
+            float y  = AlturaTerreno(ux, uz);
 
             var go = prefabArbol != null
                 ? Instantiate(prefabArbol)
                 : CrearArbolProcedural(a.altura, a.radio);
 
             go.transform.SetParent(_parArboles, false);
-            go.transform.position  = new Vector3(a.x, y, a.z);
+            go.transform.position  = new Vector3(ux, y, uz);
             go.transform.localScale= Vector3.one * Mathf.Max(0.3f, a.radio / 3f);
             go.isStatic = true;
             go.name = $"Arbol_LIDAR_{i}";
