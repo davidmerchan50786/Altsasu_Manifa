@@ -51,7 +51,7 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     public Material matTejado;      // tejado genérico
 
     [Header("Configuración")]
-    [Range(1, 1030)] public int edificiosPorFrame = 10;
+    [Range(1, 50)] public int edificiosPorFrame = 5;  // bajo para no spikear memoria
     public bool generarTejados  = true;
     public bool generarVentanas = true;
     public bool generarAceras   = true;

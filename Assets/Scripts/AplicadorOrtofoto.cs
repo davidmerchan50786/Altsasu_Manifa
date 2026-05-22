@@ -27,11 +27,12 @@ public class AplicadorOrtofoto : MonoBehaviour
     [Tooltip("Y de los quads sobre el terreno (m)")]
     public float offsetY = 0.05f;
 
-    [Tooltip("Activar streaming: cargar solo teselas cercanas a la cámara")]
+    [Tooltip("Activar streaming: cargar solo teselas cercanas a la cámara (SIEMPRE activado para controlar memoria)")]
     public bool streaming = true;
 
-    [Range(100f, 2000f)]
-    public float radioStreaming = 800f;
+    [Range(100f, 600f)]
+    [Tooltip("Radio máximo. Cada tile ~7MB GPU. A 400m se cargan ~4 tiles=28MB")]
+    public float radioStreaming = 400f;
 
     [Tooltip("Shader para los quads de ortofoto (deja vacío = auto-detecta)")]
     public Shader shaderOrtofoto;
@@ -178,15 +179,19 @@ public class AplicadorOrtofoto : MonoBehaviour
             Vector3 camPos = _cam.transform.position;
             float   r2     = radioStreaming * radioStreaming;
 
+            int cargadasEsteFrame = 0;
             foreach (var t in _tilos)
             {
-                float cx  = (t.meta.ux_min + t.meta.ux_max) * 0.5f;
-                float cz  = (t.meta.uz_min + t.meta.uz_max) * 0.5f;
+                float cx    = (t.meta.ux_min + t.meta.ux_max) * 0.5f;
+                float cz    = (t.meta.uz_min + t.meta.uz_max) * 0.5f;
                 float dist2 = (camPos.x - cx) * (camPos.x - cx)
                             + (camPos.z - cz) * (camPos.z - cz);
 
-                if (dist2 <= r2 && !t.cargada)
+                if (dist2 <= r2 && !t.cargada && cargadasEsteFrame < 2)
+                {
                     yield return StartCoroutine(CargarTesela(t));
+                    cargadasEsteFrame++;   // max 2 tiles por tick (cada 1s) = max 14MB/s
+                }
                 else if (dist2 > r2 * 1.5f && t.cargada)
                     DescargarTesela(t);
             }

@@ -27,8 +27,8 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     [Tooltip("Aplicar automáticamente al arranque si hay datos mejores")]
     public bool aplicarAutomatico = true;
 
-    [Tooltip("Resolución máxima del heightmap (potencia de 2 + 1)")]
-    public int resolucionMax = 2049;
+    [Tooltip("Resolución máxima del heightmap (potencia de 2 + 1). 1025=~1m/px, 2049=~0.5m/px")]
+    public int resolucionMax = 1025;  // 2049 requiere ~50MB spike — usar 1025 por defecto
 
     // ── Constantes ────────────────────────────────────────────────────────
     const string PATH_LIDAR_RAW = "Assets/AlsasuaData/lidar_dtm_05m.raw";   // 0.5m, generado por PipelineLIDAR_Completo.py
@@ -155,9 +155,21 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             zMin,
             8570f - terrainW * 0.5f);
 
-        float[,] heights = new float[hRes, hRes];
-        for (int i = 0; i < hRes * hRes && i < rawData.Length; i++)
-            heights[i / hRes, i % hRes] = rawData[i] / 65535f;
+        // Limitar resolución al máximo configurado para controlar memoria
+        int outRes = Mathf.Min(resolucionMax, hRes);
+        td.heightmapResolution = outRes;
+
+        float[,] heights = new float[outRes, outRes];
+        float scale = (float)(hRes - 1) / (outRes - 1);   // ratio de muestreo
+        for (int oy = 0; oy < outRes; oy++)
+        for (int ox = 0; ox < outRes; ox++)
+        {
+            int sy = Mathf.Clamp(Mathf.RoundToInt(oy * scale), 0, hRes - 1);
+            int sx = Mathf.Clamp(Mathf.RoundToInt(ox * scale), 0, hRes - 1);
+            int idx = sy * hRes + sx;
+            heights[oy, ox] = idx < rawData.Length ? rawData[idx] / 65535f : 0f;
+        }
+        hRes = outRes;
 
         td.SetHeights(0, 0, heights);
         terrain.Flush();
@@ -304,7 +316,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         if (terrain == null) yield break;
 
         // Leer puntos en hilo de fondo
-        var puntos = new List<Vector3>();
+        List<Vector3> puntos = new List<Vector3>();
         bool lecto = false;
 
         System.Threading.ThreadPool.QueueUserWorkItem(_ =>
@@ -335,17 +347,17 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         if (puntos.Count < 100) yield break;
         AlsasuaLogger.Info("TerrenoHDR", $"LIDAR ground: {puntos.Count} puntos");
 
-        yield return null;
+        yield return null;   // GC opportunity before large allocations
 
         var td   = terrain.terrainData;
-        int hRes = Mathf.Min(resolucionMax, 2049);
+        // Limitar a 1025 para XYZ (3 arrays de hRes² serían ~50MB con 2049)
+        int hRes = Mathf.Min(resolucionMax, 1025);
         td.heightmapResolution = hRes;
 
         float terrW = td.size.x, terrH = td.size.z;
-        float terrY = td.size.y;
         Vector3 terrPos = terrain.transform.position;
 
-        // Acumular alturas en grid (promedio de puntos caídos en cada celda)
+        // Acumular alturas (hRes=1025 → 3×1025²×4 = 12.6MB, manejable)
         var sumZ  = new float[hRes, hRes];
         var countZ= new int  [hRes, hRes];
 
@@ -385,12 +397,20 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 if (n > 0) heights[hy, hx] = s / n;
             }
 
+        // Liberar la lista de puntos antes de SetHeights (libera ~29MB)
+        int nPuntos = puntos.Count;
+        puntos.Clear();
+        puntos = null;
+        System.GC.Collect();
+
+        yield return null;   // frame para que GC actúe
+
         td.SetHeights(0, 0, heights);
         terrain.Flush();
 
         _aplicado = true;
         AlsasuaLogger.Info("TerrenoHDR",
-            $"✅ Terreno LIDAR aplicado: {puntos.Count} pts → {hRes}×{hRes} heightmap");
+            $"✅ Terreno LIDAR aplicado: {nPuntos} pts → {hRes}×{hRes} heightmap");
     }
 
     static string FullPath(string relative)
