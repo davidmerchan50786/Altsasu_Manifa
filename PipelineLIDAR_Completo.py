@@ -299,11 +299,15 @@ def procesar_edificios(tiles):
             idx = np.random.choice(len(pts_techo), 200, replace=False)
             pts_techo = pts_techo[idx]
         # Convertir a relativo para compresión
+        # Formato {x,y,z} en lugar de [x,y,z] porque JsonUtility de Unity
+        # no puede deserializar jagged arrays (float[][])
         puntos_rel = []
         for pt in pts_techo:
-            puntos_rel.append([round(float(pt[0]-fp['cx']),2),
-                                round(float(pt[1]-z_base),2),
-                                round(float(pt[2]-fp['cz']),2)])
+            puntos_rel.append({
+                'x': round(float(pt[0]-fp['cx']),2),
+                'y': round(float(pt[1]-z_base),2),
+                'z': round(float(pt[2]-fp['cz']),2)
+            })
 
         resultados.append({
             'id':            fp['id'],

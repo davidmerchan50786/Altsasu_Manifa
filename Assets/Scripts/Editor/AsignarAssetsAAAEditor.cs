@@ -287,23 +287,19 @@ public static class AsignarAssetsAAAEditor
             EditorUtility.SetDirty(multitud);
         }
 
-        // SistemaManifestacion ← prefabs NPCs
+        // SistemaManifestacion ← prefab civil como manifestante base
+        // (usa prefabManifestante singular, no array)
         var manif = FindComponent<SistemaManifestacion>();
         if (manif != null && cfg.prefabsCivil?.Length > 0)
         {
-            SetField(manif, "prefabsManifestante", cfg.prefabsCivil);
-            SetField(manif, "prefabsGuardia",      cfg.prefabsGuardia);
+            SetField(manif, "prefabManifestante", cfg.prefabsCivil[0]);
+            // GuardiaCivil
+            // No hay campo prefabGuardiaCivil en SistemaManifestacion todavía (se añadirá si es necesario)
             EditorUtility.SetDirty(manif);
         }
 
-        // ControladorJugador ← prefab jugador + audio pasos
-        var jugador = FindComponent<ControladorJugador>();
-        if (jugador != null && cfg.pasosHierba?.Length > 0)
-        {
-            SetField(jugador, "audiosPasoHierba", cfg.pasosHierba);
-            SetField(jugador, "audioPasos",       cfg.pasosHierba[0]);
-            EditorUtility.SetDirty(jugador);
-        }
+        // ControladorJugador — los pasos se obtienen en runtime vía
+        // ConfiguradorAssetsAAA.Instance.pasosHierba, no hay campo serializado
 
         // SistemaBombas ← projectiles
         var bombas = FindComponent<SistemaBombas>();

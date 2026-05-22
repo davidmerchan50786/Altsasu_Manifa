@@ -210,23 +210,19 @@ public class IntegradorAssets : MonoBehaviour
 
     void IntegrarFBXEnSistemas()
     {
-        // Buscar prefabs de animales y asignarlos al SistemaFauna
+        // SistemaFauna — los prefabs ahora se asignan desde ConfiguradorAssetsAAA
+        // (prefabLobo y prefabPerro en lugar del array prefabsAnimales)
         var fauna = AltsasuCore.I?.faunaSystem;
-        if (fauna != null && (fauna.prefabsAnimales == null || fauna.prefabsAnimales.Length == 0))
+        if (fauna != null && fauna.prefabLobo == null && fauna.prefabPerro == null)
         {
-            var prefabsAnimales = new List<GameObject>();
-            // Buscar en la escena objetos con nombres de animales
-            string[] nombresAnimales = { "Caballo","Oveja","Conejo","Cierva","Gallina","Perro","Rata" };
-            foreach (var nombre in nombresAnimales)
+            var cfg = ConfiguradorAssetsAAA.Instance;
+            if (cfg != null)
             {
-                // Buscar prefab cargado
-                var pf = Resources.Load<GameObject>($"Prefabs/FBX/Animales/{nombre}");
-                if (pf != null) prefabsAnimales.Add(pf);
-            }
-            if (prefabsAnimales.Count > 0)
-            {
-                fauna.prefabsAnimales = prefabsAnimales.ToArray();
-                AlsasuaLogger.Info("Integrador", $"Fauna: {prefabsAnimales.Count} prefabs asignados");
+                if (fauna.prefabLobo  == null) fauna.prefabLobo  = cfg.prefabLobo;
+                if (fauna.prefabPerro == null) fauna.prefabPerro = cfg.prefabPerro;
+                if (fauna.prefabLobo != null || fauna.prefabPerro != null)
+                    AlsasuaLogger.Info("Integrador",
+                        $"Fauna: Lobo={fauna.prefabLobo?.name ?? "nulo"}, Perro={fauna.prefabPerro?.name ?? "nulo"}");
             }
         }
 

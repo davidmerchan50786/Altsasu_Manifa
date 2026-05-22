@@ -54,9 +54,14 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         public string material, roof_material, roof_tipo_real;
         public float  roof_r_real, roof_g_real, roof_b_real;
         public float  mat_r, mat_g, mat_b;
-        // Puntos reales del tejado: [dx, dy_elev, dz] relativos al centroide
-        public float[][] puntos_tejado;
+        // Puntos reales del tejado como array de objetos (JsonUtility no soporta float[][])
+        public PuntoTejado[] puntos_tejado;
     }
+
+    // Clase wrapper para cada punto del tejado — necesaria porque
+    // JsonUtility no puede deserializar jagged arrays (float[][])
+    [System.Serializable]
+    class PuntoTejado { public float x, y, z; }
 
     readonly Dictionary<int, EdificioUltra> _ultra = new();
     bool _cargado;
@@ -216,8 +221,8 @@ public class FusionadorEdificiosUltra : MonoBehaviour
         for (int i = 0; i < ed.puntos_tejado.Length; i++)
         {
             var p = ed.puntos_tejado[i];
-            if (p == null || p.Length < 3) { puntos = null; return false; }
-            puntos[i] = new UnityEngine.Vector3(p[0], p[1], p[2]);
+            if (p == null) { puntos = null; return false; }
+            puntos[i] = new UnityEngine.Vector3(p.x, p.y, p.z);
         }
         return true;
     }

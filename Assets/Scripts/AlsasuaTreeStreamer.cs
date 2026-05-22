@@ -94,10 +94,10 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             var arr = JsonHelper.ParseArray<LIDARTreeData>(json);
             if (arr != null)
             {
-                // lidar_trees.json → coordenadas relativas a Herriko Plaza, añadir offset Unity
-                const float OX = 1918f, OZ = 8570f;
+                // lidar_trees.json usa coordenadas Unity ABSOLUTAS (generadas por PipelineLIDAR)
+                // NO añadir offset — ya incluyen OX=1918, OZ=8570
                 foreach (var t in arr)
-                    _posiciones.Add(new Vector3(t.x + OX, 0f, t.z + OZ));
+                    _posiciones.Add(new Vector3(t.x, 0f, t.z));
                 _cargado = true;
                 AlsasuaLogger.Info("TreeStreamer",
                     $"{_posiciones.Count} árboles LIDAR exactos cargados para streaming.");
