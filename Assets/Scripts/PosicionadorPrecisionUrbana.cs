@@ -111,21 +111,38 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         // Hay que añadir OX=1918, OZ=8570 para obtener posición Unity absoluta.
         const float OX = 1918f, OZ = 8570f;
 
+        // Usar prefabs GreenForest del ConfiguradorAssetsAAA si disponibles
+        var cfgAAA = ConfiguradorAssetsAAA.Instance;
+
         int colocados = 0;
         for (int i = 0; i < arboles.Length; i++)
         {
             var a    = arboles[i];
-            float ux = a.x + OX;
-            float uz = a.z + OZ;
+            // Filtrar árboles irreales: clusters de monte o ruido
+            if (a.altura < 1.5f || a.altura > 40f || a.radio > 14f) continue;
+
+            float ux = a.x;   // coordenadas Unity absolutas (generadas por PipelineLIDAR)
+            float uz = a.z;
             float y  = AlturaTerreno(ux, uz);
 
-            var go = prefabArbol != null
-                ? Instantiate(prefabArbol)
+            // Seleccionar prefab GreenForest según radio y altura, o fallback procedural
+            GameObject prefabSeleccionado = null;
+            if (cfgAAA != null)
+                prefabSeleccionado = cfgAAA.GetPrefabArbol(a.radio, a.altura);
+            if (prefabSeleccionado == null)
+                prefabSeleccionado = prefabArbol;
+
+            var go = prefabSeleccionado != null
+                ? Instantiate(prefabSeleccionado)
                 : CrearArbolProcedural(a.altura, a.radio);
 
             go.transform.SetParent(_parArboles, false);
             go.transform.position  = new Vector3(ux, y, uz);
-            go.transform.localScale= Vector3.one * Mathf.Max(0.3f, a.radio / 3f);
+            // Escalar según radio real LIDAR: radio/3 = escala normalizada para GreenForest
+            float escala = Mathf.Clamp(a.radio / 3f, 0.4f, 3f);
+            go.transform.localScale= Vector3.one * escala;
+            // Rotación Y aleatoria para variedad visual
+            go.transform.localRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
             go.isStatic = true;
             go.name = $"Arbol_LIDAR_{i}";
 

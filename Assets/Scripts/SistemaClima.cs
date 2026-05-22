@@ -228,6 +228,10 @@ public class SistemaClima : MonoBehaviour
     {
         StartCoroutine(FadeAudio(_srcLluvia, c.llueve ? 0.6f : 0f));
         StartCoroutine(FadeAudio(_srcViento, c.viento > 2f ? Mathf.Clamp01(c.viento / 10f) * 0.5f : 0f));
+        // Sincronizar audio ambiente de SistemaAtmosfera con Nature Sounds Pack
+        var atmos = FindFirstObjectByType<SistemaAtmosfera>();
+        if (atmos != null)
+            atmos.SetClimaAudio(c.llueve, climaActual == EstadoClima.Tormenta);
     }
 
     IEnumerator FadeAudio(AudioSource src, float targetVol, float dur = 3f)

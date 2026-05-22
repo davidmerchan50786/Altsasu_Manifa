@@ -43,6 +43,9 @@ public static class CreadorEscenaPrincipal
         gmGO.AddComponent<AudioManager>();
         // SistemaOpciones es static — AltsasuCore llama SistemaOpciones.AplicarTodo() directamente
         gmGO.AddComponent<SistemaApoyoPopular>();
+        // ConfiguradorAssetsAAA — repositorio central de todos los assets AAA+
+        var cfgAAA = gmGO.AddComponent<ConfiguradorAssetsAAA>();
+        AsignarAssetsAAAEditor.AsignarDesdeCreador(cfgAAA);
 
         // ── 3. AltsasuCore (coordinador -100) ─────────────────────────────
         var coreGO = Nuevo("AltsasuCore");
@@ -260,6 +263,10 @@ public static class CreadorEscenaPrincipal
 
     static Material Cargar(string path)
         => AssetDatabase.LoadAssetAtPath<Material>(path);
+
+    // Expuesto como public para que AsignarAssetsAAAEditor también lo use
+    public static void AsignarMaterialesAlGestorPublic(GestorMaterialesAlsasua g)
+        => AsignarMaterialesAlGestor(g);
 
     static void AsignarMaterialesAlGestor(GestorMaterialesAlsasua g)
     {

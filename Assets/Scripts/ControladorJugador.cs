@@ -737,6 +737,18 @@ public class ControladorJugador : MonoBehaviour
         _timerPaso -= Time.deltaTime;
         if (_timerPaso > 0f) return;
 
+        // Intentar Nature Sounds Pack (más realista) antes del fallback AudioManager
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.pasosHierba?.Length > 0)
+        {
+            var clip = cfg.pasosHierba[Random.Range(0, cfg.pasosHierba.Length)];
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, transform.position, 0.5f);
+                _timerPaso = intervalo;
+                return;
+            }
+        }
         AudioManager.Play(
             estaCorriendo ? AudioManager.Clip.PasoAsfalto : AudioManager.Clip.PasoTierra,
             transform.position);

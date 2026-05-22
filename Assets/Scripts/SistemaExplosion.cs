@@ -57,10 +57,32 @@ public static class SistemaExplosion
             SistemaMusica.TocarEvento(SistemaMusica.Instance.stingEvento);
     }
 
-    // ── VFX procedural ────────────────────────────────────────────────────
+    // ── VFX — usa HQ Explosions Pack si disponible, procedural si no ─────────
 
     static void CrearVFXExplosion(Vector3 centro, float radio)
     {
+        // Prioridad: HQ Explosions prefab → procedural
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.prefabsExplosion?.Length > 0)
+        {
+            // Seleccionar nivel según radio: pequeño<3m, mediano<6m, grande>6m
+            int nivel = radio < 3f ? 0 : radio < 6f ? 2 : 4;
+            nivel = Mathf.Clamp(nivel, 0, cfg.prefabsExplosion.Length - 1);
+            var explo = Object.Instantiate(cfg.prefabsExplosion[nivel], centro, Quaternion.identity);
+            explo.transform.localScale = Vector3.one * (radio / 4f);
+            Object.Destroy(explo, 6f);
+
+            // Añadir fuego persistente en explosiones grandes
+            if (radio > 5f && cfg.prefabFuego != null)
+            {
+                var fire = Object.Instantiate(cfg.prefabFuego, centro, Quaternion.identity);
+                fire.transform.localScale = Vector3.one * (radio * 0.3f);
+                Object.Destroy(fire, 12f);
+            }
+            return;
+        }
+
+        // Fallback procedural
         var root = new GameObject("Explosion_VFX");
         root.transform.position = centro;
 

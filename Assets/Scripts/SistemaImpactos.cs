@@ -26,6 +26,12 @@ public class SistemaImpactos : MonoBehaviour
     const int POOL_SIZE = 40;
     readonly Queue<ParticleSystem> _pool = new();
 
+    [Header("Prefabs bullet holes (auto desde ConfiguradorAssetsAAA)")]
+    public GameObject prefabImpactoHormigon;
+    public GameObject prefabImpactoMetal;
+    public GameObject prefabImpactoMadera;
+    public GameObject prefabSangre;
+
     // ── Decals de impacto ─────────────────────────────────────────────────
     const int MAX_DECALS = 150;
     readonly List<GameObject> _decals = new();
@@ -64,6 +70,16 @@ public class SistemaImpactos : MonoBehaviour
         if (I != null && I != this) { Destroy(this); return; }
         I = this;
         PrecargarPool();
+
+        // Auto-asignar bullet holes desde ConfiguradorAssetsAAA
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg != null)
+        {
+            if (prefabImpactoHormigon == null) prefabImpactoHormigon = cfg.prefabImpactoHormigon;
+            if (prefabImpactoMetal    == null) prefabImpactoMetal    = cfg.prefabImpactoMetal;
+            if (prefabImpactoMadera   == null) prefabImpactoMadera   = cfg.prefabImpactoMadera;
+            if (prefabSangre          == null) prefabSangre          = cfg.prefabSangre;
+        }
     }
 
     void PrecargarPool()
@@ -226,22 +242,40 @@ public class SistemaImpactos : MonoBehaviour
     void SpawnDecal(Vector3 pos, Vector3 normal, TipoMaterial tipo, Transform padre)
     {
         var cfg = CONFIGS[tipo];
-        var go  = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        go.name = "Decal_Impacto";
 
-        var col = go.GetComponent<Collider>();
-        if (col != null) Destroy(col);
+        // Usar prefab de bullet hole si disponible (Assets/#Tools/Resources/Particles/BulletHoles)
+        GameObject prefabDecal = tipo switch
+        {
+            TipoMaterial.Metal    => prefabImpactoMetal,
+            TipoMaterial.Madera   => prefabImpactoMadera,
+            TipoMaterial.Carne    => prefabSangre,
+            _                     => prefabImpactoHormigon,
+        };
 
-        go.transform.position = pos + normal * 0.008f;
-        go.transform.rotation = Quaternion.LookRotation(-normal);
+        GameObject go;
+        if (prefabDecal != null)
+        {
+            go = Instantiate(prefabDecal, pos + normal * 0.01f, Quaternion.LookRotation(-normal), padre);
+            go.name = "Decal_Impacto";
+        }
+        else
+        {
+            // Fallback procedural
+            go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = "Decal_Impacto";
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            go.transform.position = pos + normal * 0.008f;
+            go.transform.rotation = Quaternion.LookRotation(-normal);
+            var mat = new Material(Shader.Find("Unlit/Transparent") ?? Shader.Find("Standard"));
+            mat.color = cfg.colorDecal;
+            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            go.transform.SetParent(padre, true);
+        }
+
         float size = Random.Range(0.06f, 0.14f);
         go.transform.localScale = Vector3.one * size;
-        go.transform.SetParent(padre, true);
-
-        var mat = new Material(Shader.Find("Unlit/Transparent") ?? Shader.Find("Standard"));
-        mat.color = cfg.colorDecal;
-        go.GetComponent<MeshRenderer>().sharedMaterial = mat;
-        go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
         _decals.Add(go);
         if (_decals.Count > MAX_DECALS)
