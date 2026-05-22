@@ -39,7 +39,7 @@ public class AplicadorOrtofoto : MonoBehaviour
     // ── Datos internos ─────────────────────────────────────────────────────
 
     [System.Serializable]
-    class TiloMeta
+    public class TiloMeta
     {
         public string file;
         public float  ux_min, uz_min, ux_max, uz_max;
