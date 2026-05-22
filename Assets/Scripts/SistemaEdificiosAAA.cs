@@ -112,7 +112,8 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
     void OnMundoGeneradoLegado()
     {
-        // Solo aplica si no se usa zone streaming (escenas antiguas)
+        // Solo aplica si no se usa zone streaming ni geometría precisa
+        if (GeneradorGeometriaPrecisa.Instance != null) return;
         var parent = GameObject.Find("Edificios_OSM");
         if (parent == null) return;
         StartCoroutine(EnriquecerTodo());
@@ -237,7 +238,15 @@ public class SistemaEdificiosAAA : MonoBehaviour
         // CargarMateriales() ya fue llamado en Start() — no repetir
         yield return null;
 
-        _parentEdificios = GameObject.Find("Edificios_OSM")?.transform;
+        // Si ya hay geometría precisa activa, SistemaEdificiosAAA no necesita actuar
+        if (GeneradorGeometriaPrecisa.Instance != null)
+        {
+            AlsasuaLogger.Info("EdificiosAAA",
+                "GeneradorGeometriaPrecisa activo — SistemaEdificiosAAA cede el paso");
+            yield break;
+        }
+
+        _parentEdificios = (GameObject.Find("Edificios_OSM"))?.transform;
         if (_parentEdificios == null) yield break;
 
         int i = 0;

@@ -26,10 +26,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[DefaultExecutionOrder(-80)]  // antes de todos los generadores
+[DefaultExecutionOrder(-85)]  // antes de IntegradorAssets(-80), SistemaZonas(-80), generadores
 public class GestorMaterialesAlsasua : MonoBehaviour
 {
     public static GestorMaterialesAlsasua Instance { get; private set; }
+
+    // Cache: evita crear new Material() para cada uno de los 1030 edificios.
+    // Clave = (instanceID_base, color32_packed). Limpiado en OnDestroy.
+    readonly Dictionary<long, Material> _matCache = new();
 
     // ════════════════════════════════════════════════════════════════════
     //  MATERIALES POR CATEGORÍA (asignados desde CreadorEscenaPrincipal)
@@ -328,20 +332,18 @@ public class GestorMaterialesAlsasua : MonoBehaviour
         return TintarMaterial(base_, defaultColor);
     }
 
-    // Devuelve una copia del material con el color base ajustado.
-    // No modifica el asset original.
-    static Material TintarMaterial(Material src, Color tint)
+    // Devuelve un material con el color ajustado.
+    // Usa caché para no crear new Material() por cada edificio.
+    Material TintarMaterial(Material src, Color tint)
     {
         if (src == null) return FallbackMat(tint);
+        long key = CacheKey(src.GetInstanceID(), tint);
+        if (_matCache.TryGetValue(key, out var cached)) return cached;
+
         var m = new Material(src);
-
-        // HDRP/Lit: _BaseColor
-        if (m.HasProperty("_BaseColor"))
-            m.SetColor("_BaseColor", tint);
-        // Standard/Unlit: _Color
-        if (m.HasProperty("_Color"))
-            m.SetColor("_Color", tint);
-
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", tint);
+        if (m.HasProperty("_Color"))     m.SetColor("_Color",     tint);
+        _matCache[key] = m;
         return m;
     }
 
@@ -350,6 +352,24 @@ public class GestorMaterialesAlsasua : MonoBehaviour
         var m = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"));
         m.color = c;
         return m;
+    }
+
+    // Empaqueta instanceID + color como clave long (evita boxing de tuple)
+    static long CacheKey(int srcId, Color c)
+    {
+        int cr = Mathf.RoundToInt(c.r * 255);
+        int cg = Mathf.RoundToInt(c.g * 255);
+        int cb = Mathf.RoundToInt(c.b * 255);
+        int colorPacked = (cr << 16) | (cg << 8) | cb;
+        return ((long)srcId << 24) | (uint)colorPacked;
+    }
+
+    void OnDestroy()
+    {
+        foreach (var m in _matCache.Values)
+            if (m != null) Destroy(m);
+        _matCache.Clear();
+        if (Instance == this) Instance = null;
     }
 
     // Rellena referencias nulas con fallbacks de runtime.

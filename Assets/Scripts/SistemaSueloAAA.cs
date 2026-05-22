@@ -195,7 +195,7 @@ public class SistemaSueloAAA : MonoBehaviour
     IEnumerator MejorarCalles()
     {
         // Aplicar materiales PBR a las calles ya generadas
-        var callesParent = GameObject.Find("Calles_OSM");
+        var callesParent = GameObject.Find("Calles_Precisas") ?? GameObject.Find("Calles_OSM");
         if (callesParent == null) yield break;
 
         int n = 0;
@@ -337,7 +337,7 @@ public class SistemaSueloAAA : MonoBehaviour
         }
 
         // Árboles en las calles del pueblo (alineados)
-        var callesParent = GameObject.Find("Calles_OSM");
+        var callesParent = GameObject.Find("Calles_Precisas") ?? GameObject.Find("Calles_OSM");
         if (callesParent != null)
         {
             int callesConArboles = 0;
@@ -380,7 +380,7 @@ public class SistemaSueloAAA : MonoBehaviour
     {
         if (_prefabsProps.Count == 0) yield break;
 
-        var callesParent = GameObject.Find("Calles_OSM");
+        var callesParent = GameObject.Find("Calles_Precisas") ?? GameObject.Find("Calles_OSM");
         if (callesParent == null) yield break;
 
         var terrain = Terrain.activeTerrain;
@@ -465,7 +465,7 @@ public class SistemaSueloAAA : MonoBehaviour
     {
         if (_prefabsVehiculos.Count == 0) yield break;
 
-        var callesParent = GameObject.Find("Calles_OSM");
+        var callesParent = GameObject.Find("Calles_Precisas") ?? GameObject.Find("Calles_OSM");
         if (callesParent == null) yield break;
 
         var terrain = Terrain.activeTerrain;

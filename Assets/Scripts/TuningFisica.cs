@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-[DefaultExecutionOrder(-50)]
+[DefaultExecutionOrder(-48)]  // después de SistemaNavMesh(-50), no depende del NavMesh
 public class TuningFisica : MonoBehaviour
 {
     public static TuningFisica Instance { get; private set; }

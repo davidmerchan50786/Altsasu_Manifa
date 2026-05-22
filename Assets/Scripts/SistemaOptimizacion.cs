@@ -140,7 +140,9 @@ public class SistemaOptimizacion : MonoBehaviour
         const float DIST_LOD1 = 300f;  // medium
         const float DIST_LOD2 = 600f;  // low / culled > 600m
 
-        var edifParent = GameObject.Find("Edificios_OSM");
+        // Prioridad: geometría precisa > base OSM
+        var edifParent = GameObject.Find("Edificios_Precisos")
+                      ?? GameObject.Find("Edificios_OSM");
         if (edifParent == null) yield break;
 
         // Recoger posiciones en NativeArray para Burst

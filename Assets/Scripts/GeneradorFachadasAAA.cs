@@ -61,6 +61,9 @@ public class GeneradorFachadasAAA : MonoBehaviour
 
         CrearMateriales();
 
+        // Si GeneradorGeometriaPrecisa está activo, las fachadas precisas ya están generadas
+        if (GeneradorGeometriaPrecisa.Instance != null) yield break;
+
         var edificios = GameObject.Find("Edificios_OSM");
         if (edificios == null) yield break;
 

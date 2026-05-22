@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[DefaultExecutionOrder(-80)]
+[DefaultExecutionOrder(-82)]  // antes de IntegradorAssets(-80)
 public class SistemaZonas : MonoBehaviour
 {
     // ── Singleton ──────────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ public class SistemaZonas : MonoBehaviour
                 if (c.points == null || c.points.Length < 2) continue;
                 var pts = System.Array.ConvertAll(c.points,
                     p => new Vector3(p.x + 1918f, 0, p.z + 8570f));
-                SistemaTerreno.Instance.PintarCarretera(pts, Mathf.Max(3f, c.width));
+                SistemaTerreno.Instance?.PintarCarretera(pts, Mathf.Max(3f, c.width));
             }
         }
 

@@ -35,7 +35,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Linq;
 
-[DefaultExecutionOrder(-60)] // después de SistemaTerreno (-70) y antes de zonas (-80)
+[DefaultExecutionOrder(-60)] // después de SistemaTerreno(-70), GestorMat(-85), Zonas(-80)
 public class GeneradorGeometriaPrecisa : MonoBehaviour
 {
     public static GeneradorGeometriaPrecisa Instance { get; private set; }
@@ -95,6 +95,11 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         // Esperar terreno
         while (Terrain.activeTerrain == null) yield return new WaitForSeconds(0.5f);
 
+        // Ocultar geometría OSM básica inmediatamente — evita que ambas se vean a la vez.
+        // GeneradorMundoOSM puede seguir ejecutándose en paralelo (para índices/eventos),
+        // pero sus meshes no serán visibles mientras los precisos se generan.
+        OcultarGeometriaOSM();
+
         _parentEdif   = CrearParent("Edificios_Precisos");
         _parentCalles = CrearParent("Calles_Precisas");
         _parentAceras = CrearParent("Aceras_Precisas");
@@ -108,6 +113,23 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         _terminado = true;
         AlsasuaLogger.Info("GeomPrecisa",
             $"✅ Geometría precisa: {_edificiosGenerados} edificios, {_callesGeneradas} calles");
+    }
+
+    // Oculta los GOs de baja calidad generados por GeneradorMundoOSM/SistemaEdificiosAAA.
+    // Los desactiva en lugar de destruirlos para que SistemaOptimizacion/Zonas
+    // puedan seguir usando sus referencias si las tienen cacheadas.
+    static void OcultarGeometriaOSM()
+    {
+        foreach (string nombre in new[] { "Edificios_OSM", "Calles_OSM" })
+        {
+            var go = GameObject.Find(nombre);
+            if (go != null)
+            {
+                go.SetActive(false);
+                AlsasuaLogger.Info("GeomPrecisa",
+                    $"Geometría OSM base ocultada: {nombre} (reemplazada por precisa)");
+            }
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════
