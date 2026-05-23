@@ -398,4 +398,71 @@ public static class AplicadorTexturasAAA
         }
         return null;
     }
+
+    // ── Conversión de materiales Standard → HDRP/Lit ─────────────────────────
+    // Movido desde IntegradorAssetsNuevos (eliminado por redundancia).
+
+    [MenuItem("Tools/Alsasua/Mundo/🎨 Convertir Materiales HDRP", priority = 11)]
+    public static int ConvertirMaterialesAHDRP()
+    {
+        EditorUtility.DisplayProgressBar("Convirtiendo materiales", "Buscando materiales Standard...", 0f);
+
+        string[] carpetas = {
+            "Assets/Police Car & Helicopter",
+            "Assets/Hot Rod",
+            "Assets/BarrierPack",
+            "Assets/SpaceZeta_StreetLamps2",
+            "Assets/LowPolySoldiers_demo",
+        };
+
+        var shaderHDRP = Shader.Find("HDRP/Lit");
+        if (shaderHDRP == null)
+        {
+            Debug.LogError("[AplicadorTexturasAAA] Shader 'HDRP/Lit' no encontrado. ¿Está HDRP instalado?");
+            EditorUtility.ClearProgressBar();
+            return 0;
+        }
+
+        var guids = AssetDatabase.FindAssets("t:Material", carpetas);
+        int convertidos = 0;
+
+        for (int i = 0; i < guids.Length; i++)
+        {
+            EditorUtility.DisplayProgressBar("Convirtiendo materiales",
+                $"Material {i + 1}/{guids.Length}...", (float)i / guids.Length);
+
+            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null) continue;
+
+            string shaderName = mat.shader?.name ?? "";
+            bool esStandard = shaderName.Contains("Standard")
+                           || shaderName.Contains("Legacy")
+                           || shaderName == "0000000000000000f000000000000000";
+            if (!esStandard && mat.shader != shaderHDRP) continue;
+
+            Color  colorAntes  = mat.HasProperty("_Color")              ? mat.GetColor("_Color")                : Color.white;
+            Texture texAlbedo  = mat.HasProperty("_MainTex")            ? mat.GetTexture("_MainTex")            : null;
+            Texture texNormal  = mat.HasProperty("_BumpMap")            ? mat.GetTexture("_BumpMap")            : null;
+            Texture texMetal   = mat.HasProperty("_MetallicGlossMap")   ? mat.GetTexture("_MetallicGlossMap")   : null;
+            float metallic     = mat.HasProperty("_Metallic")           ? mat.GetFloat("_Metallic")             : 0f;
+            float smoothness   = mat.HasProperty("_Glossiness")         ? mat.GetFloat("_Glossiness")           : 0.5f;
+
+            Undo.RecordObject(mat, $"Convert {mat.name} to HDRP");
+            mat.shader = shaderHDRP;
+            if (texAlbedo != null) mat.SetTexture("_BaseColorMap", texAlbedo);
+            if (texNormal != null) mat.SetTexture("_NormalMap",    texNormal);
+            if (texMetal  != null) mat.SetTexture("_MaskMap",      texMetal);
+            mat.SetColor("_BaseColor",   colorAntes);
+            mat.SetFloat("_Metallic",    metallic);
+            mat.SetFloat("_Smoothness",  smoothness);
+            EditorUtility.SetDirty(mat);
+            convertidos++;
+        }
+
+        EditorUtility.ClearProgressBar();
+        AssetDatabase.SaveAssets();
+        Debug.Log($"[AplicadorTexturasAAA] 🎨 {convertidos}/{guids.Length} materiales convertidos a HDRP/Lit.");
+        return convertidos;
+    }
 }

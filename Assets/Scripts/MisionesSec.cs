@@ -254,8 +254,10 @@ public class GestorMisionesSecundarias : MonoBehaviour
 {
     public static GestorMisionesSecundarias Instance { get; private set; }
 
-    readonly List<Mision> _disponibles = new();
-    readonly List<Mision> _activas     = new();
+    readonly List<Mision> _disponibles  = new();
+    readonly List<Mision> _activas      = new();
+    readonly List<int>    _objetivoIdx  = new(); // índice de objetivo actual por misión activa
+    readonly List<Mision> _aEliminar    = new(); // buffer para evitar modificar _activas en Update
 
     void Awake()
     {
@@ -296,28 +298,42 @@ public class GestorMisionesSecundarias : MonoBehaviour
 
     void IniciarSecundaria<T>() where T : Mision, new()
     {
-        var ya = _activas.Find(m => m is T);
-        if (ya != null) return; // ya activa
+        if (_activas.Exists(m => m is T)) return; // ya activa
         var m = _disponibles.Find(m => m is T);
         if (m == null) return;
         _activas.Add(m);
+        _objetivoIdx.Add(0);
         m.AlIniciar?.Invoke();
         AlsasuaLogger.Info("MisionSec", $"Misión secundaria disponible: {m.Nombre}");
     }
 
     void Update()
     {
-        foreach (var m in _activas)
+        _aEliminar.Clear();
+        for (int i = 0; i < _activas.Count; i++)
         {
-            if (m.Objetivos.Count == 0) continue;
-            var obj = m.Objetivos[0];
-            if (obj.Condicion != null && obj.Condicion())
+            var m   = _activas[i];
+            int idx = _objetivoIdx[i];
+            if (idx >= m.Objetivos.Count) { _aEliminar.Add(m); continue; }
+
+            var obj = m.Objetivos[idx];
+            if (obj.Condicion == null || !obj.Condicion()) continue;
+
+            obj.AlCompletar?.Invoke();
+            AlsasuaLogger.Info("MisionSec", $"✅ Objetivo: {obj.Descripcion}");
+            _objetivoIdx[i] = idx + 1;
+
+            if (_objetivoIdx[i] >= m.Objetivos.Count)
             {
-                obj.AlCompletar?.Invoke();
-                _activas.Remove(m);
-                AlsasuaLogger.Info("MisionSec", $"✅ {m.Nombre}");
-                break;
+                m.AlCompletar?.Invoke();
+                AlsasuaLogger.Info("MisionSec", $"🏆 {m.Nombre}");
+                _aEliminar.Add(m);
             }
+        }
+        foreach (var m in _aEliminar)
+        {
+            int i = _activas.IndexOf(m);
+            if (i >= 0) { _activas.RemoveAt(i); _objetivoIdx.RemoveAt(i); }
         }
     }
 

@@ -42,7 +42,7 @@ using CesiumForUnity;
 #endif
 
 [RequireComponent(typeof(CharacterController))]
-public class ControladorJugador : MonoBehaviour
+public class ControladorJugador : MonoBehaviour, IDamageable
 {
     // ═══════════════════════════════════════════════════════════════════════
     //  MOVIMIENTO
@@ -603,32 +603,32 @@ public class ControladorJugador : MonoBehaviour
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Busca el ControladorVehiculoJugador más cercano dentro de 3.5 m y entra en él.
-    /// Gorka usa un Blueprint node "Get Overlapping Actors" con filtro de clase.
-    /// Aquí: OverlapSphere físico + GetComponent — misma lógica, código C# puro.
+    /// Busca el IInteractable más cercano dentro de su radio de interacción y lo activa.
+    /// Cubre vehículos, armas recogibles, puertas y cualquier futuro objeto interactuable.
     /// </summary>
     private void TentarEntrarVehiculo()
     {
-        const float radioInteraccion = 3.5f;
-        var cols = Physics.OverlapSphere(transform.position, radioInteraccion);
+        const float radioMax = 5f; // radio de búsqueda máximo
+        var cols = Physics.OverlapSphere(transform.position, radioMax);
 
-        ControladorVehiculoJugador cochesMasCercano = null;
-        float distMin = float.MaxValue;
+        IInteractable mejor  = null;
+        float         distMin = float.MaxValue;
 
         foreach (var col in cols)
         {
-            var veh = col.GetComponent<ControladorVehiculoJugador>()
-                   ?? col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (veh == null || veh.JugadorDentro) continue;
+            var interactable = col.GetComponent<IInteractable>()
+                            ?? col.GetComponentInParent<IInteractable>();
+            if (interactable == null || !interactable.PuedeInteractuar) continue;
 
-            float d = Vector3.Distance(transform.position, veh.transform.position);
-            if (d < distMin) { distMin = d; cochesMasCercano = veh; }
+            float d = Vector3.Distance(transform.position, col.transform.position);
+            if (d > interactable.RadioInteraccion) continue;
+            if (d < distMin) { distMin = d; mejor = interactable; }
         }
 
-        if (cochesMasCercano != null)
+        if (mejor != null)
         {
-            AlsasuaLogger.Info("Jugador", $"Entrando en vehículo '{cochesMasCercano.name}'.");
-            cochesMasCercano.EntraJugador(this);
+            AlsasuaLogger.Info("Jugador", $"Interactuando: {mejor.TextoInteraccion}");
+            mejor.OnInteractuar(this);
         }
     }
 
@@ -801,10 +801,10 @@ public class ControladorJugador : MonoBehaviour
     // Evento para SistemaPolish y otros sistemas
     public static event System.Action<int> OnDanoRecibido;
 
-    public void RecibirDano(int cantidad)
+    public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
     {
         vida      = Mathf.Max(0, vida - cantidad);
-        timerDano = 0.35f;   // activar flash rojo en pantalla
+        timerDano = 0.35f;
         OnDanoRecibido?.Invoke(cantidad);
         if (vida <= 0) Morir();
     }

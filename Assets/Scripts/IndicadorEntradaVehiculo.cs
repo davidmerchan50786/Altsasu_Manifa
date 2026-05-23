@@ -27,9 +27,10 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
     [SerializeField] private int   tamañoFuente = 22;
 
     // ── Estado interno ──────────────────────────────────────────────────────
-    private ControladorVehiculoJugador _controlador;
-    private Transform                  _jugador;
-    private bool                       _mostrar;
+    private IInteractable _interactable;
+    private Transform     _jugador;
+    private bool          _mostrar;
+    private string        _textoPrompt = "[E] Entrar";
 
     // Estilo GUI pre-construido para evitar allocations en cada frame
     private GUIStyle _estilo;
@@ -38,7 +39,7 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
 
     private void Awake()
     {
-        _controlador = GetComponent<ControladorVehiculoJugador>();
+        _interactable = GetComponent<IInteractable>();
     }
 
     private void Start()
@@ -54,10 +55,11 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
         if (_jugador == null) BuscarJugador();
         if (_jugador == null) { _mostrar = false; return; }
 
-        float distancia = Vector3.Distance(transform.position, _jugador.position);
-        bool  libre     = !_controlador.JugadorDentro;
+        if (_interactable == null) { _mostrar = false; return; }
 
-        _mostrar = distancia <= radioDeteccion && libre;
+        float distancia = Vector3.Distance(transform.position, _jugador.position);
+        _mostrar = distancia <= radioDeteccion && _interactable.PuedeInteractuar;
+        if (_mostrar) _textoPrompt = _interactable.TextoInteraccion;
     }
 
     private void OnGUI()
@@ -93,11 +95,10 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
         Color colorPrevio = GUI.color;
         GUI.color = new Color(0f, 0f, 0f, 0.85f);
         GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height),
-                  "[E] Entrar", shadowStyle);
+                  _textoPrompt, shadowStyle);
 
-        // Texto principal blanco-amarillo para destacar sobre cualquier fondo
         GUI.color = new Color(1f, 0.96f, 0.40f);
-        GUI.Label(rect, "[E] Entrar", _estilo);
+        GUI.Label(rect, _textoPrompt, _estilo);
 
         GUI.color = colorPrevio;
     }

@@ -140,7 +140,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
         // ── Base mesh (misma lógica que GeneradorMundoOSM pero con material AAA) ──
         var verts2D = new List<Vector2>();
         foreach (var v in e.vertices)
-            verts2D.Add(new Vector2(v.x + 1918f, v.z + 8570f)); // OFFSET_X / OFFSET_Z
+            verts2D.Add(new Vector2(v.x + GeoDataAlsasua.OX, v.z + GeoDataAlsasua.OZ));
 
         float cx = 0, cz = 0;
         foreach (var v in verts2D) { cx += v.x; cz += v.y; }
@@ -173,7 +173,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
         // Collider solo cercanos al centro de la ciudad
-        if (Vector2.Distance(new Vector2(cx, cz), new Vector2(1918f, 8570f)) < 200f)
+        if (Vector2.Distance(new Vector2(cx, cz), new Vector2(GeoDataAlsasua.OX, GeoDataAlsasua.OZ)) < 200f)
             go.AddComponent<MeshCollider>().sharedMesh = mesh;
 
         // ── Enriquecimiento AAA ───────────────────────────────────────────────
@@ -182,51 +182,10 @@ public class SistemaEdificiosAAA : MonoBehaviour
         _totalEdificios++;
     }
 
-    // Genera el mesh del edificio (duplicado local para no depender de GM en runtime)
     Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
-    {
-        int n = planta.Count;
-        if (n < 3) return null;
+        => MeshBuilder.Edificio(planta, suelo, altura);
 
-        var verts = new List<Vector3>();
-        var tris  = new List<int>();
-        var uvs   = new List<Vector2>();
-
-        for (int i = 0; i < n; i++)
-        {
-            int j = (i + 1) % n;
-            var p0 = new Vector3(planta[i].x, suelo,          planta[i].y);
-            var p1 = new Vector3(planta[j].x, suelo,          planta[j].y);
-            var p2 = new Vector3(planta[j].x, suelo + altura, planta[j].y);
-            var p3 = new Vector3(planta[i].x, suelo + altura, planta[i].y);
-            float u = Vector2.Distance(planta[i], planta[j]) / 4f;
-            int b = verts.Count;
-            verts.AddRange(new[]{p0,p1,p2,p3});
-            uvs.AddRange(new[]{ new Vector2(0,0),new Vector2(u,0),new Vector2(u,1),new Vector2(0,1) });
-            tris.AddRange(new[]{b,b+2,b+1, b,b+3,b+2});
-        }
-        // Techo fan
-        int tb = verts.Count;
-        foreach (var v in planta) verts.Add(new Vector3(v.x, suelo + altura, v.y));
-        uvs.AddRange(planta.ConvertAll(v => new Vector2(v.x*0.1f, v.y*0.1f)));
-        for (int i = 1; i < n-1; i++) tris.AddRange(new[]{tb, tb+i, tb+i+1});
-
-        var mesh = new Mesh { name = "EdifAAA" };
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-        mesh.SetUVs(0, uvs);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        return mesh;
-    }
-
-    float AlturaTerreno(float x, float z)
-    {
-        var t = Terrain.activeTerrain;
-        if (t != null) return t.SampleHeight(new Vector3(x, 0, z)) + t.transform.position.y;
-        if (Physics.Raycast(new Vector3(x, 1000f, z), Vector3.down, out var h, 2000f)) return h.point.y;
-        return 240f;
-    }
+    static float AlturaTerreno(float x, float z) => GeoDataAlsasua.AlturaTerreno(x, z);
 
     // ════════════════════════════════════════════════════════════════════════
     //  PIPELINE PRINCIPAL
@@ -692,7 +651,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
         foreach (var n in nombres)
         {
-            // Buscar el material HDRP ya creado (por MEGA_BUILD / ConstruirTodo)
+            // Buscar el material HDRP ya creado (por FLUJO_COMPLETO / CreadorEscenaPrincipal)
             string matPath = $"Assets/Materials/Edificios/{n}.mat";
             // Cargar material pre-creado desde Resources (si está exportado como asset)
         var matAsset = Resources.Load<Material>($"Materials/Edificios/{n}");

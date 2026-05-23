@@ -445,7 +445,9 @@ public class Mision_InterceptorArdiendo : Mision
 
     private int   _cochesDestruidos = 0;
     private float _timerFuga        = 0f;
+#pragma warning disable CS0414
     private bool  _escapando        = false;
+#pragma warning restore CS0414
     private const int   META_COCHES  = 2;
     private const float TIEMPO_FUGA  = 120f;
 
@@ -571,7 +573,9 @@ public class Mision_LaRepresalia : Mision
 {
     public override string Nombre => "La Represalia — Errepresalia";
 
+#pragma warning disable CS0414
     private float _timerBajo3    = 0f;
+#pragma warning restore CS0414
     private float _timerAguante  = 0f;
     private bool  _en3Estrellas  = false;
     private const float DURACION_AGUANTE = 90f;
@@ -774,7 +778,7 @@ public class Mision_ManifaFinal : Mision
                 AlsasuaLogger.Info("M12",
                     "★★★★★ ASKATASUNA ★★★★★ — El pueblo de Alsasua ha resistido. FIN.");
                 // Mostrar pantalla de victoria
-                HUDAAA.MostrarVictoria();
+                HUDCanvas.MostrarVictoria();
             }
         }
     };

@@ -53,7 +53,7 @@ public class SistemaTrafico : MonoBehaviour
         {
             float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
             float dist  = Random.Range(30f, radioActivo);
-            float ox = 1918f, oz = 8570f;
+            float ox = GeoDataAlsasua.OX, oz = GeoDataAlsasua.OZ;
             float wx = ox + Mathf.Cos(angle) * dist;
             float wz = oz + Mathf.Sin(angle) * dist;
             float wy = terrain.SampleHeight(new Vector3(wx, 0, wz))

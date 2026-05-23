@@ -211,9 +211,8 @@ public sealed class GeneradorCallesAltsasu : MonoBehaviour
             }
         }
 
-        var mesh = new Mesh { name = "Banda" };
-        mesh.SetVertices(v); mesh.SetUVs(0, u); mesh.SetTriangles(t, 0);
-        mesh.RecalculateNormals(); mesh.RecalculateBounds(); mesh.RecalculateTangents();
+        var mesh = MeshBuilder.Finalizar(v, t, u, "Banda");
+        mesh?.RecalculateTangents();
         return mesh;
     }
 

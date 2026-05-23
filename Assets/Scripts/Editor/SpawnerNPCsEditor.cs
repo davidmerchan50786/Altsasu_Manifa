@@ -8,7 +8,7 @@ using UnityEngine.AI;
 public static class SpawnerNPCsEditor
 {
     private const int    NUM_NPCS  = 25;
-    private const float  CENTRO_X  = 1918f, CENTRO_Z = 8570f;
+    private const float  CENTRO_X  = GeoDataAlsasua.OX, CENTRO_Z = GeoDataAlsasua.OZ;
     private const float  RADIO     = 200f;
 
     [MenuItem("Tools/Alsasua/Mundo/👥 Poblar Zone_01", priority = 16)]

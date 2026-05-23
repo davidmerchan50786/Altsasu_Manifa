@@ -87,6 +87,18 @@ public class HUDCanvas : MonoBehaviour
     // ── Marcadores de misión ──────────────────────────────────────────────
     readonly List<MarcadorMision> _marcadores = new();
 
+    // ── Banner deslizable de misión ───────────────────────────────────────
+    RectTransform   _bannerMision;
+    Image           _bgBanner;
+    Text            _bannerTxtTitulo, _bannerTxtObjetivo;
+    bool            _bannerVisible;
+
+    // ── Notificaciones de logros ──────────────────────────────────────────
+    readonly Queue<string> _notifQueue = new();
+    bool                   _notifMostrando;
+    RectTransform          _panelNotif;
+    Text                   _txtNotif;
+
     // ── Estado ────────────────────────────────────────────────────────────
     ControladorJugador          _jugador;
     GameManagerAltsasua         _gm;
@@ -124,8 +136,11 @@ public class HUDCanvas : MonoBehaviour
         CrearCrosshair();
         CrearMinimap();
         CrearMisionTexto();
+        CrearBannerMision();
+        CrearPanelNotificaciones();
         SuscribirEventos();
         StartCoroutine(BuscarReferencias());
+        StartCoroutine(ProcesarColaNotificaciones());
     }
 
     IEnumerator BuscarReferencias()
@@ -147,6 +162,7 @@ public class HUDCanvas : MonoBehaviour
         SistemaMisiones.OnMisionIniciada      += OnMisionIniciada;
         SistemaMisiones.OnObjetivoCompletado  += OnObjetivoCompletado;
         SistemaMisiones.OnMisionCompletada    += OnMisionCompletada;
+        SistemaLogros.OnLogroDesbloqueado     += OnLogro;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -584,6 +600,45 @@ public class HUDCanvas : MonoBehaviour
         I._danoIndicators.Add(new DanoIndicator { image = img, timer = DUR, duracion = DUR });
     }
 
+    /// <summary>Muestra pantalla de victoria al completar M12.</summary>
+    public static void MostrarVictoria()
+    {
+        if (I == null) return;
+        var go = new GameObject("PanelVictoria");
+        go.transform.SetParent(I._canvas.transform, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        var bg = go.AddComponent<Image>();
+        bg.color = new Color(0f, 0f, 0f, 0.75f);
+        var txt = new GameObject("TxtVictoria").AddComponent<Text>();
+        txt.transform.SetParent(go.transform, false);
+        var rtt = txt.GetComponent<RectTransform>();
+        rtt.anchorMin = Vector2.zero; rtt.anchorMax = Vector2.one;
+        rtt.offsetMin = rtt.offsetMax = Vector2.zero;
+        txt.text = "★ ASKATASUNA ★\nEl pueblo de Alsasua ha resistido.";
+        txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        txt.fontSize = 36; txt.fontStyle = FontStyle.Bold;
+        txt.alignment = TextAnchor.MiddleCenter;
+        txt.color = new Color(1f, 0.9f, 0.2f);
+        I.StartCoroutine(I.FadeOutVictoria(go, 8f));
+    }
+
+    System.Collections.IEnumerator FadeOutVictoria(GameObject panel, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        var imgs = panel.GetComponentsInChildren<Graphic>();
+        float t = 0f;
+        while (t < 2f)
+        {
+            t += Time.deltaTime;
+            float a = 1f - t / 2f;
+            foreach (var g in imgs) { var c = g.color; c.a = a; g.color = c; }
+            yield return null;
+        }
+        Destroy(panel);
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     //  CALLBACKS
     // ════════════════════════════════════════════════════════════════════════
@@ -613,17 +668,27 @@ public class HUDCanvas : MonoBehaviour
 
     void OnMisionIniciada(string nombre)
     {
-        if (_txtMisionTitulo != null) _txtMisionTitulo.text = nombre;
+        if (_txtMisionTitulo   != null) _txtMisionTitulo.text   = nombre;
+        if (_txtMisionObjetivo != null) _txtMisionObjetivo.text = "▶ ...";
+        // Banner (texto propio + slide)
+        if (_bannerTxtTitulo   != null) _bannerTxtTitulo.text   = nombre;
+        if (_bannerTxtObjetivo != null) _bannerTxtObjetivo.text = "▶ ...";
+        MostrarBanner(true);
     }
     void OnObjetivoCompletado(string desc)
     {
         if (_txtMisionObjetivo != null) _txtMisionObjetivo.text = "✅ " + desc;
+        if (_bannerTxtObjetivo != null) _bannerTxtObjetivo.text = "✅ " + desc;
         StartCoroutine(FlashMision());
+        StartCoroutine(FlashBannerVerde());
     }
     void OnMisionCompletada(string nombre)
     {
         if (_txtMisionTitulo   != null) _txtMisionTitulo.text   = "🏆 " + nombre;
         if (_txtMisionObjetivo != null) _txtMisionObjetivo.text = "¡Misión completada!";
+        if (_bannerTxtTitulo   != null) _bannerTxtTitulo.text   = "🏆 " + nombre;
+        if (_bannerTxtObjetivo != null) _bannerTxtObjetivo.text = "¡Misión completada!";
+        StartCoroutine(OcultarBannerTras(6f));
         StartCoroutine(OcultarMisionTrasDelay(5f));
     }
 
@@ -735,7 +800,137 @@ public class HUDCanvas : MonoBehaviour
         SistemaMisiones.OnMisionIniciada      -= OnMisionIniciada;
         SistemaMisiones.OnObjetivoCompletado  -= OnObjetivoCompletado;
         SistemaMisiones.OnMisionCompletada    -= OnMisionCompletada;
+        SistemaLogros.OnLogroDesbloqueado     -= OnLogro;
         if (_miniRT != null) _miniRT.Release();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  BANNER DESLIZABLE DE MISIÓN
+    // ════════════════════════════════════════════════════════════════════════
+
+    void CrearBannerMision()
+    {
+        _bannerMision = Panel("BannerMision", _canvas.transform,
+            new Vector2(0, 0), new Vector2(0, 0),
+            new Vector2(-420f, 60f), new Vector2(390f, 80f));
+
+        _bgBanner = _bannerMision.gameObject.AddComponent<Image>();
+        _bgBanner.color = new Color(0.06f, 0.06f, 0.10f, 0.92f);
+
+        // Borde azul izquierdo
+        var borde = Panel("Borde", _bannerMision,
+            new Vector2(0, 0), new Vector2(0, 1), Vector2.zero, new Vector2(5f, 0f));
+        borde.gameObject.AddComponent<Image>().color = new Color(0.3f, 0.6f, 1f);
+
+        _bannerTxtTitulo   = CrearText(_bannerMision, "BannerTitulo",
+            new Vector2(14f, 54f), new Color(1f, 0.92f, 0.4f), 13, FontStyle.Bold);
+        _bannerTxtObjetivo = CrearText(_bannerMision, "BannerObjetivo",
+            new Vector2(14f, 28f), new Color(0.85f, 0.85f, 0.9f), 11, FontStyle.Normal);
+    }
+
+    void MostrarBanner(bool visible)
+    {
+        if (_bannerVisible == visible || _bannerMision == null) return;
+        _bannerVisible = visible;
+        StopCoroutine("AnimarBanner");
+        StartCoroutine(AnimarBanner(visible));
+    }
+
+    IEnumerator AnimarBanner(bool mostrar)
+    {
+        float dur = 0.35f, t = 0f;
+        float desde = _bannerMision.anchoredPosition.x;
+        float hasta = mostrar ? 16f : -440f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            _bannerMision.anchoredPosition = new Vector2(Mathf.Lerp(desde, hasta, t / dur), 60f);
+            yield return null;
+        }
+        _bannerMision.anchoredPosition = new Vector2(hasta, 60f);
+    }
+
+    IEnumerator FlashBannerVerde()
+    {
+        if (_bgBanner == null) yield break;
+        Color orig = _bgBanner.color;
+        for (int i = 0; i < 3; i++)
+        {
+            _bgBanner.color = new Color(0.08f, 0.28f, 0.08f, 0.92f);
+            yield return new WaitForSecondsRealtime(0.12f);
+            _bgBanner.color = orig;
+            yield return new WaitForSecondsRealtime(0.12f);
+        }
+    }
+
+    IEnumerator OcultarBannerTras(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        MostrarBanner(false);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  NOTIFICACIONES DE LOGROS
+    // ════════════════════════════════════════════════════════════════════════
+
+    void CrearPanelNotificaciones()
+    {
+        _panelNotif = Panel("PanelNotif", _canvas.transform,
+            new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(420f, -20f), new Vector2(380f, 70f)); // fuera de pantalla (derecha)
+
+        var bg = _panelNotif.gameObject.AddComponent<Image>();
+        bg.color = new Color(0.08f, 0.08f, 0.12f, 0.95f);
+
+        var borde = Panel("BordeNotif", _panelNotif,
+            new Vector2(0, 0), new Vector2(0, 1), Vector2.zero, new Vector2(4f, 0f));
+        borde.gameObject.AddComponent<Image>().color = new Color(1f, 0.85f, 0.1f);
+
+        _txtNotif = CrearText(_panelNotif, "TxtNotif",
+            new Vector2(12f, 38f), new Color(1f, 0.95f, 0.7f), 11, FontStyle.Bold);
+    }
+
+    void OnLogro(SistemaLogros.Logro logro)
+        => _notifQueue.Enqueue($"{logro.Icono}  {logro.Nombre}\n{logro.Descripcion}");
+
+    IEnumerator ProcesarColaNotificaciones()
+    {
+        while (true)
+        {
+            if (_notifQueue.Count > 0 && !_notifMostrando)
+                yield return StartCoroutine(MostrarNotificacion(_notifQueue.Dequeue()));
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+    }
+
+    IEnumerator MostrarNotificacion(string msg)
+    {
+        _notifMostrando = true;
+        if (_txtNotif != null) _txtNotif.text = msg;
+
+        // Slide desde la derecha
+        float dur = 0.3f, t = 0f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float x = Mathf.Lerp(420f, -16f, t / dur);
+            if (_panelNotif != null) _panelNotif.anchoredPosition = new Vector2(x, -20f);
+            yield return null;
+        }
+
+        yield return new WaitForSecondsRealtime(3.5f);
+
+        // Slide hacia fuera
+        t = 0f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float x = Mathf.Lerp(-16f, 420f, t / dur);
+            if (_panelNotif != null) _panelNotif.anchoredPosition = new Vector2(x, -20f);
+            yield return null;
+        }
+
+        _notifMostrando = false;
     }
 
     // ── Tipos auxiliares ──────────────────────────────────────────────────

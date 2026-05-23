@@ -23,7 +23,7 @@ using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(CapsuleCollider))]
-public class PoliciaForalIA : MonoBehaviour
+public class PoliciaForalIA : NPCBase, IDamageable
 {
     // ── Estado ────────────────────────────────────────────────────────────────
     public enum EstadoPolicia
@@ -84,11 +84,13 @@ public class PoliciaForalIA : MonoBehaviour
     [SerializeField] private float dispersion        = 0.05f;
 
     // ── Estado interno ────────────────────────────────────────────────────────
-    private EstadoPolicia      estado = EstadoPolicia.Patrullando;
-    private NavMeshAgent       agente;
-    private Transform          jugador;
-    private ControladorJugador controlJugador;
+    private EstadoPolicia       estado      = EstadoPolicia.Patrullando;
     private GameManagerAltsasua gameManager;
+
+    // Alias para compatibilidad con código existente — NPCBase ya declara _jugador/_controlJugador/_agente
+    private Transform          jugador          => _jugador;
+    private ControladorJugador controlJugador   => _controlJugador;
+    private NavMeshAgent       agente           => _agente;
 
     private int   wpActual      = 0;
     private float timerEspera   = 0f;
@@ -96,10 +98,7 @@ public class PoliciaForalIA : MonoBehaviour
     private float timerAtaque   = 0f;
     private Vector3 ultimaPosJugador;
 
-    // Cachés de capas (se calculan en Awake, no cada frame)
-    private int maskObstaculo; // capas que bloquean LOS (sin capa Player)
-
-    // Caché de SistemaAtmosfera — FindFirstObjectByType es O(n); se cachea en Awake
+    private int              maskObstaculo;
     private SistemaAtmosfera _atmosfera;
 
     // ── Propiedades públicas ───────────────────────────────────────────────────
@@ -107,16 +106,21 @@ public class PoliciaForalIA : MonoBehaviour
     public bool          JugadorVisto   => estado == EstadoPolicia.Persiguiendo
                                         || estado == EstadoPolicia.Atacando;
 
+    // IDamageable
+    public int  Vida        => vida;
+    public int  VidaMax     => 120; // valor inicial del SerializeField
+    public bool EstaMuerto  => estado == EstadoPolicia.Muerto;
+
     // ─────────────────────────────────────────────────────────────────────────
     //  LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void Awake()
+    protected override void Awake()
     {
-        agente = GetComponent<NavMeshAgent>();
-        agente.enabled = false; // esperar NavMesh
+        velocidadBase   = velPatrulla;
+        velocidadMaxima = velPerseguir;
+        base.Awake();
         maskObstaculo = capasObstaculo & ~LayerMask.GetMask("Player");
-        // _atmosfera se busca en Start y con retry — AltsasuCore puede crearla después
     }
 
     private IEnumerator BuscarAtmosfera()
@@ -134,59 +138,23 @@ public class PoliciaForalIA : MonoBehaviour
             AlsasuaLogger.Warn("PoliciaForal", "SistemaAtmosfera no encontrado — noche desactivada");
     }
 
-    private void Start()
+    protected override void OnStart()
     {
         StartCoroutine(BuscarAtmosfera());
-        var jGO = GameObject.FindGameObjectWithTag("Player");
-        if (jGO != null)
-        {
-            jugador        = jGO.transform;
-            controlJugador = jGO.GetComponent<ControladorJugador>();
-        }
         gameManager = FindFirstObjectByType<GameManagerAltsasua>();
         if (linterna != null) linterna.enabled = false;
-
-        // Si el NavMesh ya está listo (p.ej. spawn tardío), activar directamente.
-        // Si no, suscribirse al evento — el agente se activará cuando esté horneado.
-        if (SistemaNavMesh.EstaListo)
-            ActivarAgente();
-        else
-            SistemaNavMesh.OnNavMeshListo += ActivarAgente;
     }
 
-    private void OnDestroy()
+    protected override void AlActivarAgente()
     {
-        // Limpiar suscripción para evitar memory leaks
-        SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
-    }
-
-    private void ActivarAgente()
-    {
-        if (agente == null || agente.enabled) return;
-
-        // Verificar que hay NavMesh debajo de este NPC antes de activar
-        if (!SistemaNavMesh.PuntoEnNavMesh(transform.position, 3f))
-        {
-            // Fuera del área horneada — intentarlo cuando se rehornee
-            AlsasuaLogger.Warn("PoliciaForal",
-                $"{name}: no hay NavMesh en {transform.position}. " +
-                "Esperando próximo rehorneado.");
-            SistemaNavMesh.OnNavMeshListo += ActivarAgente;
-            return;
-        }
-
-        agente.enabled         = true;
-        agente.speed           = velPatrulla;
-        agente.stoppingDistance = 1.5f;
-        agente.angularSpeed    = 200f;
-
+        _agente.speed            = velPatrulla;
+        _agente.stoppingDistance = 1.5f;
         AlsasuaLogger.Info("PoliciaForal", $"{name}: NavMesh detectado — iniciando patrulla.");
         IrAlSiguienteWP();
     }
 
-    private void Update()
+    protected override void ActualizarComportamiento()
     {
-        if (!agente.enabled) return;      // esperar a NavMesh
         if (estado == EstadoPolicia.Muerto) return;
 
         ActualizarLinterna();
@@ -286,7 +254,7 @@ public class PoliciaForalIA : MonoBehaviour
         if (JugadorEnVision())
         {
             // Confirmado con LOS → perseguir y avisar al GameManager
-            ultimaPosJugador = jugador.position;
+            if (jugador != null) ultimaPosJugador = jugador.position;
             gameManager?.AumentarBusqueda(1);
             CambiarEstado(EstadoPolicia.Persiguiendo);
         }
@@ -382,7 +350,7 @@ public class PoliciaForalIA : MonoBehaviour
 
     private void Disparar()
     {
-        if (controlJugador == null || controlJugador.EstaMuerto) return;
+        if (jugador == null || controlJugador == null || controlJugador.EstaMuerto) return;
 
         Vector3 ori = transform.position + Vector3.up * 1.4f;
         Vector3 dir = (jugador.position + Vector3.up * 0.9f - ori).normalized;
@@ -402,15 +370,17 @@ public class PoliciaForalIA : MonoBehaviour
         }
     }
 
-    public void RecibirDano(int dano)
+    public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
     {
         if (estado == EstadoPolicia.Muerto) return;
-        vida -= dano;
+        vida -= cantidad;
         if (vida <= 0) { Morir(); return; }
         // Si le disparan estando en patrulla → pasa directamente a perseguir
         if (estado == EstadoPolicia.Patrullando || estado == EstadoPolicia.Sospechoso)
             CambiarEstado(EstadoPolicia.Persiguiendo);
     }
+
+    public void Curar(int cantidad) { } // la policía no se cura en gameplay
 
     private void Morir()
     {

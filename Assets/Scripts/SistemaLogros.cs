@@ -9,9 +9,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class SistemaLogros : MonoBehaviour
+public class SistemaLogros : SingletonMono<SistemaLogros>
 {
-    public static SistemaLogros Instance { get; private set; }
     public static event System.Action<Logro> OnLogroDesbloqueado;
 
     // ── Definición de logro ───────────────────────────────────────────────
@@ -78,12 +77,7 @@ public class SistemaLogros : MonoBehaviour
 
     // ════════════════════════════════════════════════════════════════════════
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-        SuscribirEventos();
-    }
+    protected override void OnAwake() => SuscribirEventos();
 
     // Handlers con nombre para poder desuscribir
     void OnEntroVehiculo(ControladorVehiculoJugador _) => Todos.Find(l=>l.Id=="primer_coche")?.Desbloquear();
@@ -225,12 +219,12 @@ public class SistemaLogros : MonoBehaviour
         GUI.color = Color.white;
     }
 
-    void OnDestroy()
+    protected override void OnDestroyed()
     {
-        SistemaGrafitis.OnPintadaRealizada    -= OnGraffiti;
-        SistemaMisiones.OnMisionCompletada    -= OnMisionCompletada;
-        SistemaMisiones.OnMisionIniciada      -= OnMisionIniciada;
-        GameManagerAltsasua.OnEstrellasCambia -= OnWanted;
+        SistemaGrafitis.OnPintadaRealizada        -= OnGraffiti;
+        SistemaMisiones.OnMisionCompletada        -= OnMisionCompletada;
+        SistemaMisiones.OnMisionIniciada          -= OnMisionIniciada;
+        GameManagerAltsasua.OnEstrellasCambia     -= OnWanted;
         ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
         VehiculoNPC.OnVehiculoDestruido           -= OnVehiculoDestruido;
         OnLogroDesbloqueado                       -= MostrarNotificacion;

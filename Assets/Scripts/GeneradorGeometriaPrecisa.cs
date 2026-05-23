@@ -58,9 +58,9 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     public bool generarBordillos= true;
 
     // ── constantes métricas ───────────────────────────────────────────────
-    const float OFFSET_X    = 1918f;   // Herriko Plaza en Unity
-    const float OFFSET_Z    = 8570f;
-    const float ALT_PLANTA  = 3.2f;    // altura por planta (m)
+    const float OFFSET_X    = GeoDataAlsasua.OX;
+    const float OFFSET_Z    = GeoDataAlsasua.OZ;
+    const float ALT_PLANTA  = GeoDataAlsasua.ALT_PLANTA;
     const float ALT_BORDILLO= 0.15f;   // altura del bordillo (m)
     const float ANCHO_ACERA_RESIDENCIAL = 1.5f;
     const float ANCHO_ACERA_PEATONAL    = 2.5f;
@@ -333,9 +333,7 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         Vector2 p1 = Vector2.Lerp(a, b, t1);
         float y0 = yBase, y1 = yBase + H_VENTANA;
 
-        // Marco de ventana (4 tiras alrededor del hueco)
-        float frame = 0.05f;
-        // Simplificado: ventana como quad con material diferente (vidrio azul)
+        // Marco de ventana — simplificado: ventana como quad con material diferente (vidrio azul)
         int base_ = verts.Count;
         verts.Add(new Vector3(p0.x, y0, p0.y));
         verts.Add(new Vector3(p1.x, y0, p1.y));
@@ -379,13 +377,14 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         // Triangulación fan simple del footprint
         Vector2 c = verts.Aggregate(Vector2.zero, (a,v)=>a+v) / verts.Length;
         vm.Add(new Vector3(c.x, y, c.y));
+        um.Add(new Vector2(c.x * 0.1f, c.y * 0.1f));  // UV del centroide
 
         for (int i = 0; i < verts.Length; i++)
         {
             vm.Add(new Vector3(verts[i].x, y, verts[i].y));
+            um.Add(new Vector2(verts[i].x * 0.1f, verts[i].y * 0.1f));
             int j = (i + 1) % verts.Length;
-            tm.Add(0); tm.Add(i + 1); tm.Add(j + 1 > verts.Length ? 1 : j + 1);
-            um.Add(new Vector2(c.x * 0.1f, c.y * 0.1f));
+            tm.Add(0); tm.Add(i + 1); tm.Add(j + 1);
         }
 
         if (vm.Count < 3) return;
@@ -593,7 +592,6 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     void GenerarTejadoHip(GameObject parent, Vector2[] verts, float y, float angulo, Material matReal = null)
     {
         // Simplified hip roof via uniform inward offset (straight skeleton approx)
-        float offset = 0f;
         float maxOff = Mathf.Min(
             verts.Max(v => v.x) - verts.Min(v => v.x),
             verts.Max(v => v.y) - verts.Min(v => v.y)) * 0.5f;
@@ -888,32 +886,11 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     static void ConstruirMesh(GameObject parent, string nombre,
                                List<Vector3> v, List<int> t, List<Vector2> uv, Material mat)
     {
-        if (v.Count < 3 || t.Count < 3) return;
-        var go = new GameObject(nombre);
-        go.transform.SetParent(parent.transform, false);
-        go.isStatic = true;
-
-        var mesh = new Mesh { name = nombre };
-        mesh.indexFormat = v.Count > 65535
-            ? UnityEngine.Rendering.IndexFormat.UInt32
-            : UnityEngine.Rendering.IndexFormat.UInt16;
-        mesh.SetVertices(v);
-        mesh.SetTriangles(t, 0);
-        mesh.SetUVs(0, uv);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-
-        go.AddComponent<MeshFilter>().sharedMesh       = mesh;
-        go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-        go.AddComponent<MeshCollider>().sharedMesh     = mesh;
+        var mesh = MeshBuilder.Finalizar(v, t, uv, nombre);
+        MeshBuilder.CrearGO(nombre, parent.transform, mesh, mat, isStatic: true, conCollider: true);
     }
 
-    static float AlturaTerreno(Vector3 pos)
-    {
-        var t = Terrain.activeTerrain;
-        if (t == null) return 240f;
-        return t.SampleHeight(pos) + t.transform.position.y;
-    }
+    static float AlturaTerreno(Vector3 pos) => GeoDataAlsasua.AlturaTerreno(pos);
 
     static bool EsCalleUrbanaPeatonal(string tipo)
         => tipo == "pedestrian" || tipo == "footway" || tipo == "living_street";

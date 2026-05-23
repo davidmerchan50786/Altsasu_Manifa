@@ -105,13 +105,8 @@ public sealed class AltsasuCore : MonoBehaviour
         ? new Vector3(I.centroX, AlturaEn(I.centroX, I.centroZ), I.centroZ)
         : new Vector3(1918f, 240f, 8570f);
 
-    public static float AlturaEn(float x, float z)
-    {
-        var t = Terrain.activeTerrain;
-        if (t != null) return t.SampleHeight(new Vector3(x, 0, z)) + t.transform.position.y;
-        if (Physics.Raycast(new Vector3(x, 1000, z), Vector3.down, out var h, 2000)) return h.point.y;
-        return 240f;
-    }
+    /// <summary>Delegado a GeoDataAlsasua.AlturaTerreno — punto único de verdad para altura de terreno.</summary>
+    public static float AlturaEn(float x, float z) => GeoDataAlsasua.AlturaTerreno(x, z);
 
     // ══════════════════════════════════════════════════════════════════════
     //  BOOT

@@ -257,7 +257,7 @@ public class ImportadorExtractedAssets : EditorWindow
         AssetDatabase.Refresh();
 
         // Auto-convertir materiales
-        IntegradorAssetsNuevos.ConvertirMaterialesAHDRP();
+        AplicadorTexturasAAA.ConvertirMaterialesAHDRP();
 
         Debug.Log($"[ImportadorExtracted] ✅ {ok}/{sel.Count} assets importados a Assets/Models/*_Extracted/");
         EditorUtility.DisplayDialog("Importación completada",

@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using System.IO;
 
@@ -106,77 +107,113 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         var terrain = Terrain.activeTerrain;
         if (terrain == null) yield break;
 
-        // Leer metadatos
+        // Leer metadatos del fichero RAW
         string metaPath = FullPath(PATH_LIDAR_META);
-        float terrainW = 1024f, terrainH_m = 900f, zMin = 300f, zRange = 700f;
-        int hRes = 2049;
+        float lidarW = 1024f, lidarL = 1024f, zMin = 480f, zRange = 420f;
+        int srcRes = 2049;
 
         if (File.Exists(metaPath))
         {
             try
             {
                 var meta = JsonUtility.FromJson<LidarDtmMeta>(File.ReadAllText(metaPath));
-                terrainW   = meta.terrainWidth;
-                terrainH_m = meta.terrainHeight;
-                zMin       = meta.z_min;
-                zRange     = meta.z_max - meta.z_min;
-                hRes       = meta.heightmapResolution;
+                lidarW  = meta.terrainWidth;
+                lidarL  = meta.terrainLength > 1f ? meta.terrainLength : meta.terrainWidth;
+                zMin    = meta.z_min;
+                zRange  = meta.z_max - meta.z_min;
+                srcRes  = meta.heightmapResolution;
             }
             catch { }
         }
 
-        // Leer .raw en thread (puede ser 8MB)
+        // Leer .raw en hilo de fondo con Task.Run (puede ser 8–33 MB)
         ushort[] rawData = null;
-        bool lecto = false;
-        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+        var taskRaw = Task.Run(() =>
         {
-            try
-            {
-                var bytes = File.ReadAllBytes(path);
-                rawData = new ushort[bytes.Length / 2];
-                Buffer.BlockCopy(bytes, 0, rawData, 0, bytes.Length);
-                lecto = true;
-            }
-            catch (System.Exception e)
-            { AlsasuaLogger.Warn("TerrenoHDR", $"RAW read error: {e.Message}"); lecto = true; }
+            var bytes = File.ReadAllBytes(path);
+            var buf   = new ushort[bytes.Length / 2];
+            Buffer.BlockCopy(bytes, 0, buf, 0, bytes.Length);
+            return buf;
         });
 
-        while (!lecto) yield return new WaitForSeconds(0.05f);
+        yield return EsperarTask(taskRaw, "RAW read");
+        if (taskRaw.IsFaulted || !taskRaw.IsCompletedSuccessfully) yield break;
+        rawData = taskRaw.Result;
         if (rawData == null) yield break;
-
         yield return null;
 
         var td = terrain.terrainData;
-        td.heightmapResolution = hRes;
-        td.size = new Vector3(terrainW, zRange, terrainW);
-        // Centrar el terreno en Herriko Plaza (OX=1918, OZ=8570)
-        terrain.transform.position = new Vector3(
-            1918f - terrainW * 0.5f,
-            zMin,
-            8570f - terrainW * 0.5f);
 
-        // Limitar resolución al máximo configurado para controlar memoria
-        int outRes = Mathf.Min(resolucionMax, hRes);
+        // ── CRÍTICO: NO cambiar td.size ni terrain.transform.position ──────
+        // SceneBootstrapper ya fijó el terreno a 5000×18000m en (0,0,0).
+        // Modificarlo rompería la alineación de edificios, árboles y ortofoto.
+
+        int outRes = Mathf.Min(resolucionMax, srcRes);
         td.heightmapResolution = outRes;
 
-        float[,] heights = new float[outRes, outRes];
-        float scale = (float)(hRes - 1) / (outRes - 1);   // ratio de muestreo
+        Vector3 terSize = td.size;           // 5000, 900, 18000 (de SceneBootstrapper)
+        Vector3 terPos  = terrain.transform.position;  // 0, 0, 0
+
+        // Leer el heightmap DEM existente ANTES de sobrescribir.
+        // Fuera del área LIDAR conservamos el DEM (valles de Urbasa, monte Aizkorri, etc.)
+        float[,] demHeights = td.GetHeights(0, 0, outRes, outRes);
+
+        // Límites del área cubierta por el LIDAR (centrada en Herriko Plaza)
+        float lidarMinX = 1918f - lidarW * 0.5f;
+        float lidarMinZ = 8570f - lidarL * 0.5f;
+
+        // Zona de transición suave: blend LIDAR→DEM en el borde (evita corte brusco)
+        const float BLEND_M = 80f;  // metros de transición
+
+        var heights = new float[outRes, outRes];
+
         for (int oy = 0; oy < outRes; oy++)
         for (int ox = 0; ox < outRes; ox++)
         {
-            int sy = Mathf.Clamp(Mathf.RoundToInt(oy * scale), 0, hRes - 1);
-            int sx = Mathf.Clamp(Mathf.RoundToInt(ox * scale), 0, hRes - 1);
-            int idx = sy * hRes + sx;
-            heights[oy, ox] = idx < rawData.Length ? rawData[idx] / 65535f : 0f;
+            // Posición Unity de este píxel del heightmap
+            float ux = terPos.x + (float)ox / (outRes - 1) * terSize.x;
+            float uz = terPos.z + (float)oy / (outRes - 1) * terSize.z;
+
+            // Fracción dentro del rectángulo LIDAR
+            float lx = (ux - lidarMinX) / lidarW;
+            float lz = (uz - lidarMinZ) / lidarL;
+
+            float demH  = demHeights[oy, ox];  // altura DEM normalizada [0,1]
+
+            if (lx >= 0f && lx <= 1f && lz >= 0f && lz <= 1f)
+            {
+                // Dentro del LIDAR
+                int sx  = Mathf.Clamp(Mathf.RoundToInt(lx * (srcRes - 1)), 0, srcRes - 1);
+                int sy  = Mathf.Clamp(Mathf.RoundToInt(lz * (srcRes - 1)), 0, srcRes - 1);
+                int idx = sy * srcRes + sx;
+
+                float altitudM = idx < rawData.Length
+                    ? rawData[idx] / 65535f * zRange + zMin
+                    : zMin;
+                float lidarH = Mathf.Clamp01((altitudM - terPos.y) / terSize.y);
+
+                // Blend suave en los bordes del parche LIDAR
+                float distBorde = Mathf.Min(
+                    Mathf.Min(lx, 1f - lx) * lidarW,
+                    Mathf.Min(lz, 1f - lz) * lidarL);
+                float t = Mathf.Clamp01(distBorde / BLEND_M);
+
+                heights[oy, ox] = Mathf.Lerp(demH, lidarH, t);
+            }
+            else
+            {
+                // Fuera del LIDAR: conservar DEM original (valle del Arakil, Urbasa, etc.)
+                heights[oy, ox] = demH;
+            }
         }
-        hRes = outRes;
 
         td.SetHeights(0, 0, heights);
         terrain.Flush();
 
         _aplicado = true;
         AlsasuaLogger.Info("TerrenoHDR",
-            $"✅ DTM LIDAR 0.5m aplicado: {hRes}×{hRes}  {terrainW}m×{terrainW}m  Z={zMin:F0}-{zMin+zRange:F0}m");
+            $"✅ DTM LIDAR 0.5m: {outRes}²px  terreno {terSize.x}×{terSize.z}m  " +
+            $"LIDAR {lidarW}×{lidarL}m  Z {zMin:F0}–{zMin+zRange:F0}m");
     }
 
     [System.Serializable]
@@ -199,38 +236,32 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         float xll = 0, yll = 0, cell = 0, nodata = -9999f;
         float[] data = null;
 
-        // Leer en hilo de fondo (no bloquear el main thread)
-        bool lecto = false;
-        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+        // Leer en hilo de fondo con Task.Run
+        // Variables locales capturadas por la Task — se actualizan mediante tupla de retorno
+        var taskAsc = Task.Run(() =>
         {
-            try
-            {
-                using var r = new StreamReader(path);
-                ncols = int.Parse(  r.ReadLine().Split()[1]);
-                nrows = int.Parse(  r.ReadLine().Split()[1]);
-                xll   = float.Parse(r.ReadLine().Split()[1],
-                    System.Globalization.CultureInfo.InvariantCulture);
-                yll   = float.Parse(r.ReadLine().Split()[1],
-                    System.Globalization.CultureInfo.InvariantCulture);
-                cell  = float.Parse(r.ReadLine().Split()[1],
-                    System.Globalization.CultureInfo.InvariantCulture);
-                nodata= float.Parse(r.ReadLine().Split()[1],
-                    System.Globalization.CultureInfo.InvariantCulture);
+            using var r   = new StreamReader(path);
+            int   _ncols  = int.Parse(  r.ReadLine().Split()[1]);
+            int   _nrows  = int.Parse(  r.ReadLine().Split()[1]);
+            float _xll    = float.Parse(r.ReadLine().Split()[1], System.Globalization.CultureInfo.InvariantCulture);
+            float _yll    = float.Parse(r.ReadLine().Split()[1], System.Globalization.CultureInfo.InvariantCulture);
+            float _cell   = float.Parse(r.ReadLine().Split()[1], System.Globalization.CultureInfo.InvariantCulture);
+            float _nodata = float.Parse(r.ReadLine().Split()[1], System.Globalization.CultureInfo.InvariantCulture);
 
-                data = new float[ncols * nrows];
-                int idx = 0; string line;
-                while ((line = r.ReadLine()) != null)
-                    foreach (var tok in line.Split(' ','\t'))
-                        if (!string.IsNullOrEmpty(tok) && idx < data.Length)
-                            data[idx++] = float.Parse(tok,
-                                System.Globalization.CultureInfo.InvariantCulture);
-                lecto = true;
-            }
-            catch (System.Exception e)
-            { AlsasuaLogger.Warn("TerrenoHDR", $"Error leyendo ASC: {e.Message}"); }
+            float[] _data = new float[_ncols * _nrows];
+            int idx = 0; string line;
+            while ((line = r.ReadLine()) != null)
+                foreach (var tok in line.Split(' ', '\t'))
+                    if (!string.IsNullOrEmpty(tok) && idx < _data.Length)
+                        _data[idx++] = float.Parse(tok, System.Globalization.CultureInfo.InvariantCulture);
+
+            return (_ncols, _nrows, _xll, _yll, _cell, _nodata, _data);
         });
 
-        while (!lecto) yield return new WaitForSeconds(0.1f);
+        yield return EsperarTask(taskAsc, "ASC read");
+        if (taskAsc.IsFaulted || !taskAsc.IsCompletedSuccessfully) yield break;
+
+        (ncols, nrows, xll, yll, cell, nodata, data) = taskAsc.Result;
         if (data == null) yield break;
 
         yield return null;
@@ -315,34 +346,31 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         var terrain = Terrain.activeTerrain;
         if (terrain == null) yield break;
 
-        // Leer puntos en hilo de fondo
-        List<Vector3> puntos = new List<Vector3>();
-        bool lecto = false;
-
-        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+        // Leer puntos en hilo de fondo con Task.Run
+        var taskXyz = Task.Run(() =>
         {
-            try
+            var lista = new List<Vector3>();
+            foreach (var line in File.ReadLines(path))
             {
-                foreach (var line in File.ReadLines(path))
+                var tok = line.Split(' ', '\t');
+                if (tok.Length < 3) continue;
+                if (float.TryParse(tok[0], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out float x)
+                 && float.TryParse(tok[1], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out float y)
+                 && float.TryParse(tok[2], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out float z))
                 {
-                    var tok = line.Split(' ', '\t');
-                    if (tok.Length < 3) continue;
-                    if (float.TryParse(tok[0], out float x)
-                     && float.TryParse(tok[1], out float y)
-                     && float.TryParse(tok[2], out float z))
-                    {
-                        // lidar_ground.xyz: X=relativo a Herriko Plaza, Y=altitud, Z=relativo
-                        // Convertir a Unity absoluto (+ OX, + OZ)
-                        puntos.Add(new Vector3(x + 1918f, y, z + 8570f));
-                    }
+                    // lidar_ground.xyz: X/Z relativo a Herriko Plaza → convertir a Unity absoluto
+                    lista.Add(new Vector3(x + GeoDataAlsasua.OX, y, z + GeoDataAlsasua.OZ));
                 }
-                lecto = true;
             }
-            catch (System.Exception e)
-            { AlsasuaLogger.Warn("TerrenoHDR", $"XYZ error: {e.Message}"); lecto = true; }
+            return lista;
         });
 
-        while (!lecto) yield return new WaitForSeconds(0.1f);
+        yield return EsperarTask(taskXyz, "XYZ read");
+        if (taskXyz.IsFaulted || !taskXyz.IsCompletedSuccessfully) yield break;
+        List<Vector3> puntos = taskXyz.Result;
 
         if (puntos.Count < 100) yield break;
         AlsasuaLogger.Info("TerrenoHDR", $"LIDAR ground: {puntos.Count} puntos");
@@ -415,4 +443,21 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
     static string FullPath(string relative)
         => Path.Combine(Application.dataPath.Replace("Assets", ""), relative);
+
+    /// <summary>
+    /// Cede el control cada frame hasta que la Task finaliza.
+    /// Si falla, loga el error. Sustituye el patrón ThreadPool + bool + WaitForSeconds.
+    /// </summary>
+    static IEnumerator EsperarTask(Task task, string nombreTarea)
+    {
+        while (!task.IsCompleted)
+            yield return null; // cede cada frame sin sleep fijo
+
+        if (task.IsFaulted)
+        {
+            var ex = task.Exception?.InnerException ?? task.Exception;
+            AlsasuaLogger.Error("TerrenoHDR",
+                $"Error en tarea '{nombreTarea}': {ex?.GetType().Name} — {ex?.Message}");
+        }
+    }
 }

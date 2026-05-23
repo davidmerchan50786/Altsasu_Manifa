@@ -13,11 +13,24 @@ using Unity.Mathematics;
 
 public class SistemaManifestacion : MonoBehaviour
 {
+    public static SistemaManifestacion Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(this); return; }
+        Instance = this;
+    }
+
     // ── Boids coordinator ─────────────────────────────────────────────────
     readonly List<ManifestanteIA> _agentes = new();
-    NativeArray<float3> _bPosiciones;
-    NativeArray<float3> _bVelocidades;
-    bool _boidsActivo;
+
+    // Arrays persistentes — se reasignan solo cuando cambia n (evita 40+ allocs/s a 10Hz)
+    NativeArray<float3> _bPos;
+    NativeArray<float3> _bVel;
+    NativeArray<float3> _bNuevaPos;
+    NativeArray<float3> _bNuevaVel;
+    int _bCapacidad; // tamaño actual de los arrays
+
     float _timerBoids;
     const float BOIDS_TICK = 0.1f; // 10 Hz
 
@@ -26,14 +39,12 @@ public class SistemaManifestacion : MonoBehaviour
 
     void Update()
     {
-        // Tecla M para alternar manifestación
         if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
         {
             if (_activa) TerminarManifestacion();
             else StartCoroutine(IniciarManifestacion());
         }
 
-        // Tick Boids a 10Hz
         if (!_activa || _agentes.Count < 2) return;
         _timerBoids -= Time.deltaTime;
         if (_timerBoids > 0) return;
@@ -41,41 +52,94 @@ public class SistemaManifestacion : MonoBehaviour
         TickBoids();
     }
 
+    void AsegurarCapacidad(int n)
+    {
+        // Solo reasignar si n SUPERA la capacidad actual — no reducir al bajar agentes.
+        // Esto evita reasignaciones costosas cada vez que un manifestante muere.
+        if (_bCapacidad >= n) return;
+
+        if (_bPos.IsCreated)      _bPos.Dispose();
+        if (_bVel.IsCreated)      _bVel.Dispose();
+        if (_bNuevaPos.IsCreated) _bNuevaPos.Dispose();
+        if (_bNuevaVel.IsCreated) _bNuevaVel.Dispose();
+
+        _bPos      = new NativeArray<float3>(n, Allocator.Persistent);
+        _bVel      = new NativeArray<float3>(n, Allocator.Persistent);
+        _bNuevaPos = new NativeArray<float3>(n, Allocator.Persistent);
+        _bNuevaVel = new NativeArray<float3>(n, Allocator.Persistent);
+        _bCapacidad = n;
+    }
+
+    // Snapshot reutilizable — evita alloc y protege contra modificación concurrente de _agentes
+    readonly List<ManifestanteIA> _snapshot = new();
+
     void TickBoids()
     {
-        int n = _agentes.Count;
-        var pos = new NativeArray<float3>(n, Allocator.TempJob);
-        var vel = new NativeArray<float3>(n, Allocator.TempJob);
+        // Snapshot: copia los agentes vivos en un buffer fijo para esta iteración.
+        // Si un ManifestanteIA muere y llama DesregistrarAgente() durante este tick,
+        // el snapshot no cambia → sin IndexOutOfRange ni accesos a null destruidos.
+        _snapshot.Clear();
+        foreach (var a in _agentes)
+            if (a != null) _snapshot.Add(a);
 
+        // Limpiar nulls acumulados en la lista maestra (muertos sin desregistrar)
+        if (_snapshot.Count != _agentes.Count)
+            _agentes.RemoveAll(a => a == null);
+
+        int n = _snapshot.Count;
+        if (n == 0) return;
+
+        AsegurarCapacidad(n);
+
+        // Copiar estado actual (solo agentes vivos del snapshot)
         for (int i = 0; i < n; i++)
         {
-            if (_agentes[i] == null) continue;
-            var p = _agentes[i].transform.position;
-            var v = _agentes[i].VelocidadBoids;
-            pos[i] = new float3(p.x, p.y, p.z);
-            vel[i] = new float3(v.x, v.y, v.z);
+            var p = _snapshot[i].transform.position;
+            var v = _snapshot[i].VelocidadBoids;
+            _bPos[i] = new float3(p.x, p.y, p.z);
+            _bVel[i] = new float3(v.x, v.y, v.z);
         }
 
-        var cfg = _agentes[0].tipo == TipoManifestante.Disturbios
+        // Config según tipo del primer agente válido
+        var cfg = _snapshot[0].tipo == TipoManifestante.Disturbios
             ? IntegradorMatematicas.BOIDS_DISTURBIOS
             : IntegradorMatematicas.BOIDS_MANIFESTANTE;
 
-        var (nPos, nVel) = IntegradorMatematicas.TickBoids(pos, vel,
-            centroManifestacion, cfg, BOIDS_TICK);
+        var job = new JobBoidsUpdate
+        {
+            posiciones        = _bPos,
+            velocidades       = _bVel,
+            radioSeparacion   = cfg.radioSep,
+            radioAlineacion   = cfg.radioAlin,
+            radioCohesion     = cfg.radioCoh,
+            pesoSeparacion    = cfg.pesoSep,
+            pesoAlineacion    = cfg.pesoAlin,
+            pesoCohesion      = cfg.pesoCoh,
+            velocidadMax      = cfg.velMax,
+            fuerza            = cfg.fuerza,
+            deltaTime         = BOIDS_TICK,
+            objetivo          = new float3(centroManifestacion.x, centroManifestacion.y, centroManifestacion.z),
+            pesoObjetivo      = cfg.pesoObj,
+            nuevasVelocidades = _bNuevaVel,
+            nuevasPosiciones  = _bNuevaPos,
+        };
+        job.Schedule(n, 8).Complete();
 
+        // Aplicar resultados — snapshot garantiza índices válidos
         for (int i = 0; i < n; i++)
-            if (_agentes[i] != null)
-                _agentes[i].AplicarBoids(
-                    new Vector3(nPos[i].x, nPos[i].y, nPos[i].z),
-                    new Vector3(nVel[i].x, nVel[i].y, nVel[i].z));
-
-        pos.Dispose(); vel.Dispose(); nPos.Dispose(); nVel.Dispose();
+        {
+            _snapshot[i].AplicarBoids(
+                new Vector3(_bNuevaPos[i].x, _bNuevaPos[i].y, _bNuevaPos[i].z),
+                new Vector3(_bNuevaVel[i].x, _bNuevaVel[i].y, _bNuevaVel[i].z));
+        }
     }
 
     void OnDestroy()
     {
-        if (_bPosiciones.IsCreated) _bPosiciones.Dispose();
-        if (_bVelocidades.IsCreated) _bVelocidades.Dispose();
+        if (_bPos.IsCreated)      _bPos.Dispose();
+        if (_bVel.IsCreated)      _bVel.Dispose();
+        if (_bNuevaPos.IsCreated) _bNuevaPos.Dispose();
+        if (_bNuevaVel.IsCreated) _bNuevaVel.Dispose();
     }
     // ─── Inspector ─────────────────────────────────────────────────────────
     [Header("Prefabs manifestantes")]
@@ -105,7 +169,7 @@ public class SistemaManifestacion : MonoBehaviour
     [Header("Activación")]
     // Tecla M — new Input System
     // [HideInInspector] public KeyCode teclaManifestacion = KeyCode.M; // legacy eliminado
-    public bool    activaAlInicio = false;
+    public bool    activaAlInicio = true;
 
     // ─── Estado ────────────────────────────────────────────────────────────
     bool     _activa;

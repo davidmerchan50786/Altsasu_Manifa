@@ -6,9 +6,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaDestruccion : MonoBehaviour
+public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
 {
-    public static SistemaDestruccion Instance { get; private set; }
 
     [Header("Efectos de fuego")]
     public GameObject prefabFuegoGrande;
@@ -42,11 +41,6 @@ public class SistemaDestruccion : MonoBehaviour
     readonly List<GameObject> _fuegoActivos = new();
     const int MAX_FUEGOS = 30;
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
 
     // =========================================================================
     //  COCHE BOMBA / EXPLOSIÓN DE COCHE
@@ -314,13 +308,9 @@ public class SistemaDestruccion : MonoBehaviour
             float falloff = 1f - Mathf.Clamp01(Vector3.Distance(col.transform.position, pos) / radio);
             int   danoCal = Mathf.RoundToInt(daño * falloff);
 
-            // Jugador
-            var jugador = col.GetComponent<ControladorJugador>();
-            if (jugador != null) { jugador.RecibirDano(danoCal); continue; }
-
-            // Vehículo del jugador
-            var coche = col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (coche != null) { coche.RecibirDano(danoCal); continue; }
+            var damageable = col.GetComponent<IDamageable>()
+                          ?? col.GetComponentInParent<IDamageable>();
+            if (damageable != null) { damageable.RecibirDano(danoCal, pos, TipoDano.Explosion); continue; }
         }
     }
 }

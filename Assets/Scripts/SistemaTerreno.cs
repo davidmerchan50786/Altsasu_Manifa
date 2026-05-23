@@ -233,6 +233,17 @@ public class SistemaTerreno : MonoBehaviour
             if (++lote >= 32) { lote = 0; yield return null; }
         }
 
+        // Verificar consistencia antes de escribir (otra coroutine pudo cambiar capas)
+        if (_td.terrainLayers?.Length != _numCapas)
+        {
+            AlsasuaLogger.Warn("Terreno",
+                $"PintarTerrain: capas cambiaron ({_numCapas}→{_td.terrainLayers?.Length}), re-inicializando");
+            _numCapas = _td.terrainLayers?.Length ?? _numCapas;
+            // Recrear el mapa con el tamaño correcto y volver a pintar
+            var mapaNuevo = new float[_resAlpha, _resAlpha, _numCapas];
+            _td.SetAlphamaps(0, 0, mapaNuevo);
+            yield break;
+        }
         _td.SetAlphamaps(0, 0, mapa);
         AlsasuaLogger.Info("Terreno", "✅ Alphamap pintado");
     }
@@ -521,6 +532,10 @@ public class SistemaTerreno : MonoBehaviour
         int h = z1 - z0 + 1;
         if (w <= 0 || h <= 0) yield break;
 
+        // Capturar el número de capas ANTES del loop (puede cambiar durante yields)
+        int capasAntes = _td.terrainLayers?.Length ?? 0;
+        if (capasAntes == 0) yield break;
+
         float[,,] sub = _td.GetAlphamaps(x0, z0, w, h);
         int hRes = _td.heightmapResolution - 1;
         float[,] heights = _td.GetHeights(0, 0, _td.heightmapResolution, _td.heightmapResolution);
@@ -538,6 +553,16 @@ public class SistemaTerreno : MonoBehaviour
                 PintarPunto(sub, ay, ax, alt01, pend, wx, wz);
             }
             yield return null;
+        }
+
+        // Verificar que el número de capas no cambió durante el loop
+        // (otro sistema puede haber modificado terrainLayers entre yields)
+        int capasDespues = _td.terrainLayers?.Length ?? 0;
+        if (capasDespues != capasAntes || sub.GetLength(2) != capasDespues)
+        {
+            AlsasuaLogger.Warn("Terreno",
+                $"RepintarZona: capas cambiaron durante coroutine ({capasAntes}→{capasDespues}), zona descartada");
+            yield break;
         }
 
         _td.SetAlphamaps(x0, z0, sub);

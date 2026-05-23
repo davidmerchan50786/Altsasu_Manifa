@@ -189,8 +189,9 @@ public static class IntegradorMatematicas
     };
 
     /// <summary>
-    /// Ejecuta un tick de Boids para N agentes. Devuelve arrays con nuevas
-    /// posiciones y velocidades (caller hace Dispose).
+    /// Ejecuta un tick de Boids para N agentes. Devuelve arrays TempJob (caller hace Dispose).
+    /// Nota: SistemaManifestacion lanza el Job directamente con arrays Persistent para evitar allocs.
+    /// Este método se mantiene para fauna (ovejas, ciervos) y vehículos NPC.
     /// </summary>
     public static (NativeArray<float3> pos, NativeArray<float3> vel)
         TickBoids(NativeArray<float3> posiciones, NativeArray<float3> velocidades,

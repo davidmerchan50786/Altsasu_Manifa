@@ -208,13 +208,21 @@ public struct JobFBMTerrain : IJobParallelFor
         return t * t * t * t * math.dot(g, x);
     }
 
+    // Burst BC1028: no se puede crear array managed dentro de un job.
+    // Switch inline equivale exactamente a grad[h & 7].
     static float2 Gradiente(int h)
     {
-        float2[] grad = {
-            new float2(1,1),new float2(-1,1),new float2(1,-1),new float2(-1,-1),
-            new float2(1,0),new float2(-1,0),new float2(0,1),new float2(0,-1)
-        };
-        return grad[h & 7];
+        switch (h & 7)
+        {
+            case 0: return new float2( 1, 1);
+            case 1: return new float2(-1, 1);
+            case 2: return new float2( 1,-1);
+            case 3: return new float2(-1,-1);
+            case 4: return new float2( 1, 0);
+            case 5: return new float2(-1, 0);
+            case 6: return new float2( 0, 1);
+            default:return new float2( 0,-1);
+        }
     }
 
     static int Perm(int x)

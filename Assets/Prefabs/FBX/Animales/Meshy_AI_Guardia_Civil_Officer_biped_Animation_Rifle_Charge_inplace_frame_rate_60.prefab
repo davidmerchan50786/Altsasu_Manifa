@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Meshy_AI_Guardia_Civil_Officer_biped_Animation_Rifle_Charge_inplace_frame_rate_60
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 2be2840fb9fb44379853cc4cdf77c98c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: f860202f501a65f4c9d48ea2feb51c01, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

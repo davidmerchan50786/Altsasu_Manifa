@@ -5,15 +5,14 @@ using UnityEngine;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody))]
-public class VehiculoNPC : MonoBehaviour
+public class VehiculoNPC : VehiculoBase
 {
     // ═══════════════════════════════════════════════════════════════════════
     //  MOVIMIENTO
     // ═══════════════════════════════════════════════════════════════════════
 
-    [Header("═══ MOVIMIENTO ═══")]
-    [Tooltip("Velocidad máxima de desplazamiento del vehículo (m/s). 8 m/s ≈ 30 km/h, velocidad urbana.")]
-    [SerializeField] private float velocidadMax    = 8f;    // m/s ≈ 30 km/h ciudad
+    [Header("═══ MOVIMIENTO NPC ═══")]
+    // velocidadMax viene de VehiculoBase (SerializeField, default 10 → ajustar a 8 en Inspector)
     [Tooltip("Aceleración desde parado hasta velocidadMax (m/s²). Valores bajos = arranque gradual.")]
     [SerializeField] private float aceleracion     = 4f;
     [Tooltip("Velocidad angular máxima de giro del vehículo (grados/segundo).")]
@@ -39,12 +38,8 @@ public class VehiculoNPC : MonoBehaviour
     //  SALUD
     // ═══════════════════════════════════════════════════════════════════════
 
-    [Header("═══ SALUD ═══")]
-    [Tooltip("Puntos de vida actuales del vehículo. Al llegar a 0 explota y se destruye.")]
-    [SerializeField] private int vida    = 80;
-    [Tooltip("Puntos de vida máximos del vehículo (referencia para el oscurecimiento progresivo de la carrocería).")]
-    [SerializeField] private int vidaMax = 80;
-    private bool destruido = false;
+    // vida, vidaMax, destruido, IDamageable → heredados de VehiculoBase
+    // SerializeField para ajustar vida en Inspector: seleccionar el GO y editar "Vida Maxima"
 
     [Header("═══ MODELO 3D ═══")]
     [Tooltip("Prefab del modelo visual del vehículo (ej. Interceptor.prefab). " +
@@ -71,7 +66,7 @@ public class VehiculoNPC : MonoBehaviour
     //  ESTADO INTERNO
     // ═══════════════════════════════════════════════════════════════════════
 
-    private Rigidbody rb;
+    // _rb heredado de VehiculoBase
     private int       wpActual    = 0;
     private float     velocidadActual = 0f;
     private bool      frenando    = false;
@@ -84,31 +79,25 @@ public class VehiculoNPC : MonoBehaviour
     //  UNITY
     // ═══════════════════════════════════════════════════════════════════════
 
-    private void Awake()
+    protected override void OnAwakeVehiculo()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        rb.linearDamping        = 1.5f;
+        _rb.constraints   = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        _rb.linearDamping = 1.5f;
+        _vida = vidaMaxima; // sobreescribir el valor base con el del NPC (80 vs 100)
 
         if (capasObstaculo == 0) capasObstaculo = ~0;
 
-        // Instanciar modelo 3D externo si está asignado; si no, montar malla básica de cajas.
         if (prefabModelo != null) InstanciarModeloPrefab();
         else                      CrearCuerpoBasico_Inline();
 
-        // BUG 17 FIX: cachear el renderer en Awake() para no buscarlo en cada impacto.
         rendererPrincipal = GetComponentInChildren<Renderer>();
 
-        // Color aleatorio — FIX LEAK: MaterialPropertyBlock en lugar de .material.color.
-        // Acceder a renderer.material crea una instancia de Material por renderer que nunca
-        // se destruye automáticamente. SetPropertyBlock sobreescribe propiedades del shader
-        // por renderer sin crear ninguna instancia → cero leak, cero GC.
         if (rendererPrincipal != null)
         {
             Color c = coloresCoche[Random.Range(0, coloresCoche.Length)];
             _mpbCoche = new MaterialPropertyBlock();
-            _mpbCoche.SetColor("_BaseColor", c);   // URP/Lit
-            _mpbCoche.SetColor("_Color",     c);   // Standard (fallback)
+            _mpbCoche.SetColor("_BaseColor", c);
+            _mpbCoche.SetColor("_Color",     c);
             rendererPrincipal.SetPropertyBlock(_mpbCoche);
         }
     }
@@ -203,7 +192,7 @@ public class VehiculoNPC : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (destruido || waypoints.Count == 0) return;
+        if (_destruido || waypoints.Count == 0) return;
 
         DetectarObstaculos();
         MoverHaciaWaypoint();
@@ -239,7 +228,7 @@ public class VehiculoNPC : MonoBehaviour
         velocidadActual = Mathf.MoveTowards(velocidadActual, velObjetivo,
                                              aceleracion * Time.fixedDeltaTime);
 
-        rb.MovePosition(rb.position + transform.forward * velocidadActual * Time.fixedDeltaTime);
+        _rb.MovePosition(_rb.position + transform.forward * velocidadActual * Time.fixedDeltaTime);
     }
 
     private void CambiarWaypointSiLlegamos()
@@ -271,30 +260,30 @@ public class VehiculoNPC : MonoBehaviour
     private void AplicarGravedadTerrenoVehiculo()
     {
         // Raycast desde el centro del coche hacia abajo — hasta 4 m (tiles y suelo)
-        Vector3 origen = rb.position + Vector3.up * 0.8f;
+        Vector3 origen = _rb.position + Vector3.up * 0.8f;
         if (Physics.Raycast(origen, Vector3.down, out RaycastHit hit, 5f,
             ~LayerMask.GetMask("Ignore Raycast"), QueryTriggerInteraction.Ignore))
         {
-            float deltaY = rb.position.y - hit.point.y;
+            float deltaY = _rb.position.y - hit.point.y;
 
             if (deltaY > 0.4f)
             {
                 // El coche está más de 0.4 m sobre el suelo → añadir impulso hacia abajo
                 // proporcional a cuánto ha subido. Damping extra evita oscilación.
-                var vel = rb.linearVelocity;
+                var vel = _rb.linearVelocity;
                 if (vel.y > 0f) vel.y = 0f;                    // cancelar velocidad ascendente
                 vel.y -= Mathf.Min(deltaY * 3f, 8f);           // impulso proporcional hacia abajo
-                rb.linearVelocity = vel;
+                _rb.linearVelocity = vel;
             }
             else if (deltaY < -0.1f)
             {
                 // El coche se ha hundido (nuevo tile más alto debajo) → snapear hacia arriba
-                Vector3 pos = rb.position;
+                Vector3 pos = _rb.position;
                 pos.y = hit.point.y + 0.05f;
                 rb.MovePosition(pos);
-                var vel = rb.linearVelocity;
+                var vel = _rb.linearVelocity;
                 vel.y = 0f;
-                rb.linearVelocity = vel;
+                _rb.linearVelocity = vel;
             }
         }
     }
@@ -317,34 +306,29 @@ public class VehiculoNPC : MonoBehaviour
     //  DAÑO
     // ═══════════════════════════════════════════════════════════════════════
 
-    public void RecibirDano(int cantidad)
+    protected override void OnDanoRecibido(int cantidad, Vector3 origen, TipoDano tipo)
     {
-        if (destruido) return;
-        vida -= cantidad;
-
-        // FIX LEAK: leer el color actual del MPB (no de .material) y oscurecer sin crear instancias.
-        // GetPropertyBlock rellena _mpbCoche con los valores actuales del renderer → GetColor
-        // devuelve el último color asignado → lo oscurecemos y lo volvemos a escribir.
+        // Oscurecer carrocería proporcionalmente al daño acumulado (sin crear instancias de Material)
         if (rendererPrincipal != null && _mpbCoche != null)
         {
             rendererPrincipal.GetPropertyBlock(_mpbCoche);
             Color colorActual = _mpbCoche.GetColor("_BaseColor");
             Color colorOscuro = Color.Lerp(colorActual, Color.black,
-                                           0.3f * ((float)(vidaMax - vida) / vidaMax));
+                                           0.3f * ((float)(vidaMaxima - _vida) / vidaMaxima));
             _mpbCoche.SetColor("_BaseColor", colorOscuro);
             _mpbCoche.SetColor("_Color",     colorOscuro);
             rendererPrincipal.SetPropertyBlock(_mpbCoche);
         }
-
-        if (vida <= 0) Destruir();
     }
+
+    protected override void IniciarDestruccion() => Destruir();
 
     // Evento global — las misiones lo escuchan para contar destrucciones
     public static event System.Action<VehiculoNPC> OnVehiculoDestruido;
 
     private void Destruir()
     {
-        destruido = true;
+        _destruido = true;
         velocidadActual = 0f;
         OnVehiculoDestruido?.Invoke(this);
 
@@ -361,7 +345,7 @@ public class VehiculoNPC : MonoBehaviour
             r.SetPropertyBlock(pb);
 
         // Desactivar física controlada
-        rb.constraints = RigidbodyConstraints.None;
+        _rb.constraints = RigidbodyConstraints.None;
         // FIX TEST T21-T23: Destroy() no puede llamarse en edit-mode (tests unitarios).
         // En play-mode usamos Destroy con delay de 15 s para que la explosión sea visible.
         // En edit-mode (tests) usamos DestroyImmediate sincrono para limpiar correctamente.
@@ -424,7 +408,7 @@ public class VehiculoNPC : MonoBehaviour
         // Rigidbody y script
         var vehiculo = go.AddComponent<VehiculoNPC>();
         vehiculo.waypoints = ruta;
-        vehiculo.vida      = vehiculo.vidaMax = 80;
+        // vidaMaxima se ajusta en el Inspector; vida se inicializa en Awake de VehiculoBase
 
         return go;
     }

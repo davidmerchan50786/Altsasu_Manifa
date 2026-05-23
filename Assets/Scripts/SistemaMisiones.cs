@@ -166,7 +166,9 @@ public class Mision_RobarCoche : Mision
     public override string Nombre => "El Coche de la Ertzaintza";
 
     private bool _dentroDelCoche = false;
+#pragma warning disable CS0414
     private bool _escapado       = false;
+#pragma warning restore CS0414
     private Vector3 _posInicio;
 
     public override System.Action AlIniciar => () =>

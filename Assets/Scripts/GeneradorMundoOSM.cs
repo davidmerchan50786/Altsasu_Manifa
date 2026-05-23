@@ -21,10 +21,9 @@ public class GeneradorMundoOSM : MonoBehaviour
     public static event Action OnMundoGenerado;
 
     // ── Offsets de coordenadas (sistema terreno) ──────────────────────────
-    // Herriko Plaza en coordenadas OSM: lat=42.9006, lon=-2.1667
-    // En coordenadas Unity: X=1918, Z=8570
-    const float OFFSET_X = 1918f;
-    const float OFFSET_Z = 8570f;
+    // Constantes geográficas centralizadas en GeoDataAlsasua
+    const float OFFSET_X = GeoDataAlsasua.OX;
+    const float OFFSET_Z = GeoDataAlsasua.OZ;
 
     // ── Materiales por tipo ───────────────────────────────────────────────
     Material _matEdifResidencial, _matEdifComercial, _matEdifIndustrial;
@@ -54,46 +53,103 @@ public class GeneradorMundoOSM : MonoBehaviour
         while ((Terrain.activeTerrain == null || SistemaZonas.Instance == null) && t < 8f)
             { t += 0.5f; yield return new WaitForSeconds(0.5f); }
 
-        CargarMateriales();
+        if (SistemaZonas.Instance == null)
+        {
+            AlsasuaLogger.Error("OSM", "SistemaZonas no disponible tras 8s — abortando generación OSM.");
+            yield break;
+        }
 
-        // Parent para árboles (los únicos que se construyen directamente aquí)
+        CargarMateriales();
         if (_parentArboles == null) _parentArboles = new GameObject("Arboles_OSM").transform;
 
-        // ── FASE 1: Indexar edificios en zonas (sin construir meshes) ─────
-        yield return StartCoroutine(IndexarEdificios());
+        // ── FASE 1: Edificios ─────────────────────────────────────────────
+        bool edificiosOk = false;
+        yield return StartCoroutine(EjecutarFaseSegura(
+            IndexarEdificios(), "edificios", r => edificiosOk = r));
         yield return null;
 
-        // ── FASE 2: Indexar calles en zonas ──────────────────────────────
-        yield return StartCoroutine(IndexarCalles());
+        // ── FASE 2: Calles ────────────────────────────────────────────────
+        yield return StartCoroutine(EjecutarFaseSegura(
+            IndexarCalles(), "calles", _ => { }));
         yield return null;
 
-        // ── FASE 3: Árboles (pocos, construir directamente) ──────────────
-        yield return StartCoroutine(GenerarArboles());
+        // ── FASE 3: Árboles ───────────────────────────────────────────────
+        yield return StartCoroutine(EjecutarFaseSegura(
+            GenerarArboles(), "árboles", _ => { }));
 
-        // Avisar a SistemaZonas que el índice está completo
+        // Marcar listo aunque alguna fase haya fallado parcialmente
         SistemaZonas.Instance?.MarcarIndexadoListo();
-
         MundoListo = true;
         OnMundoGenerado?.Invoke();
         AlsasuaLogger.Info("OSM",
-            $"✅ Índice OSM listo: {_edificiosCreados} edificios, {_callesCreadas} tramos indexados");
+            $"✅ Índice OSM listo: {_edificiosCreados} edificios, {_callesCreadas} tramos indexados" +
+            (edificiosOk ? "" : " ⚠ sin datos de edificios"));
+    }
+
+    /// <summary>
+    /// Envuelve una corrutina en un bloque seguro: la ejecuta y captura cualquier excepción,
+    /// logando el error sin detener el pipeline completo.
+    /// </summary>
+    IEnumerator EjecutarFaseSegura(IEnumerator fase, string nombreFase, System.Action<bool> resultado)
+    {
+        bool ok = true;
+        Exception capturada = null;
+
+        // Ejecutar paso a paso para poder capturar excepciones
+        while (true)
+        {
+            object current;
+            try   { if (!fase.MoveNext()) break; current = fase.Current; }
+            catch (Exception ex) { capturada = ex; break; }
+            yield return current;
+        }
+
+        if (capturada != null)
+        {
+            ok = false;
+            AlsasuaLogger.Error("OSM",
+                $"Error en fase '{nombreFase}': {capturada.GetType().Name} — {capturada.Message}");
+        }
+
+        resultado(ok);
     }
 
     IEnumerator IndexarEdificios()
     {
         string path = Path.Combine(Application.dataPath, "AlsasuaData", "buildings_unity.json");
-        if (!File.Exists(path)) { AlsasuaLogger.Warn("OSM", "buildings_unity.json no encontrado"); yield break; }
+        if (!File.Exists(path))
+        {
+            AlsasuaLogger.Warn("OSM", $"buildings_unity.json no encontrado en: {path}");
+            yield break;
+        }
 
-        string json = File.ReadAllText(path);
-        var edificios = JsonHelper.ParseArray<EdificioData>(json);
-        if (edificios == null) yield break;
+        string json;
+        try { json = File.ReadAllText(path); }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Error("OSM", $"No se pudo leer buildings_unity.json: {ex.Message}");
+            yield break;
+        }
+
+        EdificioData[] edificios;
+        try { edificios = JsonHelper.ParseArray<EdificioData>(json); }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Error("OSM", $"JSON de edificios malformado: {ex.Message}");
+            yield break;
+        }
+
+        if (edificios == null || edificios.Length == 0)
+        {
+            AlsasuaLogger.Warn("OSM", "buildings_unity.json vacío o sin edificios válidos.");
+            yield break;
+        }
 
         int lote = 0;
         foreach (var e in edificios)
         {
-            if (e.vertices == null || e.vertices.Length < 3) continue;
+            if (e?.vertices == null || e.vertices.Length < 3) continue;
 
-            // Calcular centro del edificio para asignarlo a la zona correcta
             float cx = 0, cz = 0;
             foreach (var v in e.vertices) { cx += v.x + OFFSET_X; cz += v.z + OFFSET_Z; }
             cx /= e.vertices.Length; cz /= e.vertices.Length;
@@ -102,23 +158,41 @@ public class GeneradorMundoOSM : MonoBehaviour
             _edificiosCreados++;
             if (++lote >= 60) { lote = 0; yield return null; }
         }
+        AlsasuaLogger.Info("OSM", $"Indexados {_edificiosCreados} edificios.");
     }
 
     IEnumerator IndexarCalles()
     {
         string path = Path.Combine(Application.dataPath, "AlsasuaData", "roads_unity.json");
-        if (!File.Exists(path)) yield break;
+        if (!File.Exists(path))
+        {
+            AlsasuaLogger.Warn("OSM", $"roads_unity.json no encontrado en: {path}");
+            yield break;
+        }
 
-        string json = File.ReadAllText(path);
-        var roads = JsonHelper.ParseArray<RoadData>(json);
-        if (roads == null) yield break;
+        string json;
+        try { json = File.ReadAllText(path); }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Error("OSM", $"No se pudo leer roads_unity.json: {ex.Message}");
+            yield break;
+        }
+
+        RoadData[] roads;
+        try { roads = JsonHelper.ParseArray<RoadData>(json); }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Error("OSM", $"JSON de calles malformado: {ex.Message}");
+            yield break;
+        }
+
+        if (roads == null || roads.Length == 0) yield break;
 
         int lote = 0;
         foreach (var r in roads)
         {
-            if (r.points == null || r.points.Length < 2) continue;
+            if (r?.points == null || r.points.Length < 2) continue;
 
-            // Centro del tramo
             float cx = (r.points[0].x + r.points[^1].x) * 0.5f + OFFSET_X;
             float cz = (r.points[0].z + r.points[^1].z) * 0.5f + OFFSET_Z;
 
@@ -126,6 +200,7 @@ public class GeneradorMundoOSM : MonoBehaviour
             _callesCreadas++;
             if (++lote >= 40) { lote = 0; yield return null; }
         }
+        AlsasuaLogger.Info("OSM", $"Indexadas {_callesCreadas} calles.");
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -196,93 +271,16 @@ public class GeneradorMundoOSM : MonoBehaviour
     //  MESH GENERATION — shared por ConstruirEdificio y ConstruirCalle
     // ════════════════════════════════════════════════════════════════════════
 
-    Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
-    {
-        int n = planta.Count;
-        if (n < 3) return null;
-
-        var mesh  = new Mesh { name = "Edificio" };
-        var verts = new List<Vector3>();
-        var tris  = new List<int>();
-        var uvs   = new List<Vector2>();
-
-        // Paredes laterales
-        for (int i = 0; i < n; i++)
-        {
-            int j = (i + 1) % n;
-            var p0 = new Vector3(planta[i].x, suelo,          planta[i].y);
-            var p1 = new Vector3(planta[j].x, suelo,          planta[j].y);
-            var p2 = new Vector3(planta[j].x, suelo + altura, planta[j].y);
-            var p3 = new Vector3(planta[i].x, suelo + altura, planta[i].y);
-
-            float u = Vector2.Distance(planta[i], planta[j]) / 4f;
-            int b = verts.Count;
-            verts.AddRange(new[]{p0,p1,p2,p3});
-            uvs.AddRange(new[]{new Vector2(0,0),new Vector2(u,0),new Vector2(u,1),new Vector2(0,1)});
-            tris.AddRange(new[]{b,b+2,b+1, b,b+3,b+2});
-        }
-
-        // Techo (triangulación simple fan)
-        int techoBase = verts.Count;
-        foreach (var v in planta)
-            verts.Add(new Vector3(v.x, suelo + altura, v.y));
-        uvs.AddRange(planta.ConvertAll(v => new Vector2(v.x * 0.1f, v.y * 0.1f)));
-        for (int i = 1; i < n - 1; i++)
-            tris.AddRange(new[]{techoBase, techoBase + i, techoBase + i + 1});
-
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-        mesh.SetUVs(0, uvs);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        return mesh;
-    }
+    static Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
+        => MeshBuilder.Edificio(planta, suelo, altura);
 
     // ════════════════════════════════════════════════════════════════════════
     //  CALLES
     // ════════════════════════════════════════════════════════════════════════
 
 
-    Mesh GenerarMeshCalle(Vector3[] pts, float ancho)
-    {
-        int n = pts.Length;
-        if (n < 2) return null;
-
-        var verts = new List<Vector3>();
-        var tris  = new List<int>();
-        var uvs   = new List<Vector2>();
-        float uAcum = 0f;
-
-        for (int i = 0; i < n; i++)
-        {
-            Vector3 dir;
-            if (i == 0)         dir = (pts[1] - pts[0]).normalized;
-            else if (i == n-1)  dir = (pts[i] - pts[i-1]).normalized;
-            else                dir = ((pts[i+1] - pts[i-1]) * 0.5f).normalized;
-
-            Vector3 right = Vector3.Cross(Vector3.up, dir).normalized * (ancho * 0.5f);
-            verts.Add(pts[i] - right);
-            verts.Add(pts[i] + right);
-
-            if (i > 0) uAcum += Vector3.Distance(pts[i], pts[i-1]);
-            uvs.Add(new Vector2(0, uAcum / ancho));
-            uvs.Add(new Vector2(1, uAcum / ancho));
-
-            if (i > 0)
-            {
-                int b = (i-1)*2;
-                tris.AddRange(new[]{b, b+2, b+1,  b+1, b+2, b+3});
-            }
-        }
-
-        var mesh = new Mesh { name = "Calle" };
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-        mesh.SetUVs(0, uvs);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        return mesh;
-    }
+    static Mesh GenerarMeshCalle(Vector3[] pts, float ancho)
+        => MeshBuilder.Banda(pts, ancho);
 
     // ════════════════════════════════════════════════════════════════════════
     //  ÁRBOLES
@@ -464,14 +462,7 @@ public class GeneradorMundoOSM : MonoBehaviour
         return _cuboCache;
     }
 
-    float AlturaTerreno(float x, float z)
-    {
-        var t = Terrain.activeTerrain;
-        if (t != null) return t.SampleHeight(new Vector3(x, 0, z)) + t.transform.position.y;
-        if (Physics.Raycast(new Vector3(x, 1000, z), Vector3.down, out var h, 2000))
-            return h.point.y;
-        return 240f;
-    }
+    static float AlturaTerreno(float x, float z) => GeoDataAlsasua.AlturaTerreno(x, z);
 
 }
 

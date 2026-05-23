@@ -18,8 +18,8 @@ public static class GeneradorCarreteras
 {
     private const string JSON_PATH   = "Assets/AlsasuaData/roads_unity.json";
     private const string ZONA_NOMBRE = "Zone_01_HerrikoPlaza_Centro";
-    private const float  CENTRO_X    = 1918f;
-    private const float  CENTRO_Z    = 8570f;
+    private const float  CENTRO_X    = GeoDataAlsasua.OX;
+    private const float  CENTRO_Z    = GeoDataAlsasua.OZ;
     private const float  RADIO       = 380f;
     private const float  Y_OFFSET    = 0.04f;  // sobre el terreno, evita z-fighting
 

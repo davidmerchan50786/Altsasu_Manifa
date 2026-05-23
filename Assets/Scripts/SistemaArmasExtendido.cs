@@ -293,12 +293,9 @@ public class ImpactoPiedra : MonoBehaviour
         if (col.gameObject.name.Contains("Ventana") || col.gameObject.name.Contains("Window") || col.gameObject.name.Contains("Glass"))
             _destr?.RomperCristales(transform.position, col.contacts[0].normal);
 
-        // Daño a jugador / vehículo / policía
-        col.gameObject.GetComponent<ControladorJugador>()?.RecibirDano(15);
-        col.gameObject.GetComponentInParent<ControladorVehiculoJugador>()?.RecibirDano(15);
-        col.gameObject.GetComponent<PoliciaForalIA>()?.RecibirDano(15);
-        col.gameObject.GetComponent<EnemigoPatrulla>()?.RecibirDano(15);
-        // Civil: solo huye
+        // Daño via IDamageable — un solo GetComponent cubre jugador, policía y vehículo NPC
+        col.gameObject.GetComponent<IDamageable>()?.RecibirDano(15, transform.position, TipoDano.Impacto);
+        // Civil: solo huye (no implementa IDamageable)
         col.gameObject.GetComponent<NPCCivil>()?.AlertarDisparo(transform.position);
         Destroy(gameObject);
     }

@@ -51,7 +51,9 @@ public class SistemaReverbZonas : MonoBehaviour
 
     // ── Oclusión ──────────────────────────────────────────────────────────
     readonly List<AudioSource> _fuentesRegistradas = new();
-    float _timerOclusion;
+    float    _timerOclusion;
+    Camera   _camCache;
+    int      _maskOclusion;
 
     // ════════════════════════════════════════════════════════════════════════
 
@@ -59,6 +61,8 @@ public class SistemaReverbZonas : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
+        _camCache    = Camera.main;
+        _maskOclusion = LayerMask.GetMask("Default", "Building", "Wall");
         InicializarReverbZone();
     }
 
@@ -134,9 +138,9 @@ public class SistemaReverbZonas : MonoBehaviour
 
     void ActualizarOclusion()
     {
-        var cam = Camera.main;
-        if (cam == null) return;
-        Vector3 oyente = cam.transform.position;
+        if (_camCache == null) _camCache = Camera.main;
+        if (_camCache == null) return;
+        Vector3 oyente = _camCache.transform.position;
 
         for (int i = _fuentesRegistradas.Count - 1; i >= 0; i--)
         {
@@ -147,13 +151,10 @@ public class SistemaReverbZonas : MonoBehaviour
             float   dist = dir.magnitude;
             if (dist < 0.5f) { src.volume = src.maxDistance > 0 ? 1f : src.volume; continue; }
 
-            // Raycast entre fuente y oyente
             int colisiones = 0;
-            if (Physics.Raycast(src.transform.position, dir.normalized, dist,
-                LayerMask.GetMask("Default", "Building", "Wall")))
+            if (Physics.Raycast(src.transform.position, dir.normalized, dist, _maskOclusion))
                 colisiones++;
 
-            // Reducir volumen según oclusión
             float oclusion = Mathf.Clamp01(1f - colisiones * 0.6f);
             src.volume = Mathf.Lerp(src.volume, oclusion, Time.deltaTime * 2f);
         }

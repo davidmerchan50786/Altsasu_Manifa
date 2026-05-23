@@ -54,7 +54,7 @@ public static class InicializadorProyecto
         {
             case 0: // Construir todo
                 if (faltanDatos) EjecutarDescargaPS();
-                EditorApplication.delayCall += ConstructorProyectoCompleto.ConstruirTodo;
+                EditorApplication.delayCall += FLUJO_COMPLETO.Ejecutar;
                 break;
             case 2: // Solo descargar OSM
                 EjecutarDescargaPS();

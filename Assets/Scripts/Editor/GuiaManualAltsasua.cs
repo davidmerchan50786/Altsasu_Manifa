@@ -282,17 +282,17 @@ public class GuiaManualAltsasua : EditorWindow
 
     void DibujarPaso_1()
     {
-        Titulo("¿Qué hace el Setup Maestro?");
-        Texto("Ejecuta 35 pasos automáticos: crea la escena, genera edificios, calles, prefabs de coche, animator, tráfico, civiles, waypoints de policía, configura audio/physics/HDRP y aplica texturas PBR.");
+        Titulo("¿Qué hace el Flujo Completo?");
+        Texto("Ejecuta 23 pasos automáticos: crea la escena, genera edificios, calles, prefabs de coche, animator, tráfico, civiles, waypoints de policía, configura audio/physics/HDRP y aplica texturas PBR.");
 
         Titulo("Cómo ejecutarlo:");
-        Cmd("Tools  →  Alsasua  →  ★ SETUP MAESTRO COMPLETO ★");
-        Texto("Pulsa 'Ejecutar todo' en el diálogo de confirmación.");
+        Cmd("Tools  →  Alsasua  →  ▶▶ FLUJO COMPLETO ◀◀");
+        Texto("Pulsa el botón o usa el atajo de menú.");
 
         Advertencia("Unity puede parecer congelado durante 5-15 minutos.\nNo lo cierres. La barra de progreso avanzará.");
 
         Titulo("Verificación:");
-        Texto("En la Consola verás: '★ SETUP MAESTRO COMPLETADO ★'");
+        Texto("En la Consola verás: '✅ Flujo completo terminado'");
         Texto("La escena Assets/#Scenes/Alsasua_Main.unity debe existir.");
 
         bool existe = File.Exists(Path.GetFullPath(Path.Combine(
@@ -300,8 +300,8 @@ public class GuiaManualAltsasua : EditorWindow
         EditorGUILayout.LabelField(existe ? "✅ Escena detectada" : "❌ Escena no existe aún",
             existe ? _estiloOK : _estiloWarn);
 
-        if (GUILayout.Button("Ejecutar Setup Maestro ahora", GUILayout.Height(32)))
-            SETUP_MAESTRO.EjecutarTodo();
+        if (GUILayout.Button("Ejecutar Flujo Completo ahora", GUILayout.Height(32)))
+            FLUJO_COMPLETO.Ejecutar();
     }
 
     void DibujarPaso_2()

@@ -37,7 +37,7 @@ public class ProcesadorNubePuntos : MonoBehaviour
     // ── Coordenadas del grid (ETRS89 → Unity) ────────────────────────────
     // El ASC del IGN usa coordenadas geográficas en EPSG:4326 o UTM ETRS89
     // Las convertimos a Unity XZ con el mismo offset que el DEM
-    const float OX = 1918f, OZ = 8570f; // Herriko Plaza Unity
+    const float OX = GeoDataAlsasua.OX, OZ = GeoDataAlsasua.OZ;
 
     // Coordenadas GPS del punto inferior-izquierdo del DSM (se lee del .asc)
     float _dsmXllCorner, _dsmYllCorner;

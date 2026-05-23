@@ -34,12 +34,11 @@ public static class SistemaExplosion
                 rb.AddForce(dir * fuerza, ForceMode.Impulse);
             }
 
-            // Daño a entidades
+            // Daño a entidades via IDamageable
             int danoInt = Mathf.RoundToInt(dañoMax * falloff);
-            var jugador = col.GetComponent<ControladorJugador>();
-            if (jugador != null) jugador.RecibirDano(danoInt);
-            var coche = col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (coche != null) coche.RecibirDano(danoInt);
+            var damageable = col.GetComponent<IDamageable>()
+                          ?? col.GetComponentInParent<IDamageable>();
+            damageable?.RecibirDano(danoInt, col.transform.position, TipoDano.Explosion);
 
             // Daño a barricadas
             var barricada = col.GetComponent<BarricadaFuego>();

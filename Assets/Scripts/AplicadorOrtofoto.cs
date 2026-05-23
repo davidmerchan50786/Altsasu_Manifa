@@ -60,7 +60,9 @@ public class AplicadorOrtofoto : MonoBehaviour
     Transform         _parent;
     Shader            _shader;
     Camera            _cam;
+#pragma warning disable CS0414
     bool              _iniciado;
+#pragma warning restore CS0414
 
     const string META_PATH = "Assets/AlsasuaData/orto_tiles_meta.json";
     const string TILES_DIR = "Assets/AlsasuaData/tiles/orto/";
@@ -306,11 +308,7 @@ public class AplicadorOrtofoto : MonoBehaviour
         return mat;
     }
 
-    static float AlturaTerreno(Vector3 pos)
-    {
-        var t = Terrain.activeTerrain;
-        return t == null ? 240f : t.SampleHeight(pos) + t.transform.position.y;
-    }
+    static float AlturaTerreno(Vector3 pos) => GeoDataAlsasua.AlturaTerreno(pos);
 
     // ── API pública ────────────────────────────────────────────────────────
 

@@ -268,7 +268,7 @@ public class SistemaZonas : MonoBehaviour
             {
                 if (c.points == null || c.points.Length < 2) continue;
                 var pts = System.Array.ConvertAll(c.points,
-                    p => new Vector3(p.x + 1918f, 0, p.z + 8570f));
+                    p => new Vector3(p.x + GeoDataAlsasua.OX, 0, p.z + GeoDataAlsasua.OZ));
                 SistemaTerreno.Instance?.PintarCarretera(pts, Mathf.Max(3f, c.width));
             }
         }

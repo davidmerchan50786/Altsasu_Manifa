@@ -82,8 +82,8 @@ public class SistemaChunks : MonoBehaviour
     [SerializeField] private bool  mostrarGUI         = true;
 
     // ── Estado interno ─────────────────────────────────────────────────────────
-    private Transform            jugador;
-    private float                _timerCheck;
+    private Transform             jugador;
+    private float                 _timerCheck;
     private readonly HashSet<int> _activos = new HashSet<int>();
 
     // ── Propiedades públicas ────────────────────────────────────────────────────
@@ -96,9 +96,23 @@ public class SistemaChunks : MonoBehaviour
 
     private void Start()
     {
+        // Suscribirse al evento de spawn del jugador — evita FindGameObjectWithTag en polling
+        AltsasuCore.OnJugadorSpawned += OnJugadorSpawned;
+
+        // Intentar cachear ahora por si el jugador ya existe en escena
         BuscarJugador();
         InicializarChunks();
         ComprobarChunks(); // primera comprobación inmediata sin esperar el timer
+    }
+
+    private void OnDestroy()
+    {
+        AltsasuCore.OnJugadorSpawned -= OnJugadorSpawned;
+    }
+
+    private void OnJugadorSpawned(Transform t)
+    {
+        jugador = t;
     }
 
     private void Update()
@@ -107,6 +121,7 @@ public class SistemaChunks : MonoBehaviour
         if (_timerCheck > 0f) return;
         _timerCheck = intervaloCheck;
 
+        // Fallback: si el evento no llegó (spawn anterior al Start), buscar una vez
         if (jugador == null) BuscarJugador();
         ComprobarChunks();
     }
@@ -140,6 +155,10 @@ public class SistemaChunks : MonoBehaviour
 
     private void BuscarJugador()
     {
+        // Prioridad: AltsasuCore.Jugador (O(1)) antes que FindGameObjectWithTag (O(n))
+        var core = AltsasuCore.Jugador;
+        if (core != null) { jugador = core; return; }
+
         var jGO = GameObject.FindGameObjectWithTag("Player");
         if (jGO != null) jugador = jGO.transform;
     }

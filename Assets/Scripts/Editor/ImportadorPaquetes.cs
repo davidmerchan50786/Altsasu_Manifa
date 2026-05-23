@@ -328,7 +328,7 @@ public class ImportadorPaquetes : EditorWindow
         if (_autoConvertirHDRP)
         {
             EditorUtility.DisplayProgressBar("Post-proceso", "Convirtiendo materiales a HDRP...", 0.9f);
-            IntegradorAssetsNuevos.ConvertirMaterialesAHDRP();
+            AplicadorTexturasAAA.ConvertirMaterialesAHDRP();
             EditorUtility.ClearProgressBar();
         }
 
@@ -442,6 +442,6 @@ public class ImportadorPaquetes : EditorWindow
         Debug.Log($"[ImportadorPaquetes] '{etiqueta}' completado: {ok}/{nombres.Length} importados.");
 
         // Auto-convertir materiales
-        IntegradorAssetsNuevos.ConvertirMaterialesAHDRP();
+        AplicadorTexturasAAA.ConvertirMaterialesAHDRP();
     }
 }

@@ -107,12 +107,16 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         // Destruir árboles del terrain data (se reemplazarán con LIDAR exactos)
         LimpiarArbolesTerreno();
 
-        // lidar_trees.json usa coordenadas relativas a Herriko Plaza (sin offset Unity).
-        // Hay que añadir OX=1918, OZ=8570 para obtener posición Unity absoluta.
-        const float OX = 1918f, OZ = 8570f;
+        // lidar_trees.json tiene coordenadas Unity absolutas — no requiere offset.
 
         // Usar prefabs GreenForest del ConfiguradorAssetsAAA si disponibles
         var cfgAAA = ConfiguradorAssetsAAA.Instance;
+
+        // Radio máximo de colocación inicial (rendimiento + visibilidad)
+        // PosicionadorPrecisionUrbana coloca árboles cercanos al centro urbano;
+        // zonas lejanas las gestiona AlsasuaTreeStreamer en streaming.
+        const float RADIO_MAX_INICIAL = 600f;
+        const float OX_CENTRO = GeoDataAlsasua.OX, OZ_CENTRO = GeoDataAlsasua.OZ;
 
         int colocados = 0;
         for (int i = 0; i < arboles.Length; i++)
@@ -120,6 +124,10 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
             var a    = arboles[i];
             // Filtrar árboles irreales: clusters de monte o ruido
             if (a.altura < 1.5f || a.altura > 40f || a.radio > 14f) continue;
+
+            // Solo árboles dentro del radio urbano inicial
+            float dx = a.x - OX_CENTRO, dz = a.z - OZ_CENTRO;
+            if (dx*dx + dz*dz > RADIO_MAX_INICIAL * RADIO_MAX_INICIAL) continue;
 
             float ux = a.x;   // coordenadas Unity absolutas (generadas por PipelineLIDAR)
             float uz = a.z;
@@ -163,31 +171,46 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         if (arbOSM != null) arbOSM.SetActive(false);
     }
 
+    // Shared materials para árboles procedurales (creados una vez, reutilizados)
+    static Material _matTronco, _matCopa;
+
+    static Material MatHDRP(Color c)
+    {
+        var sh  = Shader.Find("HDRP/Lit") ?? Shader.Find("Standard");
+        var mat = new Material(sh);
+        // HDRP usa _BaseColor; Standard usa _Color
+        if (mat.HasProperty("_BaseColor"))   mat.SetColor("_BaseColor", c);
+        else                                  mat.SetColor("_Color",     c);
+        if (mat.HasProperty("_EmissiveColor")) mat.SetColor("_EmissiveColor", Color.black);
+        return mat;
+    }
+
     GameObject CrearArbolProcedural(float altura, float radio)
     {
-        var go   = new GameObject("Arbol");
-        float h  = Mathf.Max(2f, altura);
-        float r  = Mathf.Max(0.5f, radio);
+        if (_matTronco == null) _matTronco = MatHDRP(new Color(0.35f, 0.22f, 0.12f));
+
+        var go  = new GameObject("Arbol");
+        float h = Mathf.Clamp(altura, 2f, 20f);   // cap a 20m para procedurales
+        float r = Mathf.Clamp(radio,  0.5f, 5f);
 
         // Tronco
         var tronco = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        Destroy(tronco.GetComponent<Collider>());
         tronco.transform.SetParent(go.transform, false);
         tronco.transform.localPosition = new Vector3(0, h * 0.35f, 0);
         tronco.transform.localScale    = new Vector3(r * 0.15f, h * 0.35f, r * 0.15f);
-        var mr = tronco.GetComponent<MeshRenderer>();
-        mr.sharedMaterial = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"))
-            { color = new Color(0.35f, 0.22f, 0.12f) };
+        tronco.GetComponent<MeshRenderer>().sharedMaterial = _matTronco;
 
-        // Copa
+        // Copa — color verde variado por árbol, material nuevo solo si cambia mucho
+        float v = Random.Range(-0.04f, 0.04f);
         var copa = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(copa.GetComponent<Collider>());
         copa.transform.SetParent(go.transform, false);
         copa.transform.localPosition = new Vector3(0, h * 0.75f, 0);
-        copa.transform.localScale    = new Vector3(r * 2f, h * 0.5f, r * 2f);
-        var mr2 = copa.GetComponent<MeshRenderer>();
-        mr2.sharedMaterial = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"))
-            { color = new Color(0.2f + Random.Range(-0.04f,0.04f),
-                                0.45f + Random.Range(-0.05f,0.05f),
-                                0.15f) };
+        copa.transform.localScale    = new Vector3(r * 1.6f, h * 0.45f, r * 1.6f);
+        copa.GetComponent<MeshRenderer>().sharedMaterial =
+            MatHDRP(new Color(0.18f + v, 0.42f + v, 0.12f));
+
         return go;
     }
 
@@ -208,8 +231,8 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         {
             if (feat.verts == null || feat.verts.Length == 0) continue;
             // Punto de la farola (es Sym → punto único)
-            float ux = feat.verts[0].x + 1918f;
-            float uz = feat.verts[0].z + 8570f;
+            float ux = feat.verts[0].x + GeoDataAlsasua.OX;
+            float uz = feat.verts[0].z + GeoDataAlsasua.OZ;
             float y  = AlturaTerreno(ux, uz);
 
             var go = prefabFarola != null
@@ -328,12 +351,7 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         public PuntoSimple[] verts;
     }
 
-    static float AlturaTerreno(float ux, float uz)
-    {
-        var t = Terrain.activeTerrain;
-        if (t == null) return 240f;
-        return t.SampleHeight(new Vector3(ux, 0, uz)) + t.transform.position.y;
-    }
+    static float AlturaTerreno(float ux, float uz) => GeoDataAlsasua.AlturaTerreno(ux, uz);
 
     Transform CrearParent(string nombre)
     {

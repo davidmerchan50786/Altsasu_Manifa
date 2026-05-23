@@ -33,7 +33,7 @@ public class SistemaSueloAAA : MonoBehaviour
     static readonly string[] PIEDRA  = { "cobblestone_large_01", "cobblestone_embedded_asphalt", "cobblestone_floor_02" };
 
     // ── Offsets OSM → Unity ───────────────────────────────────────────────
-    const float OX = 1918f, OZ = 8570f;
+    const float OX = GeoDataAlsasua.OX, OZ = GeoDataAlsasua.OZ;
 
     // ── Estado ────────────────────────────────────────────────────────────
     Material _matAsfalto, _matAcera, _matBordillo, _matMarcaVial;
@@ -54,6 +54,23 @@ public class SistemaSueloAAA : MonoBehaviour
     void Start()
     {
         GeneradorMundoOSM.OnMundoGenerado += OnMundoListo;
+        // Arrancar también directamente: si el mundo ya estaba listo o no usa GeneradorMundoOSM
+        StartCoroutine(ArrancarDirecto());
+    }
+
+    IEnumerator ArrancarDirecto()
+    {
+        // Esperar máx 8s al terreno, luego aplicar texturas independientemente
+        float t = 0f;
+        while (Terrain.activeTerrain == null && t < 8f) { t += 0.5f; yield return new WaitForSeconds(0.5f); }
+        if (Terrain.activeTerrain == null) yield break;
+
+        // Si el evento ya disparó (OnMundoListo ya arrancó ConstruirSuelo), no duplicar
+        yield return new WaitForSeconds(3f);
+        if (Terrain.activeTerrain.terrainData.terrainLayers?.Length > 0) yield break;
+
+        AlsasuaLogger.Info("SueloAAA", "Aplicando terrain layers directamente (sin esperar evento OSM)");
+        yield return StartCoroutine(AplicarTerrain());
     }
 
     void OnMundoListo()
@@ -108,29 +125,45 @@ public class SistemaSueloAAA : MonoBehaviour
 
         var td = terrain.terrainData;
 
-        // Crear TerrainLayers con materiales PBR reales
-        var layers = new List<TerrainLayer>();
-        layers.Add(CrearTerrainLayer(HIERBA[0],  4f,  4f));  // base: hierba
-        layers.Add(CrearTerrainLayer(ROCA[0],    8f,  8f));  // pendientes: roca
-        layers.Add(CrearTerrainLayer(TIERRA[0],  3f,  3f));  // caminos: tierra
-        layers.Add(CrearTerrainLayer(HIERBA[1],  5f,  5f));  // variación hierba
+        // Si SistemaTerreno ya inicializó las capas, respetarlas (evita mismatch en SetAlphamaps).
+        // Solo crear capas si el terreno aún no las tiene.
+        if (td.terrainLayers == null || td.terrainLayers.Length == 0)
+        {
+            var layers = new List<TerrainLayer>();
+            layers.Add(CrearTerrainLayer(HIERBA[0],  4f,  4f));
+            layers.Add(CrearTerrainLayer(ROCA[0],    8f,  8f));
+            layers.Add(CrearTerrainLayer(TIERRA[0],  3f,  3f));
+            layers.Add(CrearTerrainLayer(HIERBA[1],  5f,  5f));
+            td.terrainLayers = layers.ToArray();
+            yield return null;
+        }
 
-        td.terrainLayers = layers.ToArray();
-        yield return null;
-
-        // Pintar automáticamente por pendiente + fBm multifrecuencia
-        int res   = td.alphamapResolution;
+        // Leer el count real DESPUÉS de respetar lo existente
+        int nCapas = td.terrainLayers.Length;
+        int res    = td.alphamapResolution;
 
         // fBm: 6 octavas, variación a múltiples escalas (mejor que Perlin 1 octava)
         var alphaFBM = IntegradorMatematicas.GenerarAlphamapFBM(
-            terrain, layers.Count,
+            terrain, nCapas,
             frecuenciaBase: 0.0018f, octavas: 6, persistencia: 0.45f, lacunaridad: 2.1f);
 
-        var alpha = alphaFBM ?? new float[res, res, layers.Count];
-        if (alphaFBM != null)
+        // Asegurar que alpha tiene EXACTAMENTE nCapas canales (evita "Float array size wrong")
+        float[,,] alpha;
+        if (alphaFBM != null && alphaFBM.GetLength(2) == nCapas)
+        {
+            alpha = alphaFBM;
+        }
+        else
+        {
+            // Fallback: construir array con dimensiones correctas
+            alpha = new float[res, res, nCapas];
+            // (se rellena en el fallback Perlin abajo)
+        }
+
+        if (alphaFBM != null && alphaFBM.GetLength(2) == nCapas)
         {
             td.SetAlphamaps(0, 0, alpha);
-            yield break; // fBm calculó el alphamap completo
+            yield break;
         }
 
         // Fallback si fBm falló: Perlin de una octava
@@ -155,10 +188,10 @@ public class SistemaSueloAAA : MonoBehaviour
                 float total = wHierba + wRoca + wTierra + wHierba2;
                 if (total < 0.001f) total = 1f;
 
-                alpha[z, x, 0] = wHierba  / total;
-                alpha[z, x, 1] = wRoca    / total;
-                alpha[z, x, 2] = wTierra  / total;
-                alpha[z, x, 3] = wHierba2 / total;
+                if (nCapas > 0) alpha[z, x, 0] = wHierba  / total;
+                if (nCapas > 1) alpha[z, x, 1] = wRoca    / total;
+                if (nCapas > 2) alpha[z, x, 2] = wTierra  / total;
+                if (nCapas > 3) alpha[z, x, 3] = wHierba2 / total;
             }
             if (z % 50 == 0) yield return null;
         }

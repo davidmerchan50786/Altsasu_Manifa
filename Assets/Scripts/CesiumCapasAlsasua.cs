@@ -62,6 +62,7 @@ public class CesiumCapasAlsasua : MonoBehaviour
 {
     // ── Token ──────────────────────────────────────────────────────────────
     [Header("═══ CESIUM ION ═══")]
+    #pragma warning disable CS0414
     [Tooltip("Token de Cesium Ion. Configurado en CesiumSettings/ion.cesium.com.asset.")]
     [SerializeField] private string ionToken = ""; // se rellena desde CesiumSettings en Start
 
@@ -113,6 +114,7 @@ public class CesiumCapasAlsasua : MonoBehaviour
     [Tooltip("Radio a partir del cual Cesium maneja los árboles (m).\n" +
              "Por debajo lo gestiona AlsasuaTreeStreamer con prefabs.")]
     [SerializeField] private float radioTransicionCesium = 400f;
+#pragma warning restore CS0414
 
     // ── Información de coordenadas ─────────────────────────────────────────
     [Header("═══ COORDENADAS ═══")]
@@ -134,6 +136,10 @@ public class CesiumCapasAlsasua : MonoBehaviour
 
     private void Awake()
     {
+        // Auto-encontrar TreeStreamer si no está asignado en Inspector
+        if (treeStreamer == null)
+            treeStreamer = FindFirstObjectByType<AlsasuaTreeStreamer>();
+
 #if CESIUM_FOR_UNITY
         _cesiumDisponible = true;
         AlsasuaLogger.Info("CesiumCapas", "✅ Cesium for Unity detectado.");
@@ -346,3 +352,4 @@ public class CesiumCapasAlsasua : MonoBehaviour
         return new Vector2(herrikoPlazaTerreno.x + dx, herrikoPlazaTerreno.y + dz);
     }
 }
+

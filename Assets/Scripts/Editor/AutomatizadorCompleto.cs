@@ -57,7 +57,7 @@ public static class AutomatizadorCompleto
         Paso(13, "Configurar tráfico OSM",    () => ConfiguradorTrafico.Configurar());
         Paso(14, "Conectar sistemas null",     ConectarSistemasNull);
         Paso(15, "HDRP configurar",           ConfigurarHDRP);
-        Paso(16, "Materiales HDRP",           () => IntegradorAssetsNuevos.ConvertirMaterialesAHDRP());
+        Paso(16, "Materiales HDRP",           () => AplicadorTexturasAAA.ConvertirMaterialesAHDRP());
         Paso(17, "Occlusion Culling",         ConfigurarOcclusion);
         Paso(18, "Quality settings",          ConfigurarQuality);
         Paso(19, "Physics collision matrix",  ConfigurarPhysicsMatrix);

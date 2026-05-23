@@ -77,7 +77,9 @@ public class SistemaNavMesh : MonoBehaviour
     private Vector3        _centroActual;
     private bool           _horneando = false;
     private float          _timerCheck = 0f;
+#pragma warning disable CS0414
     private bool           _usaLegacy  = false;   // fallback sin paquete AI Navigation
+#pragma warning restore CS0414
 
     // ─────────────────────────────────────────────────────────────────────────
     //  LIFECYCLE

@@ -24,8 +24,8 @@ public static class GeneradorEdificiosZona
     // ── Parámetros de zona ────────────────────────────────────────────────
     private const string JSON_PATH   = "Assets/AlsasuaData/buildings_unity.json";
     private const string ZONA_NOMBRE = "Zone_01_HerrikoPlaza_Centro";
-    private const float  CENTRO_X    = 1918f;
-    private const float  CENTRO_Z    = 8570f;
+    private const float  CENTRO_X    = GeoDataAlsasua.OX;
+    private const float  CENTRO_Z    = GeoDataAlsasua.OZ;
     private const float  RADIO_ZONA  = 350f;
     private const int    MAX_EDIFICIOS = 600;
 

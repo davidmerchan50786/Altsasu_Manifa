@@ -25,7 +25,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
-public class ControladorVehiculoJugador : MonoBehaviour
+public class ControladorVehiculoJugador : VehiculoBase, IInteractable
 {
     // ── Ruedas ────────────────────────────────────────────────────────────────
     [Header("═══ RUEDAS ═══")]
@@ -104,38 +104,30 @@ public class ControladorVehiculoJugador : MonoBehaviour
     public static event System.Action<ControladorVehiculoJugador> OnJugadorSalio;
 
     // ── Salud del vehículo ────────────────────────────────────────────────────
-    [Header("═══ DAÑO ═══")]
-    [SerializeField] private int vidaMaxima  = 400;
-    private int   _vidaActual;
-    private bool  _destruido;
+    // IDamageable (Vida, VidaMax, EstaMuerto, RecibirDano, Curar) → heredados de VehiculoBase
+    // vidaMaxima, _vida, _destruido → en VehiculoBase (SerializeField = 100 por defecto;
+    //   ajustar a 400 en el prefab Interceptor_Jugador)
     private ParticleSystem _humoMotor;   // humo al 50% HP
     private ParticleSystem _fuegoCoche;  // fuego al 20% HP
 
-    /// <summary>Llamado por SistemaDisparo cuando una bala impacta en el coche.</summary>
-    public void RecibirDano(int dano)
+    // RecibirDano y Curar → heredados de VehiculoBase. Feedback visual en OnDanoRecibido().
+
+    protected override void OnDanoRecibido(int cantidad, Vector3 origen, TipoDano tipo)
     {
-        if (_destruido) return;
-        _vidaActual = Mathf.Max(0, _vidaActual - dano);
+        float fraccion = (float)_vida / vidaMaxima;
 
-        float fraccion = (float)_vidaActual / vidaMaxima;
-
-        // 50% HP → humo del motor
         if (fraccion <= 0.5f && _humoMotor == null)
             _humoMotor = CrearParticula(Vector3.up * 0.8f, new Color(0.3f,0.3f,0.3f,0.8f), 1.5f);
 
-        // 20% HP → fuego + advertencia al jugador dentro
         if (fraccion <= 0.2f && _fuegoCoche == null)
         {
             _fuegoCoche = CrearParticula(Vector3.up * 0.6f, new Color(1f,0.3f,0f,0.9f), 2f);
             if (jugadorDentro)
                 AlsasuaLogger.Warn("Vehiculo", "⚠ ¡El coche está en llamas! ¡Sal!");
         }
-
-        // 0 HP → explosión
-        if (_vidaActual <= 0) Explotar();
     }
 
-    private void Explotar()
+    protected override void IniciarDestruccion()
     {
         _destruido = true;
         if (jugadorDentro) ForzarSalida();
@@ -163,6 +155,12 @@ public class ControladorVehiculoJugador : MonoBehaviour
         ps.Play();
         return ps;
     }
+
+    // IInteractable
+    public string TextoInteraccion  => "Entrar en vehículo  [E]";
+    public float  RadioInteraccion  => 3.5f;
+    public bool   PuedeInteractuar  => !jugadorDentro && !_destruido;
+    public void   OnInteractuar(ControladorJugador jugador) => EntraJugador(jugador);
 
     // ── Estado interno ────────────────────────────────────────────────────────
     private Rigidbody          rb;
@@ -209,21 +207,20 @@ public class ControladorVehiculoJugador : MonoBehaviour
     /// Velocidad actual del vehículo en km/h, calculada a partir de la magnitud del
     /// <c>Rigidbody.linearVelocity</c>. Devuelve 0 si el Rigidbody aún no está inicializado.
     /// </summary>
-    public float VelocidadKmh  => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public float VelocidadKmh  => _rb != null ? _rb.linearVelocity.magnitude * 3.6f : 0f;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void Awake()
+    protected override void OnAwakeVehiculo()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = _rb; // alias local para compatibilidad con código existente
         rb.centerOfMass = new Vector3(0f, alturaCentroMasa, 0f);
-        rb.mass         = 1400f;   // Mitsubishi Montero (~1700 kg tara; ajustable por SerializeField)
+        rb.mass         = 1400f;
         ConfigurarWheelColliders();
-        // Cachear el array una vez — evita 1600 bytes/s de GC en FixedUpdate
         _todasLasRuedas = new[] { rDI, rDD, rTI, rTD };
-        _vidaActual = vidaMaxima;
+        // _vida ya inicializado por VehiculoBase.Awake() con vidaMaxima
     }
 
     private void Update()
@@ -363,7 +360,8 @@ public class ControladorVehiculoJugador : MonoBehaviour
         OnJugadorEntro?.Invoke(this);
 
         // Transición de cámara: hombro → asiento conductor
-        StartCoroutine(TransicionCamara(entrando: true));
+        if (_corrutinaCamara != null) StopCoroutine(_corrutinaCamara);
+        _corrutinaCamara = StartCoroutine(TransicionCamara(entrando: true));
         AlsasuaLogger.Info("Vehiculo", $"Jugador entró en {name}.");
     }
 
@@ -393,7 +391,8 @@ public class ControladorVehiculoJugador : MonoBehaviour
         GameManagerAltsasua.Instance?.SetJugadorEnVehiculo(false);
 
         // Transición de cámara: asiento → spring arm original
-        StartCoroutine(TransicionCamara(entrando: false));
+        if (_corrutinaCamara != null) StopCoroutine(_corrutinaCamara);
+        _corrutinaCamara = StartCoroutine(TransicionCamara(entrando: false));
         controlJugador = null;
         AlsasuaLogger.Info("Vehiculo", $"Jugador salió de {name}.");
     }
@@ -406,11 +405,22 @@ public class ControladorVehiculoJugador : MonoBehaviour
         Vector3    p0 = camaraRef.position, p1;
         Quaternion r0 = camaraRef.rotation, r1;
 
-        if (entrando && asientoConductor != null)
+        if (entrando)
         {
-            // Cámara se mueve al asiento del conductor
-            p1 = asientoConductor.position + asientoConductor.up * 0.12f;
-            r1 = asientoConductor.rotation;
+            if (asientoConductor != null)
+            {
+                p1 = asientoConductor.position + asientoConductor.up * 0.12f;
+                r1 = asientoConductor.rotation;
+            }
+            else
+            {
+                // Fallback si asientoConductor no está asignado en el prefab:
+                // cámara va detrás y encima del coche, mirando hacia adelante.
+                p1 = transform.position
+                   + transform.up    * alturaPivotCoche
+                   - transform.forward * distanciaOrbitaCoche;
+                r1 = Quaternion.LookRotation(transform.forward, Vector3.up);
+            }
         }
         else
         {
@@ -429,6 +439,7 @@ public class ControladorVehiculoJugador : MonoBehaviour
         }
         camaraRef.position = p1;
         camaraRef.rotation = r1;
+        _corrutinaCamara = null;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

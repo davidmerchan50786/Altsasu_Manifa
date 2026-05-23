@@ -12,9 +12,9 @@ using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
 using System.Collections.Generic;
 
-public class SistemaVidaNocturna : MonoBehaviour
+public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
 {
-    public static SistemaVidaNocturna Instance { get; private set; }
+
 
     // ── Estado ────────────────────────────────────────────────────────────
     bool  _esNoche;
@@ -39,12 +39,6 @@ public class SistemaVidaNocturna : MonoBehaviour
     const float INTENSIDAD_FAROLA_DIA   = 0f;
 
     // ════════════════════════════════════════════════════════════════════════
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
 
     void Start()
     {

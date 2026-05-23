@@ -52,6 +52,7 @@ public class TuningFisica : MonoBehaviour
 
     // ── Estado ────────────────────────────────────────────────────────────
     WheelFrictionCurve _fricLong, _fricLat;
+    ControladorVehiculoJugador _cocheJugadorCache;
 
     // ════════════════════════════════════════════════════════════════════════
 
@@ -128,9 +129,11 @@ public class TuningFisica : MonoBehaviour
 
     void AplicarAntiRoll()
     {
-        var vehiculo = AltsasuCore.I?.traficoSystem;
-        // Anti-roll sobre el coche del jugador
-        var cocheJugador = FindFirstObjectByType<ControladorVehiculoJugador>();
+        // Refrescar caché solo si la referencia se perdió (coche destruido o no asignado aún)
+        if (_cocheJugadorCache == null)
+            _cocheJugadorCache = FindFirstObjectByType<ControladorVehiculoJugador>();
+
+        var cocheJugador = _cocheJugadorCache;
         if (cocheJugador == null || !cocheJugador.JugadorDentro) return;
 
         var wcs = cocheJugador.GetComponentsInChildren<WheelCollider>();
@@ -180,6 +183,9 @@ public class TuningFisica : MonoBehaviour
 
     /// <summary>Re-aplica el tuning a todos los WheelColliders (útil tras spawn de coche).</summary>
     public static void ReaplicarWheels() => Instance?.AplicarWheelColliders();
+
+    /// <summary>Invalida la caché del coche del jugador (llamar tras spawn o destrucción).</summary>
+    public static void InvalidarCochejugador() { if (Instance != null) Instance._cocheJugadorCache = null; }
 
     /// <summary>Ajusta la gravedad temporalmente (viento, zona especial).</summary>
     public static void SetGravedad(float y) => Physics.gravity = new Vector3(0f, y, 0f);

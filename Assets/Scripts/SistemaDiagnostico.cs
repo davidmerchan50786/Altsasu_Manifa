@@ -17,21 +17,13 @@ using System.Collections.Generic;
 using System.Text;
 
 [DefaultExecutionOrder(200)] // después de que todo arranque
-public class SistemaDiagnostico : MonoBehaviour
+public class SistemaDiagnostico : SingletonMono<SistemaDiagnostico>
 {
-    public static SistemaDiagnostico Instance { get; private set; }
-
     bool   _mostrandoPanel;
     string _informe = "";
     GUIStyle _estiloPanel, _estiloOK, _estiloError, _estiloWarn, _estiloTitulo;
     bool   _estilosInit;
     Vector2 _scroll;
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
 
     void Start() => StartCoroutine(DiagnosticarTodo());
 

@@ -48,12 +48,17 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     Transform                 _jugador;
     bool                      _cargado;
 
+    // ── Pool de árboles ────────────────────────────────────────────────────
+    readonly List<GameObject> _pool = new();
+    [Tooltip("Tamaño inicial del pool (pre-calentado en Start).")]
+    public int tamañoPool = 150;
+
     // ──────────────────────────────────────────────────────────────────────
 
     void Start()
     {
-        // Si existen árboles LIDAR exactos, PosicionadorPrecisionUrbana los gestiona.
-        // El streamer OSM sirve de fallback cuando no hay datos LIDAR.
+        PreCalentarPool();
+
         bool hayLIDAR = TieneArbolesLIDAR();
 
         if (hayLIDAR)
@@ -151,22 +156,102 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         }
     }
 
-    // ── Cache NativeArrays (reutilizados entre frames) ─────────────────────
-    NativeArray<float3> _posicionesNative;
-    bool                _nativeInit;
+    // ── Pool ──────────────────────────────────────────────────────────────
+
+    void PreCalentarPool()
+    {
+        if (treePrefabs == null || treePrefabs.Length == 0) return;
+        for (int i = 0; i < tamañoPool; i++)
+        {
+            var prefab = treePrefabs[i % treePrefabs.Length];
+            if (prefab == null) continue;
+            var go = Instantiate(prefab, transform);
+            go.SetActive(false);
+            go.name = $"Arbol_Pool_{i}";
+            _pool.Add(go);
+        }
+    }
+
+    GameObject AlquilarArbol(GameObject prefab, Vector3 pos, Quaternion rot)
+    {
+        // Buscar uno inactivo del mismo prefab (por nombre de prefab) o cualquiera disponible
+        GameObject go = null;
+        string prefabNombre = prefab.name;
+        for (int i = _pool.Count - 1; i >= 0; i--)
+        {
+            if (_pool[i] == null) { _pool.RemoveAt(i); continue; }
+            if (!_pool[i].activeInHierarchy)
+            {
+                // Preferir mismo tipo de árbol para evitar pop visual
+                if (_pool[i].name.Contains(prefabNombre) || go == null)
+                    go = _pool[i];
+            }
+        }
+
+        if (go == null)
+        {
+            // Pool exhausto — crear nuevo y añadir al pool para devoluciones futuras
+            go = Instantiate(prefab, transform);
+            _pool.Add(go);
+        }
+
+        go.transform.SetPositionAndRotation(pos, rot);
+        go.SetActive(true);
+        return go;
+    }
+
+    void DevolverArbol(GameObject go)
+    {
+        if (go == null) return;
+        go.SetActive(false);
+    }
 
     void OnDestroy()
     {
-        if (_nativeInit && _posicionesNative.IsCreated)
-            _posicionesNative.Dispose();
+        if (_nativeInit)
+        {
+            if (_posicionesNative.IsCreated)  _posicionesNative.Dispose();
+            if (_naPosInst.IsCreated)         _naPosInst.Dispose();
+            if (_naDestruir.IsCreated)        _naDestruir.Dispose();
+            if (_naPosExist.IsCreated)        _naPosExist.Dispose();
+            if (_naResultadoRango.IsCreated)  _naResultadoRango.Dispose();
+            if (_naPosCand.IsCreated)         _naPosCand.Dispose();
+            if (_naOcupado.IsCreated)         _naOcupado.Dispose();
+        }
+
+        foreach (var go in _pool)
+            if (go != null) Destroy(go);
+        _pool.Clear();
     }
+
+    // ── NativeArrays persistentes — se asignan una vez, se reutilizan cada ciclo ──
+    NativeArray<float3> _posicionesNative;   // posiciones de árboles del JSON
+    NativeArray<float3> _naPosInst;          // posiciones de instancias activas  (max = maxArboles)
+    NativeArray<byte>   _naDestruir;         // máscara destrucción               (max = maxArboles)
+    NativeArray<float3> _naPosExist;         // posiciones existentes para ocupación (max = maxArboles+1)
+    NativeArray<int>    _naResultadoRango;   // resultado filtro de rango         (= posicionesNative.Length)
+    NativeArray<float3> _naPosCand;          // posiciones de candidatos           (max = MAX_CANDIDATOS)
+    NativeArray<byte>   _naOcupado;          // máscara ocupación                  (max = MAX_CANDIDATOS)
+    bool                _nativeInit;
+    const int           MAX_CANDIDATOS = 200;
 
     void InicializarNative()
     {
         if (_nativeInit || _posiciones.Count == 0) return;
-        _posicionesNative = new NativeArray<float3>(_posiciones.Count, Allocator.Persistent);
+
+        _posicionesNative  = new NativeArray<float3>(_posiciones.Count, Allocator.Persistent);
         for (int i = 0; i < _posiciones.Count; i++)
             _posicionesNative[i] = new float3(_posiciones[i].x, 0f, _posiciones[i].z);
+
+        // Arrays de trabajo persistentes — tamaño máximo fijo, sin realloc en cada ciclo
+        int capInst = Mathf.Max(maxArboles + 1, 1);
+        _naPosInst        = new NativeArray<float3>(capInst,              Allocator.Persistent);
+        _naDestruir       = new NativeArray<byte>  (capInst,              Allocator.Persistent);
+        _naPosExist       = new NativeArray<float3>(capInst,              Allocator.Persistent);
+        _naResultadoRango = new NativeArray<int>   (_posicionesNative.Length, Allocator.Persistent);
+        _naPosCand        = new NativeArray<float3>(MAX_CANDIDATOS,        Allocator.Persistent);
+        _naOcupado        = new NativeArray<byte>  (MAX_CANDIDATOS,        Allocator.Persistent);
+
         _nativeInit = true;
     }
 
@@ -192,39 +277,34 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             float3  posJ  = new float3(posJ3.x, 0f, posJ3.z);
 
             // ── FASE 1: Burst — marcar instancias a destruir ──────────────
-            // Limpiar referencias nulas sin reasignar el readonly (usar RemoveAll)
             _instancias.RemoveAll(inst => inst == null);
 
-            if (_instancias.Count > 0)
+            int nInst = _instancias.Count;
+            if (nInst > 0)
             {
-                var posInst = new NativeArray<float3>(_instancias.Count, Allocator.TempJob);
-                for (int i = 0; i < _instancias.Count; i++)
+                // Rellenar solo los primeros nInst elementos del array persistente
+                for (int i = 0; i < nInst; i++)
                 {
                     var p = _instancias[i].transform.position;
-                    posInst[i] = new float3(p.x, 0f, p.z);
+                    _naPosInst[i] = new float3(p.x, 0f, p.z);
                 }
-                var aDestruir = new NativeArray<byte>(_instancias.Count, Allocator.TempJob);
 
                 var jobDestruir = new JobMarcarArbolesADestruir
                 {
-                    posicionesInstancias = posInst,
+                    posicionesInstancias = _naPosInst,
                     posJugador           = posJ,
                     radioDestruirSq      = radioDestroir * radioDestroir,
-                    aDestruir            = aDestruir,
+                    aDestruir            = _naDestruir,
                 };
-                jobDestruir.Schedule(_instancias.Count, 64).Complete();
+                jobDestruir.Schedule(nInst, 64).Complete();
 
-                for (int i = _instancias.Count - 1; i >= 0; i--)
-                    if (aDestruir[i] == 1) { Destroy(_instancias[i]); _instancias.RemoveAt(i); }
-
-                posInst.Dispose();
-                aDestruir.Dispose();
+                for (int i = nInst - 1; i >= 0; i--)
+                    if (_naDestruir[i] == 1) { DevolverArbol(_instancias[i]); _instancias.RemoveAt(i); }
             }
 
             if (_instancias.Count >= maxArboles) continue;
 
             // ── FASE 2: Burst — filtrar posiciones en rango ───────────────
-            var resultadoRango = new NativeArray<int>(_posicionesNative.Length, Allocator.TempJob);
             var jobRango = new JobFiltrarArbolesEnRango
             {
                 posiciones  = _posicionesNative,
@@ -233,45 +313,45 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                 radioMax    = radioVisible,
                 radioMaxSq  = radioVisible * radioVisible,
                 radioMinSq  = radioMinimo  * radioMinimo,
-                resultado   = resultadoRango,
+                resultado   = _naResultadoRango,
             };
             jobRango.Schedule(_posicionesNative.Length, 128).Complete();
 
             // ── FASE 3: Burst — comprobar ocupación (anti-duplicado) ──────
-            var candidatos = new List<int>();
-            for (int i = 0; i < resultadoRango.Length && candidatos.Count < 200; i++)
-                if (resultadoRango[i] >= 0) candidatos.Add(resultadoRango[i]);
-            resultadoRango.Dispose();
+            // Recopilar candidatos en lista temporal (reutilizar cada ciclo)
+            var candidatos = new List<int>(); // pequeña (max 200), aceptable aquí
+            for (int i = 0; i < _naResultadoRango.Length && candidatos.Count < MAX_CANDIDATOS; i++)
+                if (_naResultadoRango[i] >= 0) candidatos.Add(_naResultadoRango[i]);
 
             if (candidatos.Count == 0) continue;
 
-            // Posiciones de instancias existentes para ocupación
-            var posExist = new NativeArray<float3>(_instancias.Count + 1, Allocator.TempJob);
-            for (int i = 0; i < _instancias.Count; i++)
+            // Rellenar posiciones de instancias existentes en array persistente
+            nInst = _instancias.Count;
+            for (int i = 0; i < nInst; i++)
             {
                 var p = _instancias[i].transform.position;
-                posExist[i] = new float3(p.x, 0f, p.z);
+                _naPosExist[i] = new float3(p.x, 0f, p.z);
             }
-            var posCand = new NativeArray<float3>(candidatos.Count, Allocator.TempJob);
-            for (int i = 0; i < candidatos.Count; i++)
-                posCand[i] = _posicionesNative[candidatos[i]];
 
-            var ocupado = new NativeArray<byte>(candidatos.Count, Allocator.TempJob);
+            int nCand = candidatos.Count;
+            for (int i = 0; i < nCand; i++)
+                _naPosCand[i] = _posicionesNative[candidatos[i]];
+
             var jobOcup = new JobComprobarOcupacion
             {
-                candidatos           = posCand,
-                posicionesExistentes = posExist,
-                radioOcupacionSq     = 9f, // 3m²
-                ocupado              = ocupado,
+                candidatos           = _naPosCand,
+                posicionesExistentes = _naPosExist,
+                radioOcupacionSq     = 9f,
+                ocupado              = _naOcupado,
             };
-            jobOcup.Schedule(candidatos.Count, 32).Complete();
+            jobOcup.Schedule(nCand, 32).Complete();
 
             // ── FASE 4: Instanciar en hilo principal (required by Unity) ──
             var terrain = Terrain.activeTerrain;
-            for (int i = 0; i < candidatos.Count; i++)
+            for (int i = 0; i < nCand; i++)
             {
                 if (_instancias.Count >= maxArboles) break;
-                if (ocupado[i] == 1) continue;
+                if (_naOcupado[i] == 1) continue;
 
                 var pos = _posicionesNative[candidatos[i]];
                 float y = terrain != null
@@ -281,19 +361,16 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                 var prefab = treePrefabs[UnityEngine.Random.Range(0, treePrefabs.Length)];
                 if (prefab == null) continue;
 
-                var go = Instantiate(prefab,
+                var go = AlquilarArbol(
+                    prefab,
                     new Vector3(pos.x, y, pos.z),
-                    Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0),
-                    transform);
+                    Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
                 go.isStatic = false;
                 _instancias.Add(go);
 
-                yield return null; // distribuir en frames
+                yield return null;
             }
-
-            posExist.Dispose();
-            posCand.Dispose();
-            ocupado.Dispose();
+            // Sin Dispose — los arrays son Persistent y se reutilizan en el siguiente ciclo
         }
     }
 
@@ -303,22 +380,4 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     [System.Serializable] class TreesWrapper { public List<TreeEntry> items; }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  CONSTANTES GEOGRÁFICAS — Alsasua / Altsasu (lat 42.9°N)
-// ─────────────────────────────────────────────────────────────────────────────
-public static class GeoDataAlsasua
-{
-    /// <summary>Latitud del centro de Alsasua (Herriko Plaza).</summary>
-    public const double LATITUD_CENTRO  = 42.9003;
-    /// <summary>Longitud del centro de Alsasua (Herriko Plaza).</summary>
-    public const double LONGITUD_CENTRO = -2.1665;
-
-    /// <summary>Metros por grado de latitud (constante global ~111 320 m/°).</summary>
-    public const double M_POR_GRADO_LAT = 111_320.0;
-
-    /// <summary>
-    /// Metros por grado de longitud a lat 42.9°N.
-    /// = 111 320 × cos(42.9°) ≈ 81 560 m/°
-    /// </summary>
-    public const double M_POR_GRADO_LON = 81_560.0;
-}
+// GeoDataAlsasua movida a Assets/Scripts/GeoDataAlsasua.cs
