@@ -19,9 +19,8 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
 
-public class SistemaAgendaNPC : MonoBehaviour
+public class SistemaAgendaNPC : SingletonMono<SistemaAgendaNPC>
 {
-    public static SistemaAgendaNPC Instance { get; private set; }
 
     // ── Horarios ──────────────────────────────────────────────────────────
     public struct FranjaHoraria
@@ -44,12 +43,6 @@ public class SistemaAgendaNPC : MonoBehaviour
     float _horaAnterior = -1f;
 
     // ════════════════════════════════════════════════════════════════════════
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
 
     void Start() => InvokeRepeating(nameof(ActualizarAgendas), 5f, 60f); // cada minuto real
 

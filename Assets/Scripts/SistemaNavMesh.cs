@@ -29,10 +29,9 @@ using Unity.AI.Navigation;
 #endif
 
 [DefaultExecutionOrder(-50)]   // antes que PoliciaForalIA (0) pero después de SceneBootstrapper (-200)
-public class SistemaNavMesh : MonoBehaviour
+public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
 {
-    // ── Singleton ──────────────────────────────────────────────────────────
-    public static SistemaNavMesh Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
 
     // ── Evento que avisa cuando el NavMesh está disponible ─────────────────
     public static event System.Action OnNavMeshListo;
@@ -85,12 +84,7 @@ public class SistemaNavMesh : MonoBehaviour
     //  LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        EstaListo = false;
-    }
+    protected override void OnAwake() => EstaListo = false;
 
     private IEnumerator Start()
     {

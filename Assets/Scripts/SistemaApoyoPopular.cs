@@ -1,9 +1,9 @@
 // SistemaApoyoPopular.cs — Apoyo popular, paranoia y honor del movimiento
 using UnityEngine;
 
-public class SistemaApoyoPopular : MonoBehaviour
+public class SistemaApoyoPopular : SingletonMono<SistemaApoyoPopular>
 {
-    public static SistemaApoyoPopular Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
 
     [Range(0,100)] public float apoyo    = 50f;
     [Range(0,100)] public float honor    = 50f;
@@ -17,12 +17,6 @@ public class SistemaApoyoPopular : MonoBehaviour
     public static event System.Action<float> OnApoyoCambia;
     public static event System.Action<float> OnParanoiaCambia;
     public static event System.Action        OnParanoiaCritica;
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
 
     void Update()
     {

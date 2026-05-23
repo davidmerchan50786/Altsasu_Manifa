@@ -11,10 +11,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class SistemaTutorial : MonoBehaviour
+public class SistemaTutorial : SingletonMono<SistemaTutorial>
 {
-    public static SistemaTutorial Instance { get; private set; }
-
     // ── Pistas ────────────────────────────────────────────────────────────
     public enum Pista
     {
@@ -65,12 +63,7 @@ public class SistemaTutorial : MonoBehaviour
 
     // ════════════════════════════════════════════════════════════════════════
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-        SuscribirEventos();
-    }
+    protected override void OnAwake() => SuscribirEventos();
 
     void OnMisionStart(string _)                 => Mostrar(Pista.MisionIniciada);
     void OnWanted(int n)                         { if (n==1) Mostrar(Pista.Wanted1); if (n==3) Mostrar(Pista.Wanted3); }

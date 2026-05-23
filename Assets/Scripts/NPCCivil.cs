@@ -105,10 +105,12 @@ public class NPCCivil : NPCBase
     // ── API pública ───────────────────────────────────────────────────────
 
     /// <summary>El GameManager llama esto cuando hay un disparo cerca.</summary>
-    public void AlertarDisparo(Vector3 origenDisparo)
+    public void AlertarDisparo(Vector3 origenDisparo) => Alertar(origenDisparo);
+
+    public override void Alertar(Vector3 origen)
     {
-        if (Vector3.Distance(transform.position, origenDisparo) > radioEscucha) return;
-        HuirDe(origenDisparo);
+        if (Vector3.Distance(transform.position, origen) > radioEscucha) return;
+        HuirDe(origen);
         CambiarEstado(Estado.Huyendo);
     }
 

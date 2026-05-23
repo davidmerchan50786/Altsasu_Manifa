@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaGrafitis : MonoBehaviour
+public class SistemaGrafitis : SingletonMono<SistemaGrafitis>
 {
     [Header("Texturas de pintadas (asignar en Inspector)")]
     public Texture2D[] texturasGraffiti;   // "Askatasuna", estrella ETA, "Gora Euskal Herria", etc.
@@ -39,7 +39,7 @@ public class SistemaGrafitis : MonoBehaviour
     TipoPintada _tipoPintada = TipoPintada.Graffiti;
 #pragma warning restore CS0414
 
-    void Start() => _apoyo = FindFirstObjectByType<SistemaApoyoPopular>();
+    protected override void OnAwake() => _apoyo = SistemaApoyoPopular.Instance;
 
     void Update()
     {

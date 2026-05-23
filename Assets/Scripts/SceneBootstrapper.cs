@@ -569,25 +569,23 @@ public class SceneBootstrapper : MonoBehaviour
 
     void EnsureGameManager()
     {
-        var gm = FindFirstObjectByType<GameManagerAltsasua>();
-        if (gm != null) return;
+        if (GameManagerAltsasua.Instance != null) return;
 
         var go = new GameObject("GameManager");
-        gm = go.AddComponent<GameManagerAltsasua>();
+        go.AddComponent<GameManagerAltsasua>();
         Debug.Log("[Bootstrap] ✓ GameManager creado en runtime.");
     }
 
     void EnsureCore()
     {
-        if (FindFirstObjectByType<AltsasuCore>() != null) return;
-        var gmGO = FindFirstObjectByType<GameManagerAltsasua>()?.gameObject
-                ?? new GameObject("AltsasuCore");
+        if (AltsasuCore.I != null) return;
+        var gmGO = GameManagerAltsasua.Instance?.gameObject ?? new GameObject("AltsasuCore");
         gmGO.AddComponent<AltsasuCore>();
     }
 
     void EnsureSistemasBasicos()
     {
-        var gmGO = FindFirstObjectByType<GameManagerAltsasua>()?.gameObject;
+        var gmGO = GameManagerAltsasua.Instance?.gameObject;
         if (gmGO == null) return;
 
         // ── Gameplay básico ───────────────────────────────────────────────

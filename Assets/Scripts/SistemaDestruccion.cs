@@ -41,6 +41,11 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
     readonly List<GameObject> _fuegoActivos = new();
     const int MAX_FUEGOS = 30;
 
+    // ── Pool de molotovs ──────────────────────────────────────────────────
+    const int POOL_MOLOTOVS = 8;
+    GameObject[] _poolMolotovs;
+    int          _molotovIdx;   // round-robin — si todos están en vuelo, recicla el más antiguo
+
 
     // =========================================================================
     //  COCHE BOMBA / EXPLOSIÓN DE COCHE
@@ -133,22 +138,51 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
 
     public void LanzarMolotov(Vector3 posicion, Vector3 velocidad)
     {
-        GameObject molotov;
-        if (prefabMolotov != null)
-            molotov = Instantiate(prefabMolotov, posicion, Quaternion.identity);
-        else
-        {
-            molotov = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            molotov.name = "Molotov";
-            molotov.transform.localScale = Vector3.one * 0.15f;
-            molotov.GetComponent<MeshRenderer>().material.color = new Color(0.8f, 0.5f, 0.2f);
-        }
+        InicializarPoolMolotovs();
 
-        var rb = molotov.GetComponent<Rigidbody>() ?? molotov.AddComponent<Rigidbody>();
-        rb.mass = 0.5f;
+        // Tomar del pool (round-robin — si todos están en vuelo, recicla el más antiguo)
+        var molotov = _poolMolotovs[_molotovIdx];
+        _molotovIdx = (_molotovIdx + 1) % POOL_MOLOTOVS;
+
+        // Forzar explosión del molotov reciclado si aún estaba en vuelo
+        var prevProyectil = molotov.GetComponent<ProyectilMolotov>();
+        if (molotov.activeInHierarchy && prevProyectil != null)
+            prevProyectil.ForzarExplosion();
+
+        molotov.transform.position = posicion;
+        molotov.SetActive(true);
+
+        var rb = molotov.GetComponent<Rigidbody>();
         rb.linearVelocity = velocidad;
+        rb.angularVelocity = Vector3.zero;
 
-        molotov.AddComponent<ProyectilMolotov>().Init(this, radioFuegoMolotov, duracionFuegoMolotov);
+        molotov.GetComponent<ProyectilMolotov>().Init(this, radioFuegoMolotov, duracionFuegoMolotov);
+    }
+
+    void InicializarPoolMolotovs()
+    {
+        if (_poolMolotovs != null) return;
+        _poolMolotovs = new GameObject[POOL_MOLOTOVS];
+        for (int i = 0; i < POOL_MOLOTOVS; i++)
+        {
+            GameObject go;
+            if (prefabMolotov != null)
+            {
+                go = Instantiate(prefabMolotov, Vector3.zero, Quaternion.identity);
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = "Molotov";
+                go.transform.localScale = Vector3.one * 0.15f;
+                go.GetComponent<MeshRenderer>().material.color = new Color(0.8f, 0.5f, 0.2f);
+            }
+            var rb2 = go.GetComponent<Rigidbody>() ?? go.AddComponent<Rigidbody>();
+            rb2.mass = 0.5f;
+            go.AddComponent<ProyectilMolotov>();
+            go.SetActive(false);
+            _poolMolotovs[i] = go;
+        }
     }
 
     public void ExplotarMolotov(Vector3 pos)
@@ -323,15 +357,23 @@ public class ProyectilMolotov : MonoBehaviour
     float _radio, _duracion;
     bool  _explotado;
 
-    public void Init(SistemaDestruccion s, float r, float d) { _sistema = s; _radio = r; _duracion = d; }
+    public void Init(SistemaDestruccion s, float r, float d)
+    {
+        _sistema   = s;
+        _radio     = r;
+        _duracion  = d;
+        _explotado = false;
+    }
 
-    void OnCollisionEnter(Collision col)
+    void OnCollisionEnter(Collision col) => Explotar();
+
+    public void ForzarExplosion() => Explotar();
+
+    void Explotar()
     {
         if (_explotado) return;
         _explotado = true;
         _sistema?.ExplotarMolotov(transform.position);
-        Destroy(gameObject);
+        gameObject.SetActive(false);  // devolver al pool
     }
-
-    void Update() { if (_explotado) Destroy(gameObject); }
 }

@@ -14,9 +14,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaMisiones : MonoBehaviour
+public class SistemaMisiones : SingletonMono<SistemaMisiones>
 {
-    public static SistemaMisiones Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
 
     // UI: OnGUI puro — sin dependencia de TextMeshPro
     // Si en el futuro se añade TMPro, crear un CanvasGUI hijo y asignar manualmente.
@@ -31,12 +31,6 @@ public class SistemaMisiones : MonoBehaviour
     public static event System.Action<string> OnMisionCompletada;
 
     // ─────────────────────────────────────────────────────────────────────
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
 
     private void Start()
     {
@@ -193,11 +187,8 @@ public class Mision_RobarCoche : Mision
                 var gm = GameManagerAltsasua.Instance;
                 if (gm != null) gm.AumentarBusqueda(1);
                 // Alertar a los civiles cercanos
-                foreach (var npc in Object.FindObjectsByType<NPCCivil>(FindObjectsSortMode.None))
-                {
-                    var veh = Object.FindFirstObjectByType<ControladorVehiculoJugador>();
-                    if (veh != null) npc.AlertarDisparo(veh.transform.position);
-                }
+                var jug = AltsasuCore.Jugador;
+                if (jug != null) SistemaIA.AlertarCercanos(jug.position, 30f);
             }
         },
         new Objetivo

@@ -102,9 +102,9 @@ public class HUDCanvas : MonoBehaviour
     // ── Estado ────────────────────────────────────────────────────────────
     ControladorJugador          _jugador;
     GameManagerAltsasua         _gm;
-    SistemaApoyoPopular         _apoyo;
     SistemaAtmosfera            _atm;
     ControladorVehiculoJugador  _vehiculo;
+    float                       _apoyoActual;   // caché local — actualizado por evento
 
     // ── Colores ───────────────────────────────────────────────────────────
     static readonly Color COL_VIDA     = new(0.95f, 0.22f, 0.22f);
@@ -139,30 +139,63 @@ public class HUDCanvas : MonoBehaviour
         CrearBannerMision();
         CrearPanelNotificaciones();
         SuscribirEventos();
-        StartCoroutine(BuscarReferencias());
+        BuscarReferencias();
         StartCoroutine(ProcesarColaNotificaciones());
     }
 
-    IEnumerator BuscarReferencias()
+    void BuscarReferencias()
     {
-        while (_jugador == null || _gm == null)
-        {
-            _jugador  = FindFirstObjectByType<ControladorJugador>();
-            _gm       = GameManagerAltsasua.Instance;
-            _apoyo    = SistemaApoyoPopular.Instance;
-            _atm      = AltsasuCore.I?.atmosferaSystem;
-            yield return new WaitForSeconds(0.5f);
-        }
+        _gm  = GameManagerAltsasua.Instance;
+        _atm = AltsasuCore.I?.atmosferaSystem;
+        // _jugador se asigna cuando AltsasuCore dispara OnJugadorSpawned
+        if (AltsasuCore.Jugador != null)
+            _jugador = AltsasuCore.Jugador.GetComponent<ControladorJugador>();
+        // apoyo inicial
+        _apoyoActual = SistemaApoyoPopular.Instance != null
+                     ? SistemaApoyoPopular.Instance.apoyo : 50f;
     }
 
     void SuscribirEventos()
     {
-        ControladorJugador.OnDanoRecibido     += OnDano;
-        GameManagerAltsasua.OnEstrellasCambia += OnWanted;
-        SistemaMisiones.OnMisionIniciada      += OnMisionIniciada;
-        SistemaMisiones.OnObjetivoCompletado  += OnObjetivoCompletado;
-        SistemaMisiones.OnMisionCompletada    += OnMisionCompletada;
-        SistemaLogros.OnLogroDesbloqueado     += OnLogro;
+        ControladorJugador.OnDanoRecibido          += OnDano;
+        GameManagerAltsasua.OnEstrellasCambia      += OnWanted;
+        SistemaMisiones.OnMisionIniciada           += OnMisionIniciada;
+        SistemaMisiones.OnObjetivoCompletado       += OnObjetivoCompletado;
+        SistemaMisiones.OnMisionCompletada         += OnMisionCompletada;
+        SistemaLogros.OnLogroDesbloqueado          += OnLogro;
+        AltsasuCore.OnJugadorSpawned               += OnJugadorSpawned;
+        SistemaApoyoPopular.OnApoyoCambia          += v => _apoyoActual = v;
+        ControladorVehiculoJugador.OnJugadorEntro  += OnEntroVehiculo;
+        ControladorVehiculoJugador.OnJugadorSalio  += OnSalioVehiculo;
+    }
+
+    void DesuscribirEventos()
+    {
+        ControladorJugador.OnDanoRecibido          -= OnDano;
+        GameManagerAltsasua.OnEstrellasCambia      -= OnWanted;
+        SistemaMisiones.OnMisionIniciada           -= OnMisionIniciada;
+        SistemaMisiones.OnObjetivoCompletado       -= OnObjetivoCompletado;
+        SistemaMisiones.OnMisionCompletada         -= OnMisionCompletada;
+        SistemaLogros.OnLogroDesbloqueado          -= OnLogro;
+        AltsasuCore.OnJugadorSpawned               -= OnJugadorSpawned;
+        SistemaApoyoPopular.OnApoyoCambia          -= v => _apoyoActual = v;
+        ControladorVehiculoJugador.OnJugadorEntro  -= OnEntroVehiculo;
+        ControladorVehiculoJugador.OnJugadorSalio  -= OnSalioVehiculo;
+    }
+
+    void OnJugadorSpawned(Transform t)
+        => _jugador = t.GetComponent<ControladorJugador>();
+
+    void OnEntroVehiculo(ControladorVehiculoJugador v)
+    {
+        _vehiculo = v;
+        if (_panelVelocimetro != null) _panelVelocimetro.SetActive(true);
+    }
+
+    void OnSalioVehiculo(ControladorVehiculoJugador _)
+    {
+        _vehiculo = null;
+        if (_panelVelocimetro != null) _panelVelocimetro.SetActive(false);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -206,9 +239,9 @@ public class HUDCanvas : MonoBehaviour
 
     void ActualizarApoyo()
     {
-        if (_apoyo == null || _barraApoyo == null) return;
-        _barraApoyo.value = Mathf.Lerp(_barraApoyo.value, _apoyo.apoyo / 100f, Time.deltaTime * 2f);
-        if (_txtApoyo != null) _txtApoyo.text = $"♥ {_apoyo.apoyo:F0}%";
+        if (_barraApoyo == null) return;
+        _barraApoyo.value = Mathf.Lerp(_barraApoyo.value, _apoyoActual / 100f, Time.deltaTime * 2f);
+        if (_txtApoyo != null) _txtApoyo.text = $"♥ {_apoyoActual:F0}%";
     }
 
     void ActualizarHoraClima()
@@ -222,11 +255,7 @@ public class HUDCanvas : MonoBehaviour
 
     void ActualizarVehiculo()
     {
-        if (_panelVelocimetro == null) return;
-        _vehiculo = FindFirstObjectByType<ControladorVehiculoJugador>();
-        bool enCoche = _vehiculo != null && _vehiculo.JugadorDentro;
-        _panelVelocimetro.SetActive(enCoche);
-        if (!enCoche) return;
+        if (_panelVelocimetro == null || _vehiculo == null) return;
 
         var rb = _vehiculo.GetComponent<Rigidbody>();
         float kmh = rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
@@ -795,12 +824,7 @@ public class HUDCanvas : MonoBehaviour
 
     void OnDestroy()
     {
-        ControladorJugador.OnDanoRecibido     -= OnDano;
-        GameManagerAltsasua.OnEstrellasCambia -= OnWanted;
-        SistemaMisiones.OnMisionIniciada      -= OnMisionIniciada;
-        SistemaMisiones.OnObjetivoCompletado  -= OnObjetivoCompletado;
-        SistemaMisiones.OnMisionCompletada    -= OnMisionCompletada;
-        SistemaLogros.OnLogroDesbloqueado     -= OnLogro;
+        DesuscribirEventos();
         if (_miniRT != null) _miniRT.Release();
     }
 

@@ -11,16 +11,8 @@ using UnityEngine.AI;
 using Unity.Collections;
 using Unity.Mathematics;
 
-public class SistemaManifestacion : MonoBehaviour
+public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
 {
-    public static SistemaManifestacion Instance { get; private set; }
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
-
     // ── Boids coordinator ─────────────────────────────────────────────────
     readonly List<ManifestanteIA> _agentes = new();
 
@@ -383,8 +375,13 @@ public class SistemaManifestacion : MonoBehaviour
 
 public enum TipoManifestante { Pacifico, Disturbios }
 
-public class ManifestanteIA : MonoBehaviour
+public class ManifestanteIA : MonoBehaviour, IAgente
 {
+    // IAgente
+    public Vector3 Posicion   => transform.position;
+    public bool    EstaActivo => gameObject.activeInHierarchy;
+    public void    Alertar(Vector3 origen) { /* manifestantes no huyen por disparos */ }
+
     public TipoManifestante    tipo;
     public Vector3             centro;
     public SistemaApoyoPopular apoyoSistema;
@@ -416,12 +413,13 @@ public class ManifestanteIA : MonoBehaviour
             var col = gameObject.AddComponent<CapsuleCollider>();
             col.height = 1.8f; col.radius = 0.3f; col.center = new Vector3(0, 0.9f, 0);
         }
-        _sistema = FindFirstObjectByType<SistemaManifestacion>();
+        _sistema = SistemaManifestacion.Instance;
         _sistema?.RegistrarAgente(this);
+        SistemaIA.Registrar(this);
         ElegirObjetivo();
     }
 
-    void OnDestroy() => _sistema?.DesregistrarAgente(this);
+    void OnDestroy() { _sistema?.DesregistrarAgente(this); SistemaIA.Desregistrar(this); }
 
     void FixedUpdate()
     {

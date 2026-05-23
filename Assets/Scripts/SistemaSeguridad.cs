@@ -20,9 +20,8 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [DefaultExecutionOrder(150)] // después de todos los sistemas, antes de SistemaDiagnostico (200)
-public class SistemaSeguridad : MonoBehaviour
+public class SistemaSeguridad : SingletonMono<SistemaSeguridad>
 {
-    public static SistemaSeguridad Instance { get; private set; }
 
     [Header("Intervalos (segundos)")]
     [Range(1f, 30f)] public float intervaloChequeo = 5f;
@@ -55,23 +54,16 @@ public class SistemaSeguridad : MonoBehaviour
     //  LIFECYCLE
     // ════════════════════════════════════════════════════════════════════════
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
+    protected override void OnAwake()
+        => AltsasuCore.OnWorldReady += IniciarMonitoreo;
 
-    IEnumerator Start()
+    protected override void OnDestroyed()
+        => AltsasuCore.OnWorldReady -= IniciarMonitoreo;
+
+    void IniciarMonitoreo()
     {
-        // Esperar a que el mundo esté listo antes de empezar a monitorear
-        yield return new WaitUntil(() => AltsasuCore.Listo || Time.time > 30f);
         AlsasuaLogger.Info("Seguridad", "Monitor de salud activo.");
         StartCoroutine(BucleMonitoreo());
-    }
-
-    void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
     }
 
     // ════════════════════════════════════════════════════════════════════════

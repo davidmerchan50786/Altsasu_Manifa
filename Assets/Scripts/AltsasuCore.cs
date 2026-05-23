@@ -31,7 +31,6 @@
 
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 [DefaultExecutionOrder(-100)]
 public sealed class AltsasuCore : MonoBehaviour
@@ -44,6 +43,8 @@ public sealed class AltsasuCore : MonoBehaviour
     public AudioManager          audioManagerSystem;
     public GameManagerAltsasua   wantedSystem;
     public SistemaApoyoPopular   apoyoSystem;
+    public SistemaIA             iaSystem;
+    public SistemaDeteccionIA    deteccionIASystem;
 
     [Header("── Fase 2: Mundo ──")]
     public SistemaAtmosfera      atmosferaSystem;
@@ -127,13 +128,14 @@ public sealed class AltsasuCore : MonoBehaviour
         // ── FASE 1: Core (sin dependencias) ──────────────────────────────
         BootFase(1, () =>
         {
-            EnsureOn(ref audioManagerSystem, "AudioManager");
-            EnsureOn(ref wantedSystem,       "GameManager");
-            EnsureOn(ref apoyoSystem,        "SistemaApoyoPopular");
+            EnsureOn(ref audioManagerSystem,  "AudioManager");
+            EnsureOn(ref wantedSystem,        "GameManager");
+            EnsureOn(ref apoyoSystem,         "SistemaApoyoPopular");
+            EnsureOn(ref iaSystem,            "SistemaIA");
+            EnsureOn(ref deteccionIASystem,   "SistemaDeteccionIA");
             SistemaOpciones.AplicarTodo();
             Application.targetFrameRate = fpsMeta;
             QualitySettings.vSyncCount  = 0;
-            AplicarGraficos();
         });
 
         yield return null;
@@ -237,18 +239,6 @@ public sealed class AltsasuCore : MonoBehaviour
         }
     }
 
-    void AplicarGraficos()
-    {
-        RenderSettings.fog        = true;
-        RenderSettings.fogDensity = 0.0012f;
-        RenderSettings.fogColor   = new Color(0.72f, 0.75f, 0.80f);
-        RenderSettings.fogMode    = FogMode.ExponentialSquared;
-        QualitySettings.shadowDistance  = 300f;
-        QualitySettings.shadowCascades  = 4;
-        QualitySettings.lodBias         = 2.5f;
-        QualitySettings.maximumLODLevel = 0;
-    }
-
     // ══════════════════════════════════════════════════════════════════════
     //  JUGADOR
     // ══════════════════════════════════════════════════════════════════════
@@ -265,11 +255,10 @@ public sealed class AltsasuCore : MonoBehaviour
 
         if (_jugador == null) { AlsasuaLogger.Warn("Core", "Jugador no encontrado en 15s"); yield break; }
 
-        // Añadir componentes de gameplay al jugador si no los tiene
-        AddIfMissing<SistemaArmasExtendido>(_jugador.gameObject, ref armasSystem);
-        AddIfMissing<SistemaBombas>        (_jugador.gameObject, ref bombasSystem);
-        AddIfMissing<SistemaDisparo>       (_jugador.gameObject, ref disparoSystem);
-        AddIfMissing<SistemaBarricadas>    (_jugador.gameObject, ref barricadasSystem);
+        // Registrar referencias a los sistemas del jugador (ya instanciados por ControladorJugador.Awake)
+        if (armasSystem   == null) armasSystem   = _jugador.GetComponent<SistemaArmasExtendido>();
+        if (bombasSystem  == null) bombasSystem  = _jugador.GetComponent<SistemaBombas>();
+        if (disparoSystem == null) disparoSystem = _jugador.GetComponent<SistemaDisparo>();
 
         // Fijar altitud inicial
         var terrain = Terrain.activeTerrain;
@@ -284,24 +273,10 @@ public sealed class AltsasuCore : MonoBehaviour
         AlsasuaLogger.Info("Core", $"✓ Jugador: {_jugador.name} @ {_jugador.position:F0}");
     }
 
-    void AddIfMissing<T>(GameObject go, ref T campo) where T : MonoBehaviour
-    {
-        if (campo != null) return;
-        campo = go.GetComponent<T>();
-        if (campo == null) campo = go.AddComponent<T>();
-    }
-
     // ══════════════════════════════════════════════════════════════════════
     //  UPDATE
     // ══════════════════════════════════════════════════════════════════════
 
     void Update()
-    {
-        _fps = 1f / Mathf.Max(Time.unscaledDeltaTime, 0.001f);
-
-        // Re-buscar jugador si murió y respawneó
-        if (!_listo) return;
-        if (_jugador == null)
-            _jugador = GameObject.FindGameObjectWithTag("Player")?.transform;
-    }
+        => _fps = 1f / Mathf.Max(Time.unscaledDeltaTime, 0.001f);
 }

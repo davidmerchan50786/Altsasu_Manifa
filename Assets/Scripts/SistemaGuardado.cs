@@ -14,9 +14,9 @@ using UnityEngine;
 using System;
 using System.IO;
 
-public class SistemaGuardado : MonoBehaviour
+public class SistemaGuardado : SingletonMono<SistemaGuardado>
 {
-    public static SistemaGuardado Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
 
     const string CLAVE_SLOT    = "ultimo_slot";
     const float  AUTOSAVE_INT  = 180f; // 3 minutos
@@ -56,12 +56,6 @@ public class SistemaGuardado : MonoBehaviour
     float        _tiempoSesion;
 
     // ════════════════════════════════════════════════════════════════════════
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
 
     void Start()
     {

@@ -101,6 +101,11 @@ public class PoliciaForalIA : NPCBase, IDamageable
     private int              maskObstaculo;
     private SistemaAtmosfera _atmosfera;
 
+    // ── Detección batch (SistemaDeteccionIA) ──────────────────────────────────
+    private int   _slotDeteccion  = -1;    // slot en SistemaDeteccionIA (-1 = no registrado)
+    private int   _visionFrame    = -999;  // último frame en que se enviaron comandos
+    private const int VISION_TICK = 3;     // enviar raycasts cada 3 frames (~20 Hz)
+
     // ── Propiedades públicas ───────────────────────────────────────────────────
     public EstadoPolicia Estado         => estado;
     public bool          JugadorVisto   => estado == EstadoPolicia.Persiguiendo
@@ -141,7 +146,8 @@ public class PoliciaForalIA : NPCBase, IDamageable
     protected override void OnStart()
     {
         StartCoroutine(BuscarAtmosfera());
-        gameManager = FindFirstObjectByType<GameManagerAltsasua>();
+        gameManager = GameManagerAltsasua.Instance;
+        _slotDeteccion = SistemaDeteccionIA.Registrar();
         if (linterna != null) linterna.enabled = false;
     }
 
@@ -182,36 +188,29 @@ public class PoliciaForalIA : NPCBase, IDamageable
     {
         if (jugador == null) return false;
 
-        Vector3 oriEye = transform.position + Vector3.up * 1.65f; // altura de los ojos
-        Vector3 dirJug = jugador.position - oriEye;
-        float   dist   = dirJug.magnitude;
-
-        // ── 1. Comprobación de radio y ángulo de cono ─────────────────────────
-        bool esDeNoche = EsDeNoche();
+        // ── 1. Comprobación de radio y ángulo de cono (sin raycast — O(1)) ────
+        bool  esDeNoche = EsDeNoche();
         float radioAct  = esDeNoche ? radioLinterna  : radioVision;
         float anguloAct = esDeNoche ? anguloLinterna : anguloVision;
+
+        Vector3 oriEye = transform.position + Vector3.up * 1.65f;
+        Vector3 dirJug = jugador.position - oriEye;
+        float   dist   = dirJug.magnitude;
 
         if (dist > radioAct) return false;
         if (Vector3.Angle(transform.forward, dirJug) > anguloAct * 0.5f) return false;
 
-        // ── 2. Raycast multi-punto (pies / pecho / cabeza) ────────────────────
-        //   Si ALGUNO de los rayos llega al jugador sin obstáculo → detectado.
-        // FIX 3: bucle for con índice en lugar de foreach sobre array de float[].
-        // foreach sobre un array de valor (float[]) genera un enumerador en el heap cada
-        // llamada → presión GC acumulada a 60fps. El for con índice es cero-alloc.
-        for (int k = 0; k < alturasLOS.Length; k++)
+        // ── 2. Enviar raycasts al batch (cada VISION_TICK frames) ─────────────
+        int frame = Time.frameCount;
+        if (frame - _visionFrame >= VISION_TICK)
         {
-            Vector3 destino = jugador.position + Vector3.up * alturasLOS[k];
-            Vector3 dir     = destino - oriEye;
-
-            // El rayo ignora la capa Player para poder llegar hasta él
-            if (!Physics.Raycast(oriEye, dir.normalized, dir.magnitude,
-                                  maskObstaculo, QueryTriggerInteraction.Ignore))
-            {
-                return true; // Línea de visión despejada
-            }
+            _visionFrame = frame;
+            SistemaDeteccionIA.EscribirComandos(
+                _slotDeteccion, oriEye, jugador, alturasLOS, maskObstaculo);
         }
-        return false;
+
+        // ── 3. Leer resultado del job ejecutado el frame anterior ─────────────
+        return SistemaDeteccionIA.TieneVision(_slotDeteccion);
     }
 
     /// <summary>Detección por proximidad sonora (pasos, disparo cercano).</summary>

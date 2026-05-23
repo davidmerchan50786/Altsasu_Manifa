@@ -30,9 +30,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [DefaultExecutionOrder(-70)]
-public class SistemaTerreno : MonoBehaviour
+public class SistemaTerreno : SingletonMono<SistemaTerreno>
 {
-    public static SistemaTerreno Instance { get; private set; }
     public static bool Listo { get; private set; }
 
     // ── Capas ──────────────────────────────────────────────────────────────
@@ -79,11 +78,6 @@ public class SistemaTerreno : MonoBehaviour
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════════════
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
 
     IEnumerator Start()
     {

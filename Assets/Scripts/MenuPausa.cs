@@ -10,9 +10,9 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
 [DefaultExecutionOrder(100)]
-public class MenuPausa : MonoBehaviour
+public class MenuPausa : SingletonMono<MenuPausa>
 {
-    public static MenuPausa Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
     public static bool       Activo  { get; private set; }
 
     // ── Estado ────────────────────────────────────────────────────────────
@@ -33,12 +33,6 @@ public class MenuPausa : MonoBehaviour
     const string ESCENA_MENU = "MenuPrincipal";
 
     // ─────────────────────────────────────────────────────────────────────
-
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
 
     void Update()
     {

@@ -20,8 +20,13 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
-public abstract class NPCBase : MonoBehaviour
+public abstract class NPCBase : MonoBehaviour, IAgente
 {
+    // IAgente
+    public Vector3 Posicion   => transform.position;
+    public bool    EstaActivo => _agente != null && _agente.enabled && gameObject.activeInHierarchy;
+    public virtual void Alertar(Vector3 origen) { }   // subclases sobreescriben si reaccionan
+
     [Header("Modelo")]
     [Tooltip("Prefab visual del NPC. Si null se llama a CrearCuerpoFallback().")]
     public GameObject prefabModelo;
@@ -56,6 +61,7 @@ public abstract class NPCBase : MonoBehaviour
 
     protected virtual void Start()
     {
+        SistemaIA.Registrar(this);
         var jGO = GameObject.FindGameObjectWithTag("Player");
         if (jGO != null)
         {
@@ -72,6 +78,7 @@ public abstract class NPCBase : MonoBehaviour
     protected virtual void OnDestroy()
     {
         SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
+        SistemaIA.Desregistrar(this);
     }
 
     protected virtual void Update()

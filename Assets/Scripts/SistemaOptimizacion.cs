@@ -20,9 +20,8 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 [DefaultExecutionOrder(-95)]
-public class SistemaOptimizacion : MonoBehaviour
+public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
 {
-    public static SistemaOptimizacion Instance { get; private set; }
 
     [Header("Objetivos")]
     [Range(30, 144)] public int fpsMeta      = 60;
@@ -47,13 +46,7 @@ public class SistemaOptimizacion : MonoBehaviour
     readonly Queue<ParticleSystem> _poolParticulas = new();
     const int POOL_SIZE = 20;
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-        GuardarConfigOriginal();
-        PrecargarPool();
-    }
+    protected override void OnAwake() { GuardarConfigOriginal(); PrecargarPool(); }
 
     void Start()
     {

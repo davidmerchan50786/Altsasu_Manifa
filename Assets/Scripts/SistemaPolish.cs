@@ -80,9 +80,22 @@ public class SistemaPolish : MonoBehaviour
     void Start()
     {
         _cam = Camera.main;
+        AplicarConfigGraficos();
         InicializarVolume();
         InicializarSirena();
         SuscribirEventos();
+    }
+
+    static void AplicarConfigGraficos()
+    {
+        RenderSettings.fog        = true;
+        RenderSettings.fogDensity = 0.0012f;
+        RenderSettings.fogColor   = new Color(0.72f, 0.75f, 0.80f);
+        RenderSettings.fogMode    = FogMode.ExponentialSquared;
+        QualitySettings.shadowDistance  = 300f;
+        QualitySettings.shadowCascades  = 4;
+        QualitySettings.lodBias         = 2.5f;
+        QualitySettings.maximumLODLevel = 0;
     }
 
     void InicializarVolume()

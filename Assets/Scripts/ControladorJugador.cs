@@ -219,8 +219,10 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     private void Awake()
     {
         cc             = GetComponent<CharacterController>();
-        sistemaDisparo = GetComponent<SistemaDisparo>();
-        sistemaBombas  = GetComponent<SistemaBombas>();
+        sistemaDisparo = GetComponent<SistemaDisparo>()  ?? gameObject.AddComponent<SistemaDisparo>();
+        sistemaBombas  = GetComponent<SistemaBombas>()   ?? gameObject.AddComponent<SistemaBombas>();
+        if (GetComponent<SistemaArmasExtendido>() == null) gameObject.AddComponent<SistemaArmasExtendido>();
+        if (GetComponent<SistemaBarricadas>()     == null) gameObject.AddComponent<SistemaBarricadas>();
 
         cc.height = 1.8f;
         cc.center = new Vector3(0f, 0.9f, 0f);

@@ -65,7 +65,7 @@ public class SistemaArmasExtendido : MonoBehaviour
     void Start()
     {
         _destruccion = SistemaDestruccion.Instance;
-        _grafitis    = FindFirstObjectByType<SistemaGrafitis>();
+        _grafitis    = SistemaGrafitis.Instance;
         _apoyo       = SistemaApoyoPopular.Instance;
         _tiene[(int)TipoArma.Puños] = true;
         _tiene[(int)TipoArma.Spray] = true; // siempre disponible
