@@ -280,7 +280,7 @@ public class VehiculoNPC : VehiculoBase
                 // El coche se ha hundido (nuevo tile más alto debajo) → snapear hacia arriba
                 Vector3 pos = _rb.position;
                 pos.y = hit.point.y + 0.05f;
-                rb.MovePosition(pos);
+                _rb.MovePosition(pos);
                 var vel = _rb.linearVelocity;
                 vel.y = 0f;
                 _rb.linearVelocity = vel;

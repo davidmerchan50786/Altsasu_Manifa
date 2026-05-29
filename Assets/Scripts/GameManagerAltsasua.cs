@@ -329,7 +329,7 @@ public class GameManagerAltsasua : MonoBehaviour
         _timerSpawnEnemigo = intervalSpawnEnemigos;
 
         _enemigosActivos.RemoveAll(e => e == null);
-        if (_enemigosActivos.Count >= maxEnemigos || puntosSpawnEnemigos == null) return;
+        if (_enemigosActivos.Count >= maxEnemigos || puntosSpawnEnemigos == null || puntosSpawnEnemigos.Length == 0) return;
 
         Transform punto = puntosSpawnEnemigos[Random.Range(0, puntosSpawnEnemigos.Length)];
         SpawnEnemigo(punto);

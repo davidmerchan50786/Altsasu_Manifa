@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
