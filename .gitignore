@@ -111,3 +111,17 @@ InitTestScene*.unity*
 /[Aa]ssets/_recovery/
 /[Aa]ssets/_Staging/
 /[Aa]ssets/_staging/
+
+# ── ALTSASU: prevención de bloat de git (ver _MANUAL_AAA/01) ──────────────
+# Archivos .blend de referencia que Unity NI importa (no tienen .meta)
+*.REFERENCE_ONLY
+*.REFERENCE_ONLY.meta
+# Fuente generada por Cesium/Reinterop (se regenera sola, pesa decenas de MB)
+/[Pp]ackages/com.cesium.unity/Source/generated/
+# Cesium es paquete de REGISTRO (está en manifest.json): no embeber su carpeta.
+# Si Unity vuelve a embeberlo, descoméntalo tras seguir el Manual 1:
+# /[Pp]ackages/com.cesium.unity/
+# Nubes de puntos crudas LIDAR (se reprocesan con los scripts Python)
+*.xyz.tmp
+# Salidas de los manuales en PDF (se regeneran desde los .html)
+/_MANUAL_AAA/*.pdf

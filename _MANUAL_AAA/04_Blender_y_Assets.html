@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>ALTSASU — Manual 4 · Blender y assets</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", Arial, sans-serif; color: #1c1c1c; font-size: 10.5pt; line-height: 1.5; }
+.cover { text-align: center; padding-top: 60mm; page-break-after: always; }
+.cover h1 { font-size: 30pt; color: #7a0d0d; margin: 0; }
+.cover h2 { font-size: 15pt; color: #444; font-weight: normal; margin-top: 6mm; }
+.cover .meta { margin-top: 40mm; color: #666; font-size: 9pt; }
+.cover .tag { display:inline-block; background:#7a0d0d; color:#fff; padding:3px 12px; border-radius:3px; font-size:9pt; letter-spacing:2px;}
+h1.sec { color: #7a0d0d; border-bottom: 3px solid #7a0d0d; padding-bottom: 4px; font-size: 17pt; margin-top: 14mm; page-break-before: always; }
+h2 { color: #b3261e; font-size: 13pt; margin-top: 8mm; }
+h3 { color: #333; font-size: 11pt; margin-top: 6mm; }
+pre { background: #1e1e2e; color: #e6e6e6; padding: 10px 12px; border-radius: 5px; font-size: 8.6pt; line-height:1.4; white-space: pre-wrap; }
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 9pt; font-family:"Liberation Mono",monospace; }
+pre code { background:none; padding:0; color:inherit; }
+table { border-collapse: collapse; width: 100%; margin: 5mm 0; font-size: 9pt; }
+th { background: #7a0d0d; color: #fff; text-align: left; padding: 5px 7px; }
+td { border: 1px solid #ccc; padding: 4px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: #f7f3f3; }
+.box { border-left: 5px solid; padding: 8px 12px; margin: 5mm 0; border-radius: 0 4px 4px 0; font-size: 9.5pt; }
+.tip { background:#eef7ee; border-color:#2e7d32; }
+.warn { background:#fff7e6; border-color:#e08600; }
+.danger { background:#fdecea; border-color:#c62828; }
+.small { font-size: 8.5pt; color:#666; }
+ul.check { list-style:none; padding-left:0; } ul.check li{ padding:2px 0 2px 24px; text-indent:-24px;} ul.check li:before{content:"\2610  ";color:#7a0d0d;font-weight:bold;}
+</style></head><body>
+
+<div class="cover">
+  <div class="tag">PROYECTO ALTSASU · MANIFA</div>
+  <h1>MANUAL 4</h1>
+  <h2>Blender y assets<br>(modelos · texturas · audio, todo legal)</h2>
+  <div class="meta">Qué conseguir, de dónde (CC0/legal), y cómo integrarlo sin romper nada.</div>
+</div>
+
+<h1 class="sec">0 · Aviso legal (importante)</h1>
+<div class="danger box"><b>NADA de assets de GTA ni de ningún juego comercial.</b> Usar modelos, texturas, audio o marcas de Rockstar (o de cualquier juego) es ilegal y haría que tu proyecto fuera retirado y no se pudiera publicar. "Inspirarse en el estilo GTA" = SÍ. "Copiar sus archivos" = NO. Todo lo de este manual es <b>CC0 / libre / tuyo</b>, que es la única vía para un AAA publicable.</div>
+
+<h1 class="sec">1 · Qué assets necesitas (lista de la compra)</h1>
+<table>
+<tr><th>Categoría</th><th>Qué hace falta</th><th>¿Ya tienes algo?</th></tr>
+<tr><td>Coches</td><td>5–10 modelos low/mid-poly con LODs y daños</td><td>Sí: Polyeler Retro Car, Hot Rod, Police Car (v2)</td></tr>
+<tr><td>Personajes</td><td>Jugador + NPCs variados (civiles, GC, manifestantes)</td><td>Parcial: LowPolySoldiers (v2), FightingMotions (anim)</td></tr>
+<tr><td>Edificios</td><td>Kit modular de fachadas vasco-navarras (piedra, balcones)</td><td>Procedural (SistemaEdificiosAAA) + Polygon City</td></tr>
+<tr><td>Mobiliario urbano</td><td>Farolas, bancos, papeleras, señales, contenedores</td><td>Parcial: StreetLamps (v2), generadores</td></tr>
+<tr><td>Vegetación</td><td>Árboles de Navarra (roble, haya, pino), arbustos, hierba</td><td>Sí: GreenForest + 12 especies FBX</td></tr>
+<tr><td>Texturas PBR</td><td>Asfalto, piedra, enfoscado, tejas, metal (Albedo+Normal+ARM)</td><td>Sí: Textures_AAA, Textures/Roads</td></tr>
+<tr><td>Audio</td><td>Motor, pasos, ambiente, lluvia, multitud, música</td><td>Sí: varios mp3/wav + Nature Sounds</td></tr>
+<tr><td>VFX</td><td>Fuego, explosiones, humo, chispas</td><td>Sí: HQ Explosions, LiteFire, Vefects (v2)</td></tr>
+</table>
+
+<h1 class="sec">2 · Fuentes legales (CC0 y libres)</h1>
+<table>
+<tr><th>Fuente</th><th>Qué</th><th>Licencia</th></tr>
+<tr><td>Poly Haven</td><td>Texturas PBR, HDRIs, modelos</td><td>CC0 (uso libre)</td></tr>
+<tr><td>ambientCG</td><td>Texturas PBR, materiales</td><td>CC0</td></tr>
+<tr><td>Quaternius</td><td>Modelos low-poly (coches, props, personajes)</td><td>CC0</td></tr>
+<tr><td>Kenney.nl</td><td>Kits de assets, UI, audio</td><td>CC0</td></tr>
+<tr><td>Sketchfab (filtro CC0/CC-BY)</td><td>Modelos variados</td><td>Comprobar cada uno</td></tr>
+<tr><td>Freesound (filtro CC0)</td><td>Efectos de sonido y ambiente</td><td>CC0/CC-BY</td></tr>
+<tr><td>Mixamo (Adobe)</td><td>Animaciones de personaje + rig auto</td><td>Libre para uso</td></tr>
+<tr><td>Unity Asset Store (gratis/comprado)</td><td>Lo que ya usas</td><td>Según asset</td></tr>
+</table>
+<div class="tip box">Lleva un archivo <code>CREDITOS.md</code> anotando fuente y licencia de cada asset. Te ahorra problemas y es obligatorio en CC-BY.</div>
+
+<h1 class="sec">3 · Blender — flujo de trabajo</h1>
+<h3>3.1 Importar / exportar</h3>
+<ul class="check">
+<li>Importa tus modelos a Blender, limpia (aplica transformaciones, recalcula normales, elimina geometría interna invisible).</li>
+<li>Exporta a <b>FBX</b> o <b>glTF/glb</b> para Unity. Escala correcta: 1 unidad Blender = 1 m.</li>
+<li>Tienes <code>ConvertirGLB.py</code> y <code>ExtraerAnimaciones.py</code> para automatizar conversiones.</li>
+</ul>
+<h3>3.2 LODs (clave para 60 fps en mundo grande)</h3>
+<ul class="check">
+<li>Por cada edificio/coche/árbol importante, genera LOD0 (cerca), LOD1 (~50%), LOD2 (~20%), LOD3 (impostor/billboard).</li>
+<li>En Blender usa el modificador <b>Decimate</b> para LOD1–LOD2.</li>
+<li>En Unity añade un <code>LODGroup</code> (lo automatiza <code>LODGenerador</code>, portar de v2).</li>
+</ul>
+<h3>3.3 Edificios estilo Alsasua</h3>
+<ul class="check">
+<li>Construye un <b>kit modular</b>: muros de piedra/enfoscado, ventanas con contraventanas, balcones de forja, tejados a dos aguas con teja roja, aleros. Es el look de Sakana.</li>
+<li>El generador procedural ya monta fachadas; el kit de Blender es para los edificios "hero" (iglesia, ayuntamiento, estación, frontón).</li>
+<li>Modela los <b>hitos reconocibles</b> a mano: Herriko Plaza, ayuntamiento, iglesia, estación de tren, frontón. Son los que hacen decir "¡es Alsasua!".</li>
+</ul>
+<h3>3.4 Script Blender (ejemplo: exportar todo a glb con LODs)</h3>
+<pre><code>import bpy, math
+# Ejemplo mínimo: decimar copia para un LOD y exportar glb
+def make_lod(obj, ratio):
+    lod = obj.copy(); lod.data = obj.data.copy()
+    bpy.context.collection.objects.link(lod)
+    m = lod.modifiers.new("dec","DECIMATE"); m.ratio = ratio
+    return lod
+# bpy.ops.export_scene.gltf(filepath="C:/out/edificio.glb", export_format='GLB')</code></pre>
+
+<h1 class="sec">4 · Texturas PBR (que se vea AAA)</h1>
+<ul class="check">
+<li>Cada material necesita: <b>Albedo (Base Color), Normal (OpenGL), ARM</b> (AO+Roughness+Metallic) y, opcional, <b>Height/Displacement</b>.</li>
+<li>Tienes este set en <code>Assets/Textures_AAA/</code>. Para lo que falte, descarga de Poly Haven/ambientCG (CC0).</li>
+<li>En HDRP, usa el shader <b>Lit</b> con mapas: Base Map, Normal Map, Mask Map (ARM empaquetado).</li>
+<li>Para charcos/calles mojadas tras lluvia, sube Smoothness y usa SSR (lo gestiona <code>SistemaSuperficiesMojadas</code>, portar de v2).</li>
+</ul>
+
+<h1 class="sec">5 · Audio</h1>
+<ul class="check">
+<li>Motor de coche (capas: ralentí, aceleración, deceleración), pasos por superficie, ambiente de pueblo (pájaros, viento, campanas), multitud/manifestación, lluvia/tormenta, música.</li>
+<li>Gestionado por <code>AudioManager</code> (pool de 32 fuentes, 48 clips) + <code>SistemaMusica</code> + <code>SistemaReverbZonas</code>.</li>
+<li>Fuentes legales: Freesound (CC0), tus propias grabaciones del pueblo (lo más auténtico).</li>
+</ul>
+
+<h1 class="sec">6 · Orden recomendado</h1>
+<table>
+<tr><th>Prioridad</th><th>Tarea</th><th>Impacto en "wow"</th></tr>
+<tr><td>1</td><td>Ortofoto + materiales reales de calle/fachada (Manual 3)</td><td>Altísimo (reconoces el pueblo)</td></tr>
+<tr><td>2</td><td>Hitos modelados a mano (plaza, iglesia, estación, frontón)</td><td>Alto</td></tr>
+<tr><td>3</td><td>LODs + vegetación real de Navarra</td><td>Alto (fluidez + verosimilitud)</td></tr>
+<tr><td>4</td><td>Coches y NPCs variados con animaciones (Mixamo)</td><td>Medio-alto (vida)</td></tr>
+<tr><td>5</td><td>Audio ambiente del pueblo</td><td>Medio (inmersión)</td></tr>
+</table>
+
+<p class="small" style="margin-top:12mm; border-top:1px solid #ccc; padding-top:4px;">Manual 4 · Proyecto ALTSASU</p>
+</body></html>

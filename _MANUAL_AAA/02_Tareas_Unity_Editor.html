@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>ALTSASU — Manual 2 · Unity</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", Arial, sans-serif; color: #1c1c1c; font-size: 10.5pt; line-height: 1.5; }
+.cover { text-align: center; padding-top: 60mm; page-break-after: always; }
+.cover h1 { font-size: 30pt; color: #7a0d0d; margin: 0; }
+.cover h2 { font-size: 15pt; color: #444; font-weight: normal; margin-top: 6mm; }
+.cover .meta { margin-top: 40mm; color: #666; font-size: 9pt; }
+.cover .tag { display:inline-block; background:#7a0d0d; color:#fff; padding:3px 12px; border-radius:3px; font-size:9pt; letter-spacing:2px;}
+h1.sec { color: #7a0d0d; border-bottom: 3px solid #7a0d0d; padding-bottom: 4px; font-size: 17pt; margin-top: 14mm; page-break-before: always; }
+h2 { color: #b3261e; font-size: 13pt; margin-top: 8mm; }
+h3 { color: #333; font-size: 11pt; margin-top: 6mm; }
+pre { background: #1e1e2e; color: #e6e6e6; padding: 10px 12px; border-radius: 5px; font-size: 8.7pt; line-height:1.4; white-space: pre-wrap; }
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 9pt; font-family:"Liberation Mono",monospace; }
+pre code { background:none; padding:0; color:inherit; }
+table { border-collapse: collapse; width: 100%; margin: 5mm 0; font-size: 9pt; }
+th { background: #7a0d0d; color: #fff; text-align: left; padding: 5px 7px; }
+td { border: 1px solid #ccc; padding: 4px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: #f7f3f3; }
+.box { border-left: 5px solid; padding: 8px 12px; margin: 5mm 0; border-radius: 0 4px 4px 0; font-size: 9.5pt; }
+.tip { background:#eef7ee; border-color:#2e7d32; }
+.warn { background:#fff7e6; border-color:#e08600; }
+.danger { background:#fdecea; border-color:#c62828; }
+.kbd { background:#eee; border:1px solid #bbb; border-radius:3px; padding:0 5px; font-family:monospace; font-size:9pt;}
+.small { font-size: 8.5pt; color:#666; }
+ul.check { list-style:none; padding-left:0; } ul.check li{ padding:2px 0 2px 24px; text-indent:-24px;} ul.check li:before{content:"\2610  ";color:#7a0d0d;font-weight:bold;}
+</style></head><body>
+
+<div class="cover">
+  <div class="tag">PROYECTO ALTSASU · MANIFA</div>
+  <h1>MANUAL 2</h1>
+  <h2>Tareas en Unity Editor<br>(lo que el asistente no puede hacer)</h2>
+  <div class="meta">Requiere: Unity 6000.3.10f1 + GPU. Tiempo estimado total: 1–2 jornadas.</div>
+</div>
+
+<h1 class="sec">0 · Por qué esto lo haces tú</h1>
+<p>El asistente trabaja sin Unity, sin GPU y sin pantalla. Todo lo que requiere el <b>editor abierto</b> (hornear, ver, asignar referencias visuales, build) es tuyo. Esta es la lista completa, ordenada.</p>
+
+<h1 class="sec">1 · Abrir el proyecto por primera vez</h1>
+<ul class="check">
+<li>Instala <b>Unity 6000.3.10f1</b> exacto desde Unity Hub (si no, te convertirá assets y puede romper metadatos).</li>
+<li>Abre la carpeta <code>Altsasu_Manifa</code>. La primera importación tarda (miles de assets); déjala terminar.</li>
+<li>Si quitaste Cesium embebido (Manual 1), Unity lo descargará del registro: <span class="kbd">Window → Package Manager</span> → comprueba "Cesium for Unity 1.23.2" sin errores.</li>
+<li>Revisa la consola: 0 errores rojos. Warnings amarillos se toleran de momento.</li>
+</ul>
+<div class="warn box">Si ves errores de scripts al abrir, NO toques nada hasta que termine de compilar (barra inferior derecha). Muchos "errores" desaparecen al acabar la primera compilación.</div>
+
+<h1 class="sec">2 · La escena principal</h1>
+<p>Escenas reales del juego: <code>Assets/#Scenes/Alsasua_Main.unity</code> y <code>MenuPrincipal.unity</code>.</p>
+<ul class="check">
+<li>Abre <code>Alsasua_Main.unity</code>.</li>
+<li>Comprueba que existe un GameObject con <code>SceneBootstrapper</code> y otro con <code>AltsasuCore</code>. Si no, el mundo se autogenera al pulsar Play (el bootstrap crea lo que falte).</li>
+<li>Pulsa <span class="kbd">Play</span>. Debe: crear el terreno desde el DEM, generar edificios/calles desde el JSON OSM, y aparecer el jugador en Herriko Plaza.</li>
+<li><span class="kbd">File → Build Settings</span> → añade <code>MenuPrincipal</code> (índice 0) y <code>Alsasua_Main</code> (índice 1) a "Scenes in Build".</li>
+</ul>
+
+<h1 class="sec">3 · Terreno (DEM/LIDAR)</h1>
+<p>El relieve sale de <code>Assets/AlsasuaData/dem_unity_1025.raw</code>. Para máxima precisión usa el pipeline del Manual 3 y luego:</p>
+<ul class="check">
+<li>Con el terreno generado, ejecuta el menú del juego que sube precisión con LIDAR (<code>GeneradorTerrenoUltraPreciso</code>) si lo tienes en un menú de editor.</li>
+<li>Pinta capas de terreno: <code>SistemaTerreno</code> lo hace por pendiente/altitud al arrancar; revisa que las <b>Terrain Layers</b> tengan texturas asignadas (hierba, tierra, roca, asfalto).</li>
+<li>Ajusta <b>Terrain → Resolution</b> si va lento; 6×6 km es grande.</li>
+</ul>
+
+<h1 class="sec">4 · NavMesh (IA y NPCs no andan sin esto)</h1>
+<p>El tráfico, multitudes y enemigos necesitan NavMesh horneado.</p>
+<ul class="check">
+<li><span class="kbd">Window → AI → Navigation</span> (o el paquete AI Navigation / NavMeshSurface).</li>
+<li>Marca el terreno y los edificios como <b>Navigation Static</b> / añade <code>NavMeshSurface</code> al root del mundo.</li>
+<li><b>Bake</b>. En un mundo de 6 km esto tarda; ajusta agent radius/height al de tus NPCs.</li>
+<li>Verifica que <code>SistemaNavMesh</code>/<code>NavMeshBaker</code> (portado de v2) encuentra la malla.</li>
+</ul>
+<div class="tip box">Para mundos grandes, hornea NavMesh por zonas (ya tienes <code>GestorZonasAlsasua</code> con 10 zonas) en vez de uno gigante: mejor rendimiento y bake más rápido.</div>
+
+<h1 class="sec">5 · Iluminación y HDRP (el look "AAA")</h1>
+<ul class="check">
+<li><span class="kbd">Window → Rendering → Lighting</span>: configura el Environment (HDRI Sky). Tienes HDRIs en <code>Assets/HDRIs/</code>.</li>
+<li>Coloca un <b>Volume</b> global con el perfil HDRP (lo gestiona <code>SistemaVolumenHDRP</code>/<code>SistemaPostProcesoAAA</code>): exposición, tonemapping (ACES), bloom, ambient occlusion, motion blur, vignette.</li>
+<li>Sol: un <b>Directional Light</b> controlado por <code>SistemaAtmosfera</code> (ciclo día/noche). Sombras a "High", contact shadows ON.</li>
+<li><b>Lightmaps</b>: para elementos estáticos, marca Static y hornea GI. Para 6 km, usa sobre todo iluminación en tiempo real + reflection probes en zonas clave (plaza, calles principales).</li>
+<li>Coloca <b>Reflection Probes</b> en plaza, interiores y cruces importantes.</li>
+</ul>
+<div class="warn box">HDRP a 6 km es exigente. Si no llegas a 60 fps, baja calidad de sombras en lejanía, usa LODs agresivos (Manual 4) y streaming por zonas antes que bajar resolución global.</div>
+
+<h1 class="sec">6 · Materiales y conversión HDRP</h1>
+<ul class="check">
+<li>Tras importar assets nuevos (sobre todo de paquetes Built-in/URP), conviértelos: <span class="kbd">Edit → Rendering → Materials → Convert all built-in to HDRP</span>, o usa <code>ConversorMaterialesHDRP</code> del proyecto.</li>
+<li>Materiales rosas = shader incompatible → conviértelos.</li>
+<li>Asigna las texturas de <code>Assets/Textures_AAA/</code> (PBR: Albedo, Normal, ARM/AO, Displacement) a materiales HDRP/Lit.</li>
+</ul>
+
+<h1 class="sec">7 · Tras un refactor de código (reasignar referencias)</h1>
+<p>Cuando el asistente divida una clase-dios (Manual 0, sección 4), algunas referencias del inspector pueden quedar vacías.</p>
+<ul class="check">
+<li>Selecciona los GameObjects afectados (HUD, jugador, generadores) y revisa que no haya campos <b>"Missing"</b> o vacíos en el inspector.</li>
+<li>Re-arrastra las referencias a los componentes nuevos.</li>
+<li>Si un componente sale como "Missing Script", es un GUID roto: usa <code>LimpiarMissingScripts</code> (portado de v2) o reasigna el script a mano.</li>
+</ul>
+
+<h1 class="sec">8 · Input</h1>
+<ul class="check">
+<li>Tienes <code>InputSystem_Actions.inputactions</code>. Abre y verifica los mapeos (movimiento, disparo, entrar/salir vehículo, bombas).</li>
+<li>Project Settings → Player → Active Input Handling = <b>Input System (New)</b> o Both.</li>
+</ul>
+
+<h1 class="sec">9 · Build final</h1>
+<ul class="check">
+<li><span class="kbd">File → Build Settings</span> → PC, Mac &amp; Linux Standalone → Windows x64.</li>
+<li>Player Settings: nombre, icono, resolución, calidad por defecto = la más alta que mantenga 60 fps.</li>
+<li><b>Build And Run</b>. Prueba: menú → cargar mundo → conducir/andar por Alsasua.</li>
+</ul>
+
+<h1 class="sec">10 · Checklist de "se ve AAA"</h1>
+<ul class="check">
+<li>Tonemapping ACES + exposición física activados.</li>
+<li>Sombras nítidas de cerca, suaves de lejos; contact shadows ON.</li>
+<li>Ambient occlusion (GTAO) y screen-space reflections en superficies mojadas.</li>
+<li>Niebla volumétrica sutil en el valle (Aralar al fondo).</li>
+<li>LODs en todos los edificios y árboles (sin "popping" brusco).</li>
+<li>Ortofoto/materiales reales en fachadas (Manual 3 y 4) → reconoces el pueblo.</li>
+<li>60 fps estables en tu GPU objetivo.</li>
+</ul>
+
+<p class="small" style="margin-top:12mm; border-top:1px solid #ccc; padding-top:4px;">Manual 2 · Proyecto ALTSASU</p>
+</body></html>

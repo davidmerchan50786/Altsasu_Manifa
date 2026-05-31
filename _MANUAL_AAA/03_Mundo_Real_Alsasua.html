@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>ALTSASU — Manual 3 · Datos reales</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", Arial, sans-serif; color: #1c1c1c; font-size: 10.5pt; line-height: 1.5; }
+.cover { text-align: center; padding-top: 60mm; page-break-after: always; }
+.cover h1 { font-size: 30pt; color: #7a0d0d; margin: 0; }
+.cover h2 { font-size: 15pt; color: #444; font-weight: normal; margin-top: 6mm; }
+.cover .meta { margin-top: 40mm; color: #666; font-size: 9pt; }
+.cover .tag { display:inline-block; background:#7a0d0d; color:#fff; padding:3px 12px; border-radius:3px; font-size:9pt; letter-spacing:2px;}
+h1.sec { color: #7a0d0d; border-bottom: 3px solid #7a0d0d; padding-bottom: 4px; font-size: 17pt; margin-top: 14mm; page-break-before: always; }
+h2 { color: #b3261e; font-size: 13pt; margin-top: 8mm; }
+h3 { color: #333; font-size: 11pt; margin-top: 6mm; }
+pre { background: #1e1e2e; color: #e6e6e6; padding: 10px 12px; border-radius: 5px; font-size: 8.5pt; line-height:1.4; white-space: pre-wrap; }
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 9pt; font-family:"Liberation Mono",monospace; }
+pre code { background:none; padding:0; color:inherit; }
+table { border-collapse: collapse; width: 100%; margin: 5mm 0; font-size: 9pt; }
+th { background: #7a0d0d; color: #fff; text-align: left; padding: 5px 7px; }
+td { border: 1px solid #ccc; padding: 4px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: #f7f3f3; }
+.box { border-left: 5px solid; padding: 8px 12px; margin: 5mm 0; border-radius: 0 4px 4px 0; font-size: 9.5pt; }
+.tip { background:#eef7ee; border-color:#2e7d32; }
+.warn { background:#fff7e6; border-color:#e08600; }
+.small { font-size: 8.5pt; color:#666; }
+ul.check { list-style:none; padding-left:0; } ul.check li{ padding:2px 0 2px 24px; text-indent:-24px;} ul.check li:before{content:"\2610  ";color:#7a0d0d;font-weight:bold;}
+</style></head><body>
+
+<div class="cover">
+  <div class="tag">PROYECTO ALTSASU · MANIFA</div>
+  <h1>MANUAL 3</h1>
+  <h2>El mundo real de Alsasua<br>(OSM · LIDAR · ortofoto)</h2>
+  <div class="meta">Para que de verdad "se vea que es el pueblo". Usa tus scripts Python ya existentes.</div>
+</div>
+
+<h1 class="sec">1 · El pueblo en cifras</h1>
+<table>
+<tr><th>Dato</th><th>Valor</th></tr>
+<tr><td>Municipio</td><td>Alsasua / Altsasu (Navarra, comarca de Sakana)</td></tr>
+<tr><td>Centro (Herriko Plaza)</td><td>lat <b>42.9003° N</b>, lon <b>−2.1665° O</b></td></tr>
+<tr><td>UTM 30N</td><td>E ≈ 567951, N ≈ 4749902</td></tr>
+<tr><td>Origen en Unity</td><td><code>GeoDataAlsasua.OX = 1918</code>, <code>OZ = 8570</code> (= Herriko Plaza)</td></tr>
+<tr><td>Bounding box del mundo</td><td>~6×6 km centrado en el pueblo (incluye monte Aralar al fondo)</td></tr>
+<tr><td>Hitos modelados</td><td>Herriko Plaza, Estación de tren, Cuartel GC, Carretera N-1, Polígono Isasia, Barrio Norte, río Burunda</td></tr>
+</table>
+<div class="warn box"><b>Regla absoluta de coherencia:</b> todo dato nuevo (edificios, calles, relieve, ortofoto) debe usar el MISMO origen y escala (Herriko Plaza = OX 1918 / OZ 8570, 1 unidad = 1 m). Si mezclas orígenes, el pueblo "baila". Todo pasa por <code>GeoDataAlsasua</code>.</div>
+
+<h1 class="sec">2 · Las tres capas de realismo</h1>
+<table>
+<tr><th>Capa</th><th>Fuente</th><th>Resultado en juego</th></tr>
+<tr><td><b>Relieve</b> (DEM/MDT)</td><td>LIDAR/MDT de IGN/IDENA</td><td>Las montañas y el valle con la forma real</td></tr>
+<tr><td><b>Edificios y calles</b></td><td>OpenStreetMap (OSM)</td><td>El trazado urbano real: 1030 edificios, 400 calles</td></tr>
+<tr><td><b>Ortofoto/texturas</b></td><td>PNOA (IGN) / IDENA</td><td>El suelo y fachadas con el aspecto real (reconoces el pueblo)</td></tr>
+</table>
+
+<h1 class="sec">3 · Tus scripts (ya están en el repo)</h1>
+<p>En la raíz de <code>Altsasu_Manifa/</code> ya tienes el pipeline. Estos son los que importan:</p>
+<table>
+<tr><th>Script</th><th>Para qué</th></tr>
+<tr><td><code>DescargarDatosAlsasua.ps1</code></td><td>Descarga base de datos del pueblo</td></tr>
+<tr><td><code>DescargarDatosCompletos.py</code> / <code>DescargarDatosAvanzados.py</code></td><td>Descarga OSM + capas avanzadas</td></tr>
+<tr><td><code>DescargarLIDARAlsasua.ps1</code></td><td>Descarga LIDAR (nube de puntos / MDT)</td></tr>
+<tr><td><code>PipelineLIDAR_Completo.py</code> / <code>PipelineDatosUltraprecisos.py</code></td><td>Procesa LIDAR → heightmap (.raw/.asc) para Unity Terrain</td></tr>
+<tr><td><code>ProcesarTilesNuevos.py</code> / <code>FusionarDatosViejos.py</code></td><td>Une tiles y fusiona con datos previos</td></tr>
+<tr><td><code>ConvertirGLB.py</code> / <code>ExtraerAnimaciones.py</code> / <code>GenerarAnimaciones.py</code></td><td>Conversión de modelos y animaciones</td></tr>
+</table>
+
+<h1 class="sec">4 · Procedimiento de datos (orden recomendado)</h1>
+
+<h3>4.1 Relieve (DEM)</h3>
+<ul class="check">
+<li>Descarga el MDT/LIDAR del Centro de Descargas del IGN o de IDENA (Navarra) para la hoja de Alsasua. Resoluciones: MDT05 (5 m) base; LIDAR (0.5–2 m) para el casco urbano.</li>
+<li>Ejecuta <code>python PipelineLIDAR_Completo.py</code> para generar el heightmap. Salida esperada: <code>Assets/AlsasuaData/dem_unity_1025.raw</code> (1025×1025, 16-bit).</li>
+<li>Verifica en Unity que el terreno coincide con el relieve real (el valle baja hacia el río, Aralar al sur).</li>
+</ul>
+<div class="tip box">El juego ya tiene <code>dtm_alsasua_5m.asc</code>, <code>lidar_ground.xyz</code> y <code>dem_unity_1025.raw</code>. Solo regenéralos si quieres más precisión o ampliar el área.</div>
+
+<h3>4.2 Edificios y calles (OSM)</h3>
+<p>El juego consume tres JSON en <code>Assets/Resources/</code> (o donde los lea <code>GeneradorMundoOSM</code>):</p>
+<pre><code>buildings_unity.json   →  footprints + altura + tipo de los 1030 edificios
+roads_unity.json       →  400 tramos con ancho y wayID
+trees_unity.json       →  especie + posición de árboles</code></pre>
+<p>Para regenerarlos desde OSM con Overpass (área de Alsasua):</p>
+<pre><code># Bounding box aprox de Alsasua (sur,oeste,norte,este)
+# 42.875,-2.190,42.910,-2.140
+import requests, json
+Q = """
+[out:json][timeout:120];
+(
+  way["building"](42.875,-2.190,42.910,-2.140);
+  way["highway"](42.875,-2.190,42.910,-2.140);
+  node["natural"="tree"](42.875,-2.190,42.910,-2.140);
+);
+out body geom;
+"""
+r = requests.get("https://overpass-api.de/api/interpreter", params={"data": Q})
+open("osm_alsasua.json","w",encoding="utf-8").write(r.text)
+</code></pre>
+<p>Luego conviértelo al formato Unity (proyección lat/lon → metros con origen Herriko Plaza). Tus scripts <code>DescargarDatosCompletos.py</code> ya hacen este paso; revisa que el origen sea OX=1918/OZ=8570.</p>
+<div class="warn box">OSM no trae la altura de todos los edificios. Donde falte <code>building:levels</code>, estima por tipo (casa 2 plantas, bloque 4–6, nave 1 alta). Mejor aún: cruza con catastro para alturas reales.</div>
+
+<h3>4.3 Ortofoto (el toque que hace "reconocible" el pueblo)</h3>
+<ul class="check">
+<li>Descarga la ortofoto PNOA (IGN) o WMS de IDENA para el bounding box, máxima resolución.</li>
+<li>Proyéctala sobre el terreno como textura base (el proyecto tiene <code>AplicadorOrtofoto</code> y <code>Assets/EscenarioSuelo/Alsasua_Color.png</code>).</li>
+<li>Para fachadas reales, usa fotos de calle (las tuyas) con <code>TexturizadorEdificiosReales</code> (portar de v2).</li>
+</ul>
+
+<h1 class="sec">5 · Fuentes oficiales (legales y gratis)</h1>
+<table>
+<tr><th>Fuente</th><th>Qué da</th><th>URL</th></tr>
+<tr><td>IDENA (Navarra)</td><td>LIDAR, MDT, ortofoto, catastro de Navarra</td><td>idena.navarra.es</td></tr>
+<tr><td>IGN — Centro de Descargas</td><td>MDT05/MDT02, PNOA ortofoto, LIDAR nacional</td><td>centrodedescargas.cnig.es</td></tr>
+<tr><td>OpenStreetMap / Overpass</td><td>Edificios, calles, vías, POIs</td><td>overpass-turbo.eu</td></tr>
+<tr><td>Sede Catastro</td><td>Alturas/plantas de edificios</td><td>sedecatastro.gob.es</td></tr>
+</table>
+<div class="tip box">IDENA e IGN son datos abiertos oficiales: úsalos sin problema citando la fuente. OSM es ODbL (atribución). Es la vía legal y precisa para clavar Alsasua.</div>
+
+<h1 class="sec">6 · Validación: "¿se ve que es Alsasua?"</h1>
+<ul class="check">
+<li>Compara una captura cenital del juego con la ortofoto real: el trazado de calles debe coincidir.</li>
+<li>Herriko Plaza en el centro, estación al este, N-1 cruzando, río Burunda y vía del tren en su sitio.</li>
+<li>El perfil de Aralar al fondo coincide con la silueta real.</li>
+<li>Alturas de edificios plausibles (no todos iguales).</li>
+</ul>
+
+<p class="small" style="margin-top:12mm; border-top:1px solid #ccc; padding-top:4px;">Manual 3 · Proyecto ALTSASU</p>
+</body></html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>ALTSASU — Manual 0</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", Arial, sans-serif; color: #1c1c1c; font-size: 10.5pt; line-height: 1.5; }
+.cover { text-align: center; padding-top: 60mm; page-break-after: always; }
+.cover h1 { font-size: 30pt; color: #7a0d0d; margin: 0; letter-spacing: 1px; }
+.cover h2 { font-size: 15pt; color: #444; font-weight: normal; margin-top: 6mm; }
+.cover .meta { margin-top: 40mm; color: #666; font-size: 9pt; }
+.cover .tag { display:inline-block; background:#7a0d0d; color:#fff; padding:3px 12px; border-radius:3px; font-size:9pt; letter-spacing:2px;}
+h1.sec { color: #7a0d0d; border-bottom: 3px solid #7a0d0d; padding-bottom: 4px; font-size: 17pt; margin-top: 14mm; page-break-before: always; }
+h2 { color: #b3261e; font-size: 13pt; margin-top: 8mm; }
+h3 { color: #333; font-size: 11pt; margin-top: 6mm; }
+code, pre { font-family: "Liberation Mono", "Courier New", monospace; }
+pre { background: #1e1e2e; color: #e6e6e6; padding: 10px 12px; border-radius: 5px; font-size: 8.7pt; overflow-x: auto; line-height:1.35; white-space: pre-wrap; }
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 9pt; }
+pre code { background: none; padding: 0; color: inherit; }
+table { border-collapse: collapse; width: 100%; margin: 5mm 0; font-size: 9pt; }
+th { background: #7a0d0d; color: #fff; text-align: left; padding: 5px 7px; }
+td { border: 1px solid #ccc; padding: 4px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: #f7f3f3; }
+.box { border-left: 5px solid; padding: 8px 12px; margin: 5mm 0; border-radius: 0 4px 4px 0; font-size: 9.5pt; }
+.tip { background:#eef7ee; border-color:#2e7d32; }
+.warn { background:#fff7e6; border-color:#e08600; }
+.danger { background:#fdecea; border-color:#c62828; }
+.ok { color:#2e7d32; font-weight:bold; } .no { color:#c62828; font-weight:bold; }
+ul.check { list-style: none; padding-left: 0; }
+ul.check li { padding: 2px 0 2px 24px; text-indent: -24px; }
+ul.check li:before { content: "\2610  "; color:#7a0d0d; font-weight:bold; }
+.toc a { color:#1c1c1c; text-decoration:none; }
+.small { font-size: 8.5pt; color:#666; }
+.kbd { background:#eee; border:1px solid #bbb; border-radius:3px; padding:0 5px; font-family:monospace; font-size:9pt;}
+</style></head><body>
+
+<div class="cover">
+  <div class="tag">PROYECTO ALTSASU · MANIFA</div>
+  <h1>MANUAL MAESTRO 0</h1>
+  <h2>Estado del proyecto · Arquitectura · Roadmap AAA</h2>
+  <div class="meta">
+    Repositorio canónico: <b>Altsasu_Manifa</b> &nbsp;·&nbsp; Rama: <code>claude/inspiring-darwin-9BBPH</code><br>
+    Unity 6000.3.10f1 · HDRP 17.3 · Cesium · MapMagic · Splines<br>
+    Documento generado automáticamente — 2026
+  </div>
+</div>
+
+<h1 class="sec" id="idx">Índice de manuales</h1>
+<p>Este es el documento maestro. La obra completa se divide en <b>5 manuales</b>:</p>
+<table>
+<tr><th>Manual</th><th>Contenido</th><th>Para quién</th></tr>
+<tr><td><b>0 — Estado, Arquitectura y Roadmap</b> (este)</td><td>Qué es el proyecto, cómo está montado, qué bugs hay, plan por fases.</td><td>Leer primero</td></tr>
+<tr><td><b>1 — Arreglo definitivo de Git/LFS</b></td><td>Por qué el repo se hizo gigante, cómo purgarlo con LFS+filter-repo, cómo no repetirlo.</td><td>TÚ, en local</td></tr>
+<tr><td><b>2 — Tareas en Unity Editor</b></td><td>Todo lo que solo se puede hacer con el editor abierto: escenas, NavMesh, luces, HDRP, build.</td><td>TÚ, en Unity</td></tr>
+<tr><td><b>3 — Mundo real de Alsasua (OSM/LIDAR)</b></td><td>Descargar y procesar datos reales (IDENA/IGN/OSM) hasta el JSON que come el juego.</td><td>TÚ + tus scripts Python</td></tr>
+<tr><td><b>4 — Blender y assets legales</b></td><td>Modelos, texturas y audio a conseguir, de dónde (CC0 legal), y aviso legal sobre GTA.</td><td>TÚ, Blender / web</td></tr>
+</table>
+
+<h1 class="sec">1 · Qué es el proyecto (realidad técnica)</h1>
+<p>Altsasu es un <b>mundo abierto estilo GTA ambientado en el pueblo real de Alsasua/Altsasu</b> (Navarra). No es un proyecto de principiante: ya tiene una base ambiciosa y, en general, bien estructurada.</p>
+<table>
+<tr><th>Aspecto</th><th>Realidad detectada en el repo</th></tr>
+<tr><td>Motor</td><td>Unity <b>6000.3.10f1</b> (Unity 6.3)</td></tr>
+<tr><td>Render</td><td><b>HDRP 17.3</b> (High Definition Render Pipeline) — gama alta, PC</td></tr>
+<tr><td>Geoespacial</td><td><b>Cesium for Unity 1.23.2</b> (tiles 3D del mundo real) + <b>MapMagic</b> (terreno procedural) + <b>Splines</b> + módulo Terrain</td></tr>
+<tr><td>Mundo</td><td>Terreno de <b>6×6 km</b> desde DEM (<code>Assets/AlsasuaData/dem_unity_1025.raw</code>, 1025×1025, alt. máx 900 m)</td></tr>
+<tr><td>Datos OSM</td><td><b>1030 edificios</b> + <b>400 tramos de calle</b> + árboles, desde JSON (<code>buildings_unity.json</code>, <code>roads_unity.json</code>, <code>trees_unity.json</code>)</td></tr>
+<tr><td>LIDAR</td><td>DTM de 0.5 m / 2 m / 5 m (<code>lidar_ground.xyz</code>, <code>dtm_alsasua_5m.asc</code>...) para afinar el relieve</td></tr>
+<tr><td>Punto de origen</td><td>Herriko Plaza = offset Unity <code>OX=1918, OZ=8570</code> (centralizado en <code>GeoDataAlsasua.cs</code>)</td></tr>
+<tr><td>Escala</td><td>1 unidad Unity = 1 metro</td></tr>
+<tr><td>Código</td><td>~620 scripts <code>.cs</code> propios del juego; ~51 sistemas/controladores/generadores</td></tr>
+</table>
+<div class="tip box"><b>Coordenadas reales de Alsasua:</b> lat 42.9003° N, lon −2.1665° O (UTM 30N E≈567951 N≈4749902). Esto es lo que hay que respetar para que "se vea que es el pueblo".</div>
+
+<h1 class="sec">2 · Estado actual (honesto)</h1>
+<ul>
+<li><b>Compila de raíz:</b> la fase de "que compile" (tipos colgantes, errores estáticos) está resuelta en la rama del juego.</li>
+<li><b>Calidad de arquitectura: B+.</b> Usa patrones correctos (ver sección 3). No es spaghetti, pero tiene <b>5 clases-dios</b> y <b>6 puntos de fallo silencioso</b> que hay que corregir.</li>
+<li><b>Dos repos divergidos.</b> <code>Altsasu_Manifa</code> = el juego completo (canónico). <code>Altsasu_Manifa_v2</code> = intento fallido de trocear el proyecto por el peso de git; se conserva solo como <b>cantera de piezas</b> (ver sección 6) y luego se archiva.</li>
+<li><b>Problema de git:</b> el repo pesa mucho porque LFS estaba declarado pero nunca activado (ver Manual 1). Es la causa real del troceo fallido.</li>
+</ul>
+<div class="danger box"><b>Limitación importante y honesta:</b> este asistente trabaja en un contenedor en la nube <b>sin Unity, sin GPU y sin pantalla</b>. No puede renderizar el juego, no puede "ver" cómo queda, no puede hornear luces/NavMesh ni verificar visualmente. Todo lo visual y lo de editor lo haces tú (Manuales 2–4); yo entrego código, datos, arquitectura y estos manuales.</div>
+
+<h1 class="sec">3 · Arquitectura actual</h1>
+<h2>3.1 Patrones que ya usa (bien)</h2>
+<table>
+<tr><th>Patrón</th><th>Dónde</th><th>Qué hace</th></tr>
+<tr><td>ServiceLocator</td><td><code>GameManagerAltsasua</code></td><td>Registra <code>IWantedSystem</code>, <code>IEconomyService</code>, <code>ISpawnService</code>. Misiones/policía acceden por interfaz, no por referencia directa. <span class="ok">Desacoplado.</span></td></tr>
+<tr><td>EventManager (fachada)</td><td><code>EventManager.cs</code></td><td>Indexa 50+ eventos en 8 categorías (Mundo, Jugador, Busqueda, Misiones, Manifestacion, AccionCallejera, Logros, VehiculosNPC). Documenta y centraliza el dispatch.</td></tr>
+<tr><td>Boot por fases</td><td><code>AltsasuCore.cs</code> + <code>SceneBootstrapper.cs</code></td><td>Arranque en 4 fases con <code>DefaultExecutionOrder</code> explícito (−200 bootstrap, −100 core, −90/−60 mundo, −50/0 gameplay). Evita races.</td></tr>
+<tr><td>Constantes geográficas centralizadas</td><td><code>GeoDataAlsasua.cs</code></td><td>Offsets, altura por planta, ubicaciones clave (Herriko Plaza, estación, cuartel, N-1, Aralar...). Antes estaba duplicado.</td></tr>
+<tr><td>SingletonMono&lt;T&gt;</td><td>17 sistemas</td><td>Acceso global a sistemas core. Útil pero denso (ver 3.3).</td></tr>
+</table>
+
+<h2>3.2 Secuencia de arranque (4 fases)</h2>
+<pre>FASE 0  SceneBootstrapper (-200)  → crea Terrain desde DEM, jugador, cámara, sol; spawn en Herriko Plaza
+FASE 1  AltsasuCore (-100)        → AudioManager + GameManagerAltsasua (registra servicios en ServiceLocator)
+FASE 2  Mundo (-90..-60)          → GeneradorMundoOSM (lee JSON) → GeneradorGeometriaPrecisa → Terreno, NavMesh, Zonas, Tráfico, Vegetación, Fauna
+FASE 3  Gameplay (-50..0)         → Disparo, Armas, Bombas, Misiones, HUD, Optimización
+FASE 4  OnWorldReady             → sistemas que necesitan el mundo completo arrancan sus Update()</pre>
+
+<h2>3.3 Sistemas (mapa condensado)</h2>
+<p class="small">51 clases Sistema*/Controlador*/Manager*/Generador*. Los más relevantes:</p>
+<table>
+<tr><th>Clase</th><th>Rol</th></tr>
+<tr><td>GameManagerAltsasua</td><td>Estrellas de búsqueda (0–5), policía, dinero, respawn, economía</td></tr>
+<tr><td>GeneradorMundoOSM / GeneradorGeometriaPrecisa</td><td>Carga JSON OSM → genera edificios+calles con fachadas, ventanas, tejados</td></tr>
+<tr><td>GeneradorTerrenoUltraPreciso</td><td>Sube precisión del DEM con LIDAR (0.5m→5m)</td></tr>
+<tr><td>SistemaEdificiosAAA / SistemaSueloAAA</td><td>Fachadas PBR, tejados, LOD, grafitis / capas de terreno, carreteras, mobiliario, vegetación</td></tr>
+<tr><td>ControladorJugador / ControladorVehiculoJugador</td><td>Jugador 3ª persona / coche con física Pacejka + suspensión</td></tr>
+<tr><td>SistemaMisiones / MisionesAltsasua</td><td>Máquina de estados de misiones M03–M12</td></tr>
+<tr><td>HUDCanvas</td><td>Construye toda la UI por código (vida, dinero, estrellas, minimapa, brújula)</td></tr>
+<tr><td>SistemaTrafico / SistemaMultitud / SistemaFauna / SistemaAgendaNPC</td><td>Tráfico NPC, multitudes, animales, horarios de NPCs</td></tr>
+<tr><td>SistemaVolumenHDRP / SistemaAtmosfera / SistemaClima</td><td>Cielo, sol, post-proceso por zona/hora/clima</td></tr>
+</table>
+
+<h1 class="sec">4 · Clases-dios y plan de refactor</h1>
+<p>Contra la "espaguetización" y las clases-dios, estas 5 son las prioritarias a dividir:</p>
+<table>
+<tr><th>Clase</th><th>Líneas</th><th>Cómo dividir</th></tr>
+<tr><td>HUDCanvas.cs</td><td>963</td><td>→ <code>HUDVida</code>, <code>HUDDinero</code>, <code>HUDBusqueda</code>, <code>HUDMinimapa</code>, <code>HUDMarcadores</code> (componentes hijos bajo un <code>HUDRoot</code>)</td></tr>
+<tr><td>GeneradorGeometriaPrecisa.cs</td><td>943</td><td>→ <code>GeneradorEdificios</code> + <code>GeneradorCalles</code> + <code>GeneradorAceras</code></td></tr>
+<tr><td>SceneBootstrapper.cs</td><td>888</td><td>→ extraer <code>CreadorTerreno</code> (DEM) y <code>SpawnerJugador</code> a clases propias</td></tr>
+<tr><td>ControladorJugador.cs</td><td>868</td><td>→ separar input (<code>InputJugador</code>) y cámara (<code>CamaraTP</code>) del movimiento</td></tr>
+<tr><td>SistemaEdificiosAAA.cs</td><td>758</td><td>→ <code>PintorFachadas</code> + <code>PintorGrafitis</code> + <code>GestorLOD</code></td></tr>
+</table>
+<div class="warn box"><b>Cuidado crítico con MonoBehaviours:</b> dividir un MonoBehaviour que está colocado en escenas/prefabs <b>rompe las referencias serializadas (GUID + fileID)</b> si se hace a ciegas. La división correcta exige:
+<ol>
+<li>Crear las clases nuevas y mover lógica conservando los <b>nombres de campos serializados</b>.</li>
+<li>En Unity, usar <span class="kbd">Component → Move</span> o reasignar referencias en el inspector.</li>
+<li>O bien usar <code>[FormerlySerializedAs]</code> para no perder valores.</li>
+</ol>
+Por eso el refactor de clases-dios se hace en coordinación contigo (Manual 2), no de golpe desde el contenedor.</div>
+
+<h1 class="sec">5 · Bugs detectados (a corregir)</h1>
+<table>
+<tr><th>#</th><th>Archivo (aprox.)</th><th>Problema</th><th>Sev.</th><th>Arreglo</th></tr>
+<tr><td>1</td><td>GeneradorTerrenoUltraPreciso.cs ~89</td><td><code>catch { }</code> vacío al cargar LIDAR/DEM → cae a terreno pobre en silencio</td><td>Media</td><td>Log de warning + flag de "usando fallback"</td></tr>
+<tr><td>2</td><td>SceneBootstrapper.cs ~150</td><td><code>catch { }</code> en carga de prefab por reflexión</td><td>Baja</td><td>Loggear el tipo que falló</td></tr>
+<tr><td>3</td><td>FusionadorEdificiosUltra.cs</td><td><code>try{...}catch{}</code> en fusión de edificios → lista corrupta sigue</td><td>Media</td><td>Loggear y abortar fusión, no continuar con datos corruptos</td></tr>
+<tr><td>4</td><td>AplicadorOrtofoto.cs</td><td><code>catch { yield break; }</code> en bake de ortofoto</td><td>Baja</td><td>Warning visible</td></tr>
+<tr><td>5</td><td>SistemaGuardado.cs</td><td><code>catch { return null; }</code> en load → partida corrupta sin avisar</td><td>Media</td><td>Avisar al jugador + backup del save</td></tr>
+<tr><td>6</td><td>GeneradorMundoOSM.cs ~355</td><td><code>Resources.FindObjectsOfTypeAll</code> sin cachear materiales</td><td>Perf</td><td>Cachear en diccionario una vez</td></tr>
+</table>
+<p class="small">Ninguno es un crash inmediato, pero todos esconden fallos (terreno pobre, partidas perdidas, edificios corruptos) sin decírtelo. La regla anti-deuda: <b>prohibido <code>catch</code> vacío</b>; siempre loggear.</p>
+
+<h1 class="sec">6 · Cantera v2 — qué salvar</h1>
+<p>v2 tiene ~68 scripts que no están en el juego. Clasificados:</p>
+<h3 class="ok">SALVAR (generadores/sistemas útiles que faltan en el juego)</h3>
+<p class="small">GeneradorEdificiosOSM, OsmEdificioLoader, GeoDataCalles, ImportadorDatosIGN, GeneradorRioBurunda, GeneradorPuentes, GeneradorMontanasFondo, GeneradorVegetacionReal, GeneradorMobiliarioUrbano, GeneradorInfraestructura, GeneradorPoblacionViva, GeneradorVidaAmbiental, SistemaDiaNocheReal, SistemaTrafico, SistemaFerroviario, TrenEnMovimiento, SistemaFarolas, SonidosAmbienteAltsasu, NPCCaminante, AnimalIA, EnemigoPatrulla, NavMeshBaker, LODGenerador, TexturizadorEdificiosReales, GeneradorTexturasProcedural, GeneradorMaterialesPBR.</p>
+<div class="warn box">Cada uno hay que <b>portarlo con cuidado</b>: comprobar que no choca con su equivalente del juego y que compila contra los tipos del juego (p. ej. <code>ControladorVehiculoJugador</code> existe en el juego, no en v2). Se hace por lotes y verificando compilación.</div>
+<h3 class="no">DESCARTAR (parches/fixes de un solo uso o duplicados)</h3>
+<p class="small">HUDAAA (el juego usa HUDCanvas), FixInputSystem, FixTags, FixTodoAAA, FixLucesDuplicadas, LimpiarArbolesTerreno, LimpiarMissingScripts, QuitarBrilloTerreno, MenuMaestroAAA, IntegradorTotalAAA, InstaladorSistemas, AltsasuSceneReport, y los "Crear*"/"Fix*" de editor de un solo uso.</p>
+
+<h1 class="sec">7 · Roadmap AAA por fases</h1>
+<table>
+<tr><th>Fase</th><th>Objetivo</th><th>Tareas clave</th><th>Criterio de "hecho"</th></tr>
+<tr><td><b>0 · Sanear repo</b></td><td>Git ligero y robusto</td><td>Activar LFS, purgar binarios de la historia, quitar Cesium embebido y demos (Manual 1)</td><td><code>.git</code> &lt; 80 MB; clon &lt; 5 min; nunca más trocear</td></tr>
+<tr><td><b>1 · Compila</b></td><td>Cero errores</td><td><span class="ok">Hecho</span> en la rama del juego</td><td>0 errores de compilación</td></tr>
+<tr><td><b>2 · Bugs</b></td><td>Sin fallos silenciosos ni NRE</td><td>Los 6 bugs de la sección 5 + auditoría de null</td><td>0 <code>catch</code> vacíos; logs en todos los fallbacks</td></tr>
+<tr><td><b>3 · Arquitectura</b></td><td>Sin clases-dios ni acoplamiento</td><td>Dividir las 5 clases-dios; todo por EventBus/ServiceLocator; capas claras</td><td>Ninguna clase &gt; 500 líneas; sin <code>FindObjectOfType</code> en caliente</td></tr>
+<tr><td><b>4 · 60 fps + visual AAA</b></td><td>Que se vea GTA y vaya fluido</td><td>HDRP volumes, LODs, batching, sin allocs en Update, Jobs donde toque; ortofoto + materiales reales de Alsasua</td><td>60 fps estables; "se ve el pueblo"</td></tr>
+</table>
+
+<h1 class="sec">8 · Reparto de trabajo</h1>
+<table>
+<tr><th>Lo hago YO (en el repo, sin Unity)</th><th>Lo haces TÚ (Unity/Blender/GPU)</th></tr>
+<tr><td>Arreglo de bugs de código (sección 5)</td><td>Abrir el proyecto y hornear (NavMesh, luces) — Manual 2</td></tr>
+<tr><td>Refactor de código no serializado y nuevas clases</td><td>Reasignar referencias en inspector tras refactor — Manual 2</td></tr>
+<tr><td>Portar scripts útiles de v2 (sección 6)</td><td>Conseguir/crear modelos y texturas — Manuales 3 y 4</td></tr>
+<tr><td>Higiene de git (gitignore/attributes)</td><td>Ejecutar la purga LFS+filter-repo en local — Manual 1</td></tr>
+<tr><td>Generar/validar el pipeline de datos de Alsasua</td><td>Descargar datos IDENA/IGN/OSM (claves, web) — Manual 3</td></tr>
+<tr><td>Estos manuales</td><td>Build final y pruebas en máquina con GPU</td></tr>
+</table>
+
+<p class="small" style="margin-top:12mm; border-top:1px solid #ccc; padding-top:4px;">Manual 0 · Proyecto ALTSASU · documento vivo, se actualiza según avanza el trabajo.</p>
+</body></html>

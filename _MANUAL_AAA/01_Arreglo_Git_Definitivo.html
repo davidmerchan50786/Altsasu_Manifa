@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>ALTSASU — Manual 1 · Git</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", Arial, sans-serif; color: #1c1c1c; font-size: 10.5pt; line-height: 1.5; }
+.cover { text-align: center; padding-top: 60mm; page-break-after: always; }
+.cover h1 { font-size: 30pt; color: #7a0d0d; margin: 0; }
+.cover h2 { font-size: 15pt; color: #444; font-weight: normal; margin-top: 6mm; }
+.cover .meta { margin-top: 40mm; color: #666; font-size: 9pt; }
+.cover .tag { display:inline-block; background:#7a0d0d; color:#fff; padding:3px 12px; border-radius:3px; font-size:9pt; letter-spacing:2px;}
+h1.sec { color: #7a0d0d; border-bottom: 3px solid #7a0d0d; padding-bottom: 4px; font-size: 17pt; margin-top: 14mm; page-break-before: always; }
+h2 { color: #b3261e; font-size: 13pt; margin-top: 8mm; }
+h3 { color: #333; font-size: 11pt; margin-top: 6mm; }
+pre { background: #1e1e2e; color: #e6e6e6; padding: 10px 12px; border-radius: 5px; font-size: 8.7pt; line-height:1.4; white-space: pre-wrap; }
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 9pt; font-family:"Liberation Mono",monospace; }
+pre code { background: none; padding: 0; color: inherit; }
+table { border-collapse: collapse; width: 100%; margin: 5mm 0; font-size: 9pt; }
+th { background: #7a0d0d; color: #fff; text-align: left; padding: 5px 7px; }
+td { border: 1px solid #ccc; padding: 4px 7px; vertical-align: top; }
+tr:nth-child(even) td { background: #f7f3f3; }
+.box { border-left: 5px solid; padding: 8px 12px; margin: 5mm 0; border-radius: 0 4px 4px 0; font-size: 9.5pt; }
+.tip { background:#eef7ee; border-color:#2e7d32; }
+.warn { background:#fff7e6; border-color:#e08600; }
+.danger { background:#fdecea; border-color:#c62828; }
+.step { background:#7a0d0d; color:#fff; border-radius:50%; padding:1px 8px; font-weight:bold; margin-right:6px; }
+.small { font-size: 8.5pt; color:#666; }
+</style></head><body>
+
+<div class="cover">
+  <div class="tag">PROYECTO ALTSASU · MANIFA</div>
+  <h1>MANUAL 1</h1>
+  <h2>Arreglo definitivo de Git / LFS<br>(que no se vuelva a trocear nunca)</h2>
+  <div class="meta">Ejecutar en TU máquina (Windows/PowerShell o Git Bash) — NO en el contenedor</div>
+</div>
+
+<h1 class="sec">1 · El diagnóstico: por qué pasó</h1>
+<p>v2 nació de trocear el proyecto porque el repo pesaba demasiado para git. La causa raíz NO era el código, era esto:</p>
+<table>
+<tr><th>Síntoma</th><th>Causa real</th></tr>
+<tr><td><code>.git</code> de 211 MB en el juego, 1.2 GB en v2</td><td><b>LFS estaba declarado en <code>.gitattributes</code> pero nunca se activó</b> (no había <code>git lfs install</code>). Los 2.000+ binarios (png, fbx, glb...) entraron como blobs normales y se quedan en la historia <b>para siempre</b>.</td></tr>
+<tr><td>191 MB de Cesium en el repo</td><td>El paquete Cesium está <b>embebido</b> en <code>Packages/com.cesium.unity/</code> incluyendo 138 MB de <code>.dylib</code> de macOS que en Windows ni usas. Debería venir del registro, no del repo.</td></tr>
+<tr><td>198 MB en <code>_ExtractedAssets</code></td><td>Modelos <code>.glb</code> pesados <b>duplicados</b> en <code>Assets/Models/Misc_Extracted/</code> (mismo MD5).</td></tr>
+<tr><td>84 MB de MapMagic, 45 MB de <code>.REFERENCE_ONLY</code></td><td>Contenido de demo de terceros y <code>.blend</code> de referencia que Unity ni importa (no tienen <code>.meta</code>).</td></tr>
+</table>
+<div class="danger box"><b>La regla de oro que se incumplió:</b> en un proyecto Unity, los binarios van por <b>Git LFS</b> y la historia <b>nunca</b> debe acumular blobs gigantes. Si haces esto bien, un proyecto de 800 MB de trabajo tiene un <code>.git</code> de pocas decenas de MB y se clona en segundos. Entonces no hace falta trocear nada.</div>
+
+<h1 class="sec">2 · Qué vas a conseguir</h1>
+<table>
+<tr><th>Antes</th><th>Después</th></tr>
+<tr><td>.git ≈ 211 MB (y subiendo)</td><td>.git &lt; ~80 MB</td></tr>
+<tr><td>Binarios como blobs eternos</td><td>Binarios en LFS (punteros de 130 bytes en git)</td></tr>
+<tr><td>Cesium 191 MB en repo</td><td>Cesium desde el registro (0 MB en repo)</td></tr>
+<tr><td>Necesidad de trocear</td><td>Un solo repo, clonable y sano</td></tr>
+</table>
+
+<h1 class="sec">3 · Procedimiento (paso a paso)</h1>
+<div class="danger box"><b>ESTO REESCRIBE LA HISTORIA DE GIT.</b> Hay que hacer <code>--force</code> al final. Haz copia de seguridad primero (paso 0) y avisa a cualquiera que tenga clon: tras esto, deben re-clonar.</div>
+
+<h3><span class="step">0</span>Copia de seguridad total (innegociable)</h3>
+<pre><code># Clona un espejo completo por si algo sale mal
+git clone --mirror https://github.com/davidmerchan50786/altsasu_manifa.git altsasu_BACKUP.git
+# Y comprime también tu carpeta de trabajo actual entera (incluye assets sin commitear)</code></pre>
+
+<h3><span class="step">1</span>Instalar herramientas</h3>
+<pre><code># Git LFS  (https://git-lfs.com)
+winget install GitHub.GitLFS        # Windows
+#  o:  choco install git-lfs
+git lfs install
+
+# git-filter-repo  (https://github.com/newren/git-filter-repo)
+pip install git-filter-repo
+#  o descarga el script y ponlo en el PATH</code></pre>
+
+<h3><span class="step">2</span>Quitar Cesium embebido (lo trae el registro)</h3>
+<p>El <code>manifest.json</code> ya declara <code>"com.cesium.unity": "1.23.2"</code> desde el registro <code>unity.pkg.cesium.com</code>. No necesitas la copia embebida.</p>
+<pre><code>git rm -r --cached Packages/com.cesium.unity
+# Borra también del disco la carpeta (Unity la re-descargará al abrir):
+#   Windows:  rmdir /s /q Packages\com.cesium.unity
+git commit -m "git: quitar Cesium embebido (se restaura desde el registro)"</code></pre>
+<div class="warn box">Al abrir Unity tras esto, comprueba que Cesium se descarga sin error. Si tu copia estaba modificada a mano, primero anota los cambios. (No detectamos modificaciones, pero verifícalo tú).</div>
+
+<h3><span class="step">3</span>Quitar duplicados, demos y referencias muertas</h3>
+<pre><code># Duplicado exacto de modelos (mantén _ExtractedAssets, quita Misc_Extracted)
+git rm -r --cached "Assets/Models/Misc_Extracted"
+# Demos de MapMagic (no son el juego)
+git rm -r --cached "Assets/MapMagic/Demo/Compatibility"
+# .blend de referencia que Unity ni importa (sin .meta)
+git rm --cached "Assets/_ExtractedAssets/Otros/forest-monster/forest-monster-final.blend.REFERENCE_ONLY"
+git rm --cached "Assets/_ExtractedAssets/Animals/rooster/rooster.blend.REFERENCE_ONLY"
+git rm --cached "Assets/_ExtractedAssets/Animals/chicken/chickenV2.blend.REFERENCE_ONLY"
+git commit -m "git: quitar duplicados, demos de MapMagic y .blend de referencia"</code></pre>
+<p class="small">El <code>.gitignore</code> ya se ha endurecido en la rama para que <code>*.REFERENCE_ONLY</code> y los generados de Cesium no vuelvan a entrar.</p>
+
+<h3><span class="step">4</span>Migrar binarios a LFS (en TODA la historia)</h3>
+<pre><code>git lfs migrate import --everything \
+  --include="*.png,*.jpg,*.jpeg,*.tga,*.tif,*.psd,*.exr,*.hdr,*.fbx,*.FBX,*.obj,*.glb,*.gltf,*.blend,*.wav,*.mp3,*.ogg,*.dll,*.so,*.dylib,*.a,*.raw,*.asset"
+git lfs ls-files | wc -l     # debería listar miles de archivos ahora en LFS</code></pre>
+<div class="tip box">Esto reescribe la historia moviendo los binarios a LFS. A partir de aquí, todo binario nuevo va a LFS automáticamente porque <code>.gitattributes</code> ya lo mapea.</div>
+
+<h3><span class="step">5</span>Purgar de la historia lo que ya no debe estar</h3>
+<pre><code># Borra de TODA la historia las rutas que quitamos (libera el peso de verdad)
+git filter-repo --force \
+  --path "Packages/com.cesium.unity" \
+  --path "Assets/Models/Misc_Extracted" \
+  --path "Assets/MapMagic/Demo/Compatibility" \
+  --path-glob "*.REFERENCE_ONLY" \
+  --invert-paths</code></pre>
+
+<h3><span class="step">6</span>Compactar</h3>
+<pre><code>git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+du -sh .git        # comprobar que ha bajado mucho</code></pre>
+
+<h3><span class="step">7</span>Subir (force) y reconectar el remoto</h3>
+<pre><code># filter-repo quita el remoto por seguridad; vuelve a añadirlo:
+git remote add origin https://github.com/davidmerchan50786/altsasu_manifa.git
+git push origin --force --all
+git push origin --force --tags</code></pre>
+<div class="danger box">Cualquier otro clon (incluido el contenedor de la nube) queda obsoleto tras el force-push. Hay que <b>re-clonar</b>, no hacer pull.</div>
+
+<h1 class="sec">4 · Cómo NO repetir el error (prevención)</h1>
+<table>
+<tr><th>Regla</th><th>Cómo</th></tr>
+<tr><td>LFS siempre activo</td><td><code>git lfs install</code> en cada máquina nueva. Verifica con <code>git lfs status</code> antes de commitear binarios.</td></tr>
+<tr><td>Nunca embeber paquetes del registro</td><td>Si está en <code>manifest.json</code>, NO debe estar en <code>Packages/</code> como carpeta.</td></tr>
+<tr><td>Nada de demos de asset store en git</td><td>Las carpetas <code>Demo/</code>, <code>Example/</code>, <code>Sample/</code> de paquetes de terceros se pueden ignorar.</td></tr>
+<tr><td>Revisar antes de commitear</td><td>Si vas a meter &gt; 5 MB en un commit no-LFS, párate y revisa.</td></tr>
+<tr><td>Un solo repo</td><td>Con LFS no hay motivo para trocear. Si vuelve a pesar, es que LFS no está activo: revísalo, no trocees.</td></tr>
+</table>
+
+<h1 class="sec">5 · Qué dejó hecho el asistente (sin reescribir historia)</h1>
+<p>Desde el contenedor no hay <code>git-lfs</code>/<code>filter-repo</code> y reescribir+force a ciegas es peligroso. Lo que SÍ se ha dejado commiteado de forma segura en la rama:</p>
+<ul>
+<li><code>.gitignore</code> endurecido: ignora <code>*.REFERENCE_ONLY</code>, generados de Cesium, carpetas de recovery/staging.</li>
+<li>Confirmado que <code>.gitattributes</code> tiene las reglas LFS correctas (solo faltaba activarlas — paso 1 y 4).</li>
+<li>Este manual.</li>
+</ul>
+<p class="small">Los pasos 2–7 los ejecutas tú en local porque implican reescritura de historia + force-push, que deben hacerse donde puedas verificar en Unity que todo sigue abriendo bien.</p>
+
+<p class="small" style="margin-top:12mm; border-top:1px solid #ccc; padding-top:4px;">Manual 1 · Proyecto ALTSASU</p>
+</body></html>
