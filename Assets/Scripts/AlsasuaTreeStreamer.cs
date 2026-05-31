@@ -605,7 +605,20 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(2f);
+            // Intervalo adaptativo: 0.5s si hay árboles a <150m, 2s para distancias mayores
+            float intervalo = 2f;
+            if (_jugador != null)
+            {
+                Vector3 posJ3 = _jugador.position;
+                foreach (var inst in _instancias)
+                {
+                    if (inst == null) continue;
+                    float dx = inst.transform.position.x - posJ3.x;
+                    float dz = inst.transform.position.z - posJ3.z;
+                    if (dx * dx + dz * dz < 150f * 150f) { intervalo = 0.5f; break; }
+                }
+            }
+            yield return new WaitForSeconds(intervalo);
 
             if (!_cargado || treePrefabs == null || treePrefabs.Length == 0) continue;
 
