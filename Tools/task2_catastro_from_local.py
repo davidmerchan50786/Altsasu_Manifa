@@ -19,11 +19,18 @@ UTM_ORIGIN_N = 4749902
 UNITY_OX = 1918
 UNITY_OZ = 8570
 
-def unity_to_wgs84(ux, uz):
-    utm_e = (ux - UNITY_OX) + UTM_ORIGIN_E
-    utm_n = (uz - UNITY_OZ) + UTM_ORIGIN_N
-    lat = utm_n / (6378137 * math.pi / 180)
-    lon = -3.0 + (utm_e - 500000) / (math.cos(math.radians(42.9)) * 111320)
+LAT_ORIGIN = 42.898703
+LON_ORIGIN = -2.167699
+UTM_E_ORIGIN = 567951
+UTM_N_ORIGIN = 4749902
+
+def unity_to_wgs84(vx, vz):
+    """
+    Building vertices are OSM-relative: Herriko Plaza = (0,0) in meters.
+    Returns (lon, lat) for GeoJSON coordinates.
+    """
+    lat = LAT_ORIGIN + vz / 111320.0
+    lon = LON_ORIGIN + vx / (111320.0 * math.cos(math.radians(LAT_ORIGIN)))
     return lon, lat
 
 def unity_to_utm(ux, uz):
@@ -63,16 +70,17 @@ def vertices_to_polygon_utm(vertices):
     return {"type": "Polygon", "coordinates": [coords]}
 
 def get_centroid_wgs84(vertices):
+    """Returns (lat, lon)"""
     coords = []
     for v in vertices:
         if isinstance(v, dict):
             lon, lat = unity_to_wgs84(v["x"], v["z"])
-            coords.append((lon, lat))
+            coords.append((lat, lon))
     if not coords:
         return None, None
     return (
-        sum(c[1] for c in coords) / len(coords),
-        sum(c[0] for c in coords) / len(coords)
+        sum(c[0] for c in coords) / len(coords),
+        sum(c[1] for c in coords) / len(coords)
     )
 
 with open(OSM_FILE) as f:

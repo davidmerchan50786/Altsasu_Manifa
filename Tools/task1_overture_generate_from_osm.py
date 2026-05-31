@@ -20,15 +20,26 @@ UTM_ORIGIN_N = 4749902
 UNITY_OX = 1918
 UNITY_OZ = 8570
 
-def unity_to_wgs84(ux, uz):
-    """Unity coords → WGS84 lon/lat"""
-    utm_e = (ux - UNITY_OX) + UTM_ORIGIN_E
-    utm_n = (uz - UNITY_OZ) + UTM_ORIGIN_N
-    # UTM zone 30N central meridian = -3°
-    # Simple inverse projection for Navarra
-    lat = utm_n / (6378137 * math.pi / 180)
-    lon = -3.0 + (utm_e - 500000) / (math.cos(math.radians(42.9)) * 111320)
+LAT_ORIGIN = 42.898703   # Herriko Plaza WGS84 lat
+LON_ORIGIN = -2.167699   # Herriko Plaza WGS84 lon
+UTM_E_ORIGIN = 567951
+UTM_N_ORIGIN = 4749902
+
+def osm_rel_to_wgs84(vx, vz):
+    """
+    Building vertices are OSM-relative: Herriko Plaza = (0,0).
+    vx/vz are meters offset from Herriko Plaza (= UTM origin).
+    Returns (lon, lat) for GeoJSON.
+    """
+    utm_e = vx + UTM_E_ORIGIN
+    utm_n = vz + UTM_N_ORIGIN
+    lat = LAT_ORIGIN + (utm_n - UTM_N_ORIGIN) / 111320.0
+    lon = LON_ORIGIN + (utm_e - UTM_E_ORIGIN) / (111320.0 * math.cos(math.radians(LAT_ORIGIN)))
     return lon, lat
+
+# Keep alias for compatibility
+def unity_to_wgs84(ux, uz):
+    return osm_rel_to_wgs84(ux, uz)
 
 def make_overture_id(osm_id):
     h = hashlib.md5(str(osm_id).encode()).hexdigest()

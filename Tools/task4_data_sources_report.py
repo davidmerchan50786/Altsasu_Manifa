@@ -35,12 +35,17 @@ def haversine_m(lat1, lon1, lat2, lon2):
     a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
     return 2 * R * math.asin(math.sqrt(a))
 
+LAT_ORIGIN = 42.898703
+LON_ORIGIN = -2.167699
+
+def osm_rel_to_latlon(vx, vz):
+    """OSM-relative meter offset from Herriko Plaza → (lat, lon)."""
+    lat = LAT_ORIGIN + vz / 111320.0
+    lon = LON_ORIGIN + vx / (111320.0 * math.cos(math.radians(LAT_ORIGIN)))
+    return lat, lon
+
 def unity_to_latlon_approx(ux, uz):
-    utm_e = (ux - UNITY_OX) + UTM_ORIGIN_E
-    utm_n = (uz - UNITY_OZ) + UTM_ORIGIN_N
-    lat_deg = utm_n / (6378137 * math.pi / 180)
-    lon_deg = -3.0 + (utm_e - 500000) / (math.cos(math.radians(42.9)) * 111320)
-    return lat_deg, lon_deg
+    return osm_rel_to_latlon(ux, uz)
 
 def get_center_latlon(item):
     """Universal center extractor for various building formats"""
@@ -69,14 +74,19 @@ def get_center_latlon(item):
         uz = item.get("unity_z") or item.get("z")
         if ux is not None and uz is not None:
             return unity_to_latlon_approx(float(ux), float(uz))
-        # Vertices array
+        # Vertices array (OSM format: list of {x, z} in OSM-relative meters)
         verts = item.get("vertices", [])
-        if verts and isinstance(verts[0], (list, tuple)):
-            avg_x = sum(v[0] for v in verts) / len(verts)
-            avg_y = sum(v[1] for v in verts) / len(verts)
-            if abs(avg_x) <= 180 and abs(avg_y) <= 90:
-                return avg_y, avg_x
-            return unity_to_latlon_approx(avg_x, avg_y)
+        if verts:
+            if isinstance(verts[0], dict) and "x" in verts[0] and "z" in verts[0]:
+                avg_x = sum(v["x"] for v in verts) / len(verts)
+                avg_z = sum(v["z"] for v in verts) / len(verts)
+                return osm_rel_to_latlon(avg_x, avg_z)
+            elif isinstance(verts[0], (list, tuple)):
+                avg_x = sum(v[0] for v in verts) / len(verts)
+                avg_y = sum(v[1] for v in verts) / len(verts)
+                if abs(avg_x) <= 180 and abs(avg_y) <= 90:
+                    return avg_y, avg_x
+                return osm_rel_to_latlon(avg_x, avg_y)
     return None, None
 
 def load_json_file(path, label):
