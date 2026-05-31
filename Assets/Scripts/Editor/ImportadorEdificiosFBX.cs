@@ -194,6 +194,23 @@ public class ImportadorEdificiosFBX : EditorWindow
             if (usarLODs && !usoPrimitiva)
                 ConfigurarLODGroup(go);
 
+            // ── Colliders para física y NavMesh ──────────────────────────────
+            foreach (var mf in go.GetComponentsInChildren<MeshFilter>())
+            {
+                if (mf.name.Contains("LOD0") || (!mf.name.Contains("LOD")))
+                {
+                    var col = mf.gameObject.GetComponent<MeshCollider>()
+                              ?? mf.gameObject.AddComponent<MeshCollider>();
+                    col.sharedMesh = mf.sharedMesh;
+                    col.convex = false;
+                }
+            }
+            // Marcar como estático para bake NavMesh
+            GameObjectUtility.SetStaticEditorFlags(go,
+                StaticEditorFlags.NavigationStatic |
+                StaticEditorFlags.ContributeGI |
+                StaticEditorFlags.OccluderStatic);
+
             // ── Material ─────────────────────────────────────────────────────
             bool tieneTextura = photoMap.ContainsKey(b.id);
             Material mat = tieneTextura
@@ -208,6 +225,15 @@ public class ImportadorEdificiosFBX : EditorWindow
                 AplicarMaterialRecursivo(go, mat);
 
                 if (tieneTextura) countTextura++;
+            }
+
+            // ── Registrar en SistemaZonas si está disponible en escena ───────
+            var sistemaZonas = Object.FindObjectOfType<SistemaZonas>();
+            if (sistemaZonas != null)
+            {
+                // TODO: construir EdificioData completo desde BuildingData cuando
+                // se unifique el modelo de datos entre ImportadorEdificiosFBX y GeneradorMundoOSM.
+                Debug.Log($"[B6] Edificio {b.id} importado — registrar manualmente en SistemaZonas si es necesario");
             }
 
             countTotal++;

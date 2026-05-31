@@ -45,7 +45,7 @@ public enum ArquetipoVasco
     Solar               // l. Solar/ruina: escombros + graffiti
 }
 
-[DefaultExecutionOrder(-62)]  // ANTES de GeneradorGeometriaPrecisa (-60)
+[DefaultExecutionOrder(-92)]  // ANTES de GeneradorMundoOSM (-90)
 public class FusionadorEdificiosUltra : MonoBehaviour
 {
     public static FusionadorEdificiosUltra Instance { get; private set; }
