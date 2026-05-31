@@ -183,16 +183,19 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
     {
         if (ed.vertices == null || ed.vertices.Length < 3) return;
 
-        // Altura: prioridad LIDAR > Overture > OSM estimada (niveles×3.2m)
-        float alturaOSM = Mathf.Max(ed.height, ALT_PLANTA);
+        // Altura: prioridad LIDAR > DSM-DTM > catastro > OSM estimada
+        float alturaOSM = Mathf.Max(ed.height > 0f ? ed.height : ed.levels * ALT_PLANTA, ALT_PLANTA);
         float altura    = FusionadorEdificiosUltra.Instance != null
-            ? Mathf.Max(ALT_PLANTA, FusionadorEdificiosUltra.Instance.GetAlturaOptima(ed.id, alturaOSM))
+            ? Mathf.Max(ALT_PLANTA, FusionadorEdificiosUltra.Instance.GetAlturaOptima((long)ed.id, alturaOSM))
             : alturaOSM;
         int   niveles   = Mathf.Max(1, Mathf.RoundToInt(altura / ALT_PLANTA));
 
         // Convertir vértices OSM → Unity XZ
         var verts2D = ed.vertices.Select(v =>
             new Vector2(v.x + OFFSET_X, v.z + OFFSET_Z)).ToArray();
+
+        // Perturbación Perlin σ=0.015m por vértice (variación orgánica histórica)
+        verts2D = PerturbVerticesPerlin(verts2D, ed.id, 0.015f);
 
         // Calcular centroide
         Vector2 centroide = verts2D.Aggregate(Vector2.zero, (a, v) => a + v) / verts2D.Length;
@@ -207,12 +210,117 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         // ── a) PAREDES con ventanas y puerta ─────────────────────────────
         GenerarParedes(go, verts2D, yBase, altura, niveles, ed);
 
-        // ── b) SUELO del edificio ─────────────────────────────────────────
+        // ── b) ZÓCALO 0.28m más oscuro ───────────────────────────────────
+        GenerarZocalo(go, verts2D, yBase, 0.28f, ed);
+
+        // ── c) CORNISA voladizo 0.12-0.18m perfil moldurado ──────────────
+        float voladizo = Mathf.Lerp(0.12f, 0.18f,
+            Mathf.PerlinNoise(ed.id * 0.0023f, 0.7f));
+        GenerarCornisa(go, verts2D, yBase + altura, voladizo, ed);
+
+        // ── d) SUELO del edificio ─────────────────────────────────────────
         GenerarSuelo(go, verts2D, yBase);
 
-        // ── c) TEJADO según tipo ──────────────────────────────────────────
+        // ── e) TEJADO según tipo ──────────────────────────────────────────
         if (generarTejados)
             GenerarTejado(go, verts2D, yBase + altura, ed);
+    }
+
+    // Perturbación Perlin de vértices: da aspecto orgánico a edificios históricos
+    static Vector2[] PerturbVerticesPerlin(Vector2[] verts, long id, float sigma)
+    {
+        var result = new Vector2[verts.Length];
+        float seed = (id % 1000) * 0.001f;
+        for (int i = 0; i < verts.Length; i++)
+        {
+            float nx = Mathf.PerlinNoise(verts[i].x * 0.1f + seed, verts[i].y * 0.1f) - 0.5f;
+            float nz = Mathf.PerlinNoise(verts[i].y * 0.1f + seed, verts[i].x * 0.1f) - 0.5f;
+            result[i] = new Vector2(verts[i].x + nx * sigma * 2f,
+                                    verts[i].y + nz * sigma * 2f);
+        }
+        return result;
+    }
+
+    // Zócalo perimetral 0.28m más oscuro
+    void GenerarZocalo(GameObject parent, Vector2[] verts, float yBase,
+                        float alturaZocalo, EdificioData ed)
+    {
+        var vm = new List<Vector3>();
+        var tm = new List<int>();
+        var um = new List<Vector2>();
+        int n = verts.Length;
+
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 a = verts[i], b = verts[(i + 1) % n];
+            float segLen = Vector2.Distance(a, b);
+            if (segLen < 0.05f) continue;
+
+            int base_ = vm.Count;
+            vm.Add(new Vector3(a.x, yBase,              a.y));
+            vm.Add(new Vector3(b.x, yBase,              b.y));
+            vm.Add(new Vector3(b.x, yBase + alturaZocalo, b.y));
+            vm.Add(new Vector3(a.x, yBase + alturaZocalo, a.y));
+            um.Add(new Vector2(0, 0)); um.Add(new Vector2(segLen / 0.5f, 0));
+            um.Add(new Vector2(segLen / 0.5f, alturaZocalo / 0.5f));
+            um.Add(new Vector2(0, alturaZocalo / 0.5f));
+            AnadirQuad(tm, base_);
+        }
+
+        if (vm.Count < 3) return;
+
+        // Material zócalo: variante oscura del material de pared
+        Material matZ = matPiedra ?? MatHDRP(new Color(0.42f, 0.38f, 0.34f));
+        ConstruirMesh(parent, "Zocalo", vm, tm, um, matZ);
+    }
+
+    // Cornisa perimetral con voladizo
+    void GenerarCornisa(GameObject parent, Vector2[] verts, float y,
+                         float voladizo, EdificioData ed)
+    {
+        var vm = new List<Vector3>();
+        var tm = new List<int>();
+        var um = new List<Vector2>();
+        int n = verts.Length;
+
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 a = verts[i], b = verts[(i + 1) % n];
+            float segLen = Vector2.Distance(a, b);
+            if (segLen < 0.05f) continue;
+
+            // Dirección normal exterior para el voladizo
+            Vector2 dir  = (b - a).normalized;
+            Vector2 perp = new Vector2(-dir.y, dir.x); // normal exterior
+
+            Vector2 ao = a - perp * voladizo;
+            Vector2 bo = b - perp * voladizo;
+            const float H_CORNISA = 0.20f;
+
+            // Cara inferior (sofito)
+            int base_ = vm.Count;
+            vm.Add(new Vector3(a.x, y,            a.y));
+            vm.Add(new Vector3(b.x, y,            b.y));
+            vm.Add(new Vector3(bo.x, y,           bo.y));
+            vm.Add(new Vector3(ao.x, y,           ao.y));
+            um.Add(new Vector2(0, 0)); um.Add(new Vector2(segLen, 0));
+            um.Add(new Vector2(segLen, voladizo)); um.Add(new Vector2(0, voladizo));
+            AnadirQuad(tm, base_);
+
+            // Cara frontal moldurada
+            int base2 = vm.Count;
+            vm.Add(new Vector3(ao.x, y,            ao.y));
+            vm.Add(new Vector3(bo.x, y,            bo.y));
+            vm.Add(new Vector3(bo.x, y + H_CORNISA, bo.y));
+            vm.Add(new Vector3(ao.x, y + H_CORNISA, ao.y));
+            um.Add(new Vector2(0, 0)); um.Add(new Vector2(segLen, 0));
+            um.Add(new Vector2(segLen, H_CORNISA)); um.Add(new Vector2(0, H_CORNISA));
+            AnadirQuad(tm, base2);
+        }
+
+        if (vm.Count < 3) return;
+        Material matC = matAcera ?? MatHDRP(new Color(0.82f, 0.79f, 0.75f));
+        ConstruirMesh(parent, "Cornisa", vm, tm, um, matC);
     }
 
     // ── Paredes con ventanas y puerta ─────────────────────────────────────
@@ -312,6 +420,9 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
                     {
                         // Ventana
                         GenerarHuecoVentana(vMesh, tMesh, uMesh, a, b, y0 + 0.8f, segLen, bay, numBays);
+                        // Vierteaguas (Canopy_Side) bajo cada ventana
+                        if (p > 0)
+                            GenerarVierteaguas(vMesh, tMesh, uMesh, a, b, y0 + 0.8f, segLen, bay, numBays);
                     }
                 }
             }
@@ -341,6 +452,33 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
         verts.Add(new Vector3(p0.x, y1, p0.y));
         uvs.Add(new Vector2(0, 0)); uvs.Add(new Vector2(1, 0));
         uvs.Add(new Vector2(1, 1)); uvs.Add(new Vector2(0, 1));
+        AnadirQuad(tris, base_);
+    }
+
+    void GenerarVierteaguas(List<Vector3> verts, List<int> tris, List<Vector2> uvs,
+                             Vector2 a, Vector2 b, float yBase, float segLen, int bay, int numBays)
+    {
+        float bayW = segLen / numBays;
+        float t0   = ((bay) * bayW + bayW * 0.5f - (W_VENTANA + 0.1f) * 0.5f) / segLen;
+        float t1   = ((bay) * bayW + bayW * 0.5f + (W_VENTANA + 0.1f) * 0.5f) / segLen;
+        t0 = Mathf.Clamp01(t0); t1 = Mathf.Clamp01(t1);
+
+        Vector2 p0 = Vector2.Lerp(a, b, t0);
+        Vector2 p1 = Vector2.Lerp(a, b, t1);
+        Vector2 dir  = (b - a).normalized;
+        Vector2 perp = new Vector2(-dir.y, dir.x) * 0.06f; // voladizo 6cm
+
+        float y = yBase - 0.04f; // justo bajo el alféizar
+        const float ESP = 0.04f; // espesor vierteaguas
+
+        int base_ = verts.Count;
+        // Cara superior inclinada
+        verts.Add(new Vector3(p0.x - perp.x, y,       p0.y - perp.y));
+        verts.Add(new Vector3(p1.x - perp.x, y,       p1.y - perp.y));
+        verts.Add(new Vector3(p1.x,          y - ESP, p1.y));
+        verts.Add(new Vector3(p0.x,          y - ESP, p0.y));
+        uvs.Add(new Vector2(0,0)); uvs.Add(new Vector2(1,0));
+        uvs.Add(new Vector2(1,1)); uvs.Add(new Vector2(0,1));
         AnadirQuad(tris, base_);
     }
 

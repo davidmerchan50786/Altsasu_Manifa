@@ -1,23 +1,29 @@
 // Assets/Scripts/SistemaEdificiosAAA.cs
 // ═══════════════════════════════════════════════════════════════════════════
-//  SISTEMA DE EDIFICIOS AAA — fachadas perfectas para Alsasua
+//  SISTEMA DE EDIFICIOS AAA — 12 arquetipos vascos para Alsasua
 //
-//  Genera edificios desde OSM con:
-//    • 30 materiales de fachada PBR reales (Poly Haven CC0)
-//    • 5 materiales de tejado reales (tejas cerámicas, pizarra)
-//    • Geometría de fachada completa por planta:
-//        - Ventanas con vidrio + marco + dintel
-//        - Balcones con losa + barandilla de hierro fundido
-//        - Cornisa superior
-//        - Zócalo de piedra
-//        - Puertas con marquesina en PB
-//    • Tejados con pendiente (residencial) o planos (comercial)
-//    • Chimeneas procedurales (1-3 por edificio)
-//    • Variación por barrio: casco histórico vs moderno
-//    • Luces de ventana nocturnas (emisión dinámica)
-//    • LOD 3 niveles (completo / caja / culled)
-//    • Graffiti político vasco en 35% de fachadas
-//    • BatchStaticFlag para GPU batching
+//  Arquetipos:
+//    a. UrbanoPre1940    — arenisca #c8a882, balcones forja, tejado 32°, chimenea piedra
+//    b. Bloque1940_1975  — ladrillo #8b4513, ventanas rectas, balcón hormigón
+//    c. ModernoPost1975  — revoco blanco #f5f0e8, tejado plano, cajas AC
+//    d. Casero           — cal #faf7f0, viga madera 1.2m vuelo, tejado 42°
+//    e. Bar              — azulejo PB, rótulo OSM/mapillary, Canopy, barril+cajón, luz ámbar
+//    f. Comercio         — escaparate 80% transparente, persiana metálica, rótulo
+//    g. Iglesia          — cobblestone gris oscuro, campanil, contrafuertes, atrio
+//    h. NaveIndustrial   — chapa ondulada Metal R=0.8, puerta 3×4m, lucernario
+//    i. EquipamientoPublico — ladrillo institucional, marquesina, megáfono
+//    j. Fronton          — hormigón blanco 10-12m, marcas impacto, red metálica
+//    k. Aparcamiento     — cubierto: losa+pilares; descubierto: líneas blancas
+//    l. Solar            — escombros, crate abierto, graffiti
+//
+//  LOD system (4 niveles):
+//    LOD0 <40m  — completo con tessellation
+//    LOD1 <120m — sin interiores
+//    LOD2 <350m — mesh simplificado baked
+//    LOD3 <700m — billboard impostor 8 ángulos
+//
+//  GPU Instancing + MaterialPropertyBlock para variación de color
+//  Target: <120 draw calls total
 // ═══════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
@@ -31,28 +37,36 @@ public class SistemaEdificiosAAA : MonoBehaviour
     public static SistemaEdificiosAAA Instance { get; private set; }
     public static bool Listo { get; private set; }
 
-    // ── Paleta de fachadas reales (Poly Haven) ─────────────────────────────
-    // Nombres exactos de Assets/Textures_AAA/Fachadas/
-    static readonly string[] PALETA_FACHADA_RESIDENCIAL = {
-        "beige_wall_001", "beige_wall_002", "clay_plaster", "rough_plaster_03",
-        "rough_plaster_brick", "plaster_brick_01", "blue_plaster_weathered",
-        "sandstone_blocks_04", "sandstone_brick_wall_01", "white_sandstone_bricks",
-        "brown_brick_02", "clay_block_wall"
-    };
-    static readonly string[] PALETA_FACHADA_HISTORICA = {
-        "brick_wall_001", "brick_wall_002", "brick_wall_003", "brick_wall_005",
-        "brick_wall_006", "brick_wall_07", "brown_brick_02",
-        "castle_brick_01", "church_bricks_03", "stone_brick_wall_001",
-        "worn_brick_wall", "broken_brick_wall"
-    };
-    static readonly string[] PALETA_FACHADA_COMERCIAL = {
-        "brushed_concrete", "brushed_concrete_03", "brushed_concrete_2",
-        "brick_wall_04", "brick_wall_02"
-    };
-    static readonly string[] PALETA_TEJADO = {
-        "ceramic_roof_01", "clay_roof_tiles", "clay_roof_tiles_02",
-        "clay_roof_tiles_03", "castle_wall_slates"
-    };
+    // ── Colores canónicos por arquetipo ────────────────────────────────────
+    static readonly Color COL_ARENISCA     = new(0.784f, 0.659f, 0.506f);  // #c8a882
+    static readonly Color COL_LADRILLO     = new(0.545f, 0.271f, 0.075f);  // #8b4513
+    static readonly Color COL_REVOCO_BLANCO= new(0.961f, 0.941f, 0.910f);  // #f5f0e8
+    static readonly Color COL_CAL_BLANCA   = new(0.980f, 0.969f, 0.941f);  // #faf7f0
+    static readonly Color COL_HORMIGON     = new(0.780f, 0.780f, 0.780f);
+    static readonly Color COL_PIEDRA_OSCURA= new(0.380f, 0.370f, 0.350f);
+    static readonly Color COL_CHAPA_METAL  = new(0.560f, 0.570f, 0.580f);
+    static readonly Color COL_TERRACOTA    = new(0.710f, 0.271f, 0.106f);  // #b5451b
+    static readonly Color COL_PIZARRA      = new(0.353f, 0.392f, 0.455f);  // #5a6474
+
+    // ── Cache de materiales ────────────────────────────────────────────────
+    readonly Dictionary<string, Material> _matCache = new();
+    Material _matVidrio, _matMarco, _matHierro, _matCornisa, _matZocalo;
+    Material _matMadera, _matChapa, _matAzulejo, _matPiedra, _matHormigon;
+    Material _matAsfalto, _matLinea;
+
+    // Materiales tejado por arquetipo
+    Material _matTejadoTeja, _matTejadoPizarra, _matTejadoMetal, _matTejadoPlano;
+
+    // ── Luces nocturnas ────────────────────────────────────────────────────
+    readonly List<Renderer> _ventanasNocturnas = new();
+    bool _esNoche;
+
+    // ── State ─────────────────────────────────────────────────────────────
+    Transform _parentEdificios;
+    int _totalEdificios;
+
+    // MaterialPropertyBlock reutilizable (evita instanciar materiales)
+    static readonly MaterialPropertyBlock _mpb = new();
 
     // ── Textos graffiti vascos ─────────────────────────────────────────────
     static readonly (string texto, Color color)[] GRAFFITI = {
@@ -68,19 +82,8 @@ public class SistemaEdificiosAAA : MonoBehaviour
         ("BIZI NAIZ",       new Color(0.1f,0.5f,0.2f)),
     };
 
-    // ── Cache de materiales cargados ───────────────────────────────────────
-    readonly Dictionary<string, Material> _matCache = new();
-    Material[] _matsResidencial, _matsHistorico, _matsComercial, _matsTejado;
-    Material   _matVidrio, _matMarco, _matHierro, _matCornisa, _matZocalo;
-
-    // ── Estado ────────────────────────────────────────────────────────────
-    Transform _parentEdificios;
-    int       _totalEdificios;
-
-    // ── Luces nocturnas ───────────────────────────────────────────────────
-    readonly List<Renderer> _ventanas    = new(); // renderers de vidrios
-    bool _esNoche;
-
+    // ═══════════════════════════════════════════════════════════════════════
+    //  LIFECYCLE
     // ═══════════════════════════════════════════════════════════════════════
 
     void Awake()
@@ -91,72 +94,65 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
     void Start()
     {
-        // Cargar materiales inmediatamente (no esperar al mundo)
         CargarMateriales();
-
-        // Hook con SistemaZonas — enriquecer edificios al cargarse cada zona
         SistemaZonas.OnZonaCargada += OnZonaCargada;
-
-        // Hook legado por si GeneradorMundoOSM crea directamente (fallback)
         GeneradorMundoOSM.OnMundoGenerado += OnMundoGeneradoLegado;
-
         Listo = true;
-        AlsasuaLogger.Info("EdificiosAAA", "Listo — materiales PBR cargados");
+        AlsasuaLogger.Info("EdificiosAAA", "Listo — 12 arquetipos vascos activos");
     }
 
-    void OnZonaCargada(Vector2Int _)
+    void OnDestroy()
     {
-        // Opcional: enriquecer edificios básicos que llegaran sin pasar por ConstruirEdificio
-        // (ej. si SistemaZonas usó el fallback de GeneradorMundoOSM)
+        SistemaZonas.OnZonaCargada        -= OnZonaCargada;
+        GeneradorMundoOSM.OnMundoGenerado -= OnMundoGeneradoLegado;
     }
+
+    void OnZonaCargada(Vector2Int _) { }
 
     void OnMundoGeneradoLegado()
     {
-        // Solo aplica si no se usa zone streaming ni geometría precisa
         if (GeneradorGeometriaPrecisa.Instance != null) return;
         var parent = GameObject.Find("Edificios_OSM");
         if (parent == null) return;
         StartCoroutine(EnriquecerTodo());
     }
 
-    void OnDestroy()
-    {
-        SistemaZonas.OnZonaCargada            -= OnZonaCargada;
-        GeneradorMundoOSM.OnMundoGenerado     -= OnMundoGeneradoLegado;
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    //  API PÚBLICA
+    // ═══════════════════════════════════════════════════════════════════════
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  API PÚBLICA — llamada por SistemaZonas para cada edificio de zona
-    // ════════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Construye un edificio AAA completo (base + detalles) y lo añade bajo <paramref name="parent"/>.
-    /// Reemplaza GeneradorMundoOSM.ConstruirEdificio() con calidad visual superior.
-    /// </summary>
+    /// Construye un edificio AAA completo con arquetipo correcto.
     public void ConstruirEdificio(EdificioData e, Transform parent)
     {
         if (e.vertices == null || e.vertices.Length < 3) return;
 
-        // ── Base mesh (misma lógica que GeneradorMundoOSM pero con material AAA) ──
         var verts2D = new List<Vector2>();
         foreach (var v in e.vertices)
             verts2D.Add(new Vector2(v.x + GeoDataAlsasua.OX, v.z + GeoDataAlsasua.OZ));
 
-        float cx = 0, cz = 0;
-        foreach (var v in verts2D) { cx += v.x; cz += v.y; }
-        cx /= verts2D.Count; cz /= verts2D.Count;
+        float cx = verts2D.Average(v => v.x);
+        float cz = verts2D.Average(v => v.y);
 
-        float suelo  = AlturaTerreno(cx, cz);
-        float altura = Mathf.Max(3.2f, e.height > 0 ? e.height : e.levels * 3.2f);
+        float suelo  = GeoDataAlsasua.AlturaTerreno(cx, cz);
+        float altOSM = GeoDataAlsasua.AlturaEdificio(e.levels, e.height);
 
-        var mesh = GeneradorMundoOSM.Instance != null
-            ? GenerarMeshEdificio(verts2D, suelo, altura)
-            : null;
+        // Consultar altura LIDAR si disponible
+        float altura = FusionadorEdificiosUltra.Instance != null
+            ? Mathf.Max(GeoDataAlsasua.ALT_PLANTA,
+                FusionadorEdificiosUltra.Instance.GetAlturaOptima(e.id, altOSM))
+            : altOSM;
 
+        var mesh = GenerarMeshEdificio(verts2D, suelo, altura);
         if (mesh == null) return;
 
+        // Determinar arquetipo
+        ArquetipoVasco arquetipo = FusionadorEdificiosUltra.Instance != null
+            ? FusionadorEdificiosUltra.Instance.GetArquetipoConAnio(e.id, e.type, e.levels)
+            : FusionadorEdificiosUltra.ArquetipoDesdeOSM(e.type, e.levels, "", "", "");
+
         string nombre = string.IsNullOrEmpty(e.name)
-            ? $"Edif_{e.id}" : $"Edif_{e.name.Replace(" ", "_")}";
+            ? $"Edif_{e.id}_{arquetipo}" : $"Edif_{e.name.Replace(" ","_")}";
+
         var go = new GameObject(nombre);
         go.transform.SetParent(parent);
         go.isStatic = true;
@@ -164,20 +160,20 @@ public class SistemaEdificiosAAA : MonoBehaviour
         var mf = go.AddComponent<MeshFilter>();
         mf.sharedMesh = mesh;
 
-        bool esHistorico = e.levels <= 3 && (cx + cz) % 2 < 1.1f;
-        bool esComercial = e.type is "commercial" or "retail" or "office";
-        var matFachada   = ElegirMaterialFachada(esHistorico, esComercial);
+        Material matFachada = MaterialFachadaPorArquetipo(arquetipo, e.id);
 
+        // Aplicar variación de color por MaterialPropertyBlock (sin instanciar material)
         var mr = go.AddComponent<MeshRenderer>();
         mr.sharedMaterial = matFachada;
+        AplicarVariacionColor(mr, arquetipo, e.id);
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
-        // Collider solo cercanos al centro de la ciudad
-        if (Vector2.Distance(new Vector2(cx, cz), new Vector2(GeoDataAlsasua.OX, GeoDataAlsasua.OZ)) < 200f)
+        // Collider en radio < 200m del origen
+        if (Vector2.Distance(new Vector2(cx, cz),
+            new Vector2(GeoDataAlsasua.OX, GeoDataAlsasua.OZ)) < 200f)
             go.AddComponent<MeshCollider>().sharedMesh = mesh;
 
-        // ── Enriquecimiento AAA ───────────────────────────────────────────────
-        EnriquecerEdificio(go.transform);
+        EnriquecerEdificioPorArquetipo(go.transform, mesh, arquetipo, e);
 
         _totalEdificios++;
     }
@@ -185,27 +181,16 @@ public class SistemaEdificiosAAA : MonoBehaviour
     Mesh GenerarMeshEdificio(List<Vector2> planta, float suelo, float altura)
         => MeshBuilder.Edificio(planta, suelo, altura);
 
-    static float AlturaTerreno(float x, float z) => GeoDataAlsasua.AlturaTerreno(x, z);
-
-    // ════════════════════════════════════════════════════════════════════════
-    //  PIPELINE PRINCIPAL
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    //  PIPELINE ENRIQUECIMIENTO
+    // ═══════════════════════════════════════════════════════════════════════
 
     IEnumerator EnriquecerTodo()
     {
         yield return new WaitForSeconds(0.5f);
-        // CargarMateriales() ya fue llamado en Start() — no repetir
-        yield return null;
+        if (GeneradorGeometriaPrecisa.Instance != null) yield break;
 
-        // Si ya hay geometría precisa activa, SistemaEdificiosAAA no necesita actuar
-        if (GeneradorGeometriaPrecisa.Instance != null)
-        {
-            AlsasuaLogger.Info("EdificiosAAA",
-                "GeneradorGeometriaPrecisa activo — SistemaEdificiosAAA cede el paso");
-            yield break;
-        }
-
-        _parentEdificios = (GameObject.Find("Edificios_OSM"))?.transform;
+        _parentEdificios = GameObject.Find("Edificios_OSM")?.transform;
         if (_parentEdificios == null) yield break;
 
         int i = 0;
@@ -213,76 +198,93 @@ public class SistemaEdificiosAAA : MonoBehaviour
         {
             if (edif == null) continue;
             var mf = edif.GetComponent<MeshFilter>();
-            if (mf == null || mf.sharedMesh == null) continue;
+            if (mf?.sharedMesh == null) continue;
 
-            EnriquecerEdificio(edif);
+            // Intentar leer arquetipo desde nombre
+            ArquetipoVasco arq = ArquetipoDesdeNombre(edif.name);
+            EnriquecerEdificioPorArquetipo(edif, mf.sharedMesh, arq, null);
             i++;
-            if (i % 20 == 0) yield return null;
+            if (i % 15 == 0) yield return null;
         }
 
         Listo = true;
-        AlsasuaLogger.Info("EdificiosAAA", $"✅ {i} edificios enriquecidos con fachadas PBR");
-
-        // Iniciar ciclo noche/día
+        AlsasuaLogger.Info("EdificiosAAA", $"✅ {i} edificios enriquecidos (12 arquetipos)");
         StartCoroutine(CicloLucesNocturnas());
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  ENRIQUECIMIENTO POR EDIFICIO
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ENRIQUECIMIENTO POR ARQUETIPO
+    // ═══════════════════════════════════════════════════════════════════════
 
-    void EnriquecerEdificio(Transform edif)
+    void EnriquecerEdificioPorArquetipo(Transform edif, Mesh mesh,
+                                         ArquetipoVasco arquetipo, EdificioData data)
     {
-        var mesh   = edif.GetComponent<MeshFilter>().sharedMesh;
         var bounds = mesh.bounds;
         float h    = bounds.size.y;
-        float w    = Mathf.Max(bounds.size.x, bounds.size.z);
-        int   pisos= Mathf.Max(1, Mathf.RoundToInt(h / 3.2f));
+        float w    = bounds.size.x;
+        float d    = bounds.size.z;
+        int niveles= Mathf.Max(1, Mathf.RoundToInt(h / GeoDataAlsasua.ALT_PLANTA));
+        string nombre = data?.name ?? "";
 
-        // ── Determinar tipo y material de fachada ─────────────────────────
-        bool esHistorico = pisos <= 3 && Random.value < 0.55f;
-        bool esComercial = edif.name.Contains("commercial") || edif.name.Contains("retail");
-        var matFachada   = ElegirMaterialFachada(esHistorico, esComercial);
-
-        // Aplicar material al mesh base
-        edif.GetComponent<MeshRenderer>().sharedMaterial = matFachada;
-
-        // ── Zócalo ────────────────────────────────────────────────────────
-        AnadirZocalo(edif, bounds);
-
-        // ── Ventanas por planta ───────────────────────────────────────────
-        for (int piso = 0; piso < pisos; piso++)
+        switch (arquetipo)
         {
-            float yBase    = bounds.min.y + 0.35f + piso * 3.2f;
-            bool  esPlBaja = piso == 0;
-            AnadirVentanasFachada(edif, bounds, yBase, esPlBaja);
+            case ArquetipoVasco.UrbanoPre1940:
+                ArquetipoCasaUrbanaHistorica(edif, bounds, h, w, d, niveles);
+                break;
+
+            case ArquetipoVasco.Bloque1940_1975:
+                ArquetipoBloque1940(edif, bounds, h, w, d, niveles);
+                break;
+
+            case ArquetipoVasco.ModernoPost1975:
+                ArquetipoModerno(edif, bounds, h, w, d, niveles);
+                break;
+
+            case ArquetipoVasco.Casero:
+                ArquetipoCaserio(edif, bounds, h, w, d, niveles);
+                break;
+
+            case ArquetipoVasco.Bar:
+                ArquetipoBar(edif, bounds, h, w, d, niveles, nombre);
+                break;
+
+            case ArquetipoVasco.Comercio:
+                ArquetipoComercio(edif, bounds, h, w, d, niveles, nombre);
+                break;
+
+            case ArquetipoVasco.Iglesia:
+                ArquetipoIglesia(edif, bounds, h, w, d, niveles, nombre);
+                break;
+
+            case ArquetipoVasco.NaveIndustrial:
+                ArquetipoNaveIndustrial(edif, bounds, h, w, d, niveles);
+                break;
+
+            case ArquetipoVasco.EquipamientoPublico:
+                ArquetipoEquipamiento(edif, bounds, h, w, d, niveles, nombre);
+                break;
+
+            case ArquetipoVasco.Fronton:
+                ArquetipoFronton(edif, bounds, h, w, d);
+                break;
+
+            case ArquetipoVasco.Aparcamiento:
+                ArquetipoAparcamiento(edif, bounds, h, w, d);
+                break;
+
+            case ArquetipoVasco.Solar:
+                ArquetipoSolar(edif, bounds);
+                break;
         }
 
-        // ── Balcones (pisos 1-penúltimo, 45% probabilidad) ───────────────
-        for (int piso = 1; piso < pisos - 1; piso++)
-        {
-            if (Random.value < 0.45f)
-                AnadirBalcon(edif, bounds, bounds.min.y + piso * 3.2f + 0.9f);
-        }
-
-        // ── Tejado ────────────────────────────────────────────────────────
-        if (esHistorico && pisos <= 4)
-            AnadirTejadoPendiente(edif, bounds, h);
-        else
-            AnadirCornisa(edif, bounds, h);
-
-        // ── Chimeneas (25% edificios con tejado) ──────────────────────────
-        if (esHistorico && Random.value < 0.25f)
-            AnadirChimeneas(edif, bounds, h);
-
-        // ── Graffiti (35% fachadas) ───────────────────────────────────────
-        if (Random.value < 0.35f)
+        // Graffiti en residenciales pre-1975 (35%)
+        if (arquetipo is ArquetipoVasco.UrbanoPre1940 or ArquetipoVasco.Bloque1940_1975
+            && Random.value < 0.35f)
             AnadirGraffiti(edif, bounds);
 
-        // ── LOD ───────────────────────────────────────────────────────────
-        ConfigurarLOD(edif, edif.GetComponent<MeshRenderer>(), mesh);
+        // LOD system
+        ConfigurarLOD(edif, edif.GetComponent<MeshRenderer>(), mesh, arquetipo);
 
-        // Static para batching
         edif.gameObject.isStatic = true;
 #if UNITY_EDITOR
         UnityEditor.GameObjectUtility.SetStaticEditorFlags(edif.gameObject,
@@ -292,195 +294,806 @@ public class SistemaEdificiosAAA : MonoBehaviour
 #endif
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  ELEMENTOS DE FACHADA
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ARQUETIPOS INDIVIDUALES
+    // ═══════════════════════════════════════════════════════════════════════
 
-    void AnadirZocalo(Transform edif, Bounds b)
+    // a. Casa urbana pre-1940
+    void ArquetipoCasaUrbanaHistorica(Transform edif, Bounds b,
+                                       float h, float w, float d, int niveles)
+    {
+        // Zócalo 0.28m más oscuro
+        AnadirZocalo(edif, b, 0.28f, DarkenColor(COL_ARENISCA, 0.7f));
+
+        // Ventanas: Kit_Window_Upper_Convex en pisos 1-2, Straight superiores
+        for (int p = 0; p < niveles; p++)
+        {
+            float yBase = b.min.y + 0.35f + p * GeoDataAlsasua.ALT_PLANTA;
+            bool usarConvex = (p <= 1);
+            float colsF = Mathf.FloorToInt(w / 1.15f);
+            int cols = Mathf.Max(1, (int)colsF);
+
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0),
+                    0.55f, 1.25f, usarConvex, p == 0);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.max.z + 0.005f),
+                    Quaternion.identity,
+                    0.55f, 1.25f, usarConvex, p == 0);
+            }
+        }
+
+        // Balcones pisos 1-3 con barandilla forja negra
+        for (int p = 1; p < Mathf.Min(3, niveles); p++)
+            AnadirBalconForja(edif, b, b.min.y + p * GeoDataAlsasua.ALT_PLANTA + 0.9f, w);
+
+        // Cornisa voladizo 0.15m con perfil moldurado
+        AnadirCornisaMoldurada(edif, b, h, 0.15f);
+
+        // Tejado 32° dos aguas con teja cerámica
+        AnadirTejadoDosAguas(edif, b, h, 32f, _matTejadoTeja);
+
+        // Chimenea piedra × 2
+        AnadirChimeneaPiedra(edif, b, h, 2);
+    }
+
+    // b. Bloque 1940-1975
+    void ArquetipoBloque1940(Transform edif, Bounds b,
+                              float h, float w, float d, int niveles)
+    {
+        AnadirZocalo(edif, b, 0.28f, DarkenColor(COL_LADRILLO, 0.75f));
+
+        for (int p = 0; p < niveles; p++)
+        {
+            float yBase = b.min.y + 0.35f + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(w / 1.15f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                // Straight windows para todos los pisos
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.65f, 1.2f, false, p == 0);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.max.z + 0.005f),
+                    Quaternion.identity, 0.65f, 1.2f, false, p == 0);
+            }
+        }
+
+        // Balcón hormigón (losa sin barandilla forja)
+        if (niveles > 2)
+            AnadirBalconHormigon(edif, b, b.min.y + 1 * GeoDataAlsasua.ALT_PLANTA + 0.9f, w);
+
+        AnadirCornisaMoldurada(edif, b, h, 0.12f);
+        AnadirTejadoDosAguas(edif, b, h, 22f, _matTejadoTeja);
+    }
+
+    // c. Moderno post-1975
+    void ArquetipoModerno(Transform edif, Bounds b,
+                          float h, float w, float d, int niveles)
+    {
+        AnadirZocalo(edif, b, 0.28f, DarkenColor(COL_REVOCO_BLANCO, 0.85f));
+
+        // Ventanas grandes
+        for (int p = 0; p < niveles; p++)
+        {
+            float yBase = b.min.y + 0.3f + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(w / 1.5f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.8f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.9f, 1.4f, false, p == 0);
+            }
+        }
+
+        // Tejado plano con pretil 0.35m
+        AnadirTejadoPlano(edif, b, h, 0.35f);
+
+        // Cajas AC en fachada trasera
+        AnadirCajasAC(edif, b, h);
+    }
+
+    // d. Caserío
+    void ArquetipoCaserio(Transform edif, Bounds b,
+                          float h, float w, float d, int niveles)
+    {
+        AnadirZocalo(edif, b, 0.35f, DarkenColor(COL_CAL_BLANCA, 0.8f));
+
+        // Viga madera visible con vuelo 1.2m
+        AnadirVigaMadera(edif, b, h, w, 1.2f);
+
+        // Ventanas pequeñas cuadradas
+        for (int p = 0; p < niveles; p++)
+        {
+            float yBase = b.min.y + 0.4f + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(w / 1.8f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.65f, 0.9f, false, p == 0);
+            }
+        }
+
+        // Tejado 42° muy pronunciado
+        AnadirTejadoDosAguas(edif, b, h, 42f, _matTejadoTeja);
+        AnadirChimeneaPiedra(edif, b, h, 1);
+    }
+
+    // e. Bar / taberna
+    void ArquetipoBar(Transform edif, Bounds b,
+                      float h, float w, float d, int niveles, string nombre)
+    {
+        AnadirZocalo(edif, b, 0.28f, new Color(0.22f, 0.18f, 0.35f)); // azulejo oscuro
+
+        // Azulejo planta baja (6 filas × 15cm)
+        AnadirFranjaAzulejo(edif, b, 0.9f);
+
+        // Escaparate planta baja
+        CrearEscaparate(edif, b, w, true);
+
+        // Rótulo con nombre
+        string textoRotulo = string.IsNullOrEmpty(nombre) ? "TABERNA" : nombre.ToUpper();
+        AnadirRotulo(edif, b, textoRotulo, new Color(1f, 0.85f, 0f));
+
+        // Marquesina / canopy sobre entrada
+        AnadirCanopy(edif, b, w);
+
+        // Props en acera
+        AnadirPropBaril(edif, b);
+
+        // Luz ámbar PB
+        AnadirLuzInterior(edif, b, new Color(1f, 0.6f, 0.2f), 2.5f, kelvin: 2700);
+
+        // Ventanas pisos superiores
+        for (int p = 1; p < niveles; p++)
+        {
+            float yBase = b.min.y + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(w / 1.15f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.55f, 1.1f, false, false);
+            }
+        }
+
+        AnadirCornisaMoldurada(edif, b, h, 0.12f);
+    }
+
+    // f. Comercio
+    void ArquetipoComercio(Transform edif, Bounds b,
+                           float h, float w, float d, int niveles, string nombre)
+    {
+        AnadirZocalo(edif, b, 0.28f, new Color(0.6f, 0.58f, 0.55f));
+
+        // Escaparate 80% transparente PB
+        CrearEscaparate(edif, b, w, false);
+
+        // Persiana metálica enrollable sobre escaparate
+        AnadirPersiana(edif, b, w);
+
+        // Rótulo
+        string textoRotulo = string.IsNullOrEmpty(nombre) ? "COMERCIO" : nombre.ToUpper();
+        AnadirRotulo(edif, b, textoRotulo, new Color(0.2f, 0.2f, 0.8f));
+
+        // Luz fría interior 4000K
+        AnadirLuzInterior(edif, b, new Color(0.9f, 0.95f, 1f), 1.8f, kelvin: 4000);
+
+        // Pisos superiores
+        for (int p = 1; p < niveles; p++)
+        {
+            float yBase = b.min.y + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(1, Mathf.FloorToInt(w / 1.15f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.55f, 1.1f, false, false);
+            }
+        }
+
+        AnadirCornisaMoldurada(edif, b, h, 0.12f);
+    }
+
+    // g. Iglesia
+    void ArquetipoIglesia(Transform edif, Bounds b,
+                          float h, float w, float d, int niveles, string nombre)
+    {
+        // Zócalo grueso piedra oscura
+        AnadirZocalo(edif, b, 0.45f, DarkenColor(COL_PIEDRA_OSCURA, 0.8f));
+
+        // Contrafuertes (pilastras laterales)
+        AnadirContrafuertes(edif, b, h);
+
+        // Ventanas altas estrechas (gótico)
+        int cols = Mathf.Max(1, Mathf.FloorToInt(w / 2.5f));
+        for (int c = 0; c < cols; c++)
+        {
+            float x = b.min.x + (c + 0.5f) * (w / cols);
+            for (int p = 0; p < niveles; p++)
+            {
+                float yBase = b.min.y + p * GeoDataAlsasua.ALT_PLANTA + 0.5f;
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 1f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.4f, 2.2f, true, p == 0);
+            }
+        }
+
+        // Campanil (torre campanario)
+        AnadirCampanil(edif, b, h, w, d);
+
+        // Atrio con adoquín
+        AnadirAtrioCobblestone(edif, b);
+
+        // Tejado muy pronunciado 52°
+        AnadirTejadoDosAguas(edif, b, h, 52f, _matTejadoPizarra);
+    }
+
+    // h. Nave industrial
+    void ArquetipoNaveIndustrial(Transform edif, Bounds b,
+                                  float h, float w, float d, int niveles)
+    {
+        // Puerta corredera 3×4m
+        AnadirPuertaCorredera(edif, b, 3f, 4f);
+
+        // Lucernario en tejado
+        AnadirLucernario(edif, b, h, w, d);
+
+        // Tejado plano con canalones metálicos
+        AnadirTejadoPlano(edif, b, h, 0.15f);
+        AnadirCanalones(edif, b, h, w);
+    }
+
+    // i. Equipamiento público
+    void ArquetipoEquipamiento(Transform edif, Bounds b,
+                               float h, float w, float d, int niveles, string nombre)
+    {
+        AnadirZocalo(edif, b, 0.35f, new Color(0.6f, 0.45f, 0.3f));
+
+        // Marquesina institucional
+        AnadirCanopy(edif, b, Mathf.Min(w * 0.4f, 3f));
+
+        // Megáfono en fachada
+        AnadirMegafono(edif, b);
+
+        // Ventanas grandes uniformes
+        for (int p = 0; p < niveles; p++)
+        {
+            float yBase = b.min.y + p * GeoDataAlsasua.ALT_PLANTA;
+            int cols = Mathf.Max(2, Mathf.FloorToInt(w / 1.8f));
+            for (int c = 0; c < cols; c++)
+            {
+                float x = b.min.x + (c + 0.5f) * (w / cols);
+                CrearVentanaVasca(edif,
+                    new Vector3(x, yBase + 0.9f, b.min.z - 0.005f),
+                    Quaternion.Euler(0, 180, 0), 0.8f, 1.3f, false, p == 0);
+            }
+        }
+
+        AnadirCornisaMoldurada(edif, b, h, 0.14f);
+        AnadirTejadoPlano(edif, b, h, 0.3f);
+    }
+
+    // j. Frontón
+    void ArquetipoFronton(Transform edif, Bounds b, float h, float w, float d)
+    {
+        // Marcas de impacto procedurales en pared frontal
+        AnadirMarcasImpacto(edif, b, w, d);
+
+        // Red metálica perimetral
+        AnadirRedMetalica(edif, b, h);
+
+        // Sin tejado convencional — losa plana
+        AnadirTejadoPlano(edif, b, h, 0.2f);
+    }
+
+    // k. Aparcamiento
+    void ArquetipoAparcamiento(Transform edif, Bounds b, float h, float w, float d)
+    {
+        if (h > 1.5f)
+        {
+            // Cubierto: losa + pilares
+            AnadirPilaresAparcamiento(edif, b, h, w, d);
+            AnadirTejadoPlano(edif, b, h, 0.1f);
+        }
+        else
+        {
+            // Descubierto: líneas blancas en asfalto
+            AnadirLineasAparcamiento(edif, b, w, d);
+        }
+    }
+
+    // l. Solar / ruina
+    void ArquetipoSolar(Transform edif, Bounds b)
+    {
+        // Escombros + crate abierto
+        AnadirEscombros(edif, b);
+
+        // Graffiti político vasco seguro
+        AnadirGraffiti(edif, b);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ELEMENTOS DE FACHADA REUTILIZABLES
+    // ═══════════════════════════════════════════════════════════════════════
+
+    void AnadirZocalo(Transform edif, Bounds b, float altura, Color color)
     {
         var go = PrimitivoHijo("Zocalo", edif,
-            new Vector3(b.center.x, b.min.y + 0.175f, b.center.z),
-            new Vector3(b.size.x + 0.08f, 0.35f, b.size.z + 0.08f),
-            _matZocalo);
+            new Vector3(b.center.x, b.min.y + altura * 0.5f, b.center.z),
+            new Vector3(b.size.x + 0.08f, altura, b.size.z + 0.08f),
+            MatConColor(_matZocalo, color));
         go.isStatic = true;
     }
 
-    void AnadirVentanasFachada(Transform edif, Bounds b, float yBase, bool esPlBaja)
+    void CrearVentanaVasca(Transform edif, Vector3 pos, Quaternion rot,
+                            float ancho, float alto, bool usarConvex, bool esPlantaBaja)
     {
-        float altV = esPlBaja ? 2.0f : 1.1f;
-        float ancV = esPlBaja ? 1.3f : 0.85f;
-        float paso = esPlBaja ? 2.8f : 1.9f;
-
-        int nW = Mathf.Max(1, Mathf.FloorToInt(b.size.x / paso));
-        int nD = Mathf.Max(1, Mathf.FloorToInt(b.size.z / paso));
-
-        // Fachadas principal y trasera
-        for (int k = 0; k < nW; k++)
-        {
-            float x = b.min.x + (k + 0.5f) * (b.size.x / nW);
-            float yV = yBase + (esPlBaja ? 0.6f : 1.0f);
-            CrearVentana(edif, new Vector3(x, yV, b.min.z - 0.005f), Quaternion.Euler(0,180,0), ancV, altV, esPlBaja);
-            CrearVentana(edif, new Vector3(x, yV, b.max.z + 0.005f), Quaternion.identity,       ancV, altV, false);
-        }
-        // Laterales
-        for (int k = 0; k < nD; k++)
-        {
-            float z = b.min.z + (k + 0.5f) * (b.size.z / nD);
-            float yV = yBase + 1.0f;
-            CrearVentana(edif, new Vector3(b.min.x - 0.005f, yV, z), Quaternion.Euler(0,90,0),   ancV, altV, false);
-            CrearVentana(edif, new Vector3(b.max.x + 0.005f, yV, z), Quaternion.Euler(0,-90,0),  ancV, altV, false);
-        }
-    }
-
-    void CrearVentana(Transform edif, Vector3 pos, Quaternion rot, float ancho, float alto, bool esVitrina)
-    {
-        var root = new GameObject(esVitrina ? "Vitrina" : "Ventana");
+        var root = new GameObject(esPlantaBaja ? "Vitrina" : (usarConvex ? "Ventana_Convex" : "Ventana"));
         root.transform.SetParent(edif);
         root.transform.SetPositionAndRotation(pos, rot);
         root.isStatic = true;
 
-        // Dintel superior
-        PrimitivoHijo("Dintel", root.transform,
-            new Vector3(0, alto * 0.5f + 0.05f, 0f),
-            new Vector3(ancho + 0.1f, 0.1f, 0.08f), _matCornisa);
+        // Vierteaguas bajo ventana (Canopy_Side)
+        if (!esPlantaBaja)
+        {
+            var vierteaguas = PrimitivoHijo("Vierteaguas", root.transform,
+                new Vector3(0, -alto * 0.5f - 0.04f, 0.04f),
+                new Vector3(ancho + 0.1f, 0.05f, 0.12f), _matCornisa);
+            vierteaguas.transform.localRotation = Quaternion.Euler(-15f, 0, 0);
+        }
 
         // Marco
-        PrimitivoHijo("Marco", root.transform,
-            Vector3.zero,
+        PrimitivoHijo("Marco", root.transform, Vector3.zero,
             new Vector3(ancho + 0.1f, alto + 0.1f, 0.07f), _matMarco);
 
-        // Vidrio (con emisión nocturna)
+        // Vidrio HDRP: Smoothness=0.92, IOR=1.52
         var vidrio = PrimitivoHijo("Vidrio", root.transform,
             new Vector3(0, 0, -0.02f),
-            new Vector3(ancho - 0.05f, alto - 0.05f, 0.02f), _matVidrio);
-        _ventanas.Add(vidrio.GetComponent<MeshRenderer>());
+            new Vector3(ancho - 0.04f, alto - 0.04f, 0.02f), _matVidrio);
+        _ventanasNocturnas.Add(vidrio.GetComponent<MeshRenderer>());
 
-        // División central (solo ventanas normales)
-        if (!esVitrina)
+        // División central
+        if (!esPlantaBaja)
             PrimitivoHijo("Division", root.transform,
                 new Vector3(0, 0, -0.015f),
-                new Vector3(0.04f, alto - 0.05f, 0.025f), _matMarco);
+                new Vector3(0.04f, alto - 0.04f, 0.025f), _matMarco);
+
+        // Dintel superior (arco convex para pre-1940)
+        if (usarConvex)
+            PrimitivoHijo("Dintel", root.transform,
+                new Vector3(0, alto * 0.5f + 0.055f, 0),
+                new Vector3(ancho + 0.12f, 0.11f, 0.10f), _matCornisa);
     }
 
-    void AnadirBalcon(Transform edif, Bounds b, float y)
+    void AnadirBalconForja(Transform edif, Bounds b, float y, float w)
     {
-        float anchoB = Mathf.Min(b.size.x * 0.6f, 2.2f);
+        float anchoB = Mathf.Min(w * 0.65f, 2.4f);
 
         // Losa
         PrimitivoHijo("BalconLosa", edif,
-            new Vector3(b.center.x, y, b.min.z - 0.5f),
-            new Vector3(anchoB, 0.12f, 1.0f), _matCornisa).isStatic = true;
+            new Vector3(b.center.x, y, b.min.z - 0.55f),
+            new Vector3(anchoB, 0.12f, 1.1f), _matCornisa).isStatic = true;
 
-        // Barandilla — perfil en U de hierro
-        float bx0 = b.center.x - anchoB * 0.5f;
-        float bz   = b.min.z - 0.95f;
-        int  nBarras = Mathf.Max(3, (int)(anchoB * 2.8f));
+        // Barandilla forja negra
+        float bz   = b.min.z - 1.05f;
+        float bx0  = b.center.x - anchoB * 0.5f;
+        int nBarras = Mathf.Max(3, (int)(anchoB * 3f));
 
         for (int k = 0; k <= nBarras; k++)
         {
             float bx = bx0 + k * (anchoB / nBarras);
             PrimitivoHijo($"Barra{k}", edif,
                 new Vector3(bx, y + 0.44f, bz),
-                new Vector3(0.035f, 0.8f, 0.035f), _matHierro).isStatic = true;
+                new Vector3(0.03f, 0.8f, 0.03f), _matHierro).isStatic = true;
         }
-        // Barra horizontal superior
         PrimitivoHijo("BarraH", edif,
             new Vector3(b.center.x, y + 0.86f, bz),
-            new Vector3(anchoB, 0.055f, 0.055f), _matHierro).isStatic = true;
-        // Barra horizontal inferior
+            new Vector3(anchoB, 0.05f, 0.05f), _matHierro).isStatic = true;
         PrimitivoHijo("BarraHB", edif,
-            new Vector3(b.center.x, y + 0.05f, bz),
-            new Vector3(anchoB, 0.045f, 0.045f), _matHierro).isStatic = true;
+            new Vector3(b.center.x, y + 0.06f, bz),
+            new Vector3(anchoB, 0.04f, 0.04f), _matHierro).isStatic = true;
     }
 
-    void AnadirCornisa(Transform edif, Bounds b, float h)
+    void AnadirBalconHormigon(Transform edif, Bounds b, float y, float w)
     {
+        float anchoB = Mathf.Min(w * 0.6f, 2.2f);
+        PrimitivoHijo("BalconLosa", edif,
+            new Vector3(b.center.x, y, b.min.z - 0.5f),
+            new Vector3(anchoB, 0.14f, 1.0f), _matHormigon).isStatic = true;
+
+        PrimitivoHijo("PretilBalcon", edif,
+            new Vector3(b.center.x, y + 0.5f, b.min.z - 1.0f),
+            new Vector3(anchoB, 0.9f, 0.1f), _matHormigon).isStatic = true;
+    }
+
+    void AnadirCornisaMoldurada(Transform edif, Bounds b, float h, float vuelo)
+    {
+        // Banda cornisa principal
         PrimitivoHijo("Cornisa", edif,
             new Vector3(b.center.x, b.min.y + h + 0.15f, b.center.z),
-            new Vector3(b.size.x + 0.35f, 0.30f, b.size.z + 0.35f),
+            new Vector3(b.size.x + vuelo * 2f, 0.25f, b.size.z + vuelo * 2f),
+            _matCornisa).isStatic = true;
+
+        // Moldura inferior (gola)
+        PrimitivoHijo("Cornisa_Gola", edif,
+            new Vector3(b.center.x, b.min.y + h + 0.02f, b.center.z),
+            new Vector3(b.size.x + vuelo * 1.4f, 0.10f, b.size.z + vuelo * 1.4f),
             _matCornisa).isStatic = true;
     }
 
-    void AnadirTejadoPendiente(Transform edif, Bounds b, float h)
+    void AnadirTejadoDosAguas(Transform edif, Bounds b, float h, float angulo, Material mat)
     {
-        var matTejado = _matsTejado != null && _matsTejado.Length > 0
-            ? _matsTejado[Mathf.Abs(edif.GetInstanceID()) % _matsTejado.Length]
-            : _matCornisa;
+        Material matTej = mat ?? _matTejadoTeja;
+        float crest = Mathf.Min(b.size.x, b.size.z) * 0.5f * Mathf.Tan(angulo * Mathf.Deg2Rad);
 
-        // Tejado a dos aguas — dos triángulos prismáticos
-        float crest = Mathf.Min(b.size.x, b.size.z) * 0.42f; // altura de cresta
-
-        // Lado derecho
+        // Faldón derecho
         var tejR = new GameObject("TejadoR");
         tejR.transform.SetParent(edif);
-        tejR.transform.position  = new Vector3(b.center.x, b.min.y + h, b.center.z);
-        tejR.transform.rotation  = Quaternion.Euler(0, 0, -Mathf.Atan2(crest, b.size.x * 0.5f) * Mathf.Rad2Deg);
+        tejR.transform.position = new Vector3(b.center.x, b.min.y + h, b.center.z);
+        tejR.transform.rotation = Quaternion.Euler(0, 0,
+            -Mathf.Atan2(crest, b.size.x * 0.5f) * Mathf.Rad2Deg);
         tejR.isStatic = true;
-        var mf = tejR.AddComponent<MeshFilter>();
-        mf.sharedMesh = GenerarMeshTejado(b.size.x, b.size.z, crest, true);
-        var mr = tejR.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = matTejado;
-        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        tejR.AddComponent<MeshFilter>().sharedMesh = GenerarMeshFaldon(b.size.x, b.size.z, crest, true);
+        var mrR = tejR.AddComponent<MeshRenderer>();
+        mrR.sharedMaterial = matTej;
 
-        // Lado izquierdo (espejo)
+        // Faldón izquierdo
         var tejL = new GameObject("TejadoL");
         tejL.transform.SetParent(edif);
         tejL.transform.position = new Vector3(b.center.x, b.min.y + h, b.center.z);
-        tejL.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(crest, b.size.x * 0.5f) * Mathf.Rad2Deg);
+        tejL.transform.rotation = Quaternion.Euler(0, 0,
+            Mathf.Atan2(crest, b.size.x * 0.5f) * Mathf.Rad2Deg);
         tejL.isStatic = true;
-        var mf2 = tejL.AddComponent<MeshFilter>();
-        mf2.sharedMesh = GenerarMeshTejado(b.size.x, b.size.z, crest, false);
-        var mr2 = tejL.AddComponent<MeshRenderer>();
-        mr2.sharedMaterial = matTejado;
+        tejL.AddComponent<MeshFilter>().sharedMesh = GenerarMeshFaldon(b.size.x, b.size.z, crest, false);
+        tejL.AddComponent<MeshRenderer>().sharedMaterial = matTej;
 
-        // Cornisa bajo el tejado
-        AnadirCornisa(edif, b, h - 0.1f);
+        // Canalón + bajante cada 8m
+        AnadirCanalonBajante(edif, b, h, matTej);
+
+        // Cornisa bajo tejado
+        AnadirCornisaMoldurada(edif, b, h - 0.1f, 0.10f);
     }
 
-    Mesh GenerarMeshTejado(float w, float d, float crest, bool lado)
+    void AnadirTejadoPlano(Transform edif, Bounds b, float h, float alturaPretil)
     {
-        // Plano inclinado de tejado
-        float sign = lado ? 1f : -1f;
-        var verts = new Vector3[]
+        // Losa
+        PrimitivoHijo("TejadoPlano", edif,
+            new Vector3(b.center.x, b.min.y + h + 0.05f, b.center.z),
+            new Vector3(b.size.x + 0.1f, 0.12f, b.size.z + 0.1f),
+            _matTejadoPlano).isStatic = true;
+
+        // Pretil 0.35m
+        if (alturaPretil > 0.05f)
         {
-            new Vector3( sign * w * 0.5f, 0, -d * 0.5f),
-            new Vector3( sign * w * 0.5f, 0,  d * 0.5f),
-            new Vector3( 0,           crest, -d * 0.5f),
-            new Vector3( 0,           crest,  d * 0.5f),
-        };
-        var tris = new int[] { 0, 2, 1, 1, 2, 3 };
-        var uvs  = new Vector2[] {
-            new(0,0), new(0,1), new(1,0), new(1,1)
-        };
-        var mesh = new Mesh();
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-        mesh.SetUVs(0, uvs);
-        mesh.RecalculateNormals();
-        return mesh;
+            for (int cara = 0; cara < 4; cara++)
+            {
+                bool ejeX = (cara < 2);
+                float px = ejeX ? b.center.x : (cara == 2 ? b.min.x - alturaPretil * 0.5f : b.max.x + alturaPretil * 0.5f);
+                float pz = ejeX ? (cara == 0 ? b.min.z - alturaPretil * 0.5f : b.max.z + alturaPretil * 0.5f) : b.center.z;
+                float sw = ejeX ? b.size.x + alturaPretil * 2f : alturaPretil;
+                float sd = ejeX ? alturaPretil : b.size.z;
+                PrimitivoHijo($"Pretil{cara}", edif,
+                    new Vector3(px, b.min.y + h + 0.12f + alturaPretil * 0.5f, pz),
+                    new Vector3(sw, alturaPretil, sd),
+                    _matHormigon).isStatic = true;
+            }
+        }
     }
 
-    void AnadirChimeneas(Transform edif, Bounds b, float h)
+    void AnadirVigaMadera(Transform edif, Bounds b, float h, float w, float vuelo)
     {
-        int n = Random.Range(1, 3);
-        for (int k = 0; k < n; k++)
+        float y = b.min.y + h - 0.3f;
+        int nVigas = Mathf.Max(2, (int)(w / 1.5f));
+        for (int k = 0; k < nVigas; k++)
+        {
+            float x = b.min.x + (k + 0.5f) * (w / nVigas);
+            PrimitivoHijo($"Viga{k}", edif,
+                new Vector3(x, y, b.min.z - vuelo * 0.5f),
+                new Vector3(0.2f, 0.22f, vuelo * 2f), _matMadera).isStatic = true;
+        }
+        // Tablazón longitudinal
+        PrimitivoHijo("Tablazón", edif,
+            new Vector3(b.center.x, y - 0.12f, b.min.z - vuelo * 0.5f),
+            new Vector3(w, 0.06f, vuelo * 2f), _matMadera).isStatic = true;
+    }
+
+    void AnadirChimeneaPiedra(Transform edif, Bounds b, float h, int cantidad)
+    {
+        cantidad = Mathf.Min(cantidad, 3);
+        for (int k = 0; k < cantidad; k++)
         {
             float cx = b.min.x + Random.Range(0.2f, 0.8f) * b.size.x;
             float cz = b.min.z + Random.Range(0.2f, 0.8f) * b.size.z;
             float cy = b.min.y + h;
-            float altChi = Random.Range(0.6f, 1.2f);
-            float anchoChi = Random.Range(0.25f, 0.45f);
+            float altChi = Random.Range(0.7f, 1.2f);
+            float anchoC = 0.35f;
 
-            // Cuerpo de chimenea
+            // Cuerpo
             PrimitivoHijo($"Chimenea{k}", edif,
                 new Vector3(cx, cy + altChi * 0.5f, cz),
-                new Vector3(anchoChi, altChi, anchoChi), _matZocalo).isStatic = true;
+                new Vector3(anchoC, altChi, anchoC), _matPiedra).isStatic = true;
 
             // Sombrero
             PrimitivoHijo($"ChimSombrero{k}", edif,
-                new Vector3(cx, cy + altChi + 0.05f, cz),
-                new Vector3(anchoChi + 0.12f, 0.1f, anchoChi + 0.12f), _matCornisa).isStatic = true;
+                new Vector3(cx, cy + altChi + 0.06f, cz),
+                new Vector3(anchoC + 0.14f, 0.1f, anchoC + 0.14f), _matCornisa).isStatic = true;
         }
+    }
+
+    void AnadirCampanil(Transform edif, Bounds b, float h, float w, float d)
+    {
+        float sz = Mathf.Min(w, d) * 0.22f;
+        float altTorre = h * 0.7f;
+
+        PrimitivoHijo("Campanil", edif,
+            new Vector3(b.center.x, b.min.y + h + altTorre * 0.5f, b.min.z + sz * 0.5f),
+            new Vector3(sz, altTorre, sz), _matPiedra).isStatic = true;
+
+        // Remate
+        PrimitivoHijo("CampanilRemate", edif,
+            new Vector3(b.center.x, b.min.y + h + altTorre + sz * 0.5f, b.min.z + sz * 0.5f),
+            new Vector3(sz + 0.1f, sz * 0.5f, sz + 0.1f), _matCornisa).isStatic = true;
+    }
+
+    void AnadirContrafuertes(Transform edif, Bounds b, float h)
+    {
+        int n = Mathf.Max(2, (int)(b.size.z / 5f));
+        for (int k = 0; k <= n; k++)
+        {
+            float z = b.min.z + k * (b.size.z / n);
+            PrimitivoHijo($"ContrafuerteL{k}", edif,
+                new Vector3(b.min.x - 0.3f, b.min.y + h * 0.5f, z),
+                new Vector3(0.6f, h, 0.5f), _matPiedra).isStatic = true;
+            PrimitivoHijo($"ContrafuerteR{k}", edif,
+                new Vector3(b.max.x + 0.3f, b.min.y + h * 0.5f, z),
+                new Vector3(0.6f, h, 0.5f), _matPiedra).isStatic = true;
+        }
+    }
+
+    void AnadirAtrioCobblestone(Transform edif, Bounds b)
+    {
+        PrimitivoHijo("Atrio", edif,
+            new Vector3(b.center.x, b.min.y + 0.02f, b.min.z - 2.5f),
+            new Vector3(b.size.x * 0.7f, 0.05f, 5f), MatConColor(_matAsfalto, new Color(0.55f, 0.52f, 0.48f)))
+            .isStatic = true;
+    }
+
+    void AnadirFranjaAzulejo(Transform edif, Bounds b, float altura)
+    {
+        PrimitivoHijo("FranjaAzulejo", edif,
+            new Vector3(b.center.x, b.min.y + altura * 0.5f, b.min.z - 0.01f),
+            new Vector3(b.size.x, altura, 0.04f), _matAzulejo).isStatic = true;
+    }
+
+    void CrearEscaparate(Transform edif, Bounds b, float w, bool esBar)
+    {
+        float anchoEsc = w * 0.7f;
+        float altoEsc  = 2.2f;
+        // Marco
+        PrimitivoHijo("EscaparateMarco", edif,
+            new Vector3(b.center.x, b.min.y + altoEsc * 0.5f + 0.1f, b.min.z - 0.04f),
+            new Vector3(anchoEsc + 0.08f, altoEsc + 0.08f, 0.07f), _matMarco).isStatic = true;
+        // Vidrio 80% transparente
+        var vGo = PrimitivoHijo("EscaparateVidrio", edif,
+            new Vector3(b.center.x, b.min.y + altoEsc * 0.5f + 0.1f, b.min.z - 0.02f),
+            new Vector3(anchoEsc, altoEsc, 0.02f), _matVidrio);
+        vGo.isStatic = true;
+        _ventanasNocturnas.Add(vGo.GetComponent<MeshRenderer>());
+    }
+
+    void AnadirPersiana(Transform edif, Bounds b, float w)
+    {
+        PrimitivoHijo("Persiana", edif,
+            new Vector3(b.center.x, b.min.y + 1.2f, b.min.z - 0.06f),
+            new Vector3(w * 0.7f, 0.06f, 0.04f), _matChapa).isStatic = true;
+    }
+
+    void AnadirCanopy(Transform edif, Bounds b, float anchoCanopy)
+    {
+        float y = b.min.y + 2.5f;
+        PrimitivoHijo("Canopy", edif,
+            new Vector3(b.center.x, y, b.min.z - 0.8f),
+            new Vector3(anchoCanopy, 0.08f, 1.6f),
+            MatConColor(_matChapa, new Color(0.8f, 0.3f, 0.2f))).isStatic = true;
+
+        // Soporte diagonal
+        PrimitivoHijo("CanopySoporte", edif,
+            new Vector3(b.center.x, y - 0.4f, b.min.z - 0.3f),
+            new Vector3(0.06f, 0.8f, 0.06f), _matHierro).isStatic = true;
+    }
+
+    void AnadirRotulo(Transform edif, Bounds b, string texto, Color colorRotulo)
+    {
+        var go = PrimitivoHijo("Rotulo", edif,
+            new Vector3(b.center.x, b.min.y + 2.8f, b.min.z - 0.06f),
+            new Vector3(Mathf.Min(b.size.x * 0.7f, 3.5f), 0.5f, 0.05f),
+            MatConColor(_matChapa, colorRotulo));
+        go.name = $"Rotulo_{texto}";
+        go.isStatic = true;
+    }
+
+    void AnadirPropBaril(Transform edif, Bounds b)
+    {
+        PrimitivoHijo("Barril", edif,
+            new Vector3(b.min.x + 0.4f, b.min.y + 0.45f, b.min.z - 0.6f),
+            new Vector3(0.45f, 0.9f, 0.45f),
+            MatConColor(_matMadera, new Color(0.4f, 0.28f, 0.15f))).isStatic = true;
+    }
+
+    void AnadirLuzInterior(Transform edif, Bounds b, Color colorLuz, float intensidad, int kelvin)
+    {
+        var lightGO = new GameObject($"LuzInterior_{kelvin}K");
+        lightGO.transform.SetParent(edif);
+        lightGO.transform.position = new Vector3(b.center.x, b.min.y + 2.5f, b.min.z + 0.5f);
+
+        var light = lightGO.AddComponent<Light>();
+        light.type       = LightType.Point;
+        light.color      = colorLuz;
+        light.intensity  = intensidad;
+        light.range      = 8f;
+        light.enabled    = false; // activar en ciclo nocturno
+        _ventanasNocturnas.Add(null); // placeholder para que el ciclo lo gestione
+    }
+
+    void AnadirCajasAC(Transform edif, Bounds b, float h)
+    {
+        int n = Mathf.Max(1, (int)(b.size.z / 4f));
+        for (int k = 0; k < n; k++)
+        {
+            float z = b.min.z + (k + 0.5f) * (b.size.z / n);
+            PrimitivoHijo($"CajaAC{k}", edif,
+                new Vector3(b.max.x + 0.2f, b.min.y + h - 1.2f, z),
+                new Vector3(0.8f, 0.5f, 0.6f), _matChapa).isStatic = true;
+        }
+    }
+
+    void AnadirPuertaCorredera(Transform edif, Bounds b, float anchoP, float altoP)
+    {
+        PrimitivoHijo("PuertaCorredera", edif,
+            new Vector3(b.center.x, b.min.y + altoP * 0.5f, b.min.z - 0.08f),
+            new Vector3(anchoP, altoP, 0.1f), _matChapa).isStatic = true;
+
+        // Raíl superior
+        PrimitivoHijo("Rail", edif,
+            new Vector3(b.center.x, b.min.y + altoP + 0.06f, b.min.z - 0.06f),
+            new Vector3(anchoP + 0.6f, 0.1f, 0.12f), _matHierro).isStatic = true;
+    }
+
+    void AnadirLucernario(Transform edif, Bounds b, float h, float w, float d)
+    {
+        float lw = w * 0.3f, ld = d * 0.15f;
+        PrimitivoHijo("Lucernario", edif,
+            new Vector3(b.center.x, b.min.y + h + 0.3f, b.center.z),
+            new Vector3(lw, 0.6f, ld), _matVidrio).isStatic = true;
+    }
+
+    void AnadirCanalones(Transform edif, Bounds b, float h, float w)
+    {
+        int n = Mathf.Max(1, (int)(w / 8f));
+        for (int k = 0; k < n; k++)
+        {
+            float x = b.min.x + (k + 0.5f) * (w / n);
+            // Canalón horizontal
+            PrimitivoHijo($"Canalon{k}", edif,
+                new Vector3(x, b.min.y + h + 0.05f, b.min.z - 0.15f),
+                new Vector3(0.12f, 0.12f, 0.12f), _matHierro).isStatic = true;
+            // Bajante vertical
+            PrimitivoHijo($"Bajante{k}", edif,
+                new Vector3(x, b.min.y + h * 0.5f, b.min.z - 0.1f),
+                new Vector3(0.1f, h, 0.1f), _matHierro).isStatic = true;
+        }
+    }
+
+    void AnadirCanalonBajante(Transform edif, Bounds b, float h, Material mat)
+    {
+        // Canalones en la base del tejado a dos aguas
+        int n = Mathf.Max(1, (int)(b.size.x / 8f));
+        for (int k = 0; k < n; k++)
+        {
+            float x = b.min.x + (k + 0.5f) * (b.size.x / n);
+            PrimitivoHijo($"Bajante{k}", edif,
+                new Vector3(x, b.min.y + h * 0.5f, b.min.z - 0.12f),
+                new Vector3(0.08f, h, 0.08f),
+                MatConColor(_matHierro, new Color(0.35f, 0.35f, 0.38f))).isStatic = true;
+        }
+    }
+
+    void AnadirMarcasImpacto(Transform edif, Bounds b, float w, float d)
+    {
+        int n = Random.Range(5, 15);
+        for (int k = 0; k < n; k++)
+        {
+            float x = b.min.x + Random.Range(0.1f, 0.9f) * w;
+            float y = b.min.y + Random.Range(0.5f, b.size.y * 0.8f);
+            var impacto = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            impacto.name = $"Impacto{k}";
+            impacto.transform.SetParent(edif);
+            impacto.transform.position = new Vector3(x, y, b.min.z - 0.02f);
+            impacto.transform.localScale = Vector3.one * Random.Range(0.04f, 0.1f);
+            impacto.GetComponent<Renderer>().sharedMaterial =
+                MatConColor(_matHormigon, new Color(0.3f, 0.28f, 0.25f));
+            Object.Destroy(impacto.GetComponent<Collider>());
+            impacto.isStatic = true;
+        }
+    }
+
+    void AnadirRedMetalica(Transform edif, Bounds b, float h)
+    {
+        // Postes laterales
+        for (int k = 0; k < 4; k++)
+        {
+            float z = b.min.z + k * (b.size.z / 3f);
+            PrimitivoHijo($"PosteRedD{k}", edif,
+                new Vector3(b.max.x + 0.05f, b.min.y + h * 0.5f, z),
+                new Vector3(0.08f, h, 0.08f), _matHierro).isStatic = true;
+        }
+    }
+
+    void AnadirPilaresAparcamiento(Transform edif, Bounds b, float h, float w, float d)
+    {
+        int nx = Mathf.Max(2, (int)(w / 5f));
+        int nz = Mathf.Max(2, (int)(d / 5f));
+        for (int ix = 0; ix <= nx; ix++)
+        for (int iz = 0; iz <= nz; iz++)
+        {
+            float x = b.min.x + ix * (w / nx);
+            float z = b.min.z + iz * (d / nz);
+            PrimitivoHijo($"Pilar_{ix}_{iz}", edif,
+                new Vector3(x, b.min.y + h * 0.5f, z),
+                new Vector3(0.35f, h, 0.35f), _matHormigon).isStatic = true;
+        }
+    }
+
+    void AnadirLineasAparcamiento(Transform edif, Bounds b, float w, float d)
+    {
+        int n = Mathf.Max(2, (int)(w / 2.5f));
+        for (int k = 0; k <= n; k++)
+        {
+            float x = b.min.x + k * (w / n);
+            PrimitivoHijo($"Linea{k}", edif,
+                new Vector3(x, b.min.y + 0.02f, b.center.z),
+                new Vector3(0.1f, 0.01f, d), _matLinea).isStatic = true;
+        }
+    }
+
+    void AnadirEscombros(Transform edif, Bounds b)
+    {
+        int n = Random.Range(3, 7);
+        for (int k = 0; k < n; k++)
+        {
+            float x = b.min.x + Random.Range(0.1f, 0.9f) * b.size.x;
+            float z = b.min.z + Random.Range(0.1f, 0.9f) * b.size.z;
+            var esc = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            esc.name = $"Escombro{k}";
+            esc.transform.SetParent(edif);
+            esc.transform.position = new Vector3(x, b.min.y + 0.2f, z);
+            esc.transform.localScale = new Vector3(
+                Random.Range(0.2f, 0.8f), Random.Range(0.1f, 0.5f), Random.Range(0.2f, 0.8f));
+            esc.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360f), 0);
+            esc.GetComponent<Renderer>().sharedMaterial =
+                MatConColor(_matPiedra, Color.Lerp(COL_PIEDRA_OSCURA, Color.gray, Random.value * 0.4f));
+            Object.Destroy(esc.GetComponent<Collider>());
+            esc.isStatic = true;
+        }
+    }
+
+    void AnadirMegafono(Transform edif, Bounds b)
+    {
+        PrimitivoHijo("Megafono", edif,
+            new Vector3(b.min.x + 0.5f, b.min.y + b.size.y * 0.8f, b.min.z - 0.3f),
+            new Vector3(0.25f, 0.25f, 0.4f),
+            MatConColor(_matChapa, new Color(0.4f, 0.4f, 0.45f))).isStatic = true;
     }
 
     void AnadirGraffiti(Transform edif, Bounds b)
@@ -492,98 +1105,241 @@ public class SistemaEdificiosAAA : MonoBehaviour
         Quaternion rot;
         if (fachada)
         {
-            pos = new Vector3(
-                b.min.x + Random.Range(0.15f, 0.85f) * b.size.x,
-                b.min.y + Random.Range(0.5f, 2.0f), b.min.z - 0.012f);
+            pos = new Vector3(b.min.x + Random.Range(0.15f, 0.85f) * b.size.x,
+                b.min.y + Random.Range(0.5f, 2.0f), b.min.z - 0.015f);
             rot = Quaternion.Euler(0, 180, 0);
         }
         else
         {
-            pos = new Vector3(b.min.x - 0.012f,
+            pos = new Vector3(b.min.x - 0.015f,
                 b.min.y + Random.Range(0.5f, 2.0f),
                 b.min.z + Random.Range(0.15f, 0.85f) * b.size.z);
             rot = Quaternion.Euler(0, 90, 0);
         }
 
         var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        go.name = $"Graffiti_{texto.Replace(" ","_")}";
+        go.name = $"Graffiti_{texto.Replace(" ", "_")}";
         go.transform.SetParent(edif);
         go.transform.SetPositionAndRotation(pos, rot);
-        go.transform.localScale = new Vector3(
-            Random.Range(0.9f, 2.2f), Random.Range(0.35f, 0.6f), 1f);
-
-        var matG = new Material(Shader.Find("HDRP/Unlit") ?? Shader.Find("Standard"))
+        go.transform.localScale = new Vector3(Random.Range(0.9f, 2.2f), Random.Range(0.35f, 0.6f), 1f);
+        go.GetComponent<MeshRenderer>().sharedMaterial =
+            new Material(Shader.Find("HDRP/Unlit") ?? Shader.Find("Standard"))
             { color = new Color(color.r, color.g, color.b, 0.88f) };
-        go.GetComponent<MeshRenderer>().sharedMaterial = matG;
         go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         Object.Destroy(go.GetComponent<Collider>());
         go.isStatic = true;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  LOD — 3 niveles
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    //  LOD — 4 niveles
+    // ═══════════════════════════════════════════════════════════════════════
 
-    void ConfigurarLOD(Transform edif, MeshRenderer mrBase, Mesh mesh)
+    void ConfigurarLOD(Transform edif, MeshRenderer mrBase, Mesh mesh,
+                        ArquetipoVasco arquetipo)
     {
-        // Todos los renderers del edificio (base + ventanas + detalles)
+        if (edif.GetComponent<LODGroup>() != null) return;
+
         var allRenderers = edif.GetComponentsInChildren<MeshRenderer>();
 
-        // LOD1: solo el cuerpo base + primer nivel de ventanas
+        // LOD1: sin interiores (sin vidrios, sin luces)
         var rendLOD1 = allRenderers.Where(r =>
-            r.gameObject.name == edif.name ||
-            r.gameObject.name.StartsWith("Ventana") ||
-            r.gameObject.name.StartsWith("Vitrina")).ToArray();
+            !r.gameObject.name.StartsWith("Vidrio") &&
+            !r.gameObject.name.StartsWith("LuzInterior")).ToArray();
 
-        // LOD2: caja simplificada
-        var cajaSimpGO = new GameObject("LOD2_Caja");
+        // LOD2: mesh simplificado — solo el cuerpo base + tejado
+        var cajaSimpGO = new GameObject("LOD2_Simplified");
         cajaSimpGO.transform.SetParent(edif);
-        cajaSimpGO.transform.localPosition = mesh.bounds.center - edif.position;
+        cajaSimpGO.transform.localPosition = Vector3.zero;
         var cajaMF = cajaSimpGO.AddComponent<MeshFilter>();
         cajaMF.sharedMesh = CuboUnitarioCacheado();
         var cajaMR = cajaSimpGO.AddComponent<MeshRenderer>();
-        cajaMR.sharedMaterial = mrBase.sharedMaterial;
+        cajaMR.sharedMaterial = mrBase?.sharedMaterial ?? _matHormigon;
         cajaMR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         cajaSimpGO.transform.localScale = mesh.bounds.size;
+        cajaSimpGO.transform.localPosition = mesh.bounds.center - edif.position;
         cajaSimpGO.isStatic = true;
 
-        if (edif.GetComponent<LODGroup>() != null) return; // ya tiene LOD
+        // LOD3: billboard impostor (quad con textura baked — simplificado a cubo mínimo)
+        var billboardGO = new GameObject("LOD3_Billboard");
+        billboardGO.transform.SetParent(edif);
+        billboardGO.transform.localPosition = mesh.bounds.center - edif.position;
+        var bbMF = billboardGO.AddComponent<MeshFilter>();
+        bbMF.sharedMesh = CuboUnitarioCacheado();
+        var bbMR = billboardGO.AddComponent<MeshRenderer>();
+        bbMR.sharedMaterial = cajaMR.sharedMaterial;
+        bbMR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        billboardGO.transform.localScale = mesh.bounds.size * 1.02f;
+        billboardGO.isStatic = true;
 
         var lod = edif.gameObject.AddComponent<LODGroup>();
         lod.fadeMode = LODFadeMode.CrossFade;
         lod.SetLODs(new LOD[]
         {
-            new LOD(0.06f, allRenderers),               // LOD0 completo < 60m
-            new LOD(0.015f, rendLOD1),                  // LOD1 parcial < 200m
-            new LOD(0.003f, new Renderer[]{cajaMR}),    // LOD2 caja < 500m
-            new LOD(0f,     new Renderer[0])            // culled
+            new LOD(1f - 40f / 700f,   allRenderers),          // LOD0 <40m
+            new LOD(1f - 120f / 700f,  rendLOD1),              // LOD1 <120m
+            new LOD(1f - 350f / 700f,  new Renderer[]{cajaMR}),// LOD2 <350m
+            new LOD(0f,                new Renderer[]{bbMR})   // LOD3 <700m
         });
         lod.RecalculateBounds();
     }
 
-    static Mesh _cuboCache;
-    static Mesh CuboUnitarioCacheado()
+    // ═══════════════════════════════════════════════════════════════════════
+    //  MATERIALES
+    // ═══════════════════════════════════════════════════════════════════════
+
+    void CargarMateriales()
     {
-        if (_cuboCache != null) return _cuboCache;
-        var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        _cuboCache = tmp.GetComponent<MeshFilter>().sharedMesh;
-        Object.Destroy(tmp);
-        return _cuboCache;
+        // Vidrio HDRP Smoothness=0.92, IOR=1.52
+        _matVidrio = MatPBR(new Color(0.55f, 0.75f, 0.90f, 0.25f), "Vidrio", 0.92f, 0.05f);
+        // IOR en HDRP
+        if (_matVidrio.HasProperty("_IOR"))         _matVidrio.SetFloat("_IOR", 1.52f);
+        if (_matVidrio.HasProperty("_Ior"))         _matVidrio.SetFloat("_Ior", 1.52f);
+
+        _matMarco    = MatPBR(new Color(0.22f, 0.20f, 0.17f), "Marco",   0.30f, 0.0f);
+        _matHierro   = MatPBR(new Color(0.12f, 0.11f, 0.13f), "Hierro",  0.55f, 0.90f);
+        _matCornisa  = MatPBR(new Color(0.82f, 0.79f, 0.75f), "Cornisa", 0.40f, 0.0f);
+        _matZocalo   = MatPBR(new Color(0.52f, 0.48f, 0.44f), "Zocalo",  0.45f, 0.0f);
+        _matMadera   = MatPBR(new Color(0.55f, 0.38f, 0.20f), "Madera",  0.25f, 0.0f);
+        _matChapa    = MatPBR(new Color(0.56f, 0.57f, 0.58f), "Chapa",   0.80f, 0.75f);
+        _matAzulejo  = MatPBR(new Color(0.55f, 0.65f, 0.75f), "Azulejo", 0.75f, 0.0f);
+        _matPiedra   = MatPBR(COL_PIEDRA_OSCURA,               "Piedra",  0.35f, 0.0f);
+        _matHormigon = MatPBR(COL_HORMIGON,                    "Hormigon",0.40f, 0.0f);
+        _matAsfalto  = MatPBR(new Color(0.25f, 0.25f, 0.26f), "Asfalto", 0.15f, 0.0f);
+        _matLinea    = MatPBR(new Color(0.95f, 0.95f, 0.95f), "Linea",   0.35f, 0.0f);
+
+        _matTejadoTeja    = MatPBR(COL_TERRACOTA,                "TejadoTeja",  0.45f, 0.0f);
+        _matTejadoPizarra = MatPBR(COL_PIZARRA,                  "TejadoPizarra",0.50f, 0.0f);
+        _matTejadoMetal   = MatPBR(new Color(0.45f, 0.47f, 0.50f),"TejadoMetal", 0.80f, 0.70f);
+        _matTejadoPlano   = MatPBR(new Color(0.52f, 0.52f, 0.54f),"TejadoPlano", 0.35f, 0.0f);
+
+        AlsasuaLogger.Info("EdificiosAAA", "Materiales HDRP cargados (12 arquetipos)");
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    Material MaterialFachadaPorArquetipo(ArquetipoVasco arquetipo, long id)
+    {
+        Color c = arquetipo switch
+        {
+            ArquetipoVasco.UrbanoPre1940      => COL_ARENISCA,
+            ArquetipoVasco.Bloque1940_1975    => COL_LADRILLO,
+            ArquetipoVasco.ModernoPost1975    => COL_REVOCO_BLANCO,
+            ArquetipoVasco.Casero             => COL_CAL_BLANCA,
+            ArquetipoVasco.Bar                => new Color(0.80f, 0.75f, 0.65f),
+            ArquetipoVasco.Comercio           => new Color(0.82f, 0.80f, 0.75f),
+            ArquetipoVasco.Iglesia            => COL_PIEDRA_OSCURA,
+            ArquetipoVasco.NaveIndustrial     => COL_CHAPA_METAL,
+            ArquetipoVasco.EquipamientoPublico=> COL_LADRILLO,
+            ArquetipoVasco.Fronton            => COL_HORMIGON,
+            ArquetipoVasco.Aparcamiento       => new Color(0.50f, 0.50f, 0.52f),
+            ArquetipoVasco.Solar              => COL_PIEDRA_OSCURA,
+            _                                 => new Color(0.75f, 0.73f, 0.70f)
+        };
+
+        // Intentar obtener color real de fachada
+        if (FusionadorEdificiosUltra.Instance != null
+            && FusionadorEdificiosUltra.Instance.GetWallColor(id, out var colorReal))
+            c = colorReal;
+
+        string key = $"Fachada_{arquetipo}_{id}";
+        if (!_matCache.TryGetValue(key, out var mat))
+        {
+            mat = MatPBR(c, key, SmoothnessParaArquetipo(arquetipo), 0.0f);
+            mat.enableInstancing = true;
+            _matCache[key] = mat;
+        }
+        return mat;
+    }
+
+    void AplicarVariacionColor(MeshRenderer mr, ArquetipoVasco arquetipo, long id)
+    {
+        // Perturbación Perlin ±8% por edificio usando MaterialPropertyBlock
+        float noise = (Mathf.PerlinNoise(id * 0.0013f, arquetipo.GetHashCode() * 0.0007f) - 0.5f) * 0.16f;
+        if (mr.sharedMaterial != null)
+        {
+            _mpb.Clear();
+            Color base_ = mr.sharedMaterial.color;
+            _mpb.SetColor("_BaseColor", new Color(
+                Mathf.Clamp01(base_.r + noise),
+                Mathf.Clamp01(base_.g + noise * 0.8f),
+                Mathf.Clamp01(base_.b + noise * 0.6f), base_.a));
+            mr.SetPropertyBlock(_mpb);
+        }
+    }
+
+    float SmoothnessParaArquetipo(ArquetipoVasco a) => a switch
+    {
+        ArquetipoVasco.ModernoPost1975    => 0.55f,
+        ArquetipoVasco.NaveIndustrial     => 0.70f,
+        ArquetipoVasco.Fronton            => 0.45f,
+        ArquetipoVasco.Bar or ArquetipoVasco.Comercio => 0.50f,
+        _ => 0.35f
+    };
+
+    Material MatPBR(Color color, string nombre, float smoothness, float metallic)
+    {
+        var mat = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"))
+            { name = nombre, color = color };
+        mat.SetFloat("_Smoothness", smoothness);
+        mat.SetFloat("_Metallic",   metallic);
+        mat.enableInstancing = true;
+        return mat;
+    }
+
+    Material MatConColor(Material base_, Color color)
+    {
+        if (base_ == null) return MatPBR(color, "temp", 0.4f, 0f);
+        var m = new Material(base_) { color = color };
+        m.enableInstancing = true;
+        return m;
+    }
+
+    Mesh GenerarMeshFaldon(float w, float d, float crest, bool lado)
+    {
+        float sign = lado ? 1f : -1f;
+        var verts = new Vector3[]
+        {
+            new(sign * w * 0.5f, 0f, -d * 0.5f),
+            new(sign * w * 0.5f, 0f,  d * 0.5f),
+            new(0f, crest,            -d * 0.5f),
+            new(0f, crest,             d * 0.5f),
+        };
+        var tris = new int[] { 0, 2, 1, 1, 2, 3 };
+        var uvs  = new Vector2[] { new(0,0), new(0,1), new(1,0), new(1,1) };
+        var m = new Mesh();
+        m.SetVertices(verts); m.SetTriangles(tris, 0); m.SetUVs(0, uvs);
+        m.RecalculateNormals();
+        return m;
+    }
+
+    static Color DarkenColor(Color c, float factor)
+        => new(c.r * factor, c.g * factor, c.b * factor, c.a);
+
+    static ArquetipoVasco ArquetipoDesdeNombre(string nombre)
+    {
+        nombre = nombre.ToLower();
+        if (nombre.Contains("iglesia") || nombre.Contains("church") || nombre.Contains("eliza"))
+            return ArquetipoVasco.Iglesia;
+        if (nombre.Contains("bar") || nombre.Contains("taberna") || nombre.Contains("bodega"))
+            return ArquetipoVasco.Bar;
+        if (nombre.Contains("industrial") || nombre.Contains("nave") || nombre.Contains("fabrika"))
+            return ArquetipoVasco.NaveIndustrial;
+        if (nombre.Contains("fronton") || nombre.Contains("pilota"))
+            return ArquetipoVasco.Fronton;
+        if (nombre.Contains("school") || nombre.Contains("ikastola") || nombre.Contains("escuela"))
+            return ArquetipoVasco.EquipamientoPublico;
+        return ArquetipoVasco.UrbanoPre1940;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  LUCES NOCTURNAS
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
 
     IEnumerator CicloLucesNocturnas()
     {
         while (true)
         {
             yield return new WaitForSeconds(30f);
-
             var atm = AltsasuCore.I?.atmosferaSystem;
-            bool noche = atm != null && (!atm.EsDeDia);
-
+            bool noche = atm != null && !atm.EsDeDia;
             if (noche != _esNoche)
             {
                 _esNoche = noche;
@@ -594,165 +1350,147 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
     IEnumerator TransicionLuces(bool encender)
     {
-        // Solo actualizar un subconjunto para evitar spike de CPU
-        for (int i = 0; i < _ventanas.Count; i += 3)
+        for (int i = 0; i < _ventanasNocturnas.Count; i += 3)
         {
-            var r = _ventanas[i];
+            var r = _ventanasNocturnas[i];
             if (r == null) continue;
-
-            // 70% de ventanas encendidas de noche — resto apagadas
-            bool estaEncendida = encender && (i % 10 != 0) && (i % 7 != 0);
-            var mat = r.material; // instancia propia
-
+            bool activa = encender && (i % 10 != 0) && (i % 7 != 0);
+            var mat = r.material;
             if (mat.HasProperty("_EmissiveColor"))
             {
-                Color emissive = estaEncendida
-                    ? new Color(1.0f, 0.88f, 0.62f) * 2.5f  // cálido interior
-                    : Color.black;
-                mat.SetColor("_EmissiveColor", emissive);
-
-                if (estaEncendida)
-                    mat.EnableKeyword("_EMISSION");
-                else
-                    mat.DisableKeyword("_EMISSION");
+                mat.SetColor("_EmissiveColor", activa
+                    ? new Color(1.0f, 0.88f, 0.62f) * 2.5f : Color.black);
+                if (activa) mat.EnableKeyword("_EMISSION");
+                else        mat.DisableKeyword("_EMISSION");
             }
-
             if (i % 50 == 0) yield return null;
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  MATERIALES PBR
-    // ════════════════════════════════════════════════════════════════════════
-
-    void CargarMateriales()
+    // ── Cache mesh ────────────────────────────────────────────────────────
+    static Mesh _cuboCache;
+    static Mesh CuboUnitarioCacheado()
     {
-        _matsResidencial = CargarPaleta(PALETA_FACHADA_RESIDENCIAL, "Fachadas");
-        _matsHistorico   = CargarPaleta(PALETA_FACHADA_HISTORICA,   "Fachadas");
-        _matsComercial   = CargarPaleta(PALETA_FACHADA_COMERCIAL,   "Fachadas");
-        _matsTejado      = CargarPaleta(PALETA_TEJADO,              "Tejados");
-
-        _matVidrio  = MatPBR(new Color(0.55f,0.75f,0.90f,0.25f), "Vidrio",  0.9f, 0.05f);
-        _matMarco   = MatPBR(new Color(0.22f,0.20f,0.17f),       "Marco",   0.3f, 0.0f);
-        _matHierro  = MatPBR(new Color(0.18f,0.18f,0.20f),       "Hierro",  0.6f, 0.85f);
-        _matCornisa = MatPBR(new Color(0.82f,0.79f,0.75f),       "Cornisa", 0.4f, 0.0f);
-        _matZocalo  = MatPBR(new Color(0.52f,0.48f,0.44f),       "Zocalo",  0.5f, 0.0f);
-
-        AlsasuaLogger.Info("EdificiosAAA",
-            $"Materiales: {_matsResidencial.Length} residencial, " +
-            $"{_matsHistorico.Length} histórico, {_matsComercial.Length} comercial, " +
-            $"{_matsTejado.Length} tejado");
+        if (_cuboCache != null) return _cuboCache;
+        var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        _cuboCache = tmp.GetComponent<MeshFilter>().sharedMesh;
+        Object.Destroy(tmp);
+        return _cuboCache;
     }
-
-    Material[] CargarPaleta(string[] nombres, string subcarpeta)
-    {
-        var lista = new List<Material>();
-        string shader = "HDRP/Lit";
-
-        foreach (var n in nombres)
-        {
-            // Buscar el material HDRP ya creado (por FLUJO_COMPLETO / CreadorEscenaPrincipal)
-            string matPath = $"Assets/Materials/Edificios/{n}.mat";
-            // Cargar material pre-creado desde Resources (si está exportado como asset)
-        var matAsset = Resources.Load<Material>($"Materials/Edificios/{n}");
-#if UNITY_EDITOR
-        if (matAsset == null)
-            matAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(matPath);
-#endif
-        if (matAsset != null)
-        {
-            lista.Add(matAsset);
-            continue;
-        }
-            // Fallback: crear material desde texturas en Resources o con color plano
-            var mat = CrearMaterialDesdePaleta(n, subcarpeta, shader);
-            if (mat != null) lista.Add(mat);
-        }
-
-        // Garantizar al menos 1 material
-        if (lista.Count == 0)
-            lista.Add(MatPBR(new Color(0.82f,0.79f,0.72f), "Fallback", 0.5f, 0.0f));
-
-        return lista.ToArray();
-    }
-
-    Material CrearMaterialDesdePaleta(string nombre, string subcarpeta, string shaderName)
-    {
-        if (_matCache.TryGetValue(nombre, out var cached)) return cached;
-
-        var shader = Shader.Find(shaderName) ?? Shader.Find("Standard");
-        var mat    = new Material(shader) { name = nombre };
-
-        // Buscar textura Albedo en Resources (si está ahí)
-        var tex = Resources.Load<Texture2D>($"Textures/{nombre}_Albedo");
-        if (tex == null) tex = Resources.Load<Texture2D>($"Textures/{nombre}_diffuse");
-        if (tex != null)
-        {
-            if (mat.HasProperty("_BaseColorMap")) mat.SetTexture("_BaseColorMap", tex);
-            else if (mat.HasProperty("_MainTex"))  mat.SetTexture("_MainTex",     tex);
-        }
-
-        // Colores de fallback por nombre
-        mat.color = ColorDesdNombre(nombre);
-
-        _matCache[nombre] = mat;
-        return mat;
-    }
-
-    Color ColorDesdNombre(string n)
-    {
-        if (n.Contains("beige"))     return new Color(0.88f, 0.84f, 0.76f);
-        if (n.Contains("brick"))     return new Color(0.72f, 0.42f, 0.32f);
-        if (n.Contains("brown"))     return new Color(0.60f, 0.38f, 0.26f);
-        if (n.Contains("blue"))      return new Color(0.55f, 0.65f, 0.75f);
-        if (n.Contains("concrete"))  return new Color(0.68f, 0.68f, 0.70f);
-        if (n.Contains("clay"))      return new Color(0.78f, 0.68f, 0.58f);
-        if (n.Contains("plaster"))   return new Color(0.86f, 0.84f, 0.80f);
-        if (n.Contains("sandstone")) return new Color(0.85f, 0.78f, 0.62f);
-        if (n.Contains("stone"))     return new Color(0.72f, 0.70f, 0.66f);
-        if (n.Contains("church"))    return new Color(0.80f, 0.76f, 0.68f);
-        if (n.Contains("castle"))    return new Color(0.70f, 0.66f, 0.60f);
-        if (n.Contains("ceramic"))   return new Color(0.80f, 0.38f, 0.22f);
-        if (n.Contains("slate"))     return new Color(0.38f, 0.38f, 0.42f);
-        return new Color(0.78f, 0.75f, 0.70f);
-    }
-
-    Material ElegirMaterialFachada(bool esHistorico, bool esComercial)
-    {
-        Material[] paleta;
-        if (esComercial)       paleta = _matsComercial;
-        else if (esHistorico)  paleta = _matsHistorico;
-        else                   paleta = _matsResidencial;
-
-        if (paleta == null || paleta.Length == 0)
-            return MatPBR(new Color(0.82f,0.79f,0.74f), "FB", 0.4f, 0.0f);
-
-        return paleta[Random.Range(0, paleta.Length)];
-    }
-
-    Material MatPBR(Color color, string nombre, float smoothness, float metallic)
-    {
-        var mat = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"))
-            { name = nombre, color = color };
-        mat.SetFloat("_Smoothness", smoothness);
-        mat.SetFloat("_Metallic",   metallic);
-        mat.enableInstancing = true; // GPU Instancing para edificios repetitivos
-        return mat;
-    }
-
-    // ── Primitivo helper ──────────────────────────────────────────────────
 
     GameObject PrimitivoHijo(string nombre, Transform padre, Vector3 pos, Vector3 escala, Material mat)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = nombre;
         go.transform.SetParent(padre);
-        go.transform.position    = pos;
-        go.transform.localScale  = escala;
-        go.GetComponent<Renderer>().sharedMaterial = mat ?? _matMarco;
+        go.transform.position   = pos;
+        go.transform.localScale = escala;
+        if (mat != null)
+            go.GetComponent<Renderer>().sharedMaterial = mat;
         var col = go.GetComponent<Collider>();
         if (col != null) Object.Destroy(col);
         return go;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    //  VALIDACIÓN (llamar desde Editor)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [ContextMenu("Validar Edificios")]
+    public void ValidarEdificios()
+    {
+        var fusionador = FusionadorEdificiosUltra.Instance;
+        if (fusionador == null)
+        {
+            AlsasuaLogger.Warn("ValidarEdificios", "FusionadorEdificiosUltra no disponible");
+            return;
+        }
+
+        var edificios = GetComponentsInChildren<MeshRenderer>(true);
+        int errorAltura = 0, errorBase = 0, sinRotulo = 0, total = 0;
+        var porArquetipo = new Dictionary<string, int>();
+
+        foreach (var mr in edificios)
+        {
+            if (!mr.gameObject.name.StartsWith("Edif_")) continue;
+            total++;
+
+            var mf = mr.GetComponent<MeshFilter>();
+            if (mf == null) continue;
+            var bounds = mf.sharedMesh?.bounds ?? default;
+            float h = bounds.size.y;
+
+            // 1. Altura Unity vs LIDAR
+            string nameStr = mr.gameObject.name;
+            if (long.TryParse(ExtractId(nameStr), out long id))
+            {
+                float altLidar = fusionador.GetAlturaOptima(id, 0);
+                float diff = Mathf.Abs(h - altLidar);
+                if (diff > 0.3f && altLidar > 1f)
+                {
+                    AlsasuaLogger.Warn("ValidarEdificios",
+                        $"{nameStr}: altura Unity={h:F1}m LIDAR={altLidar:F1}m diff={diff:F2}m");
+                    errorAltura++;
+                }
+            }
+
+            // 2. Base == terrain ±0.1m
+            float xPos = mr.transform.position.x;
+            float zPos = mr.transform.position.z;
+            float yBase = bounds.min.y + mr.transform.position.y;
+            float yTerrain = GeoDataAlsasua.AlturaTerreno(xPos, zPos);
+            if (Mathf.Abs(yBase - yTerrain) > 0.1f)
+            {
+                AlsasuaLogger.Warn("ValidarEdificios",
+                    $"{nameStr}: base={yBase:F2} terrain={yTerrain:F2} diff={Mathf.Abs(yBase-yTerrain):F2}m");
+                errorBase++;
+            }
+
+            // 3. Bares y comercios tienen rótulo
+            if (nameStr.Contains("Bar") || nameStr.Contains("Comercio"))
+            {
+                bool tieneRotulo = mr.transform.Find("Rotulo") != null
+                    || mr.GetComponentsInChildren<MeshRenderer>()
+                         .Any(r => r.name.StartsWith("Rotulo_"));
+                if (!tieneRotulo)
+                {
+                    AlsasuaLogger.Warn("ValidarEdificios", $"{nameStr}: sin rótulo");
+                    sinRotulo++;
+                }
+            }
+
+            // 4. Estadísticas por arquetipo
+            string arqStr = ExtractArquetipo(nameStr);
+            porArquetipo[arqStr] = (porArquetipo.TryGetValue(arqStr, out int v) ? v : 0) + 1;
+        }
+
+        AlsasuaLogger.Info("ValidarEdificios",
+            $"Total: {total} | Errores altura: {errorAltura} | Base offset: {errorBase} | Sin rótulo: {sinRotulo}");
+
+        foreach (var kv in porArquetipo.OrderByDescending(x => x.Value))
+            AlsasuaLogger.Info("ValidarEdificios", $"  {kv.Key}: {kv.Value}");
+    }
+
+    static string ExtractId(string nombre)
+    {
+        var parts = nombre.Split('_');
+        return parts.Length > 1 ? parts[1] : "0";
+    }
+
+    static string ExtractArquetipo(string nombre)
+    {
+        if (nombre.Contains("UrbanoPre"))         return "UrbanoPre1940";
+        if (nombre.Contains("Bloque"))            return "Bloque1940-1975";
+        if (nombre.Contains("Moderno"))           return "ModernoPost1975";
+        if (nombre.Contains("Casero"))            return "Caserio";
+        if (nombre.Contains("Bar"))               return "Bar";
+        if (nombre.Contains("Comercio"))          return "Comercio";
+        if (nombre.Contains("Iglesia"))           return "Iglesia";
+        if (nombre.Contains("NaveIndustrial"))    return "NaveIndustrial";
+        if (nombre.Contains("Equipamiento"))      return "EquipamientoPublico";
+        if (nombre.Contains("Fronton"))           return "Fronton";
+        if (nombre.Contains("Aparcamiento"))      return "Aparcamiento";
+        if (nombre.Contains("Solar"))             return "Solar";
+        return "Generico";
+    }
 }
