@@ -111,3 +111,12 @@ InitTestScene*.unity*
 /[Aa]ssets/_recovery/
 /[Aa]ssets/_Staging/
 /[Aa]ssets/_staging/
+
+# Texturas procesadas generadas (se regeneran con process_streetview_real.py)
+Assets/AlsasuaData/FacadeTextures/Processed/*.png
+Assets/AlsasuaData/FacadeTextures/Processed/*_minimap.png
+
+# Fotos originales Street View (binarios grandes, no necesarios en el repo)
+Assets/AlsasuaData/FacadeTextures/StreetView/*.png
+Assets/AlsasuaData/FacadeTextures/StreetView/*.jpg
+Assets/AlsasuaData/FacadeTextures/StreetView/*.jpeg
