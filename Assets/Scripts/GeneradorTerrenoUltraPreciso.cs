@@ -70,6 +70,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     const float N_ORIG    = 4749902f;
     const float UNITY_OX  = 1918f;
     const float UNITY_OZ  = 8570f;
+    // Z_MIN CRÍTICO: altitud mínima real del área (511.33m, de lidar_dtm_meta.json).
+    // AltitudUnity = altitudReal - Z_MIN. Sin este offset todos los picos quedan ~9× fuera de rango.
+    const float Z_MIN     = 511.33f;
 
     // ── NativeArray persistente del RAW LIDAR (nunca re-leído) ───────────
     NativeArray<ushort> _lidarRaw;
@@ -284,6 +287,11 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             if (++lote >= 16) { lote = 0; yield return null; }
         }
 
+        // Clamp final: garantizar [0,1] en todos los píxeles por si alguna fuente da valores fuera de rango.
+        for (int oy = 0; oy < outRes; oy++)
+        for (int ox = 0; ox < outRes; ox++)
+            heights[oy, ox] = Mathf.Clamp01(heights[oy, ox]);
+
         td.SetHeights(0, 0, heights);
         terrain.Flush();
         _aplicado = true;
@@ -369,7 +377,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             int idx = r * res + c;
             float rawVal = idx < raw.Length ? raw[idx] : 0;
             float altM = rawVal / 65535f * zRange + zMin;
-            return Mathf.Clamp01((altM - 0f) / terY);  // normalizado [0,1] respecto TerrainData.size.y
+            // CORRECCIÓN Z_MIN: restar Z_MIN (511.33m) antes de normalizar.
+            // Sin este offset el heightmap quedaba desplazado ~8.93 unidades normalizadas (completamente incorrecto).
+            return Mathf.Clamp01((altM - Z_MIN) / terY);
         }
 
         // 4 filas de interpolación horizontal
@@ -403,7 +413,8 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                  && float.TryParse(tok[1], System.Globalization.NumberStyles.Float, ci, out float y)
                  && float.TryParse(tok[2], System.Globalization.NumberStyles.Float, ci, out float z))
                 {
-                    lista.Add(new Vector3(x + UNITY_OX, y, z + UNITY_OZ));
+                    // Y almacenada ya en espacio Unity (altitudReal - Z_MIN) para que la comparación RMSE sea coherente.
+                    lista.Add(new Vector3(x + UNITY_OX, y - Z_MIN, z + UNITY_OZ));
                 }
             }
             return lista;
@@ -433,6 +444,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         for (int i = 0; i < puntos.Count; i += paso)
         {
             var p  = puntos[i];
+            // terrain.SampleHeight devuelve altura Unity (altReal - Z_MIN); p.y ya tiene el mismo offset.
             float yTerrain = terrain.SampleHeight(new Vector3(p.x, 0, p.z))
                            + terrain.transform.position.y;
             float delta = p.y - yTerrain;
@@ -548,7 +560,8 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                     if (float.TryParse(tok[0], System.Globalization.NumberStyles.Float, ci, out float x)
                      && float.TryParse(tok[1], System.Globalization.NumberStyles.Float, ci, out float y)
                      && float.TryParse(tok[2], System.Globalization.NumberStyles.Float, ci, out float z))
-                        lista.Add(new Vector3(x + UNITY_OX, y, z + UNITY_OZ));
+                        // Y con offset Z_MIN para comparar con terrain.SampleHeight (espacio Unity).
+                        lista.Add(new Vector3(x + UNITY_OX, y - Z_MIN, z + UNITY_OZ));
                 }
                 return lista;
             });
@@ -562,6 +575,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 int paso = Mathf.Max(1, pts.Count / 2000);
                 for (int i = 0; i < pts.Count; i += paso)
                 {
+                    // pts[i].y ya en espacio Unity (altReal - Z_MIN); terrain.SampleHeight también.
                     float yT = terrain.SampleHeight(new Vector3(pts[i].x, 0, pts[i].z))
                              + terrain.transform.position.y;
                     float d = pts[i].y - yT;
@@ -694,9 +708,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         float z = g.data[row * g.ncols + col];
         if (Mathf.Approximately(z, g.nodata)) z = g.zMin;
 
-        // Normalizar: altitudUnity = altitudReal - 0  (TerrainData.size.y es el rango total)
-        // Terrain.position.y = 0, terrainHeight = 900 en SceneBootstrapper
-        return Mathf.Clamp01(z / terY);
+        // CORRECCIÓN Z_MIN: restar Z_MIN (511.33m) para que altitudUnity = altitudReal - Z_MIN.
+        // Mismo offset que GetH() en SampleBicubicRAW — imprescindible para coherencia entre fuentes.
+        return Mathf.Clamp01((z - Z_MIN) / terY);
     }
 
     // ════════════════════════════════════════════════════════════════════════
