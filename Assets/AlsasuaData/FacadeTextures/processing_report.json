@@ -1,2322 +1,1560 @@
 {
   "total_fotos": 257,
   "procesadas": 257,
+  "errores": 0,
   "por_zona": {
-    "StreetView": 257
+    "casco_viejo": 32,
+    "plaza_fueros": 32,
+    "ferial": 32,
+    "gaztetxe": 32,
+    "iglesia": 32,
+    "ayto": 32,
+    "plaza_zubeztia": 32,
+    "garcia_jimenez": 33
   },
   "lista_procesadas": [
     {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185009.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185009_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185058.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185058_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185120.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185120_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185132.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185132_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185136.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185136_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185149.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185149_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185201.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185201_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185210.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185210_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185228.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185228_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185236.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185236_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185241.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185241_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185256.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185256_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185305.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185305_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185322.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185322_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185332.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185332_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185343.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185343_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185355.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185355_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185403.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185403_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185410.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185410_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185424.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185424_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185433.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185433_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185439.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185439_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185447.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185447_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185459.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185459_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185510.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185510_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185517.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185517_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185525.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185525_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185538.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185538_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185545.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185545_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185551.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185551_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185558.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185558_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185606.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185606_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185613.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185613_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185633.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185633_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185639.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185639_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185646.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185646_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185652.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185652_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185700.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185700_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185712.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185712_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185723.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185723_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185741.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185741_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185749.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185749_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185759.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185759_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185806.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185806_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185820.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185820_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185829.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185829_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185837.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185837_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185852.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185852_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185900.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185900_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185906.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185906_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185919.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185919_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185929.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185929_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185936.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185936_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185950.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185950_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185955.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 185955_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190000.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190000_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190009.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190009_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190016.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190016_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190022.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190022_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190030.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190030_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190049.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190049_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190056.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190056_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190102.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190102_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190110.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190110_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190115.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190115_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190121.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190121_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190128.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190128_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190135.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190135_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190143.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190143_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190152.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190152_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190202.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190202_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190206.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190206_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190213.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190213_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190219.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190219_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190229.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190229_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190235.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190235_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190242.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190242_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190252.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190252_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190258.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190258_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190305.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190305_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190314.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190314_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190320.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190320_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190328.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190328_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190336.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190336_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190343.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190343_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190357.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190357_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190411.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190411_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190417.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190417_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190427.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190427_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190443.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190443_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190449.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190449_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190458.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190458_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190502.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190502_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190511.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190511_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190528.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190528_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190535.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190535_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190540.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190540_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190550.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190550_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190602.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190602_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190609.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190609_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190621.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190621_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190628.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190628_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190636.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190636_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190642.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190642_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190656.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190656_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190704.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190704_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190716.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190716_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190723.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190723_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190733.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190733_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190752.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190752_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190758.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190758_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190804.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190804_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190810.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190810_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190817.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190817_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190822.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190822_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190840.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190840_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190849.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190849_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190856.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190856_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190904.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190904_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190916.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190916_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190924.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190924_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190935.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190935_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190945.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190945_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190951.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190951_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190957.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 190957_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191008.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191008_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191018.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191018_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191024.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191024_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191032.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191032_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191040.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191040_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191046.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191046_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191051.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191051_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191104.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191104_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191110.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191110_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191117.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191117_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191133.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191133_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191139.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191139_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191145.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191145_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191152.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191152_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191158.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191158_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191222.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191222_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191228.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191228_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191234.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191234_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191240.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191240_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191246.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191246_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191252.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191252_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191308.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191308_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191316.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191316_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191322.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191322_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191329.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191329_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191350.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191350_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191358.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191358_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191404.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191404_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191410.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191410_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191416.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191416_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191423.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191423_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191436.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191436_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191446.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191446_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191503.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191503_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191513.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191513_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191524.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191524_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191530.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191530_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191537.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191537_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191544.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191544_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191552.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191552_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191556.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191556_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191608.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191608_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191613.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191613_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191620.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191620_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191625.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191625_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191642.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191642_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191649.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191649_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191655.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191655_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191700.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191700_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191707.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191707_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191713.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191713_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191722.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191722_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191728.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191728_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191736.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191736_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191743.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191743_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191754.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191754_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191801.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191801_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191815.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191815_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191821.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191821_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191827.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191827_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191836.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191836_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191845.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191845_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191851.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191851_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191856.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191856_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191907.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191907_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191913.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191913_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191917.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191917_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191922.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191922_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191936.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191936_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191942.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191942_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191954.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191954_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191959.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 191959_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192004.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192004_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192013.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192013_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192022.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192022_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192028.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192028_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192035.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192035_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192043.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192043_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192049.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192049_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192057.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192057_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192112.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192112_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192120.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192120_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192126.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192126_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192133.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192133_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192139.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192139_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192147.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192147_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192154.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192154_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192203.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192203_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192211.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192211_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192227.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192227_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192237.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192237_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192256.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192256_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192303.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192303_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192308.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192308_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192315.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192315_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192323.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192323_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192337.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192337_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192343.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192343_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192358.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192358_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192406.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192406_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192412.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192412_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192421.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192421_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192427.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192427_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192438.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192438_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192451.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192451_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192458.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192458_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192508.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192508_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192522.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192522_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192528.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192528_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192535.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192535_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192540.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192540_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192547.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192547_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192601.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192601_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192607.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192607_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192613.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192613_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192619.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192619_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192634.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192634_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192644.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192644_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192658.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192658_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1954,
-        1098
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192710.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192710_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192716.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192716_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192722.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192722_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192729.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192729_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192744.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192744_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192754.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192754_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192801.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192801_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1920,
-        1032
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192813.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192813_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192821.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192821_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192827.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192827_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192833.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192833_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192840.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192840_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
-    },
-    {
-      "original": "Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192857.png",
-      "procesada": "Assets/AlsasuaData/FacadeTextures/Processed/StreetView_Captura de pantalla 2026-05-31 192857_facade.png",
-      "zona": "StreetView",
-      "size_px": [
-        1937,
-        1065
-      ]
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185009.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_001.png",
+      "zona": "casco_viejo",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185058.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_002.png",
+      "zona": "casco_viejo",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185120.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_003.png",
+      "zona": "casco_viejo",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185132.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_004.png",
+      "zona": "casco_viejo",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185136.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_005.png",
+      "zona": "casco_viejo",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185149.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_006.png",
+      "zona": "casco_viejo",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185201.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_007.png",
+      "zona": "casco_viejo",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185210.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_008.png",
+      "zona": "casco_viejo",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185228.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_009.png",
+      "zona": "casco_viejo",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185236.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_010.png",
+      "zona": "casco_viejo",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185241.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_011.png",
+      "zona": "casco_viejo",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185256.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_012.png",
+      "zona": "casco_viejo",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185305.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_013.png",
+      "zona": "casco_viejo",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185322.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_014.png",
+      "zona": "casco_viejo",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185332.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_015.png",
+      "zona": "casco_viejo",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185343.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_016.png",
+      "zona": "casco_viejo",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185355.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_017.png",
+      "zona": "casco_viejo",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185403.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_018.png",
+      "zona": "casco_viejo",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185410.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_019.png",
+      "zona": "casco_viejo",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185424.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_020.png",
+      "zona": "casco_viejo",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185433.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_021.png",
+      "zona": "casco_viejo",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185439.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_022.png",
+      "zona": "casco_viejo",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185447.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_023.png",
+      "zona": "casco_viejo",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185459.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_024.png",
+      "zona": "casco_viejo",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185510.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_025.png",
+      "zona": "casco_viejo",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185517.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_026.png",
+      "zona": "casco_viejo",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185525.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_027.png",
+      "zona": "casco_viejo",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185538.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_028.png",
+      "zona": "casco_viejo",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185545.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_029.png",
+      "zona": "casco_viejo",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185551.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_030.png",
+      "zona": "casco_viejo",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185558.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_031.png",
+      "zona": "casco_viejo",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185606.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_032.png",
+      "zona": "casco_viejo",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185613.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_001.png",
+      "zona": "plaza_fueros",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185633.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_002.png",
+      "zona": "plaza_fueros",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185639.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_003.png",
+      "zona": "plaza_fueros",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185646.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_004.png",
+      "zona": "plaza_fueros",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185652.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_005.png",
+      "zona": "plaza_fueros",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185700.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_006.png",
+      "zona": "plaza_fueros",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185712.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_007.png",
+      "zona": "plaza_fueros",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185723.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_008.png",
+      "zona": "plaza_fueros",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185741.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_009.png",
+      "zona": "plaza_fueros",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185749.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_010.png",
+      "zona": "plaza_fueros",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185759.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_011.png",
+      "zona": "plaza_fueros",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185806.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_012.png",
+      "zona": "plaza_fueros",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185820.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_013.png",
+      "zona": "plaza_fueros",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185829.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_014.png",
+      "zona": "plaza_fueros",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185837.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_015.png",
+      "zona": "plaza_fueros",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185852.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_016.png",
+      "zona": "plaza_fueros",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185900.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_017.png",
+      "zona": "plaza_fueros",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185906.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_018.png",
+      "zona": "plaza_fueros",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185919.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_019.png",
+      "zona": "plaza_fueros",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185929.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_020.png",
+      "zona": "plaza_fueros",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185936.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_021.png",
+      "zona": "plaza_fueros",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185950.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_022.png",
+      "zona": "plaza_fueros",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 185955.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_023.png",
+      "zona": "plaza_fueros",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190000.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_024.png",
+      "zona": "plaza_fueros",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190009.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_025.png",
+      "zona": "plaza_fueros",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190016.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_026.png",
+      "zona": "plaza_fueros",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190022.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_027.png",
+      "zona": "plaza_fueros",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190030.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_028.png",
+      "zona": "plaza_fueros",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190049.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_029.png",
+      "zona": "plaza_fueros",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190056.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_030.png",
+      "zona": "plaza_fueros",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190102.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_031.png",
+      "zona": "plaza_fueros",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190110.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_032.png",
+      "zona": "plaza_fueros",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190115.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_001.png",
+      "zona": "ferial",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190121.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_002.png",
+      "zona": "ferial",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190128.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_003.png",
+      "zona": "ferial",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190135.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_004.png",
+      "zona": "ferial",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190143.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_005.png",
+      "zona": "ferial",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190152.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_006.png",
+      "zona": "ferial",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190202.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_007.png",
+      "zona": "ferial",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190206.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_008.png",
+      "zona": "ferial",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190213.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_009.png",
+      "zona": "ferial",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190219.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_010.png",
+      "zona": "ferial",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190229.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_011.png",
+      "zona": "ferial",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190235.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_012.png",
+      "zona": "ferial",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190242.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_013.png",
+      "zona": "ferial",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190252.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_014.png",
+      "zona": "ferial",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190258.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_015.png",
+      "zona": "ferial",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190305.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_016.png",
+      "zona": "ferial",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190314.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_017.png",
+      "zona": "ferial",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190320.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_018.png",
+      "zona": "ferial",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190328.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_019.png",
+      "zona": "ferial",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190336.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_020.png",
+      "zona": "ferial",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190343.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_021.png",
+      "zona": "ferial",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190357.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_022.png",
+      "zona": "ferial",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190411.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_023.png",
+      "zona": "ferial",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190417.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_024.png",
+      "zona": "ferial",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190427.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_025.png",
+      "zona": "ferial",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190443.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_026.png",
+      "zona": "ferial",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190449.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_027.png",
+      "zona": "ferial",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190458.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_028.png",
+      "zona": "ferial",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190502.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_029.png",
+      "zona": "ferial",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190511.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_030.png",
+      "zona": "ferial",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190528.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_031.png",
+      "zona": "ferial",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190535.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_032.png",
+      "zona": "ferial",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190540.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_001.png",
+      "zona": "gaztetxe",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190550.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_002.png",
+      "zona": "gaztetxe",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190602.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_003.png",
+      "zona": "gaztetxe",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190609.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_004.png",
+      "zona": "gaztetxe",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190621.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_005.png",
+      "zona": "gaztetxe",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190628.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_006.png",
+      "zona": "gaztetxe",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190636.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_007.png",
+      "zona": "gaztetxe",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190642.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_008.png",
+      "zona": "gaztetxe",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190656.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_009.png",
+      "zona": "gaztetxe",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190704.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_010.png",
+      "zona": "gaztetxe",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190716.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_011.png",
+      "zona": "gaztetxe",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190723.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_012.png",
+      "zona": "gaztetxe",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190733.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_013.png",
+      "zona": "gaztetxe",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190752.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_014.png",
+      "zona": "gaztetxe",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190758.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_015.png",
+      "zona": "gaztetxe",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190804.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_016.png",
+      "zona": "gaztetxe",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190810.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_017.png",
+      "zona": "gaztetxe",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190817.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_018.png",
+      "zona": "gaztetxe",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190822.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_019.png",
+      "zona": "gaztetxe",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190840.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_020.png",
+      "zona": "gaztetxe",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190849.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_021.png",
+      "zona": "gaztetxe",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190856.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_022.png",
+      "zona": "gaztetxe",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190904.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_023.png",
+      "zona": "gaztetxe",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190916.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_024.png",
+      "zona": "gaztetxe",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190924.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_025.png",
+      "zona": "gaztetxe",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190935.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_026.png",
+      "zona": "gaztetxe",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190945.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_027.png",
+      "zona": "gaztetxe",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190951.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_028.png",
+      "zona": "gaztetxe",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 190957.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_029.png",
+      "zona": "gaztetxe",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191008.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_030.png",
+      "zona": "gaztetxe",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191018.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_031.png",
+      "zona": "gaztetxe",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191024.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_032.png",
+      "zona": "gaztetxe",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191032.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_001.png",
+      "zona": "iglesia",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191040.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_002.png",
+      "zona": "iglesia",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191046.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_003.png",
+      "zona": "iglesia",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191051.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_004.png",
+      "zona": "iglesia",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191104.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_005.png",
+      "zona": "iglesia",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191110.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_006.png",
+      "zona": "iglesia",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191117.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_007.png",
+      "zona": "iglesia",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191133.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_008.png",
+      "zona": "iglesia",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191139.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_009.png",
+      "zona": "iglesia",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191145.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_010.png",
+      "zona": "iglesia",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191152.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_011.png",
+      "zona": "iglesia",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191158.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_012.png",
+      "zona": "iglesia",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191222.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_013.png",
+      "zona": "iglesia",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191228.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_014.png",
+      "zona": "iglesia",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191234.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_015.png",
+      "zona": "iglesia",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191240.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_016.png",
+      "zona": "iglesia",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191246.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_017.png",
+      "zona": "iglesia",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191252.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_018.png",
+      "zona": "iglesia",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191308.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_019.png",
+      "zona": "iglesia",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191316.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_020.png",
+      "zona": "iglesia",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191322.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_021.png",
+      "zona": "iglesia",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191329.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_022.png",
+      "zona": "iglesia",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191350.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_023.png",
+      "zona": "iglesia",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191358.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_024.png",
+      "zona": "iglesia",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191404.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_025.png",
+      "zona": "iglesia",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191410.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_026.png",
+      "zona": "iglesia",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191416.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_027.png",
+      "zona": "iglesia",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191423.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_028.png",
+      "zona": "iglesia",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191436.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_029.png",
+      "zona": "iglesia",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191446.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_030.png",
+      "zona": "iglesia",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191503.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_031.png",
+      "zona": "iglesia",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191513.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_032.png",
+      "zona": "iglesia",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191524.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_001.png",
+      "zona": "ayto",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191530.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_002.png",
+      "zona": "ayto",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191537.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_003.png",
+      "zona": "ayto",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191544.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_004.png",
+      "zona": "ayto",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191552.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_005.png",
+      "zona": "ayto",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191556.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_006.png",
+      "zona": "ayto",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191608.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_007.png",
+      "zona": "ayto",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191613.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_008.png",
+      "zona": "ayto",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191620.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_009.png",
+      "zona": "ayto",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191625.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_010.png",
+      "zona": "ayto",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191642.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_011.png",
+      "zona": "ayto",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191649.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_012.png",
+      "zona": "ayto",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191655.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_013.png",
+      "zona": "ayto",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191700.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_014.png",
+      "zona": "ayto",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191707.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_015.png",
+      "zona": "ayto",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191713.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_016.png",
+      "zona": "ayto",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191722.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_017.png",
+      "zona": "ayto",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191728.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_018.png",
+      "zona": "ayto",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191736.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_019.png",
+      "zona": "ayto",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191743.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_020.png",
+      "zona": "ayto",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191754.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_021.png",
+      "zona": "ayto",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191801.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_022.png",
+      "zona": "ayto",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191815.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_023.png",
+      "zona": "ayto",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191821.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_024.png",
+      "zona": "ayto",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191827.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_025.png",
+      "zona": "ayto",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191836.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_026.png",
+      "zona": "ayto",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191845.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_027.png",
+      "zona": "ayto",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191851.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_028.png",
+      "zona": "ayto",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191856.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_029.png",
+      "zona": "ayto",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191907.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_030.png",
+      "zona": "ayto",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191913.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_031.png",
+      "zona": "ayto",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191917.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_032.png",
+      "zona": "ayto",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191922.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_001.png",
+      "zona": "plaza_zubeztia",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191936.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_002.png",
+      "zona": "plaza_zubeztia",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191942.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_003.png",
+      "zona": "plaza_zubeztia",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191954.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_004.png",
+      "zona": "plaza_zubeztia",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 191959.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_005.png",
+      "zona": "plaza_zubeztia",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192004.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_006.png",
+      "zona": "plaza_zubeztia",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192013.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_007.png",
+      "zona": "plaza_zubeztia",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192022.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_008.png",
+      "zona": "plaza_zubeztia",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192028.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_009.png",
+      "zona": "plaza_zubeztia",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192035.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_010.png",
+      "zona": "plaza_zubeztia",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192043.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_011.png",
+      "zona": "plaza_zubeztia",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192049.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_012.png",
+      "zona": "plaza_zubeztia",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192057.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_013.png",
+      "zona": "plaza_zubeztia",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192112.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_014.png",
+      "zona": "plaza_zubeztia",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192120.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_015.png",
+      "zona": "plaza_zubeztia",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192126.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_016.png",
+      "zona": "plaza_zubeztia",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192133.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_017.png",
+      "zona": "plaza_zubeztia",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192139.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_018.png",
+      "zona": "plaza_zubeztia",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192147.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_019.png",
+      "zona": "plaza_zubeztia",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192154.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_020.png",
+      "zona": "plaza_zubeztia",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192203.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_021.png",
+      "zona": "plaza_zubeztia",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192211.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_022.png",
+      "zona": "plaza_zubeztia",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192227.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_023.png",
+      "zona": "plaza_zubeztia",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192237.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_024.png",
+      "zona": "plaza_zubeztia",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192256.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_025.png",
+      "zona": "plaza_zubeztia",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192303.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_026.png",
+      "zona": "plaza_zubeztia",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192308.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_027.png",
+      "zona": "plaza_zubeztia",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192315.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_028.png",
+      "zona": "plaza_zubeztia",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192323.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_029.png",
+      "zona": "plaza_zubeztia",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192337.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_030.png",
+      "zona": "plaza_zubeztia",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192343.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_031.png",
+      "zona": "plaza_zubeztia",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192358.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_032.png",
+      "zona": "plaza_zubeztia",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192406.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_001.png",
+      "zona": "garcia_jimenez",
+      "idx": 1
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192412.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_002.png",
+      "zona": "garcia_jimenez",
+      "idx": 2
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192421.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_003.png",
+      "zona": "garcia_jimenez",
+      "idx": 3
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192427.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_004.png",
+      "zona": "garcia_jimenez",
+      "idx": 4
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192438.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_005.png",
+      "zona": "garcia_jimenez",
+      "idx": 5
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192451.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_006.png",
+      "zona": "garcia_jimenez",
+      "idx": 6
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192458.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_007.png",
+      "zona": "garcia_jimenez",
+      "idx": 7
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192508.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_008.png",
+      "zona": "garcia_jimenez",
+      "idx": 8
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192522.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_009.png",
+      "zona": "garcia_jimenez",
+      "idx": 9
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192528.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_010.png",
+      "zona": "garcia_jimenez",
+      "idx": 10
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192535.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_011.png",
+      "zona": "garcia_jimenez",
+      "idx": 11
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192540.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_012.png",
+      "zona": "garcia_jimenez",
+      "idx": 12
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192547.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_013.png",
+      "zona": "garcia_jimenez",
+      "idx": 13
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192601.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_014.png",
+      "zona": "garcia_jimenez",
+      "idx": 14
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192607.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_015.png",
+      "zona": "garcia_jimenez",
+      "idx": 15
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192613.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_016.png",
+      "zona": "garcia_jimenez",
+      "idx": 16
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192619.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_017.png",
+      "zona": "garcia_jimenez",
+      "idx": 17
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192634.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_018.png",
+      "zona": "garcia_jimenez",
+      "idx": 18
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192644.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_019.png",
+      "zona": "garcia_jimenez",
+      "idx": 19
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192658.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_020.png",
+      "zona": "garcia_jimenez",
+      "idx": 20
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192710.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_021.png",
+      "zona": "garcia_jimenez",
+      "idx": 21
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192716.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_022.png",
+      "zona": "garcia_jimenez",
+      "idx": 22
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192722.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_023.png",
+      "zona": "garcia_jimenez",
+      "idx": 23
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192729.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_024.png",
+      "zona": "garcia_jimenez",
+      "idx": 24
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192744.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_025.png",
+      "zona": "garcia_jimenez",
+      "idx": 25
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192754.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_026.png",
+      "zona": "garcia_jimenez",
+      "idx": 26
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192801.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_027.png",
+      "zona": "garcia_jimenez",
+      "idx": 27
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192813.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_028.png",
+      "zona": "garcia_jimenez",
+      "idx": 28
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192821.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_029.png",
+      "zona": "garcia_jimenez",
+      "idx": 29
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192827.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_030.png",
+      "zona": "garcia_jimenez",
+      "idx": 30
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192833.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_031.png",
+      "zona": "garcia_jimenez",
+      "idx": 31
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192840.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_032.png",
+      "zona": "garcia_jimenez",
+      "idx": 32
+    },
+    {
+      "original": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/StreetView/Captura de pantalla 2026-05-31 192857.png",
+      "procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_001.png",
+      "zona": "garcia_jimenez",
+      "idx": 1
     }
-  ]
+  ],
+  "lista_errores": []
 }

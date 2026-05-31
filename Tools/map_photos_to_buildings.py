@@ -34,16 +34,18 @@ OUTPUT_PATH   = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "photo_build
 # Origen: Herriko Plaza  UTM E=567951, N=4749902  →  UnityX=1918, UnityZ=8570
 # ---------------------------------------------------------------------------
 ZONA_CENTERS = {
-    # (unity_x, unity_z)
-    "casco_viejo":          (1918.0,   8570.0),   # Herriko Plaza / casco antiguo
-    "plaza_fueros":         (1950.0,   8610.0),   # Plaza de los Fueros ~50m E
-    "ferial":               (2100.0,   8700.0),   # Zona ferial, NE del centro
-    "gaztetxe":             (1860.0,   8520.0),   # Gaztetxe, SO del centro
-    "iglesia":              (1865.0,   8238.0),   # Jasokundeko Andre Mariaren eliza  lat~42.8957
-    "ayto":                 (1920.0,   8500.0),   # Ayuntamiento, cerca de la plaza
-    "plaza_zubeztia":       (1780.0,   8450.0),   # Plaza Zubeztia, O del centro
-    "calle_garcia_jimenez": (2050.0,   8550.0),   # Calle García Jiménez, E centro
-    "sin_zona":             (1918.0,   8570.0),   # Fallback: centro de Alsasua
+    # Coordenadas relativas al origen (Herriko Plaza = 0,0 en espacio Unity de vértices)
+    # UnityX_relativo = UTM_E - 567951; UnityZ_relativo = UTM_N - 4749902
+    "casco_viejo":          (  0.0,    0.0),   # Herriko Plaza / casco antiguo
+    "plaza_fueros":         ( 50.0,   40.0),   # Plaza de los Fueros ~50m E
+    "ferial":               (180.0,  130.0),   # Zona ferial, NE del centro
+    "gaztetxe":             (-60.0,  -50.0),   # Gaztetxe, SO del centro
+    "iglesia":              (-27.0, -335.0),   # Jasokundeko Andre Mariaren eliza (coordenada real)
+    "ayto":                 (  5.0,  -70.0),   # Ayuntamiento, S del centro
+    "plaza_zubeztia":       (-140.0, -120.0),  # Plaza Zubeztia, SO del centro
+    "garcia_jimenez":       (130.0,  -20.0),   # Calle García Jiménez, E centro
+    "calle_garcia_jimenez": (130.0,  -20.0),   # alias
+    "sin_zona":             (  0.0,    0.0),   # Fallback: centro de Alsasua
 }
 
 # Palabras clave en nombre/tipo de edificio que elevan la confianza por zona
