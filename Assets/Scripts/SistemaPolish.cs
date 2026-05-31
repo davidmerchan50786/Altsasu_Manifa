@@ -84,6 +84,13 @@ public class SistemaPolish : MonoBehaviour
         InicializarVolume();
         InicializarSirena();
         SuscribirEventos();
+
+        // ── Sistemas visuales AAA adicionales ─────────────────────────────
+        // SistemaVolumenHDRP se gestiona solo (DefaultExecutionOrder -80)
+        // ConversorMaterialesHDRP y OptimizadorVisualHDRP también son auto-singletons.
+        // SistemaPolish garantiza que el Volume de polish coexiste con el Volume HDRP
+        // ajustando la prioridad para no pisar los efectos de atmósfera.
+        if (_volume != null) _volume.priority = 5f; // más bajo que SistemaVolumenHDRP (10/11)
     }
 
     static void AplicarConfigGraficos()
@@ -309,6 +316,24 @@ public class SistemaPolish : MonoBehaviour
 
     void RestaurarTimeScale() => _timeScaleTarget = 1f;
     void RestaurarLens() => _lensDistortion?.intensity.Override(0f);
+
+    /// <summary>
+    /// Activa modo tormenta (niebla densa, HDRI tormenta).
+    /// Llama al SistemaVolumenHDRP si está disponible.
+    /// </summary>
+    public static void SetTormenta(bool activo)
+    {
+        SistemaVolumenHDRP.SetTormenta(activo);
+    }
+
+    /// <summary>
+    /// Activa Depth of Field de francotirador.
+    /// Llama al SistemaVolumenHDRP si está disponible.
+    /// </summary>
+    public static void SetDoFSniper(bool activo, float focusDist = 40f)
+    {
+        SistemaVolumenHDRP.SetDoFSniper(activo, focusDist);
+    }
 
     /// <summary>Activa/desactiva la luz de sirena (wanted ≥ 2).</summary>
     public static void SetSirena(bool activo)

@@ -736,6 +736,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
             { name = nombre, color = color };
         mat.SetFloat("_Smoothness", smoothness);
         mat.SetFloat("_Metallic",   metallic);
+        mat.enableInstancing = true; // GPU Instancing para edificios repetitivos
         return mat;
     }
 

@@ -574,6 +574,7 @@ public class SistemaSueloAAA : MonoBehaviour
     {
         var m = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard")) { color = c };
         m.SetFloat("_Smoothness", smooth);
+        m.enableInstancing = true; // GPU Instancing para calles/suelo repetitivos
         return m;
     }
 
@@ -606,11 +607,23 @@ public class SistemaSueloAAA : MonoBehaviour
             new[]{ "Barrel_01", "WoodenChair_01", "WoodenTable_01",
                    "Shelf_01", "Lantern_01", "Megaphone_01" }));
 
-        // Animales
+        // Animales — incluye Wolf HDRP y RSG_DogsPack GermanShepherd
         _prefabsAnimales = CargarDesdeCarpeta(
             extractedBase + "/Animals",
             new[]{ "Oveja", "Caballo", "Gallina", "deer-female-mesh",
                    "rabbit", "blackrat", "dog" });
+
+        // Wolf HDRP (Assets/Wolf/HDRP/Wolf/Prefab/)
+        var wolfHDRP = CargarDesdeCarpeta(
+            "Assets/Wolf/HDRP/Wolf/Prefab",
+            new[]{ "Wolf_HDRP" });
+        _prefabsAnimales.AddRange(wolfHDRP);
+
+        // RSG_DogsPack GermanShepherd HDRP (Assets/RSG_DogsPack/HDRP/Prefabs/)
+        var dogs = CargarDesdeCarpeta(
+            "Assets/RSG_DogsPack/HDRP/Prefabs",
+            new[]{ "P_GermanShepherd" });
+        _prefabsAnimales.AddRange(dogs);
 
         // Vehículos
         _prefabsVehiculos = CargarDesdeCarpeta(
