@@ -195,6 +195,11 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
     private WheelCollider[] _todasLasRuedas;
     private Coroutine       _corrutinaCamara; // para cancelarla en ForzarSalida
 
+    // OPT: LayerMask para spring arm de cámara, cacheada en Awake.
+    // LayerMask.GetMask hace string lookup por nombre → coste O(capas) cada Update.
+    // Ahorro estimado: ~0.02 ms/frame (pequeño pero constante mientras se conduce).
+    private int _maskSpringArmCached;
+
     // Propiedades públicas
     /// <summary>
     /// Devuelve <c>true</c> si hay un jugador conduciendo este vehículo en este momento.
@@ -220,6 +225,8 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         rb.mass         = 1400f;
         ConfigurarWheelColliders();
         _todasLasRuedas = new[] { rDI, rDD, rTI, rTD };
+        // OPT: cachear LayerMask del spring arm — evita string lookup cada Update
+        _maskSpringArmCached = ~LayerMask.GetMask("Player", "Ignore Raycast");
         // _vida ya inicializado por VehiculoBase.Awake() con vidaMaxima
     }
 
@@ -661,9 +668,9 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         Vector3    offset = rot * (Vector3.back * distanciaOrbitaCoche);
 
         // Spring arm: evitar que la cámara traspase geometría
+        // OPT: usa _maskSpringArmCached (cacheada en Awake) — no recalcular string lookup cada frame
         Vector3 posFinal = pivot + offset;
-        int maskSA = ~LayerMask.GetMask("Player", "Ignore Raycast");
-        if (Physics.Linecast(pivot, posFinal, out RaycastHit hit, maskSA))
+        if (Physics.Linecast(pivot, posFinal, out RaycastHit hit, _maskSpringArmCached))
             posFinal = hit.point + (pivot - posFinal).normalized * 0.2f;
 
         // Suavizado

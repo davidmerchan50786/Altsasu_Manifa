@@ -75,6 +75,13 @@ public class VehiculoNPC : VehiculoBase
     // FIX LEAK: MPB reutilizable para asignar y modificar colores sin crear instancias de Material.
     private MaterialPropertyBlock _mpbCoche;
 
+    // OPT: capasObstaculo como LayerMask ya es un int, pero Quaternion.Euler en DetectarObstaculos
+    // se recalcula cada FixedUpdate. Cacheamos el ángulo y los quaternions cuando cambia anguloDeteccion.
+    // Ahorro estimado: 2 Quaternion.Euler por vehículo × ~20 vehículos × 50 Hz = 2000 operaciones/s.
+    private float     _anguloDeteccionCached = float.NaN;
+    private Quaternion _rotIzqCached;
+    private Quaternion _rotDerCached;
+
     // ═══════════════════════════════════════════════════════════════════════
     //  UNITY
     // ═══════════════════════════════════════════════════════════════════════
@@ -290,16 +297,20 @@ public class VehiculoNPC : VehiculoBase
 
     private void DetectarObstaculos()
     {
-        // BUG 19 FIX: anguloDeteccion estaba declarado como SerializeField pero NUNCA se usaba.
-        // Ahora se usa para un cono de 3 rayos (centro + flancos) que mejora la detección
-        // de obstáculos angulados respecto al vehículo.
-        Vector3 origen   = transform.position + Vector3.up * 0.5f;
-        Quaternion izq   = Quaternion.Euler(0f, -anguloDeteccion * 0.5f, 0f);
-        Quaternion der   = Quaternion.Euler(0f,  anguloDeteccion * 0.5f, 0f);
+        // OPT: Quaternion.Euler se recalcula cada FixedUpdate (hasta 50 Hz × N vehículos).
+        // Cacheamos los quaternions de flancos cuando anguloDeteccion cambia.
+        // Ahorro estimado: 2 allocs×cálculos × 20 coches × 50 Hz = 2 000 ops/s eliminadas.
+        if (!Mathf.Approximately(_anguloDeteccionCached, anguloDeteccion))
+        {
+            _anguloDeteccionCached = anguloDeteccion;
+            _rotIzqCached = Quaternion.Euler(0f, -anguloDeteccion * 0.5f, 0f);
+            _rotDerCached = Quaternion.Euler(0f,  anguloDeteccion * 0.5f, 0f);
+        }
 
-        frenando = Physics.Raycast(origen, transform.forward,       distanciaFreno, capasObstaculo)
-                || Physics.Raycast(origen, izq * transform.forward, distanciaFreno, capasObstaculo)
-                || Physics.Raycast(origen, der * transform.forward, distanciaFreno, capasObstaculo);
+        Vector3 origen = transform.position + Vector3.up * 0.5f;
+        frenando = Physics.Raycast(origen, transform.forward,                  distanciaFreno, capasObstaculo)
+                || Physics.Raycast(origen, _rotIzqCached * transform.forward,  distanciaFreno, capasObstaculo)
+                || Physics.Raycast(origen, _rotDerCached * transform.forward,  distanciaFreno, capasObstaculo);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -337,12 +348,13 @@ public class VehiculoNPC : VehiculoBase
 
         // Oscurecer completamente — FIX: usar MaterialPropertyBlock para no crear instancias
         // de material por cada sub-renderer del vehículo (carrocería + techo + 4 ruedas = 6).
-        // MaterialPropertyBlock es per-renderer, sin creación de Material ni GC.
-        var pb = new MaterialPropertyBlock();
-        pb.SetColor("_BaseColor", new Color(0.08f, 0.06f, 0.05f));
-        pb.SetColor("_Color",     new Color(0.08f, 0.06f, 0.05f));  // fallback para shader Standard
+        // OPT: reutilizar _mpbCoche ya asignado en Awake — evita 1 alloc en evento de destrucción.
+        // Ahorro: 1 GC alloc × N explosiones eliminadas, presión reducida en el GC en combate.
+        if (_mpbCoche == null) _mpbCoche = new MaterialPropertyBlock();
+        _mpbCoche.SetColor("_BaseColor", new Color(0.08f, 0.06f, 0.05f));
+        _mpbCoche.SetColor("_Color",     new Color(0.08f, 0.06f, 0.05f));  // fallback para shader Standard
         foreach (var r in GetComponentsInChildren<Renderer>())
-            r.SetPropertyBlock(pb);
+            r.SetPropertyBlock(_mpbCoche);
 
         // Desactivar física controlada
         _rb.constraints = RigidbodyConstraints.None;

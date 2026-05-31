@@ -13,15 +13,23 @@ public static class SistemaExplosion
     /// <param name="radio">Radio de efecto (metros).</param>
     /// <param name="fuerzaMax">Fuerza de impulso máxima (Newtons).</param>
     /// <param name="dañoMax">Daño máximo en el epicentro.</param>
+    // OPT: buffer estático para OverlapSphere — evita alloc del array Collider[] en cada explosión.
+    // Physics.OverlapSphereNonAlloc reutiliza el buffer; el límite de 64 es suficiente
+    // para una explosión en ciudad densa (edificios, NPCs, vehículos alrededor).
+    // Ahorro: 1 GC alloc (variable, depende del radio) por explosión eliminado.
+    static readonly Collider[] _explodeBuffer = new Collider[64];
+
     public static void Explotar(Vector3 centro, float radio, float fuerzaMax, float dañoMax = 100f)
     {
         // ── VFX procedural ───────────────────────────────────────────────
         CrearVFXExplosion(centro, radio);
 
         // ── Física en área ───────────────────────────────────────────────
-        var colliders = Physics.OverlapSphere(centro, radio);
-        foreach (var col in colliders)
+        // OPT: NonAlloc evita Collider[] alloc; iteramos solo hasta count
+        int count = Physics.OverlapSphereNonAlloc(centro, radio, _explodeBuffer);
+        for (int ei = 0; ei < count; ei++)
         {
+            var col = _explodeBuffer[ei];
             float dist    = Vector3.Distance(col.transform.position, centro);
             float falloff = 1f - Mathf.Clamp01(dist / radio);
 
@@ -45,6 +53,8 @@ public static class SistemaExplosion
             if (barricada != null)
                 barricada.RecibirDaño(dañoMax * falloff);
         }
+        // Limpiar referencias en el buffer estático para evitar retener objetos en memoria
+        System.Array.Clear(_explodeBuffer, 0, count);
 
         // ── Flash de post-proceso + polish ──────────────────────────────
         SistemaPostProcesoAAA.FlashExplosion();

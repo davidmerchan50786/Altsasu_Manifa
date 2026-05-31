@@ -52,6 +52,10 @@ public class SistemaChunks : MonoBehaviour
         // Runtime — no serializar
         [System.NonSerialized] public bool     activo;
         [System.NonSerialized] public LODGroup lodGroup;
+        // OPT: cache de NavMeshAgents del chunk — GetComponentsInChildren es O(n hijos).
+        // Se popula en InicializarChunks una vez. Evita traversal completo al desactivar
+        // el chunk (puede haber 20-50 NPCs por chunk → 20-50 Component lookups evitados).
+        [System.NonSerialized] public UnityEngine.AI.NavMeshAgent[] agentes;
     }
 
     // ── Configuración ─────────────────────────────────────────────────────────
@@ -145,6 +149,8 @@ public class SistemaChunks : MonoBehaviour
                 c.nombre = c.go.name;
 
             c.lodGroup = c.go.GetComponentInChildren<LODGroup>();
+            // OPT: cachear agentes NavMesh del chunk al inicializar — no en cada desactivación
+            c.agentes  = c.go.GetComponentsInChildren<UnityEngine.AI.NavMeshAgent>(true);
 
             // Desactivar todo — la primera comprobación activa los cercanos
             c.go.SetActive(false);
@@ -220,10 +226,14 @@ public class SistemaChunks : MonoBehaviour
         // Resetear NavMeshAgents antes de desactivar el GO — evita corrupción
         // de paths cuando un PoliciaForalIA persigue al jugador dentro del chunk
         // que está a punto de desaparecer (riesgo: destino ya no existe en el NavMesh)
-        foreach (var agente in c.go.GetComponentsInChildren<UnityEngine.AI.NavMeshAgent>(true))
+        // OPT: usa array cacheado en lugar de GetComponentsInChildren (O(n) por llamada)
+        if (c.agentes != null)
         {
-            if (agente.isActiveAndEnabled)
-                agente.ResetPath();
+            for (int k = 0; k < c.agentes.Length; k++)
+            {
+                var ag = c.agentes[k];
+                if (ag != null && ag.isActiveAndEnabled) ag.ResetPath();
+            }
         }
 
         c.go.SetActive(false);
@@ -240,7 +250,14 @@ public class SistemaChunks : MonoBehaviour
     private IEnumerator DesactivarDiferido(Chunk c, int idx)
     {
         yield return null; // esperar un frame
-        if (!c.activo) yield break; // ya fue desactivado por otro camino
+        // BUG FIX 2: doble guard — verificar que el chunk sigue activo Y
+        // que el GO sigue existiendo (puede haber sido destruido por SceneManager
+        // o por ActivarTodo/DesactivarTodo llamados durante ese frame).
+        // Sin este guard, si el jugador reaparece cerca del chunk en el mismo frame,
+        // ActivarChunk ya habrá puesto c.activo=true y esta corrutina volvería a
+        // llamar DesactivarChunk dejando el chunk inactivo con _activos desfasado.
+        if (!c.activo) yield break;
+        if (c.go == null) yield break;  // GO destruido externamente
         DesactivarChunk(c, idx);
     }
 

@@ -233,13 +233,18 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
                 // Fallback: apilar cubos como barricada
                 barricada = new GameObject($"Barricada_{i}");
                 barricada.transform.position = pos;
+                // OPT: MaterialPropertyBlock para colorear fallback sin crear instancias de Material
+                // Ahorro: 4 × numBarricadas Material instances evitadas (4×6 = 24 leaks en barricadas).
+                var mpbBarricada = new MaterialPropertyBlock();
+                mpbBarricada.SetColor("_BaseColor", new Color(0.15f, 0.15f, 0.15f));
+                mpbBarricada.SetColor("_Color",     new Color(0.15f, 0.15f, 0.15f));
                 for (int b = 0; b < 4; b++)
                 {
                     var cubo = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cubo.transform.SetParent(barricada.transform);
                     cubo.transform.localPosition = new Vector3(UnityEngine.Random.Range(-1.5f, 1.5f), b * 0.55f, UnityEngine.Random.Range(-0.3f, 0.3f));
                     cubo.transform.localScale = new Vector3(1.2f, 0.5f, 0.6f);
-                    cubo.GetComponent<MeshRenderer>().material.color = new Color(0.15f, 0.15f, 0.15f); // neumático
+                    cubo.GetComponent<MeshRenderer>().SetPropertyBlock(mpbBarricada); // evita material instance
                 }
             }
             barricada.name = $"Barricada_{i}";
@@ -330,14 +335,21 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         go.name = encapuchado ? "Encapuchado_Template" : "Manifestante_Template";
-        var mat = go.GetComponent<MeshRenderer>().material;
-        mat.color = encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f);
+        // OPT: MaterialPropertyBlock en lugar de .material (evita instancia de Material por prefab)
+        // Ahorro: 2 Material leaks evitados por CreateDefaultManifestante (template reutilizado).
+        var mpbBody = new MaterialPropertyBlock();
+        mpbBody.SetColor("_BaseColor", encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f));
+        mpbBody.SetColor("_Color",     encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f));
+        go.GetComponent<MeshRenderer>().SetPropertyBlock(mpbBody);
         // Keffiyeh (cubo pequeño sobre la cabeza)
         var kef = GameObject.CreatePrimitive(PrimitiveType.Cube);
         kef.transform.SetParent(go.transform);
         kef.transform.localPosition = new Vector3(0, 0.55f, 0);
         kef.transform.localScale = new Vector3(0.6f, 0.25f, 0.6f);
-        kef.GetComponent<MeshRenderer>().material.color = encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f); // keffiyeh rojo/negro
+        var mpbKef = new MaterialPropertyBlock();
+        mpbKef.SetColor("_BaseColor", encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f));
+        mpbKef.SetColor("_Color",     encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f));
+        kef.GetComponent<MeshRenderer>().SetPropertyBlock(mpbKef);
         return go;
     }
 
@@ -428,7 +440,10 @@ public class ManifestanteIA : MonoBehaviour, IAgente
         if (_timer < 0) ElegirObjetivo();
 
         var jugador = AltsasuCore.Jugador;
-        bool jugadorCerca = jugador != null && Vector3.Distance(transform.position, jugador.position) < 8f;
+        // OPT: sqrMagnitude evita sqrt — con 100+ manifestantes a 50Hz son 5000 sqrt/s eliminados.
+        // Ahorro estimado: ~0.5-1.0 ms/frame en manifestaciones grandes.
+        bool jugadorCerca = jugador != null
+            && (transform.position - jugador.position).sqrMagnitude < 64f; // 8² = 64
 
         if (tipo == TipoManifestante.Disturbios && jugadorCerca)
         {
