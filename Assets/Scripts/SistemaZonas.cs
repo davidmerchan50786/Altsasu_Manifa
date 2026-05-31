@@ -56,6 +56,10 @@ public class SistemaZonas : MonoBehaviour
     readonly Queue<Vector2Int>                          _colaCarga     = new();
     readonly HashSet<Vector2Int>                        _enCola        = new(); // shadow set para Contains O(1)
 
+    // Buffers reutilizables — evitan allocations en ActualizarZonasActivas y ProcesarDesactivaciones
+    readonly HashSet<Vector2Int>  _deseadasBuffer  = new(25);
+    readonly List<Vector2Int>     _aEliminarBuffer = new(16);
+
     Vector2Int _zonaJugadorAnterior = new(int.MinValue, int.MinValue);
     Transform  _jugador;
     bool       _indexadoListo;
@@ -88,7 +92,17 @@ public class SistemaZonas : MonoBehaviour
         _parentEdificios.SetParent(transform);
         _parentCalles    = new GameObject("_Zonas_Calles").transform;
         _parentCalles.SetParent(transform);
+
+        // Suscribirse al evento de jugador para evitar FindGameObjectWithTag en Update
+        AltsasuCore.OnJugadorSpawned += OnJugadorSpawned;
     }
+
+    void OnDestroy()
+    {
+        AltsasuCore.OnJugadorSpawned -= OnJugadorSpawned;
+    }
+
+    void OnJugadorSpawned(Transform t) { _jugador = t; }
 
     IEnumerator Start()
     {
@@ -160,11 +174,14 @@ public class SistemaZonas : MonoBehaviour
 
     void ActualizarZonasActivas(Vector2Int centro)
     {
-        var deseadas = new HashSet<Vector2Int>();
+        // Reutilizar el HashSet en lugar de allocar uno nuevo cada vez
+        _deseadasBuffer.Clear();
 
         for (int dx = -viewRadius; dx <= viewRadius; dx++)
         for (int dz = -viewRadius; dz <= viewRadius; dz++)
-            deseadas.Add(new Vector2Int(centro.x + dx, centro.y + dz));
+            _deseadasBuffer.Add(new Vector2Int(centro.x + dx, centro.y + dz));
+
+        var deseadas = _deseadasBuffer;
 
         // Encolar zonas nuevas
         foreach (var key in deseadas)
@@ -288,7 +305,8 @@ public class SistemaZonas : MonoBehaviour
     {
         yield return new WaitForSeconds(unloadDelay * 0.5f);
 
-        var aEliminar = new List<Vector2Int>();
+        _aEliminarBuffer.Clear();
+        var aEliminar = _aEliminarBuffer;
         foreach (var kv in _zonas)
         {
             if (!kv.Value.cargada) continue;

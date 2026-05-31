@@ -62,11 +62,25 @@ public abstract class NPCBase : MonoBehaviour, IAgente
     protected virtual void Start()
     {
         SistemaIA.Registrar(this);
-        var jGO = GameObject.FindGameObjectWithTag("Player");
-        if (jGO != null)
+
+        // Prioridad: AltsasuCore.Jugador (O(1)) antes que FindGameObjectWithTag
+        var jugadorT = AltsasuCore.Jugador;
+        if (jugadorT != null)
         {
-            _jugador        = jGO.transform;
-            _controlJugador = jGO.GetComponent<ControladorJugador>();
+            _jugador        = jugadorT;
+            _controlJugador = jugadorT.GetComponent<ControladorJugador>();
+        }
+        else
+        {
+            // Fallback para el caso en que el NPC se spawne antes del boot completo
+            AltsasuCore.OnJugadorSpawned += CacharJugadorDesdeEvento;
+            var jGO = GameObject.FindGameObjectWithTag("Player");
+            if (jGO != null)
+            {
+                _jugador        = jGO.transform;
+                _controlJugador = jGO.GetComponent<ControladorJugador>();
+                AltsasuCore.OnJugadorSpawned -= CacharJugadorDesdeEvento;
+            }
         }
 
         if (SistemaNavMesh.EstaListo) ActivarAgente();
@@ -75,9 +89,17 @@ public abstract class NPCBase : MonoBehaviour, IAgente
         OnStart();
     }
 
+    private void CacharJugadorDesdeEvento(Transform t)
+    {
+        AltsasuCore.OnJugadorSpawned -= CacharJugadorDesdeEvento;
+        _jugador        = t;
+        _controlJugador = t.GetComponent<ControladorJugador>();
+    }
+
     protected virtual void OnDestroy()
     {
-        SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
+        SistemaNavMesh.OnNavMeshListo      -= ActivarAgente;
+        AltsasuCore.OnJugadorSpawned       -= CacharJugadorDesdeEvento;
         SistemaIA.Desregistrar(this);
     }
 

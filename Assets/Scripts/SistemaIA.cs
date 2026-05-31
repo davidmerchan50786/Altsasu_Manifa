@@ -12,6 +12,8 @@ using UnityEngine;
 public class SistemaIA : SingletonMono<SistemaIA>
 {
     private readonly List<IAgente> _agentes = new List<IAgente>(128);
+    // Buffer reutilizable para EnRango — evita allocations en el hotpath
+    private readonly List<IAgente> _enRangoBuffer = new List<IAgente>(32);
 
     // ── API pública ───────────────────────────────────────────────────────
 
@@ -26,10 +28,15 @@ public class SistemaIA : SingletonMono<SistemaIA>
         if (Instance != null) Instance._agentes.Remove(agente);
     }
 
-    /// <summary>Devuelve todos los agentes activos dentro de radio.</summary>
+    /// <summary>
+    /// Devuelve todos los agentes activos dentro de radio.
+    /// IMPORTANTE: la lista devuelta es un buffer interno reutilizable.
+    /// Consumirla en el mismo frame; NO almacenar la referencia entre frames.
+    /// </summary>
     public static List<IAgente> EnRango(Vector3 centro, float radio)
     {
-        var resultado = new List<IAgente>();
+        var resultado = Instance?._enRangoBuffer ?? new List<IAgente>();
+        resultado.Clear();
         if (Instance == null) return resultado;
         float r2 = radio * radio;
         foreach (var a in Instance._agentes)

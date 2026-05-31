@@ -383,13 +383,12 @@ public class GeneradorMundoOSM : MonoBehaviour
 
     Material BuscarMaterial(params string[] palabras)
     {
+        // Obtener el array una sola vez — FindObjectsOfTypeAll es costoso
+        var mats = Resources.FindObjectsOfTypeAll<Material>();
         foreach (var p in palabras)
-        {
-            var mats = Resources.FindObjectsOfTypeAll<Material>();
             foreach (var m in mats)
                 if (m != null && m.name.ToLower().Contains(p) && m.shader.name.Contains("HDRP"))
                     return m;
-        }
         return null;
     }
 
