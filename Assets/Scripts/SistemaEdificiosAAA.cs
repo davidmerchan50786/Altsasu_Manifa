@@ -139,7 +139,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
         // Consultar altura LIDAR si disponible
         float altura = FusionadorEdificiosUltra.Instance != null
             ? Mathf.Max(GeoDataAlsasua.ALT_PLANTA,
-                FusionadorEdificiosUltra.Instance.GetAlturaOptima(e.id, altOSM))
+                FusionadorEdificiosUltra.Instance.GetAlturaOptima((long)e.id, altOSM))
             : altOSM;
 
         var mesh = GenerarMeshEdificio(verts2D, suelo, altura);
@@ -147,7 +147,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
 
         // Determinar arquetipo
         ArquetipoVasco arquetipo = FusionadorEdificiosUltra.Instance != null
-            ? FusionadorEdificiosUltra.Instance.GetArquetipoConAnio(e.id, e.type, e.levels)
+            ? FusionadorEdificiosUltra.Instance.GetArquetipoConAnio((long)e.id, e.type, e.levels)
             : FusionadorEdificiosUltra.ArquetipoDesdeOSM(e.type, e.levels, "", "", "");
 
         string nombre = string.IsNullOrEmpty(e.name)
@@ -160,12 +160,12 @@ public class SistemaEdificiosAAA : MonoBehaviour
         var mf = go.AddComponent<MeshFilter>();
         mf.sharedMesh = mesh;
 
-        Material matFachada = MaterialFachadaPorArquetipo(arquetipo, e.id);
+        Material matFachada = MaterialFachadaPorArquetipo(arquetipo, (long)e.id);
 
         // Aplicar variación de color por MaterialPropertyBlock (sin instanciar material)
         var mr = go.AddComponent<MeshRenderer>();
         mr.sharedMaterial = matFachada;
-        AplicarVariacionColor(mr, arquetipo, e.id);
+        AplicarVariacionColor(mr, arquetipo, (long)e.id);
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
         // Collider en radio < 200m del origen

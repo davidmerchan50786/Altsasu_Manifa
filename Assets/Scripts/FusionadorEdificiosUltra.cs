@@ -648,4 +648,8 @@ public class FusionadorEdificiosUltra : MonoBehaviour
     public Vector2 GetRoofAxis(int id)                   => GetRoofAxis((long)id);
     public Material GetMaterialParedConAnio(int id, string t, string m, Color c)
         => GetMaterialParedConAnio((long)id, t, m, c);
+    public ArquetipoVasco GetArquetipoConAnio(int id, string tipo, int niveles)
+        => GetArquetipoConAnio((long)id, tipo, niveles);
+    public ArquetipoVasco GetArquetipo(int id, string tipo, int niveles)
+        => GetArquetipo((long)id, tipo, niveles);
 }
