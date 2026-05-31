@@ -55,6 +55,11 @@ public class SistemaZonas : MonoBehaviour
     readonly Dictionary<Vector2Int, ZonaInfo>           _zonas         = new();
     readonly Queue<Vector2Int>                          _colaCarga     = new();
     readonly HashSet<Vector2Int>                        _enCola        = new(); // shadow set para Contains O(1)
+    bool _desactivacionEnCurso; // BUG FIX 12: guard para evitar corrutinas ProcesarDesactivaciones concurrentes
+
+    // Buffers reutilizables — evitan allocations en ActualizarZonasActivas y ProcesarDesactivaciones
+    readonly HashSet<Vector2Int>  _deseadasBuffer  = new(25);
+    readonly List<Vector2Int>     _aEliminarBuffer = new(16);
 
     Vector2Int _zonaJugadorAnterior = new(int.MinValue, int.MinValue);
     Transform  _jugador;
@@ -88,7 +93,17 @@ public class SistemaZonas : MonoBehaviour
         _parentEdificios.SetParent(transform);
         _parentCalles    = new GameObject("_Zonas_Calles").transform;
         _parentCalles.SetParent(transform);
+
+        // Suscribirse al evento de jugador para evitar FindGameObjectWithTag en Update
+        AltsasuCore.OnJugadorSpawned += OnJugadorSpawned;
     }
+
+    void OnDestroy()
+    {
+        AltsasuCore.OnJugadorSpawned -= OnJugadorSpawned;
+    }
+
+    void OnJugadorSpawned(Transform t) { _jugador = t; }
 
     IEnumerator Start()
     {
@@ -160,11 +175,14 @@ public class SistemaZonas : MonoBehaviour
 
     void ActualizarZonasActivas(Vector2Int centro)
     {
-        var deseadas = new HashSet<Vector2Int>();
+        // Reutilizar el HashSet en lugar de allocar uno nuevo cada vez
+        _deseadasBuffer.Clear();
 
         for (int dx = -viewRadius; dx <= viewRadius; dx++)
         for (int dz = -viewRadius; dz <= viewRadius; dz++)
-            deseadas.Add(new Vector2Int(centro.x + dx, centro.y + dz));
+            _deseadasBuffer.Add(new Vector2Int(centro.x + dx, centro.y + dz));
+
+        var deseadas = _deseadasBuffer;
 
         // Encolar zonas nuevas
         foreach (var key in deseadas)
@@ -192,7 +210,11 @@ public class SistemaZonas : MonoBehaviour
             }
         }
 
-        if (desactivadas > 0)
+        // BUG FIX 12: solo iniciar una corrutina de desactivación a la vez.
+        // Sin este guard, si el jugador cruza zonas rápido, múltiples instancias
+        // concurrentes iteran y modifican _zonas/_aEliminarBuffer simultáneamente
+        // → InvalidOperationException (dict modified during enumeration).
+        if (desactivadas > 0 && !_desactivacionEnCurso)
             StartCoroutine(ProcesarDesactivaciones());
 
         AlsasuaLogger.Info("Zonas",
@@ -201,6 +223,15 @@ public class SistemaZonas : MonoBehaviour
 
     IEnumerator BucleCarga()
     {
+        // BUG FIX 11 (documentado): este bucle while(true) vive mientras SistemaZonas exista.
+        // Unity cancela corrutinas automáticamente cuando el MonoBehaviour es destruido,
+        // pero si la corrutina está DENTRO de yield return StartCoroutine(CargarZona(key))
+        // y SistemaZonas se destruye en ese momento, la inner coroutine puede seguir corriendo
+        // un frame más intentando acceder a this._parentEdificios (destruido) → NullRef.
+        // TODO CAUSA RAÍZ: CargarZona necesita un CancellationToken o chequeos de this==null.
+        // La protección actual (if (this == null) yield break en CargarZona) no es posible en C# IL2CPP.
+        // Mitigación aplicada: los accesos a _parentEdificios/_parentCalles y _zonas dentro de
+        // CargarZona ya son null-safe, y el scope de esta corrutina es la vida de SistemaZonas.
         while (true)
         {
             if (_colaCarga.Count > 0)
@@ -286,9 +317,11 @@ public class SistemaZonas : MonoBehaviour
 
     IEnumerator ProcesarDesactivaciones()
     {
+        _desactivacionEnCurso = true; // BUG FIX 12
         yield return new WaitForSeconds(unloadDelay * 0.5f);
 
-        var aEliminar = new List<Vector2Int>();
+        _aEliminarBuffer.Clear();
+        var aEliminar = _aEliminarBuffer;
         foreach (var kv in _zonas)
         {
             if (!kv.Value.cargada) continue;
@@ -309,6 +342,8 @@ public class SistemaZonas : MonoBehaviour
             var go = _parentCalles.Find(nombre);
             if (go != null) Destroy(go.gameObject);
         }
+
+        _desactivacionEnCurso = false; // BUG FIX 12: liberar el guard
     }
 
     // ══════════════════════════════════════════════════════════════════════

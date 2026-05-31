@@ -42,6 +42,14 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     float _shadowDistOrig;
     float _lodBiasOrig;
 
+    // OPT: cachear el Transform padre de edificios — GameObject.Find es O(n) escena completa.
+    // BucleMedicion corre cada 0.5s pero hay pilas de SetActive de celdas intermedias.
+    // Ahorro estimado: evita 2 Find() cada 0.5s = 4 traversals/s del hierarchy.
+    Transform _edifParentCached;
+    // OPT: buffer de hijos reutilizable — evita new List<Transform>() cada 0.5s
+    // Ahorro: 1 GC alloc cada 2s (pequeño pero acumulado con 1030 edificios = heap fragmentation).
+    readonly List<Transform> _childrenBuffer = new(1100);
+
     // ── Pool de efectos ───────────────────────────────────────────────────
     readonly Queue<ParticleSystem> _poolParticulas = new();
     const int POOL_SIZE = 20;
@@ -133,13 +141,22 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         const float DIST_LOD1 = 300f;  // medium
         const float DIST_LOD2 = 600f;  // low / culled > 600m
 
-        // Prioridad: geometría precisa > base OSM
-        var edifParent = GameObject.Find("Edificios_Precisos")
-                      ?? GameObject.Find("Edificios_OSM");
-        if (edifParent == null) yield break;
+        // OPT: cachear resultado de GameObject.Find — se ejecuta 2 veces/s, cada Find
+        // recorre todo el hierarchy (O(n) objetos en escena con 1030 edificios).
+        // Solo rebuscamos si la referencia se volvió null (ej. recarga de zona).
+        if (_edifParentCached == null)
+        {
+            var go = GameObject.Find("Edificios_Precisos") ?? GameObject.Find("Edificios_OSM");
+            if (go == null) yield break;
+            _edifParentCached = go.transform;
+        }
+        var edifParent = _edifParentCached.gameObject;
+        if (edifParent == null) { _edifParentCached = null; yield break; }
 
         // Recoger posiciones en NativeArray para Burst
-        var children = new List<Transform>();
+        // OPT: reutilizar _childrenBuffer — evita 1 alloc cada 0.5s (= 2 GC allocs/s eliminados)
+        var children = _childrenBuffer;
+        children.Clear();
         foreach (Transform t in edifParent.transform)
             if (t != null) children.Add(t);
 

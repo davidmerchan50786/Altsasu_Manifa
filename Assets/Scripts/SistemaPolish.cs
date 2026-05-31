@@ -66,6 +66,10 @@ public class SistemaPolish : MonoBehaviour
     // ── Blur de velocidad ─────────────────────────────────────────────────
     float _velocidadActual;
 
+    // OPT: referencia cacheada al coche del jugador — evita FindFirstObjectByType (O(n))
+    // en ActualizarMotionBlur() cada frame. Ahorro estimado: ~0.3-0.8 ms/frame con 50+ objetos.
+    ControladorVehiculoJugador _cocheJugadorCache;
+
     // ════════════════════════════════════════════════════════════════════════
     //  BOOT
     // ════════════════════════════════════════════════════════════════════════
@@ -84,6 +88,13 @@ public class SistemaPolish : MonoBehaviour
         InicializarVolume();
         InicializarSirena();
         SuscribirEventos();
+
+        // ── Sistemas visuales AAA adicionales ─────────────────────────────
+        // SistemaVolumenHDRP se gestiona solo (DefaultExecutionOrder -80)
+        // ConversorMaterialesHDRP y OptimizadorVisualHDRP también son auto-singletons.
+        // SistemaPolish garantiza que el Volume de polish coexiste con el Volume HDRP
+        // ajustando la prioridad para no pisar los efectos de atmósfera.
+        if (_volume != null) _volume.priority = 5f; // más bajo que SistemaVolumenHDRP (10/11)
     }
 
     static void AplicarConfigGraficos()
@@ -145,6 +156,9 @@ public class SistemaPolish : MonoBehaviour
         ControladorJugador.OnDanoRecibido     += OnJugadorDano;
         GameManagerAltsasua.OnEstrellasCambia += OnWantedCambia;
         ControladorVehiculoJugador.OnJugadorEntro += OnEntroVehiculo;
+        // OPT: cachear referencia al entrar y limpiarla al salir — elimina FindFirstObjectByType cada frame
+        ControladorVehiculoJugador.OnJugadorEntro  += OnCocheEntro;
+        ControladorVehiculoJugador.OnJugadorSalio  += OnCocheSalio;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -246,10 +260,11 @@ public class SistemaPolish : MonoBehaviour
     void ActualizarMotionBlur()
     {
         if (_motionBlur == null) return;
-        var coche = FindFirstObjectByType<ControladorVehiculoJugador>();
-        if (coche != null && coche.JugadorDentro)
+        // OPT: usa referencia cacheada en lugar de FindFirstObjectByType (O(n) escena)
+        // Ahorro estimado: ~0.3-0.8 ms/frame → ~18-48 ms/s de CPU liberado.
+        if (_cocheJugadorCache != null && _cocheJugadorCache.JugadorDentro)
         {
-            var rb = coche.GetComponent<Rigidbody>();
+            var rb = _cocheJugadorCache.GetComponent<Rigidbody>();
             float spd = rb != null ? rb.linearVelocity.magnitude : 0f;
             float blur = Mathf.InverseLerp(10f, 60f, spd) * 0.35f;
             _motionBlur.intensity.Override(blur);
@@ -297,6 +312,10 @@ public class SistemaPolish : MonoBehaviour
     /// <summary>Slow motion al entrar en vehículo.</summary>
     void OnEntroVehiculo(ControladorVehiculoJugador _) => SlowMoEntradaVehiculo();
 
+    // OPT: cachear/descachear referencia al coche para ActualizarMotionBlur
+    void OnCocheEntro(ControladorVehiculoJugador coche) { _cocheJugadorCache = coche; }
+    void OnCocheSalio(ControladorVehiculoJugador _)     { _cocheJugadorCache = null; }
+
     public static void SlowMoEntradaVehiculo()
     {
         if (I == null) return;
@@ -309,6 +328,24 @@ public class SistemaPolish : MonoBehaviour
 
     void RestaurarTimeScale() => _timeScaleTarget = 1f;
     void RestaurarLens() => _lensDistortion?.intensity.Override(0f);
+
+    /// <summary>
+    /// Activa modo tormenta (niebla densa, HDRI tormenta).
+    /// Llama al SistemaVolumenHDRP si está disponible.
+    /// </summary>
+    public static void SetTormenta(bool activo)
+    {
+        SistemaVolumenHDRP.SetTormenta(activo);
+    }
+
+    /// <summary>
+    /// Activa Depth of Field de francotirador.
+    /// Llama al SistemaVolumenHDRP si está disponible.
+    /// </summary>
+    public static void SetDoFSniper(bool activo, float focusDist = 40f)
+    {
+        SistemaVolumenHDRP.SetDoFSniper(activo, focusDist);
+    }
 
     /// <summary>Activa/desactiva la luz de sirena (wanted ≥ 2).</summary>
     public static void SetSirena(bool activo)
@@ -342,5 +379,7 @@ public class SistemaPolish : MonoBehaviour
         ControladorJugador.OnDanoRecibido     -= OnJugadorDano;
         GameManagerAltsasua.OnEstrellasCambia -= OnWantedCambia;
         ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
+        ControladorVehiculoJugador.OnJugadorEntro -= OnCocheEntro;
+        ControladorVehiculoJugador.OnJugadorSalio -= OnCocheSalio;
     }
 }

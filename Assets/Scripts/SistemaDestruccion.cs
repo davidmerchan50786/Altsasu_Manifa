@@ -59,11 +59,19 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
 
     IEnumerator SecuenciaExplosionCoche(GameObject coche, bool esCocheBomba)
     {
+        // BUG FIX 3: capturar la posición ANTES de cualquier yield. Si el coche es
+        // destruido por otro sistema (SistemaDestruccion, impacto, etc.) mientras
+        // esperamos el WaitForSeconds, coche.transform lanza MissingReferenceException.
+        // Usando la posición capturada y guardas de null se evita el crash.
+        if (coche == null) yield break;
         Vector3 pos = coche.transform.position;
 
         // 1. Flash de llamas previo
         SpawnFuego(pos + Vector3.up, TamanoFuego.Medio);
         yield return new WaitForSeconds(0.15f);
+
+        // BUG FIX 3: coche puede haber sido destruido durante el yield — guardar pos
+        if (coche != null) pos = coche.transform.position;
 
         // 2. Explosión visual
         if (prefabExplosionGrande != null)
@@ -76,16 +84,18 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
             AudioSource.PlayClipAtPoint(clipExplosion, pos, 1f);
 
         // 4. El coche sale volando hacia arriba
-        var rb = coche.GetComponent<Rigidbody>();
-        if (rb == null) rb = coche.AddComponent<Rigidbody>();
-        rb.isKinematic = false;
-        rb.mass = 600f;
+        if (coche != null)
+        {
+            var rb = coche.GetComponent<Rigidbody>();
+            if (rb == null) rb = coche.AddComponent<Rigidbody>();
+            rb.isKinematic = false;
+            rb.mass = 600f;
 
-        // Impulso hacia arriba + rotación caótica
-        Vector3 fuerza = Vector3.up * fuerzaExplosionCoche;
-        fuerza += new Vector3(Random.Range(-200f, 200f), 0, Random.Range(-200f, 200f));
-        rb.AddForce(fuerza, ForceMode.Impulse);
-        rb.AddTorque(Random.insideUnitSphere * 1500f, ForceMode.Impulse);
+            Vector3 fuerza = Vector3.up * fuerzaExplosionCoche;
+            fuerza += new Vector3(Random.Range(-200f, 200f), 0, Random.Range(-200f, 200f));
+            rb.AddForce(fuerza, ForceMode.Impulse);
+            rb.AddTorque(Random.insideUnitSphere * 1500f, ForceMode.Impulse);
+        }
 
         // 5. Daño a entidades cercanas
         DanarEntidadesCercanas(pos, esCocheBomba ? radioExplosionCoche * 2f : radioExplosionCoche, esCocheBomba ? 200 : 80);
@@ -93,40 +103,57 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
         // 6. Esperar a que caiga (~3-5s para 22m)
         yield return new WaitForSeconds(3.5f);
 
+        // BUG FIX 3: actualizar pos si el coche sigue vivo; si fue destruido, usar pos capturada
+        Vector3 posAterrizaje = coche != null ? coche.transform.position : pos;
+
         // 7. Coche aterriza calcinado y en llamas
-        CalcinarCoche(coche);
-        SpawnFuego(coche.transform.position, TamanoFuego.Grande);
-        SpawnHumoNegro(coche.transform.position);
+        if (coche != null) CalcinarCoche(coche);
+        SpawnFuego(posAterrizaje, TamanoFuego.Grande);
+        SpawnHumoNegro(posAterrizaje);
 
         if (esCocheBomba)
         {
-            // Segunda explosión al aterrizar
             yield return new WaitForSeconds(0.5f);
-            ExplosionProcedural(coche.transform.position, 8f);
-            DanarEntidadesCercanas(coche.transform.position, radioExplosionCoche, 150);
+            Vector3 posBomba = coche != null ? coche.transform.position : posAterrizaje;
+            ExplosionProcedural(posBomba, 8f);
+            DanarEntidadesCercanas(posBomba, radioExplosionCoche, 150);
         }
 
         // Fuego durante 60 segundos y luego extinguir
         yield return new WaitForSeconds(60f);
-        ExtinguirFuego(coche.transform.position, 8f);
+        Vector3 posFinal = coche != null ? coche.transform.position : posAterrizaje;
+        ExtinguirFuego(posFinal, 8f);
     }
+
+    // BUG FIX 7: Material calcinado compartido para evitar memory leak.
+    // Antes: new Material() por cada MeshRenderer del coche (6+) nunca destruidos.
+    // Ahora: un único material creado la primera vez, reutilizado con MaterialPropertyBlock.
+    Material _matCalcinadoProcedural;
 
     void CalcinarCoche(GameObject coche)
     {
-        // Cambiar todos los materiales a calcinado
-        foreach (var mr in coche.GetComponentsInChildren<MeshRenderer>())
+        // Obtener o crear el material calcinado compartido
+        Material matUsar = matCalcinado;
+        if (matUsar == null)
         {
-            if (matCalcinado != null)
-                mr.sharedMaterial = matCalcinado;
-            else
+            if (_matCalcinadoProcedural == null)
             {
-                // Crear material calcinado proceduralmente
-                var mat = new Material(mr.sharedMaterial);
-                mat.color = new Color(0.08f, 0.08f, 0.08f);
-                if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.02f);
-                mr.sharedMaterial = mat;
+                // BUG FIX 7: crear UNA sola instancia de material calcinado, no una por renderer.
+                // Usar sharedMaterial del primer renderer disponible como base; si no hay ninguno,
+                // crear con HDRP/Lit. El material se reutiliza para todos los coches calcinados.
+                var baseShader = Shader.Find("HDRP/Lit") ?? Shader.Find("Standard");
+                _matCalcinadoProcedural = new Material(baseShader);
+                _matCalcinadoProcedural.name = "M_Calcinado_Shared";
+                _matCalcinadoProcedural.color = new Color(0.08f, 0.08f, 0.08f);
+                if (_matCalcinadoProcedural.HasProperty("_Smoothness"))
+                    _matCalcinadoProcedural.SetFloat("_Smoothness", 0.02f);
             }
+            matUsar = _matCalcinadoProcedural;
         }
+
+        foreach (var mr in coche.GetComponentsInChildren<MeshRenderer>())
+            mr.sharedMaterial = matUsar;
+
         // Abollar ligeramente (escala irregular)
         coche.transform.localScale = new Vector3(
             Random.Range(0.85f, 1.05f), Random.Range(0.70f, 0.90f), Random.Range(0.85f, 1.05f));
@@ -200,7 +227,7 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
         // Daño
         DanarEntidadesCercanas(pos, radioFuegoMolotov, 30);
         SistemaApoyoPopular.Instance?.SumarParanoia(8f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 
     // =========================================================================

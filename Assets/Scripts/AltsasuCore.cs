@@ -92,9 +92,10 @@ public sealed class AltsasuCore : MonoBehaviour
     [Range(30, 120)] public int fpsMeta = 60;
 
     // ── Estado ────────────────────────────────────────────────────────────
-    Transform _jugador;
-    float     _fps;
-    bool      _listo;
+    Transform       _jugador;
+    float           _fps;
+    bool            _listo;
+    System.Action   _onRespawnHandler;
 
     public static event System.Action<Transform> OnJugadorSpawned;
     public static event System.Action            OnWorldReady;
@@ -117,6 +118,14 @@ public sealed class AltsasuCore : MonoBehaviour
     {
         if (I != null && I != this) { Destroy(this); return; }
         I = this;
+    }
+
+    void OnDestroy()
+    {
+        // BUG FIX 10: desuscribir el handler de OnRespawn para evitar lambdas huérfanas.
+        if (_onRespawnHandler != null)
+            GameManagerAltsasua.OnRespawn -= _onRespawnHandler;
+        if (I == this) I = null;
     }
 
     IEnumerator Start()
@@ -194,7 +203,12 @@ public sealed class AltsasuCore : MonoBehaviour
         yield return null;
 
         // ── FASE 4: Jugador y señal final ─────────────────────────────────
-        GameManagerAltsasua.OnRespawn += () => StartCoroutine(EsperarYConectarJugador());
+        // BUG FIX 10: el handler del OnRespawn debe desuscribirse en OnDestroy
+        // para evitar que si AltsasuCore se recrea (scene reload), se acumulen
+        // múltiples lambdas que lanzan corrutinas EsperarYConectarJugador en paralelo.
+        // Usamos un System.Action nombrado almacenado como campo de instancia.
+        _onRespawnHandler = () => StartCoroutine(EsperarYConectarJugador());
+        GameManagerAltsasua.OnRespawn += _onRespawnHandler;
         yield return StartCoroutine(EsperarYConectarJugador());
 
         _listo = true;

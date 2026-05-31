@@ -88,7 +88,7 @@ public class SistemaGrafitis : SingletonMono<SistemaGrafitis>
 
         // Apoyo popular
         _apoyo?.SumarApoyo(apoyoPorPintada, $"Pintada política en {go.name}");
-        GameManagerAltsasua.Instance?.GanarDinero(10);
+        (ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance)?.GanarDinero(10);
         OnPintadaRealizada?.Invoke();
     }
 

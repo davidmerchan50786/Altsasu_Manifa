@@ -82,11 +82,31 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
         if (kb.f9Key.wasPressedThisFrame) CargarDesdeSlot(PlayerPrefs.GetInt(CLAVE_SLOT, 0));
     }
 
+    // BUG FIX 1: lambdas nombradas para poder desuscribir en OnDestroy y evitar
+    // memory leaks + callbacks fantasma tras hot reload o scene restart.
+    private System.Action<string> _onMisionCompletada;
+    private System.Action         _onPintada;
+    private System.Action<int>    _onEstrellas;
+
     void SuscribirEventos()
     {
-        SistemaMisiones.OnMisionCompletada  += _ => { _datos.misionesCompletadas++; GuardarEnSlot(0); };
-        SistemaGrafitis.OnPintadaRealizada  += ()  => _datos.totalPintadas++;
-        GameManagerAltsasua.OnEstrellasCambia += _ => CapturarEstado();
+        _onMisionCompletada = _ => { _datos.misionesCompletadas++; GuardarEnSlot(0); };
+        _onPintada          = ()  => _datos.totalPintadas++;
+        _onEstrellas        = _   => CapturarEstado();
+
+        SistemaMisiones.OnMisionCompletada    += _onMisionCompletada;
+        SistemaGrafitis.OnPintadaRealizada    += _onPintada;
+        GameManagerAltsasua.OnEstrellasCambia += _onEstrellas;
+    }
+
+    protected override void OnDestroyed()
+    {
+        if (_onMisionCompletada != null)
+            SistemaMisiones.OnMisionCompletada    -= _onMisionCompletada;
+        if (_onPintada != null)
+            SistemaGrafitis.OnPintadaRealizada    -= _onPintada;
+        if (_onEstrellas != null)
+            GameManagerAltsasua.OnEstrellasCambia -= _onEstrellas;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -108,15 +128,17 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
 
     void CapturarEstado()
     {
-        var j  = AltsasuCore.Jugador;
-        var gm = GameManagerAltsasua.Instance;
+        var j       = AltsasuCore.Jugador;
+        var economy = ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance;
+        var wanted  = ServiceLocator.Get<IWantedSystem>()   ?? (IWantedSystem)GameManagerAltsasua.Instance;
         var ap = SistemaApoyoPopular.Instance;
         var at = AltsasuCore.I?.atmosferaSystem;
         var cl = AltsasuCore.I?.climaSystem;
         var sm = SistemaMisiones.Instance;
 
-        if (j  != null) { _datos.jugX = j.position.x; _datos.jugY = j.position.y; _datos.jugZ = j.position.z; }
-        if (gm != null) { _datos.dinero = gm.dinero; _datos.nivelWanted = gm.nivelBusqueda; }
+        if (j       != null) { _datos.jugX = j.position.x; _datos.jugY = j.position.y; _datos.jugZ = j.position.z; }
+        if (economy != null) { _datos.dinero = economy.Dinero; }
+        if (wanted  != null) { _datos.nivelWanted = wanted.NivelBusqueda; }
         if (ap != null) { _datos.apoyoPopular = ap.apoyo; _datos.paranoia = ap.paranoia; }
         if (at != null) { _datos.horaDelDia = at.HoraDelDia; }
         if (cl != null) { _datos.estadoClima = (int)cl.climaActual; }
@@ -148,13 +170,11 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
         if (j != null && (_datos.jugX != 0 || _datos.jugZ != 0))
             j.position = new Vector3(_datos.jugX, _datos.jugY, _datos.jugZ);
 
-        // Dinero y wanted
-        var gm = GameManagerAltsasua.Instance;
-        if (gm != null)
-        {
-            gm.dinero         = _datos.dinero;
-            gm.nivelBusqueda  = Mathf.Clamp(_datos.nivelWanted, 0, 5);
-        }
+        // Dinero y wanted — usando interfaces desacopladas
+        var economy = ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance;
+        var wanted  = ServiceLocator.Get<IWantedSystem>()   ?? (IWantedSystem)GameManagerAltsasua.Instance;
+        economy?.GanarDinero(_datos.dinero - (economy.Dinero)); // delta para no duplicar
+        wanted?.FijarBusqueda(_datos.nivelWanted);
 
         // Apoyo popular
         var ap = SistemaApoyoPopular.Instance;

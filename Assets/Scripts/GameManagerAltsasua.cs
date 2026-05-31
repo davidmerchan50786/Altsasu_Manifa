@@ -8,8 +8,12 @@ using UnityEngine.InputSystem;
 /// GameManagerAltsasua — Núcleo del juego estilo GTA ambientado en Alsasua.
 /// Gestiona: nivel de búsqueda, spawn de policía/enemigos, dinero, HUD y respawn.
 /// Coloca este componente en un GameObject vacío llamado "GameManager" en la escena.
+///
+/// Implementa IWantedSystem e IEconomyService para que los sistemas de gameplay
+/// no dependan de esta clase concreta — usan ServiceLocator.Get&lt;IWantedSystem&gt;()
+/// y ServiceLocator.Get&lt;IEconomyService&gt;() en su lugar.
 /// </summary>
-public class GameManagerAltsasua : MonoBehaviour
+public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService, ISpawnService
 {
     // ─── Singleton ───────────────────────────────────────────────────────────
     public static GameManagerAltsasua Instance { get; private set; }
@@ -108,6 +112,41 @@ public class GameManagerAltsasua : MonoBehaviour
     // ─── Estado ───────────────────────────────────────────────────────────────
     private bool  _jugadorVivo = false;
 
+    // HUD cache — evita string allocs en Update
+    private int    _hudDineroCache      = int.MinValue;
+    private int    _hudBusquedaCache    = -1;
+    private int    _hudPuntuacionCache  = int.MinValue;
+    // Tabla constante de estrellas para los 6 niveles (0-5) — sin concat por frame
+    private static readonly string[] _estrellasTexto =
+    {
+        "☆☆☆☆☆", "★☆☆☆☆", "★★☆☆☆", "★★★☆☆", "★★★★☆", "★★★★★"
+    };
+
+    // =========================================================================
+    //  UNITY LIFECYCLE
+    // =========================================================================
+
+    // ── ISpawnService ─────────────────────────────────────────────────────────
+    bool ISpawnService.JugadorEnVehiculo             => JugadorEnVehiculo;
+    void ISpawnService.EnemigoEliminado(UnityEngine.GameObject e) => EnemigoEliminado(e);
+    void ISpawnService.SetJugadorEnVehiculo(bool v)  => SetJugadorEnVehiculo(v);
+
+    // ── IWantedSystem ─────────────────────────────────────────────────────────
+    int IWantedSystem.NivelBusqueda => nivelBusqueda;
+    void IWantedSystem.AumentarBusqueda(int cantidad) => AumentarBusqueda(cantidad);
+    void IWantedSystem.FijarBusqueda(int nivel)
+    {
+        int prev = nivelBusqueda;
+        nivelBusqueda = Mathf.Clamp(nivel, 0, 5);
+        if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
+    }
+
+    // ── IEconomyService ───────────────────────────────────────────────────────
+    int IEconomyService.Dinero     => dinero;
+    int IEconomyService.Puntuacion => puntuacion;
+    void IEconomyService.GanarDinero(int cantidad)  => GanarDinero(cantidad);
+    bool IEconomyService.GastarDinero(int cantidad) => GastarDinero(cantidad);
+
     // =========================================================================
     //  UNITY LIFECYCLE
     // =========================================================================
@@ -122,6 +161,18 @@ public class GameManagerAltsasua : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Registrar servicios para consumo desacoplado por el resto del juego
+        ServiceLocator.Registrar<IWantedSystem>(this);
+        ServiceLocator.Registrar<IEconomyService>(this);
+        ServiceLocator.Registrar<ISpawnService>(this);
+    }
+
+    void OnDestroy()
+    {
+        ServiceLocator.Desregistrar<IWantedSystem>();
+        ServiceLocator.Desregistrar<IEconomyService>();
+        ServiceLocator.Desregistrar<ISpawnService>();
     }
 
     void Start()
@@ -405,19 +456,25 @@ public class GameManagerAltsasua : MonoBehaviour
 
     void ActualizarHUD()
     {
-        if (textoDinero != null)
-            textoDinero.text = "$ " + dinero;
-
-        if (textoNivelBusqueda != null)
+        // Solo actualizar textos cuando cambian los valores — evita string allocs cada frame
+        if (textoDinero != null && dinero != _hudDineroCache)
         {
-            string estrellas = "";
-            for (int i = 0; i < 5; i++)
-                estrellas += i < nivelBusqueda ? "★" : "☆";
-            textoNivelBusqueda.text = estrellas;
+            _hudDineroCache  = dinero;
+            textoDinero.text = "$ " + dinero.ToString();
         }
 
-        if (textoPuntuacion != null)
-            textoPuntuacion.text = "Score: " + puntuacion;
+        if (textoNivelBusqueda != null && nivelBusqueda != _hudBusquedaCache)
+        {
+            _hudBusquedaCache       = nivelBusqueda;
+            int idx                 = Mathf.Clamp(nivelBusqueda, 0, _estrellasTexto.Length - 1);
+            textoNivelBusqueda.text = _estrellasTexto[idx];
+        }
+
+        if (textoPuntuacion != null && puntuacion != _hudPuntuacionCache)
+        {
+            _hudPuntuacionCache  = puntuacion;
+            textoPuntuacion.text = "Score: " + puntuacion.ToString();
+        }
     }
 
     // =========================================================================

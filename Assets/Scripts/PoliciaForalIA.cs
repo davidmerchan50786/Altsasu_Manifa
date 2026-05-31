@@ -84,8 +84,10 @@ public class PoliciaForalIA : NPCBase, IDamageable
     [SerializeField] private float dispersion        = 0.05f;
 
     // ── Estado interno ────────────────────────────────────────────────────────
-    private EstadoPolicia       estado      = EstadoPolicia.Patrullando;
-    private GameManagerAltsasua gameManager;
+    private EstadoPolicia  estado      = EstadoPolicia.Patrullando;
+    // ARCH: usa IWantedSystem en lugar de GameManagerAltsasua — elimina dependencia
+    //       directa de Gameplay→GameManager. Se resuelve desde ServiceLocator.
+    private IWantedSystem  _wantedSystem;
 
     // Alias para compatibilidad con código existente — NPCBase ya declara _jugador/_controlJugador/_agente
     private Transform          jugador          => _jugador;
@@ -146,7 +148,7 @@ public class PoliciaForalIA : NPCBase, IDamageable
     protected override void OnStart()
     {
         StartCoroutine(BuscarAtmosfera());
-        gameManager = GameManagerAltsasua.Instance;
+        _wantedSystem  = ServiceLocator.Get<IWantedSystem>();
         _slotDeteccion = SistemaDeteccionIA.Registrar();
         if (linterna != null) linterna.enabled = false;
     }
@@ -254,7 +256,7 @@ public class PoliciaForalIA : NPCBase, IDamageable
         {
             // Confirmado con LOS → perseguir y avisar al GameManager
             if (jugador != null) ultimaPosJugador = jugador.position;
-            gameManager?.AumentarBusqueda(1);
+            _wantedSystem?.AumentarBusqueda(1);
             CambiarEstado(EstadoPolicia.Persiguiendo);
         }
         else if (timerSospecha <= 0f)
