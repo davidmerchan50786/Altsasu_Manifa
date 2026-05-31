@@ -184,7 +184,8 @@ public class Mision_RobarCoche : Mision
             Condicion   = () => _dentroDelCoche,
             AlCompletar = () =>
             {
-                ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
+                var gm = GameManagerAltsasua.Instance;
+                if (gm != null) gm.AumentarBusqueda(1);
                 // Alertar a los civiles cercanos
                 var jug = AltsasuCore.Jugador;
                 if (jug != null) SistemaIA.AlertarCercanos(jug.position, 30f);
@@ -201,8 +202,12 @@ public class Mision_RobarCoche : Mision
             },
             AlCompletar = () =>
             {
-                ServiceLocator.Get<IEconomyService>()?.GanarDinero(500);
-                ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
+                var gm = GameManagerAltsasua.Instance;
+                if (gm != null)
+                {
+                    gm.GanarDinero(500); // dinero es public — sin reflexión
+                    gm.AumentarBusqueda(1);
+                }
             }
         }
     };
@@ -231,9 +236,9 @@ public class Mision_HuirPolicia : Mision
             Descripcion = $"Mantén el nivel de búsqueda bajo durante {TIEMPO_PARA_ESCAPAR}s",
             Condicion   = () =>
             {
-                var wanted = ServiceLocator.Get<IWantedSystem>();
-                if (wanted == null) return false;
-                if (wanted.NivelBusqueda == 0)
+                var gm = GameManagerAltsasua.Instance;
+                if (gm == null) return false;
+                if (gm.nivelBusqueda == 0)
                     _timerSinBuscado += Time.deltaTime;
                 else
                     _timerSinBuscado = 0f;
@@ -241,7 +246,9 @@ public class Mision_HuirPolicia : Mision
             },
             AlCompletar = () =>
             {
-                ServiceLocator.Get<IEconomyService>()?.GanarDinero(1000);
+                var gm = GameManagerAltsasua.Instance;
+                if (gm == null) return;
+                gm.GanarDinero(1000);
             }
         }
     };

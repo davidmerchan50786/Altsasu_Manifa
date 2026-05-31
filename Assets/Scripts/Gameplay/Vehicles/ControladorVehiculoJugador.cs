@@ -361,7 +361,7 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         _camV = 10f;
 
         // Notificar al GameManager (la IA de persecución y el HUD lo necesitan)
-        ServiceLocator.Get<ISpawnService>()?.SetJugadorEnVehiculo(true);
+        GameManagerAltsasua.Instance?.SetJugadorEnVehiculo(true);
 
         // Evento para el sistema de misiones
         OnJugadorEntro?.Invoke(this);
@@ -395,7 +395,7 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
             r.enabled = true;
 
         // Notificar al GameManager
-        ServiceLocator.Get<ISpawnService>()?.SetJugadorEnVehiculo(false);
+        GameManagerAltsasua.Instance?.SetJugadorEnVehiculo(false);
 
         // Transición de cámara: asiento → spring arm original
         if (_corrutinaCamara != null) StopCoroutine(_corrutinaCamara);
