@@ -299,6 +299,10 @@ public class GeneradorMundoOSM : MonoBehaviour
         GameObject prefabArbol = Resources.Load<GameObject>("Prefabs/arbol") ??
             BuscarPrefabArbol();
 
+        // BUG FIX 8: añadir yield cada N árboles para evitar congelar el main thread
+        // un frame completo cuando hay cientos de árboles. Sin esto, la corrutina
+        // instancia todos los árboles en un solo frame → spike de CPU visible.
+        int lote = 0;
         foreach (var a in arboles)
         {
             float x = a.x + OFFSET_X, z = a.z + OFFSET_Z;
@@ -313,6 +317,7 @@ public class GeneradorMundoOSM : MonoBehaviour
 
             arbolGO.isStatic = true;
             _arbolesCreados++;
+            if (++lote >= 30) { lote = 0; yield return null; }
         }
         yield return null;
     }

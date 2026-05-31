@@ -141,10 +141,16 @@ public abstract class NPCBase : MonoBehaviour, IAgente
 
         if (!SistemaNavMesh.PuntoEnNavMesh(transform.position, 3f))
         {
-            // Fuera del área horneada — reintentar en el próximo horneado
+            // BUG FIX 6: desuscribir ANTES de volver a suscribir para evitar que
+            // múltiples rehorneados acumulen suscripciones duplicadas y llamen
+            // ActivarAgente() y AlActivarAgente() N veces.
+            SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
             SistemaNavMesh.OnNavMeshListo += ActivarAgente;
             return;
         }
+
+        // Desuscribir definitivamente antes de activar — ya no necesitamos el evento
+        SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
 
         _agente.enabled = true;
         AlActivarAgente();

@@ -132,7 +132,7 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         _destruido = true;
         if (jugadorDentro) ForzarSalida();
         SistemaDestruccion.Instance?.ExplotarCoche(gameObject);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(2);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(2);
     }
 
     private ParticleSystem CrearParticula(Vector3 offsetLocal, Color color, float size)

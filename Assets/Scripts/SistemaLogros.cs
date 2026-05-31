@@ -109,7 +109,8 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
 
     void EvaluarPeriodico()
     {
-        var gm    = GameManagerAltsasua.Instance;
+        var economy = ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance;
+        var wanted  = ServiceLocator.Get<IWantedSystem>()   ?? (IWantedSystem)GameManagerAltsasua.Instance;
         var apoyo = SistemaApoyoPopular.Instance;
         var atm   = AltsasuCore.I?.atmosferaSystem;
         var j     = AltsasuCore.Jugador;
@@ -123,7 +124,7 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         }
 
         // Dinero
-        if (gm != null && gm.dinero >= 5000) Todos.Find(l=>l.Id=="5000_dinero")?.Desbloquear();
+        if (economy != null && economy.Dinero >= 5000) Todos.Find(l=>l.Id=="5000_dinero")?.Desbloquear();
 
         // Apoyo
         if (apoyo != null)
@@ -133,7 +134,7 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         }
 
         // Cero wanted
-        if (gm != null && gm.nivelBusqueda == 0) Todos.Find(l=>l.Id=="cero_estrellas")?.Desbloquear();
+        if (wanted != null && wanted.NivelBusqueda == 0) Todos.Find(l=>l.Id=="cero_estrellas")?.Desbloquear();
 
         // Amanecer en el monte
         if (atm != null && j != null)

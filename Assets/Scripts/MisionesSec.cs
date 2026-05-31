@@ -11,6 +11,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// ── Acceso desacoplado idéntico al de MisionesAltsasua ───────────────────────
+// MisionHelper está definido en MisionesAltsasua.cs y es accesible porque
+// ambos archivos compilan en el mismo assembly (Assembly-CSharp).
+// No redeclara la clase — solo la usa.
+
 // ── MS01 — FOTÓGRAFO ──────────────────────────────────────────────────────
 public class MisionSec_Fotografo : Mision
 {
@@ -59,7 +64,7 @@ public class MisionSec_Fotografo : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(400);
+                MisionHelper.GanarDinero(400);
                 SistemaApoyoPopular.Instance?.SumarApoyo(100f, "Fotos de denuncia publicadas");
             }
         }
@@ -97,7 +102,7 @@ public class MisionSec_Musico : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(300);
+                MisionHelper.GanarDinero(300);
                 SistemaApoyoPopular.Instance?.SumarApoyo(80f, "Concierto de resistencia");
             }
         }
@@ -139,7 +144,7 @@ public class MisionSec_Txikiteo : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(200);
+                MisionHelper.GanarDinero(200);
                 SistemaApoyoPopular.Instance?.SumarApoyo(60f, "Txikiteo solidario completado");
             }
         }
@@ -184,7 +189,7 @@ public class MisionSec_Corredor : Mision
             {
                 bool enTiempo = _timerTotal < LIMITE;
                 int recomp = enTiempo ? 800 : 100;
-                GameManagerAltsasua.Instance?.GanarDinero(recomp);
+                MisionHelper.GanarDinero(recomp);
                 SistemaApoyoPopular.Instance?.SumarApoyo(
                     enTiempo ? 150f : 20f,
                     enTiempo ? "Mendi-korrika completada" : "Llegaste pero tarde");
@@ -238,7 +243,7 @@ public class MisionSec_GrafiteroPro : Mision
             {
                 _activo = false;
                 SistemaGrafitis.OnPintadaRealizada -= OnPintada;
-                GameManagerAltsasua.Instance?.GanarDinero(600);
+                MisionHelper.GanarDinero(600);
                 SistemaApoyoPopular.Instance?.SumarApoyo(200f, "Grafiti en puntos estratégicos");
                 SistemaLogros.Instance?.GetType()
                     .GetMethod("OnGraffiti",

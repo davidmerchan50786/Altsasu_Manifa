@@ -143,7 +143,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         Destroy(piedra, 10f);
 
         _apoyo?.SumarParanoia(3f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 
     static GameObject CrearPiedra(Vector3 pos)
@@ -170,7 +170,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         _destruccion?.LanzarMolotov(cam.transform.position + cam.transform.forward, vel);
 
         _apoyo?.SumarParanoia(12f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(2);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(2);
     }
 
     // ── Bomba lapa ────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         bomba.AddComponent<BombaLapaComponent>().Init(temporizadorLapa, _destruccion, hit.collider.gameObject);
 
         _apoyo?.SumarParanoia(20f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(3);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(3);
         Debug.Log($"[Armas] Bomba lapa colocada en {hit.collider.gameObject.name}. Detona en {temporizadorLapa}s");
     }
 
@@ -227,7 +227,7 @@ public class SistemaArmasExtendido : MonoBehaviour
 
         coche.AddComponent<CocheBombaComponent>().Init(_destruccion);
         Debug.Log($"[Armas] ¡Coche bomba armado: {coche.name}! Pulsa G cerca del coche para detonar.");
-        GameManagerAltsasua.Instance?.AumentarBusqueda(4);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(4);
     }
 
     // ── Bandera Euskadi (ikurriña) ────────────────────────────────────────

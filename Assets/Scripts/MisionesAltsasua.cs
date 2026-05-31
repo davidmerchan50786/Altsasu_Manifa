@@ -19,6 +19,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// ── Acceso desacoplado a GameManager ──────────────────────────────────────────
+// Las misiones no deben depender de GameManagerAltsasua directamente.
+// Estos helpers estáticos en el archivo encapsulan el acceso a ServiceLocator
+// para que los cambios de implementación no requieran tocar cada misión.
+//
+// NOTA: GameManagerAltsasua.Instance se mantiene como fallback de seguridad solo
+// para el caso extremo de que ServiceLocator no esté registrado en el frame de boot.
+internal static class MisionHelper
+{
+    static IWantedSystem   Wanted   => ServiceLocator.Get<IWantedSystem>()   ?? (IWantedSystem)GameManagerAltsasua.Instance;
+    static IEconomyService Economy  => ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance;
+
+    public static int  NivelBusqueda               => Wanted?.NivelBusqueda ?? 0;
+    public static void AumentarBusqueda(int n)     => Wanted?.AumentarBusqueda(n);
+    public static void GanarDinero(int n)          => Economy?.GanarDinero(n);
+    public static bool SinWanted()                 => NivelBusqueda == 0;
+    public static bool WantedMinimo(int min)       => NivelBusqueda >= min;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 //  COORDENADAS DE ALSASUA (sistema terreno, origen = esquina SW del DEM)
 //  Herriko Plaza ≈ (1918, y, 8570) — referencia central
@@ -90,7 +109,7 @@ public class Mision_PintadaPlaza : Mision
             {
                 _escapando = true;
                 SistemaGrafitis.OnPintadaRealizada -= ContarPintada;
-                GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+                MisionHelper.AumentarBusqueda(1);
                 SistemaApoyoPopular.Instance?.SumarApoyo(80f, "Pintada colectiva en la plaza");
                 AlsasuaLogger.Info("M03", "¡Pintadas listas! Escapa de la zona en 90 segundos");
             }
@@ -106,7 +125,7 @@ public class Mision_PintadaPlaza : Mision
                 if (_timerEscape >= TIEMPO_MAX)
                 {
                     // Tiempo agotado — penalización
-                    GameManagerAltsasua.Instance?.AumentarBusqueda(2);
+                    MisionHelper.AumentarBusqueda(2);
                     return true; // avanzar misión de todas formas
                 }
                 return fueraPlaza;
@@ -115,7 +134,7 @@ public class Mision_PintadaPlaza : Mision
             {
                 bool enTiempo = _timerEscape < TIEMPO_MAX;
                 int dinero = enTiempo ? 400 : 100;
-                GameManagerAltsasua.Instance?.GanarDinero(dinero);
+                MisionHelper.GanarDinero(dinero);
                 string msg = enTiempo ? "Escape limpio — +400€" : "Llegaron tarde pero te pillaron — +100€";
                 AlsasuaLogger.Info("M03", msg);
             }
@@ -152,8 +171,7 @@ public class Mision_Manifestacion : Mision
             Descripcion = "Llega a Herriko Plaza sin nivel de búsqueda activo",
             Condicion   = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                bool sinWanted = gm == null || gm.nivelBusqueda == 0;
+                bool sinWanted = MisionHelper.SinWanted();
                 bool enPlaza   = PuntosAlsasua.Dist2D(
                     PuntosAlsasua.JugadorPos(), PuntosAlsasua.HerrikoPlaza) < 80f;
                 return sinWanted && enPlaza;
@@ -192,13 +210,12 @@ public class Mision_Manifestacion : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(800);
+                MisionHelper.GanarDinero(800);
                 SistemaApoyoPopular.Instance?.SumarApoyo(200f, "Manifestación sostenida 2 minutos");
                 // La manifestación reduce el nivel de búsqueda si el apoyo es alto
-                var gm    = GameManagerAltsasua.Instance;
                 var apoyo = SistemaApoyoPopular.Instance;
-                if (gm != null && apoyo != null && apoyo.apoyo > 60f)
-                    gm.AumentarBusqueda(-1);
+                if (apoyo != null && apoyo.apoyo > 60f)
+                    MisionHelper.AumentarBusqueda(-1);
             }
         }
     };
@@ -243,7 +260,7 @@ public class Mision_CorteN1 : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+                MisionHelper.AumentarBusqueda(1);
                 AlsasuaLogger.Info("M05", "¡Estás en la N-1! Mantén el corte 90 segundos");
             }
         },
@@ -261,7 +278,7 @@ public class Mision_CorteN1 : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(600);
+                MisionHelper.GanarDinero(600);
                 SistemaApoyoPopular.Instance?.SumarApoyo(120f, "Corte de la N-1 durante 90 segundos");
                 AlsasuaLogger.Info("M05", "¡Corte exitoso! El tráfico lleva 90 segundos parado");
             }
@@ -279,8 +296,8 @@ public class Mision_CorteN1 : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(300);
-                GameManagerAltsasua.Instance?.AumentarBusqueda(-1);
+                MisionHelper.GanarDinero(300);
+                MisionHelper.AumentarBusqueda(-1);
             }
         }
     };
@@ -344,7 +361,7 @@ public class Mision_RadioAskatasuna : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(1200);
+                MisionHelper.GanarDinero(1200);
                 SistemaApoyoPopular.Instance?.SumarApoyo(300f, "Emisión Radio Askatasuna completada");
                 // La emisión reduce la paranoia — la gente confía más
                 SistemaApoyoPopular.Instance?.RestarParanoia(15f);
@@ -425,7 +442,7 @@ public class Mision_ConcentracionNocturna : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(700);
+                MisionHelper.GanarDinero(700);
                 SistemaApoyoPopular.Instance?.SumarApoyo(150f, "Concentración nocturna completada");
             }
         }
@@ -483,7 +500,7 @@ public class Mision_InterceptorArdiendo : Mision
             {
                 _escapando = true;
                 VehiculoNPC.OnVehiculoDestruido -= ContarCoche;
-                GameManagerAltsasua.Instance?.AumentarBusqueda(3);
+                MisionHelper.AumentarBusqueda(3);
                 SistemaApoyoPopular.Instance?.SumarApoyo(100f, "Coches policiales destruidos");
                 AlsasuaLogger.Info("M08", "¡Alerta máxima! Escapa en 2 minutos");
             }
@@ -494,13 +511,12 @@ public class Mision_InterceptorArdiendo : Mision
             Condicion   = () =>
             {
                 _timerFuga += Time.deltaTime;
-                var gm = GameManagerAltsasua.Instance;
                 // Escapado si wanted baja a 0 O si pasan los 2 minutos (con penalización)
-                bool sinWanted = gm != null && gm.nivelBusqueda == 0;
+                bool sinWanted = MisionHelper.SinWanted();
                 if (_timerFuga >= TIEMPO_FUGA)
                 {
                     // Penalización por no escapar
-                    gm?.AumentarBusqueda(1);
+                    MisionHelper.AumentarBusqueda(1);
                     return true;
                 }
                 return sinWanted;
@@ -508,7 +524,7 @@ public class Mision_InterceptorArdiendo : Mision
             AlCompletar = () =>
             {
                 bool enTiempo = _timerFuga < TIEMPO_FUGA;
-                GameManagerAltsasua.Instance?.GanarDinero(enTiempo ? 1500 : 500);
+                MisionHelper.GanarDinero(enTiempo ? 1500 : 500);
             }
         }
     };
@@ -553,7 +569,7 @@ public class Mision_PresoakEtxera : Mision
                 _activo = false;
                 SistemaGrafitis.OnPintadaRealizada -= Contar;
                 SistemaGrafitis.OnPegatinaPuesta   -= ContarPegatina;
-                GameManagerAltsasua.Instance?.GanarDinero(900);
+                MisionHelper.GanarDinero(900);
                 SistemaApoyoPopular.Instance?.SumarApoyo(250f, "Campaña Presoak Etxera completada");
                 SistemaApoyoPopular.Instance?.RestarParanoia(10f);
                 AlsasuaLogger.Info("M09", "¡Campaña completa! El pueblo entero lleva el mensaje");
@@ -594,8 +610,7 @@ public class Mision_LaRepresalia : Mision
             Descripcion = "Alcanza nivel de búsqueda 3★ (haz acciones radicales)",
             Condicion   = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                if (gm != null && gm.nivelBusqueda >= 3) _en3Estrellas = true;
+                if (MisionHelper.WantedMinimo(3)) _en3Estrellas = true;
                 return _en3Estrellas;
             },
             AlCompletar = () =>
@@ -606,18 +621,17 @@ public class Mision_LaRepresalia : Mision
             Descripcion = $"Sobrevive bajo 3★ de búsqueda durante {DURACION_AGUANTE}s",
             Condicion   = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
                 var jCtrl = AltsasuCore.Jugador?.GetComponent<ControladorJugador>();
-                if (gm == null || jCtrl == null) return false;
+                if (jCtrl == null) return false;
                 bool vivo = jCtrl.Vida > 0;
-                bool con3 = gm.nivelBusqueda >= 3;
+                bool con3 = MisionHelper.WantedMinimo(3);
                 if (vivo && con3)
                     _timerAguante += Time.deltaTime;
                 return _timerAguante >= DURACION_AGUANTE;
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(2000);
+                MisionHelper.GanarDinero(2000);
                 SistemaApoyoPopular.Instance?.SumarApoyo(400f, "Sobreviviste a la represalia");
                 AlsasuaLogger.Info("M10", "Supervivencia demostrada — la resistencia no cede");
             }
@@ -654,10 +668,9 @@ public class Mision_Amnistia : Mision
             Descripcion = "Pinta graffitis, organiza manifestaciones y reduce el wanted a 0",
             Condicion   = () =>
             {
-                var gm    = GameManagerAltsasua.Instance;
                 var apoyo = SistemaApoyoPopular.Instance;
-                if (gm == null || apoyo == null) return false;
-                return gm.nivelBusqueda == 0 && apoyo.apoyo >= META_APOYO;
+                if (apoyo == null) return false;
+                return MisionHelper.SinWanted() && apoyo.apoyo >= META_APOYO;
             },
             AlCompletar = () =>
                 AlsasuaLogger.Info("M11",
@@ -668,17 +681,16 @@ public class Mision_Amnistia : Mision
             Descripcion = $"Mantén apoyo > {META_APOYO}% y wanted = 0 durante {DURACION_SOT}s",
             Condicion   = () =>
             {
-                var gm    = GameManagerAltsasua.Instance;
                 var apoyo = SistemaApoyoPopular.Instance;
-                if (gm == null || apoyo == null) return false;
-                bool condicion = gm.nivelBusqueda == 0 && apoyo.apoyo >= META_APOYO;
+                if (apoyo == null) return false;
+                bool condicion = MisionHelper.SinWanted() && apoyo.apoyo >= META_APOYO;
                 if (condicion) _timerAltapoyo += Time.deltaTime;
                 else           _timerAltapoyo  = Mathf.Max(0f, _timerAltapoyo - Time.deltaTime);
                 return _timerAltapoyo >= DURACION_SOT;
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(3000);
+                MisionHelper.GanarDinero(3000);
                 SistemaApoyoPopular.Instance?.SumarApoyo(500f, "Victoria política — Amnistia");
                 AlsasuaLogger.Info("M11", "¡AMNISTIA! El pueblo ha ganado. Una última batalla...");
             }
@@ -738,7 +750,7 @@ public class Mision_ManifaFinal : Mision
             AlCompletar = () =>
             {
                 SistemaApoyoPopular.Instance?.SumarApoyo(200f, "Manifestación masiva convocada");
-                GameManagerAltsasua.Instance?.AumentarBusqueda(-2); // la fuerza del pueblo frena la represión
+                MisionHelper.AumentarBusqueda(-2); // la fuerza del pueblo frena la represión
             }
         },
         new Objetivo
@@ -772,9 +784,9 @@ public class Mision_ManifaFinal : Mision
             },
             AlCompletar = () =>
             {
-                GameManagerAltsasua.Instance?.GanarDinero(9999);
+                MisionHelper.GanarDinero(9999);
                 SistemaApoyoPopular.Instance?.SumarApoyo(999f, "VICTORIA — Manifa Final completada");
-                GameManagerAltsasua.Instance?.AumentarBusqueda(-99); // wanted = 0
+                MisionHelper.AumentarBusqueda(-99); // wanted = 0
                 AlsasuaLogger.Info("M12",
                     "★★★★★ ASKATASUNA ★★★★★ — El pueblo de Alsasua ha resistido. FIN.");
                 // Mostrar pantalla de victoria

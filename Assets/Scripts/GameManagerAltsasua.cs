@@ -8,8 +8,12 @@ using UnityEngine.InputSystem;
 /// GameManagerAltsasua — Núcleo del juego estilo GTA ambientado en Alsasua.
 /// Gestiona: nivel de búsqueda, spawn de policía/enemigos, dinero, HUD y respawn.
 /// Coloca este componente en un GameObject vacío llamado "GameManager" en la escena.
+///
+/// Implementa IWantedSystem e IEconomyService para que los sistemas de gameplay
+/// no dependan de esta clase concreta — usan ServiceLocator.Get&lt;IWantedSystem&gt;()
+/// y ServiceLocator.Get&lt;IEconomyService&gt;() en su lugar.
 /// </summary>
-public class GameManagerAltsasua : MonoBehaviour
+public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 {
     // ─── Singleton ───────────────────────────────────────────────────────────
     public static GameManagerAltsasua Instance { get; private set; }
@@ -122,6 +126,26 @@ public class GameManagerAltsasua : MonoBehaviour
     //  UNITY LIFECYCLE
     // =========================================================================
 
+    // ── IWantedSystem ─────────────────────────────────────────────────────────
+    int IWantedSystem.NivelBusqueda => nivelBusqueda;
+    void IWantedSystem.AumentarBusqueda(int cantidad) => AumentarBusqueda(cantidad);
+    void IWantedSystem.FijarBusqueda(int nivel)
+    {
+        int prev = nivelBusqueda;
+        nivelBusqueda = Mathf.Clamp(nivel, 0, 5);
+        if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
+    }
+
+    // ── IEconomyService ───────────────────────────────────────────────────────
+    int IEconomyService.Dinero     => dinero;
+    int IEconomyService.Puntuacion => puntuacion;
+    void IEconomyService.GanarDinero(int cantidad)  => GanarDinero(cantidad);
+    bool IEconomyService.GastarDinero(int cantidad) => GastarDinero(cantidad);
+
+    // =========================================================================
+    //  UNITY LIFECYCLE
+    // =========================================================================
+
     void Awake()
     {
         // Singleton
@@ -132,6 +156,16 @@ public class GameManagerAltsasua : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Registrar servicios para consumo desacoplado por el resto del juego
+        ServiceLocator.Registrar<IWantedSystem>(this);
+        ServiceLocator.Registrar<IEconomyService>(this);
+    }
+
+    void OnDestroy()
+    {
+        ServiceLocator.Desregistrar<IWantedSystem>();
+        ServiceLocator.Desregistrar<IEconomyService>();
     }
 
     void Start()
