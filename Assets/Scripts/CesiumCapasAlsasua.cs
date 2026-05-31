@@ -120,7 +120,7 @@ public class CesiumCapasAlsasua : MonoBehaviour
     [Header("═══ COORDENADAS ═══")]
     [Tooltip("Herriko Plaza en coordenadas Unity de terreno.\n" +
              "Referencia: AltsasuCore.centroX/centroZ = 1918, 8570")]
-    [SerializeField] private Vector2 herrikoPlazaTerreno = new Vector2(1918f, 8570f);
+    [SerializeField] private Vector2 herrikoPlazaTerreno = new Vector2(GeoDataAlsasua.OX, GeoDataAlsasua.OZ);
 
     [Tooltip("GPS real de Herriko Plaza (para CesiumGeoreference).")]
     [SerializeField] private double latitudCentro  =  42.9016;

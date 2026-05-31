@@ -41,7 +41,7 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
     [Header("═══ ZONA INICIAL (Herriko Plaza) ═══")]
     [Tooltip("Centro del primer horneado en coordenadas mundo.\n" +
              "SceneBootstrapper.centroX/centroZ = 1918 / 8570 → Herriko Plaza.")]
-    [SerializeField] private Vector3 centroInicial = new Vector3(1918f, 240f, 8570f);
+    [SerializeField] private Vector3 centroInicial = new Vector3(GeoDataAlsasua.OX, 240f, GeoDataAlsasua.OZ);
 
     [Tooltip("Radio de la zona inicial a hornear (m). 350 m cubre la plaza y calles adyacentes.")]
     [SerializeField] private float   radioInicial  = 350f;

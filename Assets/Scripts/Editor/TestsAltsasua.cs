@@ -262,7 +262,7 @@ public static class TestsAltsasua
     static bool AlturaEn_DevuelvePositivo()
     {
         // Sin terreno activo devuelve 240f (fallback definido en AltsasuCore)
-        float y = AltsasuCore.AlturaEn(1918f, 8570f);
+        float y = AltsasuCore.AlturaEn(GeoDataAlsasua.OX, GeoDataAlsasua.OZ);
         return y >= 0f;
     }
 

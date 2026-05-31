@@ -206,7 +206,7 @@ public class SistemaSeguridad : SingletonMono<SistemaSeguridad>
         // Si el NavMesh estaba listo y ahora falla la consulta básica → rehornar
         if (SistemaNavMesh.EstaListo)
         {
-            var centro = new Vector3(1918f, 240f, 8570f); // Herriko Plaza
+            var centro = new Vector3(GeoDataAlsasua.OX, 240f, GeoDataAlsasua.OZ); // Herriko Plaza
             if (!SistemaNavMesh.PuntoEnNavMesh(centro, 100f))
             {
                 p++;

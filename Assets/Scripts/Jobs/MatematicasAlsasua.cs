@@ -434,7 +434,7 @@ public static class DensidadAlsasua
     // (posX, posZ, sigma, peso)
     public static readonly (float x, float z, float sigma, float peso)[] CENTROS =
     {
-        (1918f, 8570f,  80f, 1.0f),   // Herriko Plaza — máxima densidad
+        (GeoDataAlsasua.OX, GeoDataAlsasua.OZ,  80f, 1.0f),   // Herriko Plaza — máxima densidad
         (1860f, 8620f,  50f, 0.7f),   // Mercado
         (1970f, 8510f,  60f, 0.6f),   // Iglesia (Jasokundeko Andre Mariaren Eliza)
         (1920f, 8700f,  70f, 0.5f),   // Barrio Norte — zona residencial

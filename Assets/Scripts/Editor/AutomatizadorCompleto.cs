@@ -237,8 +237,8 @@ public static class AutomatizadorCompleto
     {
         new Vector3(2038f, 0f, 8850f),  // Comisaría PF
         new Vector3(1978f, 0f, 8770f),  // Calle Navarra norte
-        new Vector3(1918f, 0f, 8670f),  // Bajando al centro
-        new Vector3(1918f, 0f, 8570f),  // Herriko Plaza
+        new Vector3(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ + 100f),  // Bajando al centro
+        new Vector3(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ),         // Herriko Plaza
         new Vector3(2018f, 0f, 8490f),  // Calle este
         new Vector3(2118f, 0f, 8370f),  // Hacia Ondarria
         new Vector3(2018f, 0f, 8670f),  // Volviendo barrio norte
@@ -249,9 +249,9 @@ public static class AutomatizadorCompleto
     {
         new Vector3(1658f, 0f, 8190f),  // Cuartel GC (Calle Ameztia)
         new Vector3(1718f, 0f, 8370f),  // Calle Navarra sur
-        new Vector3(1818f, 0f, 8470f),  // Calle Erdikale
-        new Vector3(1918f, 0f, 8570f),  // Herriko Plaza
-        new Vector3(1998f, 0f, 8650f),  // Calle Brentana
+        new Vector3(1818f, 0f, 8470f),                                    // Calle Erdikale
+        new Vector3(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ),           // Herriko Plaza
+        new Vector3(1998f, 0f, 8650f),                                    // Calle Brentana
         new Vector3(2018f, 0f, 8520f),  // Zona comercial este
         new Vector3(1968f, 0f, 8370f),  // N-1 sur casco
         new Vector3(1868f, 0f, 8270f),  // Glorieta sur
@@ -349,7 +349,7 @@ public static class AutomatizadorCompleto
         { Debug.LogWarning("[Auto] Interceptor_Jugador.prefab no encontrado — crea los coches primero."); return; }
 
         // Posición: 20m al este de Herriko Plaza, en la calle
-        var posicion = new Vector3(1938f, 242f, 8570f);
+        var posicion = new Vector3(GeoDataAlsasua.OX + 20f, 242f, GeoDataAlsasua.OZ);
         if (Terrain.activeTerrain != null)
             posicion.y = Terrain.activeTerrain.SampleHeight(posicion) + 0.5f;
 
@@ -568,10 +568,10 @@ public static class AutomatizadorCompleto
             {
                 // Ruta de manifestación: Herriko Plaza → Calle Navarra → vuelta
                 var posManif = new Vector3[] {
-                    new(1918f, 0, 8570f), new(1918f, 0, 8700f),
+                    new(GeoDataAlsasua.OX, 0, GeoDataAlsasua.OZ),       new(GeoDataAlsasua.OX, 0, GeoDataAlsasua.OZ + 130f),
                     new(1850f, 0, 8800f), new(1780f, 0, 8700f),
-                    new(1780f, 0, 8570f), new(1850f, 0, 8470f),
-                    new(1918f, 0, 8570f)
+                    new(1780f, 0, GeoDataAlsasua.OZ), new(1850f, 0, 8470f),
+                    new(GeoDataAlsasua.OX, 0, GeoDataAlsasua.OZ)
                 };
                 var wpGO = new GameObject("Waypoints_Manifestacion");
                 Undo.RegisterCreatedObjectUndo(wpGO, "WP Manifestacion");

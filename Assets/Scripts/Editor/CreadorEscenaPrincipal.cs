@@ -31,8 +31,8 @@ public static class CreadorEscenaPrincipal
         // ── 1. SceneBootstrapper (ejecución -200, lo primero) ─────────────
         var bootstrapGO = Nuevo("SceneBootstrapper");
         var sb = bootstrapGO.AddComponent<SceneBootstrapper>();
-        Set(sb, "centroX",                  1918f);
-        Set(sb, "centroZ",                  8570f);
+        Set(sb, "centroX",                  GeoDataAlsasua.OX);
+        Set(sb, "centroZ",                  GeoDataAlsasua.OZ);
         Set(sb, "generarTerrenoDesdeDEM",   true);
         Set(sb, "usarPlanoCuadradoFallback", true);
         Set(sb, "crearJugadorSiNoHay",      true);
@@ -202,8 +202,8 @@ public static class CreadorEscenaPrincipal
         Set(core, "diagnosticoSystem",    diagnos);
         Set(core, "edificiosAAASystem",   edificios);
         Set(core, "terrenoSystem",        terreno);
-        Set(core, "centroX",              1918f);
-        Set(core, "centroZ",              8570f);
+        Set(core, "centroX",              GeoDataAlsasua.OX);
+        Set(core, "centroZ",              GeoDataAlsasua.OZ);
 
         // ── 10. SistemaClima necesita el sol ──────────────────────────────
         Set(clima, "solDireccional", luz);

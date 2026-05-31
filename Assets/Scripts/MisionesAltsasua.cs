@@ -46,7 +46,7 @@ internal static class MisionHelper
 public static class PuntosAlsasua
 {
     // Puntos clave del pueblo — aproximados en coordenadas terreno
-    public static readonly Vector3 HerrikoPlaza       = new(1918f, 0f, 8570f);
+    public static readonly Vector3 HerrikoPlaza       = new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ);
     public static readonly Vector3 EstacionTren        = new(1650f, 0f, 8200f);  // sur-oeste
     public static readonly Vector3 CuartelGC           = new(2180f, 0f, 8720f);  // este
     public static readonly Vector3 CarreteraN1Norte    = new(1900f, 0f, 8000f);  // sur
@@ -714,7 +714,7 @@ public class Mision_ManifaFinal : Mision
     private bool  _manifaActiva  = false;
     private bool  _enAyuntamiento = false;
     // El Ayuntamiento está en el centro de Herriko Plaza
-    private static readonly Vector3 AYUNTAMIENTO = new(1918f, 0f, 8580f);
+    private static readonly Vector3 AYUNTAMIENTO = new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ + 10f);
     private const float RADIO_AYUNT  = 40f;
     private const float DURACION     = 180f; // 3 minutos
 

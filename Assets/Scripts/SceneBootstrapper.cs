@@ -25,8 +25,8 @@ public class SceneBootstrapper : MonoBehaviour
 {
     // ── Parámetros públicos ────────────────────────────────────────────────
     [Header("Coordenadas reales de Alsasua")]
-    public float centroX = 1918f;
-    public float centroZ = 8570f;
+    public float centroX = GeoDataAlsasua.OX;
+    public float centroZ = GeoDataAlsasua.OZ;
 
     [Header("Ajustes de terreno")]
     public bool generarTerrenoDesdeDEM = true;
@@ -46,8 +46,8 @@ public class SceneBootstrapper : MonoBehaviour
     const float  TER_H         = 900f;
     const int    DEM_RES       = 1025;
     // Posición origen del terreno para que (centroX, y, centroZ) quede en el centro
-    const float  TER_OX        = 1918f - TER_W * 0.5f;   // -1082
-    const float  TER_OZ        = 8570f - TER_L * 0.5f;   //  5570
+    const float  TER_OX        = GeoDataAlsasua.OX - TER_W * 0.5f;   // -1082
+    const float  TER_OZ        = GeoDataAlsasua.OZ - TER_L * 0.5f;   //  5570
 
 #pragma warning disable CS0414
     bool _listo;

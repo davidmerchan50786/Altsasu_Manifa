@@ -26,9 +26,9 @@ public class MisionSec_Fotografo : Mision
 
     // Puntos de "fotografía" — cerca del cuartel, la N-1, la plaza
     static readonly Vector3[] PUNTOS = {
-        new(2180f, 0f, 8720f),   // cuartel GC
-        new(1900f, 0f, 8000f),   // N-1
-        new(1918f, 0f, 8570f),   // Herriko Plaza
+        new(2180f, 0f, 8720f),                                          // cuartel GC
+        new(1900f, 0f, 8000f),                                          // N-1
+        new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ),                 // Herriko Plaza
     };
 
     public override System.Action AlIniciar => () =>
@@ -116,7 +116,7 @@ public class MisionSec_Txikiteo : Mision
 
     // 4 bares en Alsasua (puntos aproximados)
     static readonly Vector3[] BARES = {
-        new(1918f, 0f, 8575f),
+        new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ + 5f),
         new(1880f, 0f, 8610f),
         new(1950f, 0f, 8545f),
         new(1905f, 0f, 8590f),

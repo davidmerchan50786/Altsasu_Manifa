@@ -87,8 +87,8 @@ public sealed class AltsasuCore : MonoBehaviour
 
     // ── Config ────────────────────────────────────────────────────────────
     [Header("Mundo")]
-    public float centroX  = 1918f;
-    public float centroZ  = 8570f;
+    public float centroX  = GeoDataAlsasua.OX;
+    public float centroZ  = GeoDataAlsasua.OZ;
     [Range(30, 120)] public int fpsMeta = 60;
 
     // ── Estado ────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ public sealed class AltsasuCore : MonoBehaviour
     public static bool      Listo    => I != null && I._listo;
     public static Vector3   Centro   => I != null
         ? new Vector3(I.centroX, AlturaEn(I.centroX, I.centroZ), I.centroZ)
-        : new Vector3(1918f, 240f, 8570f);
+        : new Vector3(GeoDataAlsasua.OX, 240f, GeoDataAlsasua.OZ);
 
     /// <summary>Delegado a GeoDataAlsasua.AlturaTerreno — punto único de verdad para altura de terreno.</summary>
     public static float AlturaEn(float x, float z) => GeoDataAlsasua.AlturaTerreno(x, z);

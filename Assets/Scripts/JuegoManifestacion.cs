@@ -25,7 +25,7 @@ public class JuegoManifestacion : MonoBehaviour
 
     [Header("Puntos clave (Unity XZ)")]
     public Vector3 puntoReunion  = new(1750f, 0f, 8490f); // Nafarroa Kalea
-    public Vector3 puntoPlaza    = new(1918f, 0f, 8570f); // Herriko Plaza
+    public Vector3 puntoPlaza    = new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ); // Herriko Plaza
     public Vector3 puntoCorte    = new(1850f, 0f, 8540f); // cruce N-1
 
     [Header("Parámetros de juego")]
