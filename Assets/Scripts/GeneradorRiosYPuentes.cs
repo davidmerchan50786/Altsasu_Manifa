@@ -79,12 +79,12 @@ public class GeneradorRiosYPuentes : MonoBehaviour
     const string PATH_PUENTES = "Assets/AlsasuaData/lidar_puentes.json";
     const string PATH_PUENTE_FBX = "Assets/_ExtractedAssets/Props/Urban/bridge_roads.fbx";
 
-    // ── Constantes geográficas ────────────────────────────────────────────
-    const float E_ORIG   = 567951f;
-    const float N_ORIG   = 4749902f;
-    const float UNITY_OX = 1918f;
-    const float UNITY_OZ = 8570f;
-    const float Z_MIN    = 511.33f;
+    // ── Constantes geográficas — fuente única: GeoDataAlsasua ────────────
+    const float E_ORIG   = (float)GeoDataAlsasua.UTM_E_ORIGIN;
+    const float N_ORIG   = (float)GeoDataAlsasua.UTM_N_ORIGIN;
+    const float UNITY_OX = GeoDataAlsasua.UNITY_OX;
+    const float UNITY_OZ = GeoDataAlsasua.UNITY_OZ;
+    const float Z_MIN    = GeoDataAlsasua.Z_MIN;
 
     // ── Color base del agua (verde vasco) ─────────────────────────────────
     static readonly Color COLOR_AGUA = new(0x1a / 255f, 0x35 / 255f, 0x20 / 255f, 0.82f);

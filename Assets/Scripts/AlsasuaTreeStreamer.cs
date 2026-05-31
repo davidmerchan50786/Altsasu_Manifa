@@ -99,12 +99,12 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     Transform                 _jugador;
     bool                      _cargado;
 
-    // ── Constantes coordenadas ─────────────────────────────────────────────
-    const float E_ORIG   = 567951f;
-    const float N_ORIG   = 4749902f;
-    const float UNITY_OX = 1918f;
-    const float UNITY_OZ = 8570f;
-    const float Z_MIN    = 511.33f;
+    // ── Constantes coordenadas — fuente única: GeoDataAlsasua ─────────────
+    const float E_ORIG   = (float)GeoDataAlsasua.UTM_E_ORIGIN;
+    const float N_ORIG   = (float)GeoDataAlsasua.UTM_N_ORIGIN;
+    const float UNITY_OX = GeoDataAlsasua.UNITY_OX;
+    const float UNITY_OZ = GeoDataAlsasua.UNITY_OZ;
+    const float Z_MIN    = GeoDataAlsasua.Z_MIN;
 
     // ── Índices de especie ─────────────────────────────────────────────────
     const int ESP_GENERICO = 0;

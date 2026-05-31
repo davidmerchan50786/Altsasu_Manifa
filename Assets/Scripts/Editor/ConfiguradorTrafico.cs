@@ -16,7 +16,7 @@ using System.Reflection;
 public static class ConfiguradorTrafico
 {
     private const string JSON_PATH = "Assets/AlsasuaData/roads_unity.json";
-    private const float  CENTRO_X  = 1918f, CENTRO_Z = 8570f, RADIO = 400f;
+    private const float  CENTRO_X  = GeoDataAlsasua.OX, CENTRO_Z = GeoDataAlsasua.OZ, RADIO = 400f;
 
     [MenuItem("Tools/Alsasua/Mundo/🚗 Trafico OSM", priority = 14)]
     public static void Configurar()

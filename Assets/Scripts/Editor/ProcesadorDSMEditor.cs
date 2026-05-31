@@ -14,7 +14,7 @@ public static class ProcesadorDSMEditor
     const string PATH_DSM     = "Assets/AlsasuaData/dsm_alsasua_5m.asc";
     const string PATH_DTM     = "Assets/AlsasuaData/dtm_alsasua_5m.asc";
     const string PATH_SCRIPT  = "DescargarLIDARAlsasua.ps1";
-    const float  OX = 1918f, OZ = 8570f;
+    const float  OX = GeoDataAlsasua.OX, OZ = GeoDataAlsasua.OZ;
 
     // ── Descargar IGN ─────────────────────────────────────────────────────
 

@@ -276,12 +276,9 @@ public class FusionadorEdificiosUltra : MonoBehaviour
             if (_dsmCols <= 0 || _dsmRows <= 0) return;
 
             // ETRS89 UTM30N → offsets para lookup
-            // Los archivos .asc usan ETRS89. Alsasua centro ≈ E=567951, N=4749902
-            const float E_ORIGEN = 567951f;
-            const float N_ORIGEN = 4749902f;
-
-            _dsmMinX = xllcorner - E_ORIGEN;  // en metros relativos al origen
-            _dsmMinZ = yllcorner - N_ORIGEN;
+            // Alsasua centro: GeoDataAlsasua.UTM_E_ORIGIN / UTM_N_ORIGIN
+            _dsmMinX = xllcorner - (float)GeoDataAlsasua.UTM_E_ORIGIN;  // en metros relativos al origen
+            _dsmMinZ = yllcorner - (float)GeoDataAlsasua.UTM_N_ORIGIN;
             _dsmStepX = cellsize;
             _dsmStepZ = cellsize;
 

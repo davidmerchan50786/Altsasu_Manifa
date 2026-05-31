@@ -23,12 +23,38 @@ public static class GeoDataAlsasua
     public const double M_POR_GRADO_LAT  = 111_320.0;
     public const double M_POR_GRADO_LON  = 81_560.0; // a lat 42.9°N
 
+    // ── Coordenadas UTM del origen (Herriko Plaza, ETRS89 UTM30N) ─────────
+    public const double UTM_E_ORIGIN = 567951.0;
+    public const double UTM_N_ORIGIN = 4749902.0;
+
     // ── Offsets OSM → Unity ───────────────────────────────────────────────
     /// <summary>Offset X: origen OSM relativo a Herriko Plaza en Unity.</summary>
     public const float OX = 1918f;
 
     /// <summary>Offset Z: origen OSM relativo a Herriko Plaza en Unity.</summary>
     public const float OZ = 8570f;
+
+    /// <summary>Alias UNITY_OX — mismo valor que OX, para scripts que usan el nombre largo.</summary>
+    public const float UNITY_OX = OX;
+
+    /// <summary>Alias UNITY_OZ — mismo valor que OZ, para scripts que usan el nombre largo.</summary>
+    public const float UNITY_OZ = OZ;
+
+    // ── Altitudes LIDAR (lidar_dtm_meta.json) ────────────────────────────
+    /// <summary>Altitud mínima real del área de Alsasua (m). AltitudUnity = altitudReal - Z_MIN.</summary>
+    public const float Z_MIN = 511.33f;
+
+    /// <summary>Altitud máxima real del área de Alsasua (m).</summary>
+    public const float Z_MAX = 568.59f;
+
+    /// <summary>Rango de alturas del terreno LIDAR = Z_MAX - Z_MIN.</summary>
+    public const float TERRAIN_HEIGHT = 57.26f;
+
+    // ── Dimensiones del terreno (de lidar_dtm_meta.json) ─────────────────
+    public const float TERRAIN_WIDTH  = 1024f;
+    public const float TERRAIN_LENGTH = 1024f;
+    public const int   HEIGHTMAP_RES  = 2049;
+    public const float LIDAR_RES_M    = 0.5f;
 
     // ── Métricas urbanas ──────────────────────────────────────────────────
     /// <summary>Altura estándar por planta (m) cuando el edificio OSM no especifica altura.</summary>

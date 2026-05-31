@@ -210,7 +210,7 @@ public class SistemaFauna : MonoBehaviour
 
         var terrain = Terrain.activeTerrain;
         int spawned = 0;
-        float ox = 1918f, oz = 8570f;
+        float ox = GeoDataAlsasua.OX, oz = GeoDataAlsasua.OZ;
 
         // Lobos en la periferia (> 150m del centro)
         if (prefabLobo != null)
@@ -287,7 +287,7 @@ public class SistemaMultitud : MonoBehaviour
         }
 
         var terrain = Terrain.activeTerrain;
-        float ox = 1918f, oz = 8570f;
+        float ox = GeoDataAlsasua.OX, oz = GeoDataAlsasua.OZ;
         int spawned = 0;
 
         for (int i = 0; i < numAgentes * 3 && spawned < numAgentes; i++)

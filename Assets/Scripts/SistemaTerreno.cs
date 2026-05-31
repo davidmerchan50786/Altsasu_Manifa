@@ -86,8 +86,8 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
     Terrain     _terrain;
     int         _resAlpha;
 
-    // ── Constante Z_min para altitud real ─────────────────────────────────
-    const float Z_MIN = 511.33f;
+    // ── Constante Z_min para altitud real — fuente única: GeoDataAlsasua ──
+    const float Z_MIN = GeoDataAlsasua.Z_MIN;
 
     // ── Polilíneas de cauces en coords Unity (XZ) ─────────────────────────
     List<Vector2[]> _cauces  = new();
@@ -96,9 +96,16 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
     // ── Segmentos de carreteras en coords Unity ───────────────────────────
     List<Vector2[]> _carreteras = new();
 
-    const string PATH_RIOS    = "Assets/AlsasuaData/rios_ejes.geojson";
-    const string PATH_BOSQUES = "Assets/AlsasuaData/masas_forestales.geojson";
-    const string PATH_ROADS   = "Assets/AlsasuaData/roads_unity.json";
+    const string PATH_RIOS        = "Assets/AlsasuaData/rios_ejes.geojson";
+    const string PATH_BOSQUES     = "Assets/AlsasuaData/masas_forestales.geojson";
+    const string PATH_ROADS       = "Assets/AlsasuaData/roads_unity.json";
+    const string PATH_ROADS_OSM   = "Assets/AlsasuaData/roads_osm.geojson";
+    const string PATH_BOSQUES_GJ  = "Assets/AlsasuaData/bosques.geojson";
+    const string PATH_ORTO_UNITY  = "Assets/AlsasuaData/ortofoto_unity.png";
+    const string PATH_SPLATMAP_PREVIEW = "Assets/AlsasuaData/splatmap_preview.png";
+
+    // Ortofoto cacheada para BakeSplatmap
+    Texture2D _ortoUnity;
 
     // ══════════════════════════════════════════════════════════════════════
     //  LIFECYCLE
@@ -130,8 +137,18 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         AsegurarCapas8Biomas();
         yield return null;
 
-        // Pintar alphamap 8 biomas
-        yield return StartCoroutine(PintarAlphamap8Biomas());
+        // Si existe bake previo, aplicar directamente sin recalcular
+        string bakeFullPath = FullPath(PATH_SPLATMAP_PREVIEW);
+        if (File.Exists(bakeFullPath))
+        {
+            AlsasuaLogger.Info("Terreno", "Splatmap bakeado encontrado — aplicando caché…");
+            yield return StartCoroutine(AplicarSplatmapCacheado());
+        }
+        else
+        {
+            // Pintar alphamap 8 biomas desde cero
+            yield return StartCoroutine(PintarAlphamap8Biomas());
+        }
 
         // Árboles terrain engine
         if (prefabsArbol != null && prefabsArbol.Length > 0)
@@ -270,8 +287,8 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
                 i = end;
 
                 // Convertir UTM → Unity
-                float ux = (eUtm - 567951f) + 1918f;
-                float uz = (nUtm - 4749902f) + 8570f;
+                float ux = (eUtm - (float)GeoDataAlsasua.UTM_E_ORIGIN) + GeoDataAlsasua.OX;
+                float uz = (nUtm - (float)GeoDataAlsasua.UTM_N_ORIGIN) + GeoDataAlsasua.OZ;
                 pts.Add(new Vector2(ux, uz));
 
                 // Saltar hasta próximo par o cierre
@@ -653,7 +670,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             float nx = (float)rng.NextDouble(), nz = (float)rng.NextDouble();
             float wx = nx * tamX, wz = nz * tamZ;
 
-            float dist = Mathf.Sqrt((wx-1918f)*(wx-1918f)+(wz-8570f)*(wz-8570f));
+            float dist = Mathf.Sqrt((wx-GeoDataAlsasua.OX)*(wx-GeoDataAlsasua.OX)+(wz-GeoDataAlsasua.OZ)*(wz-GeoDataAlsasua.OZ));
             if (dist < 220f) continue;
 
             float pend = _td.GetSteepness(nx, nz);
@@ -718,7 +735,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             float nx = (float)x/res, nz = (float)y/res;
             float pend = _td.GetSteepness(nx, nz);
             float wx = nx*_td.size.x, wz = nz*_td.size.z;
-            float dist = Mathf.Sqrt((wx-1918f)*(wx-1918f)+(wz-8570f)*(wz-8570f));
+            float dist = Mathf.Sqrt((wx-GeoDataAlsasua.OX)*(wx-GeoDataAlsasua.OX)+(wz-GeoDataAlsasua.OZ)*(wz-GeoDataAlsasua.OZ));
             float altNorm = _td.GetInterpolatedHeight(nx, nz)/_td.size.y;
             bool apto = pend < 20f && dist > 200f && altNorm < 0.65f && altNorm > 0.18f;
             mapa[y, x] = apto ? densidadHierba : 0;
@@ -872,4 +889,512 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
     static string FullPath(string rel)
         => Path.Combine(Application.dataPath.Replace("Assets", ""), rel);
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  BAKE SPLATMAP DEFINITIVO
+    // ══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Aplica el splatmap bakeado previamente desde el archivo PNG de caché.
+    /// Lee los pesos de R/G/B/A y los distribuye en los 8 canales del alphamap.
+    /// </summary>
+    IEnumerator AplicarSplatmapCacheado()
+    {
+        // En runtime recalculamos igual — el PNG de preview no contiene los 8 canales completos.
+        // El bake real se persiste en TerrainData; el PNG es solo preview.
+        // Si TerrainData ya tiene el alphamap correcto (Editor workflow), nada que hacer.
+        AlsasuaLogger.Info("Terreno",
+            "Splatmap caché disponible — recalculando si TerrainData no tiene datos…");
+        // Verificar si el alphamap del TerrainData parece inicializado
+        var existente = _td.GetAlphamaps(0, 0, 4, 4);
+        bool yaInicializado = false;
+        for (int y = 0; y < 4 && !yaInicializado; y++)
+            for (int x = 0; x < 4 && !yaInicializado; x++)
+                for (int c = 1; c < existente.GetLength(2) && !yaInicializado; c++)
+                    if (existente[y, x, c] > 0.01f) yaInicializado = true;
+
+        if (yaInicializado)
+        {
+            AlsasuaLogger.Info("Terreno", "✅ Splatmap existente en TerrainData — skip recalculo");
+            yield break;
+        }
+        yield return StartCoroutine(PintarAlphamap8Biomas());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  BakeSplatmap — método principal
+    // ─────────────────────────────────────────────────────────────────────
+
+    [ContextMenu("Bake Splatmap Definitivo")]
+    public void BakeSplatmap()
+    {
+#if UNITY_EDITOR
+        BakeSplatmapSync();
+#else
+        StartCoroutine(BakeSplatmapCoroutine());
+#endif
+    }
+
+#if UNITY_EDITOR
+    /// <summary>Versión síncrona para Editor (ContextMenu / bake tools).</summary>
+    void BakeSplatmapSync()
+    {
+        // Resolver terrain si aún no se inicializó (llamada desde Editor fuera de Play)
+        if (_terrain == null)
+        {
+            _terrain  = Terrain.activeTerrain;
+            if (_terrain == null)
+            {
+                AlsasuaLogger.Warn("Terreno", "[BakeSplatmap] No hay Terrain activo");
+                return;
+            }
+            _td       = _terrain.terrainData;
+            _resAlpha = _td.alphamapResolution;
+        }
+
+        AsegurarCapas8Biomas();
+
+        // Cargar geodatos síncronamente (editor only)
+        _cauces     = ParseGeoJSONLineas(FullPath(PATH_RIOS));
+        _bosques    = ParseGeoJSONPoligonos(FullPath(PATH_BOSQUES));
+        _carreteras = ParseRoadsUnity(FullPath(PATH_ROADS));
+
+        // Geodatos adicionales: bosques.geojson + roads_osm.geojson
+        var bosquesExtra = ParseGeoJSONPoligonos(FullPath(PATH_BOSQUES_GJ));
+        var roadsOsm     = ParseGeoJSONLineas(FullPath(PATH_ROADS_OSM));
+
+        // Merge bosques
+        _bosques.AddRange(bosquesExtra);
+
+        // Cargar ortofoto
+        _ortoUnity = CargarOrtoUnity();
+
+        var t0 = DateTime.Now;
+
+        int  numCapas = _td.terrainLayers.Length;
+        if (numCapas == 0) { AlsasuaLogger.Warn("Terreno","[BakeSplatmap] Sin capas TerrainLayer"); return; }
+
+        float terW   = _td.size.x;
+        float terH_z = _td.size.z;
+        float terY   = _td.size.y;
+        Vector3 terPos = _terrain.transform.position;
+
+        float[,] heights = _td.GetHeights(0, 0, _td.heightmapResolution, _td.heightmapResolution);
+        int hRes = _td.heightmapResolution - 1;
+
+        // Precompute máscaras (síncrono)
+        var maskRio    = new byte[_resAlpha * _resAlpha];
+        var maskCauce  = new byte[_resAlpha * _resAlpha];
+        var maskBosque = new byte[_resAlpha * _resAlpha];
+        var maskRoad   = new byte[_resAlpha * _resAlpha];
+
+        PrecomputarMascarasSync(maskRio, maskCauce, maskBosque, maskRoad,
+            terPos, terW, terH_z, roadsOsm);
+
+        float[,,] mapa = new float[_resAlpha, _resAlpha, numCapas];
+
+        int cntHierba = 0, cntRoca = 0, cntAsfalto = 0, cntBosque = 0;
+
+        for (int ay = 0; ay < _resAlpha; ay++)
+        for (int ax = 0; ax < _resAlpha; ax++)
+        {
+            float nx = (float)ax / (_resAlpha - 1);
+            float nz = (float)ay / (_resAlpha - 1);
+
+            float altNorm   = SampleHeight01(heights, hRes, nx, nz);
+            float pendiente = _td.GetSteepness(nx, nz);
+            float wx        = terPos.x + nx * terW;
+            float wz        = terPos.z + nz * terH_z;
+
+            int pIdx   = ay * _resAlpha + ax;
+            bool esRio    = maskRio[pIdx]    > 0;
+            bool esCauce  = maskCauce[pIdx]  > 0;
+            bool esBosque = maskBosque[pIdx] > 0;
+            bool esRoad   = maskRoad[pIdx]   > 0;
+
+            Clasificar8Biomas(mapa, ay, ax, numCapas,
+                altNorm, pendiente, wx, wz, terY,
+                esRio, esCauce, esBosque, esRoad);
+
+            // Refinamiento por ortofoto
+            if (_ortoUnity != null)
+                RefinarConOrtofoto(mapa, ay, ax, numCapas, wx, wz, terW, terH_z, terPos);
+
+            // Contadores para log
+            int dominante = BiomaDominante(mapa, ay, ax, numCapas);
+            if (dominante == 0 || dominante == 1) cntHierba++;
+            else if (dominante == 2)              cntRoca++;
+            else if (dominante == 5)              cntAsfalto++;
+            else if (dominante == 7)              cntBosque++;
+        }
+
+        // Blur gaussiano 3×3
+        AplicarBlurGaussiano(mapa, _resAlpha, numCapas);
+
+        _td.SetAlphamaps(0, 0, mapa);
+
+        // Guardar PNG preview
+        GuardarPreviewPNG(mapa, _resAlpha, numCapas);
+
+        float segundos = (float)(DateTime.Now - t0).TotalSeconds;
+        AlsasuaLogger.Info("Terreno",
+            $"[SplatmapBake] Completado: {cntHierba}px hierba, {cntRoca}px roca, " +
+            $"{cntAsfalto}px asfalto, {cntBosque}px bosque en {segundos:F1}s");
+
+        UnityEditor.EditorUtility.SetDirty(_td);
+        UnityEditor.AssetDatabase.SaveAssets();
+    }
+#endif
+
+    /// <summary>Versión coroutine para runtime.</summary>
+    IEnumerator BakeSplatmapCoroutine()
+    {
+        if (_terrain == null || _td == null)
+        {
+            AlsasuaLogger.Warn("Terreno", "[BakeSplatmap] Terrain no inicializado");
+            yield break;
+        }
+
+        // Cargar geodatos adicionales
+        var bosquesExtra = new List<Vector2[]>();
+        var roadsOsm     = new List<Vector2[]>();
+        {
+            string pathBG   = FullPath(PATH_BOSQUES_GJ);
+            string pathROsm = FullPath(PATH_ROADS_OSM);
+            var t1 = Task.Run(() => ParseGeoJSONPoligonos(pathBG));
+            var t2 = Task.Run(() => ParseGeoJSONLineas(pathROsm));
+            while (!t1.IsCompleted || !t2.IsCompleted) yield return null;
+            if (t1.IsCompletedSuccessfully) bosquesExtra = t1.Result;
+            if (t2.IsCompletedSuccessfully) roadsOsm     = t2.Result;
+        }
+        _bosques.AddRange(bosquesExtra);
+
+        _ortoUnity = CargarOrtoUnity();
+        yield return null;
+
+        int numCapas = _td.terrainLayers.Length;
+        if (numCapas == 0) yield break;
+
+        float terW   = _td.size.x;
+        float terH_z = _td.size.z;
+        float terY   = _td.size.y;
+        Vector3 terPos = _terrain.transform.position;
+
+        float[,] heights = _td.GetHeights(0, 0, _td.heightmapResolution, _td.heightmapResolution);
+        int hRes = _td.heightmapResolution - 1;
+
+        var maskRio    = new byte[_resAlpha * _resAlpha];
+        var maskCauce  = new byte[_resAlpha * _resAlpha];
+        var maskBosque = new byte[_resAlpha * _resAlpha];
+        var maskRoad   = new byte[_resAlpha * _resAlpha];
+
+        yield return StartCoroutine(PrecomputarMascarasConOSM(
+            maskRio, maskCauce, maskBosque, maskRoad,
+            terPos, terW, terH_z, roadsOsm));
+
+        float[,,] mapa = new float[_resAlpha, _resAlpha, numCapas];
+        int cntHierba = 0, cntRoca = 0, cntAsfalto = 0, cntBosque = 0;
+        int lote = 0;
+        var t0 = DateTime.Now;
+
+        for (int ay = 0; ay < _resAlpha; ay++)
+        {
+            for (int ax = 0; ax < _resAlpha; ax++)
+            {
+                float nx = (float)ax / (_resAlpha - 1);
+                float nz = (float)ay / (_resAlpha - 1);
+                float altNorm   = SampleHeight01(heights, hRes, nx, nz);
+                float pendiente = _td.GetSteepness(nx, nz);
+                float wx        = terPos.x + nx * terW;
+                float wz        = terPos.z + nz * terH_z;
+
+                int pIdx = ay * _resAlpha + ax;
+                bool esRio    = maskRio[pIdx]    > 0;
+                bool esCauce  = maskCauce[pIdx]  > 0;
+                bool esBosque = maskBosque[pIdx] > 0;
+                bool esRoad   = maskRoad[pIdx]   > 0;
+
+                Clasificar8Biomas(mapa, ay, ax, numCapas,
+                    altNorm, pendiente, wx, wz, terY,
+                    esRio, esCauce, esBosque, esRoad);
+
+                if (_ortoUnity != null)
+                    RefinarConOrtofoto(mapa, ay, ax, numCapas, wx, wz, terW, terH_z, terPos);
+
+                int dom = BiomaDominante(mapa, ay, ax, numCapas);
+                if (dom == 0 || dom == 1) cntHierba++;
+                else if (dom == 2)        cntRoca++;
+                else if (dom == 5)        cntAsfalto++;
+                else if (dom == 7)        cntBosque++;
+            }
+            if (++lote >= 32) { lote = 0; yield return null; }
+        }
+
+        AplicarBlurGaussiano(mapa, _resAlpha, numCapas);
+        _td.SetAlphamaps(0, 0, mapa);
+        GuardarPreviewPNG(mapa, _resAlpha, numCapas);
+
+        float seg = (float)(DateTime.Now - t0).TotalSeconds;
+        AlsasuaLogger.Info("Terreno",
+            $"[SplatmapBake] Completado: {cntHierba}px hierba, {cntRoca}px roca, " +
+            $"{cntAsfalto}px asfalto, {cntBosque}px bosque en {seg:F1}s");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Precómputo de máscaras extendido con roadsOsm
+    // ─────────────────────────────────────────────────────────────────────
+
+    void PrecomputarMascarasSync(
+        byte[] maskRio, byte[] maskCauce, byte[] maskBosque, byte[] maskRoad,
+        Vector3 terPos, float terW, float terH_z,
+        List<Vector2[]> roadsOsm)
+    {
+        for (int ay = 0; ay < _resAlpha; ay++)
+        for (int ax = 0; ax < _resAlpha; ax++)
+        {
+            float wx = terPos.x + (float)ax / (_resAlpha - 1) * terW;
+            float wz = terPos.z + (float)ay / (_resAlpha - 1) * terH_z;
+            int pIdx = ay * _resAlpha + ax;
+
+            float minDistRio = float.MaxValue;
+            foreach (var seg in _cauces)
+                if (seg.Length > 0)
+                    minDistRio = Mathf.Min(minDistRio, DistAPolilinea(wx, wz, seg));
+
+            if (minDistRio <= bufferRioM)          maskRio[pIdx]   = 1;
+            if (minDistRio <= bufferRioM * 0.4f)   maskCauce[pIdx] = 1;
+
+            foreach (var poly in _bosques)
+                if (poly.Length > 2 && PuntoEnPoligono(wx, wz, poly))
+                { maskBosque[pIdx] = 1; break; }
+
+            // Carreteras: roads_unity.json (6m) + roads_osm.geojson (8m buffer)
+            foreach (var seg in _carreteras)
+                if (DistAPolilinea(wx, wz, seg) < 6f) { maskRoad[pIdx] = 1; break; }
+
+            if (maskRoad[pIdx] == 0)
+                foreach (var seg in roadsOsm)
+                    if (DistAPolilinea(wx, wz, seg) < 8f) { maskRoad[pIdx] = 1; break; }
+        }
+    }
+
+    IEnumerator PrecomputarMascarasConOSM(
+        byte[] maskRio, byte[] maskCauce, byte[] maskBosque, byte[] maskRoad,
+        Vector3 terPos, float terW, float terH_z,
+        List<Vector2[]> roadsOsm)
+    {
+        int lote = 0;
+        for (int ay = 0; ay < _resAlpha; ay++)
+        {
+            for (int ax = 0; ax < _resAlpha; ax++)
+            {
+                float wx = terPos.x + (float)ax / (_resAlpha - 1) * terW;
+                float wz = terPos.z + (float)ay / (_resAlpha - 1) * terH_z;
+                int pIdx = ay * _resAlpha + ax;
+
+                float minDistRio = float.MaxValue;
+                foreach (var seg in _cauces)
+                    if (seg.Length > 0)
+                        minDistRio = Mathf.Min(minDistRio, DistAPolilinea(wx, wz, seg));
+
+                if (minDistRio <= bufferRioM)        maskRio[pIdx]   = 1;
+                if (minDistRio <= bufferRioM * 0.4f) maskCauce[pIdx] = 1;
+
+                foreach (var poly in _bosques)
+                    if (poly.Length > 2 && PuntoEnPoligono(wx, wz, poly))
+                    { maskBosque[pIdx] = 1; break; }
+
+                foreach (var seg in _carreteras)
+                    if (DistAPolilinea(wx, wz, seg) < 6f) { maskRoad[pIdx] = 1; break; }
+
+                if (maskRoad[pIdx] == 0)
+                    foreach (var seg in roadsOsm)
+                        if (DistAPolilinea(wx, wz, seg) < 8f) { maskRoad[pIdx] = 1; break; }
+            }
+            if (++lote >= 32) { lote = 0; yield return null; }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Refinamiento por ortofoto
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Muestrea la ortofoto en la posición world y refina los pesos del alphamap.
+    /// Usa coordenadas Unity → UV ortofoto_unity.png (proyección ortográfica plana).
+    /// </summary>
+    void RefinarConOrtofoto(float[,,] mapa, int ay, int ax, int numCapas,
+        float wx, float wz, float terW, float terH_z, Vector3 terPos)
+    {
+        // UV: la ortofoto_unity.png cubre el terrain completo (terW × terH_z)
+        float u = Mathf.Clamp01((wx - terPos.x) / terW);
+        float v = Mathf.Clamp01((wz - terPos.z) / terH_z);
+
+        Color col = _ortoUnity.GetPixelBilinear(u, v);
+        float r = col.r, g = col.g, b = col.b;
+
+        // Convertir RGB → HSL (H en 0-360)
+        float cMax = Mathf.Max(r, g, b);
+        float cMin = Mathf.Min(r, g, b);
+        float delta = cMax - cMin;
+        float luminosity = (cMax + cMin) * 0.5f;
+
+        float hue = 0f;
+        if (delta > 0.001f)
+        {
+            if      (cMax == r) hue = 60f * (((g - b) / delta) % 6f);
+            else if (cMax == g) hue = 60f * ((b - r) / delta + 2f);
+            else                hue = 60f * ((r - g) / delta + 4f);
+            if (hue < 0f) hue += 360f;
+        }
+
+        const float kBoost = 0.15f; // Fuerza máxima de influencia de la ortofoto
+
+        // Verde (hue 90-140°): refuerza bosque (capa 7) o hierba (capa 0)
+        if (hue >= 90f && hue <= 140f)
+        {
+            float strength = kBoost * Mathf.InverseLerp(0.35f, 0.55f, luminosity);
+            if (7 < numCapas) mapa[ay, ax, 7] = Mathf.Clamp01(mapa[ay, ax, 7] + strength);
+            if (0 < numCapas) mapa[ay, ax, 0] = Mathf.Clamp01(mapa[ay, ax, 0] + strength * 0.5f);
+            NormalizarFila(mapa, ay, ax, numCapas);
+        }
+        // Muy oscuro (lum < 0.15): refuerza roca/asfalto
+        else if (luminosity < 0.15f)
+        {
+            float strength = kBoost * Mathf.InverseLerp(0.15f, 0f, luminosity);
+            if (2 < numCapas) mapa[ay, ax, 2] = Mathf.Clamp01(mapa[ay, ax, 2] + strength * 0.5f);
+            if (5 < numCapas) mapa[ay, ax, 5] = Mathf.Clamp01(mapa[ay, ax, 5] + strength * 0.5f);
+            NormalizarFila(mapa, ay, ax, numCapas);
+        }
+        // Marrón (hue 20-50°): refuerza tierra/grava
+        else if (hue >= 20f && hue <= 50f)
+        {
+            float strength = kBoost * 0.5f;
+            if (3 < numCapas) mapa[ay, ax, 3] = Mathf.Clamp01(mapa[ay, ax, 3] + strength);
+            if (4 < numCapas) mapa[ay, ax, 4] = Mathf.Clamp01(mapa[ay, ax, 4] + strength * 0.5f);
+            NormalizarFila(mapa, ay, ax, numCapas);
+        }
+    }
+
+    static void NormalizarFila(float[,,] mapa, int ay, int ax, int numCapas)
+    {
+        float suma = 0f;
+        for (int c = 0; c < numCapas; c++) suma += mapa[ay, ax, c];
+        if (suma < 0.0001f) return;
+        for (int c = 0; c < numCapas; c++) mapa[ay, ax, c] /= suma;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Blur gaussiano 3×3
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>Aplica un blur gaussiano 3×3 (sigma=1.0) al alphamap completo.</summary>
+    static void AplicarBlurGaussiano(float[,,] mapa, int res, int numCapas)
+    {
+        // Kernel gaussiano 3×3 sigma=1.0
+        // [1 2 1 / 2 4 2 / 1 2 1] / 16
+        const float k00 = 1f/16f, k01 = 2f/16f, k02 = 1f/16f;
+        const float k10 = 2f/16f, k11 = 4f/16f, k12 = 2f/16f;
+        const float k20 = 1f/16f, k21 = 2f/16f, k22 = 1f/16f;
+
+        var tmp = new float[res, res, numCapas];
+
+        for (int ay = 0; ay < res; ay++)
+        for (int ax = 0; ax < res; ax++)
+        {
+            int y0 = Mathf.Max(0, ay-1), y1 = ay, y2 = Mathf.Min(res-1, ay+1);
+            int x0 = Mathf.Max(0, ax-1), x1 = ax, x2 = Mathf.Min(res-1, ax+1);
+            for (int c = 0; c < numCapas; c++)
+            {
+                tmp[ay, ax, c] =
+                    mapa[y0, x0, c]*k00 + mapa[y0, x1, c]*k01 + mapa[y0, x2, c]*k02 +
+                    mapa[y1, x0, c]*k10 + mapa[y1, x1, c]*k11 + mapa[y1, x2, c]*k12 +
+                    mapa[y2, x0, c]*k20 + mapa[y2, x1, c]*k21 + mapa[y2, x2, c]*k22;
+            }
+        }
+
+        // Copiar resultado de vuelta y renormalizar
+        for (int ay = 0; ay < res; ay++)
+        for (int ax = 0; ax < res; ax++)
+        {
+            float suma = 0f;
+            for (int c = 0; c < numCapas; c++) suma += tmp[ay, ax, c];
+            float inv = suma > 0.0001f ? 1f / suma : 1f;
+            for (int c = 0; c < numCapas; c++) mapa[ay, ax, c] = tmp[ay, ax, c] * inv;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Utilidades BakeSplatmap
+    // ─────────────────────────────────────────────────────────────────────
+
+    static int BiomaDominante(float[,,] mapa, int ay, int ax, int numCapas)
+    {
+        int dom = 0;
+        float max = 0f;
+        for (int c = 0; c < numCapas; c++)
+            if (mapa[ay, ax, c] > max) { max = mapa[ay, ax, c]; dom = c; }
+        return dom;
+    }
+
+    Texture2D CargarOrtoUnity()
+    {
+        string fullPath = FullPath(PATH_ORTO_UNITY);
+        if (!File.Exists(fullPath)) return null;
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(fullPath);
+            var tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            tex.LoadImage(bytes);
+            tex.filterMode = FilterMode.Bilinear;
+            tex.wrapMode   = TextureWrapMode.Clamp;
+            AlsasuaLogger.Info("Terreno",
+                $"Ortofoto cargada: {tex.width}×{tex.height}px para refinamiento splatmap");
+            return tex;
+        }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Warn("Terreno", $"Error cargando ortofoto: {ex.Message}");
+            return null;
+        }
+    }
+
+    void GuardarPreviewPNG(float[,,] mapa, int res, int numCapas)
+    {
+        try
+        {
+            // RGB preview: R=hierba(0), G=roca(2), B=asfalto(5)
+            // A=bosque(7) — guardamos como RGBA pero PNG solo RGB visible
+            var preview = new Texture2D(res, res, TextureFormat.RGB24, false);
+            var pixels  = new Color[res * res];
+
+            for (int ay = 0; ay < res; ay++)
+            for (int ax = 0; ax < res; ax++)
+            {
+                float r = numCapas > 0 ? mapa[ay, ax, 0] : 0f; // hierba
+                float g = numCapas > 2 ? mapa[ay, ax, 2] : 0f; // roca
+                float b = numCapas > 5 ? mapa[ay, ax, 5] : 0f; // asfalto
+                pixels[ay * res + ax] = new Color(r, g, b);
+            }
+
+            preview.SetPixels(pixels);
+            preview.Apply();
+
+            byte[] png  = preview.EncodeToPNG();
+            string path = FullPath(PATH_SPLATMAP_PREVIEW);
+            File.WriteAllBytes(path, png);
+
+            if (Application.isPlaying)
+                Destroy(preview);
+            else
+                DestroyImmediate(preview);
+
+            AlsasuaLogger.Info("Terreno",
+                $"Preview splatmap guardado: {path} ({png.Length/1024}KB)");
+        }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Warn("Terreno", $"Error guardando preview PNG: {ex.Message}");
+        }
+    }
 }

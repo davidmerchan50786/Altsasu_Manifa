@@ -23,8 +23,8 @@ public static class ConfiguradorCesiumAlsasua
     const double ALT_PLAZA  = 523.0;   // altitud media (metros sobre el mar)
 
     // Unity coords de Herriko Plaza (referencia del DEM)
-    const float UX_PLAZA = 1918f;
-    const float UZ_PLAZA = 8570f;
+    const float UX_PLAZA = GeoDataAlsasua.OX;
+    const float UZ_PLAZA = GeoDataAlsasua.OZ;
 
     [MenuItem("Tools/Alsasua/Escena/🌍 Configurar Cesium", priority = 11)]
     public static void Configurar()
