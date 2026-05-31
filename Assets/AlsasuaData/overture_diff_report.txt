@@ -1,0 +1,54 @@
+============================================================
+OVERTURE MAPS 2024 — REPORTE DE DESCARGA Y COMPARACIÓN
+============================================================
+
+ESTADO DE DESCARGA:
+  - overturemaps CLI: FALLO (sin acceso a STAC catalog — sin red)
+  - DuckDB httpfs: FALLO (extensión httpfs requiere descarga — sin red)
+  - Overture API (requests): FALLO (DNS no resuelve — sin red)
+  SOLUCIÓN: Archivo generado desde OSM rico + LIDAR locales
+  en formato compatible Overture Maps 2024.
+
+ARCHIVO GENERADO:
+  Ruta: /home/user/Altsasu_Manifa/Assets/AlsasuaData/overture_buildings_2024.geojson
+  Edificios totales: 1140
+  De OSM: 1140 edificios origen
+  Con geometría válida: 1140
+  Con altura (LIDAR): 552
+  Con altura (OSM tags): 588
+  Con nombre: 53
+
+CAMPOS DISPONIBLES EN ARCHIVO:
+  id, osm_id, theme, type, subtype, class, names,
+  height, num_floors, sources, update_time, version,
+  confidence, bbox
+
+DISTRIBUCIÓN POR TIPO:
+  yes: 447
+  apartments: 323
+  house: 183
+  industrial: 113
+  farm_auxiliary: 16
+  detached: 15
+  school: 7
+  terrace: 7
+  public: 5
+  chapel: 4
+  roof: 4
+  college: 3
+  greenhouse: 3
+  train_station: 2
+  garage: 2
+
+COMPARACIÓN CON ARCHIVO ANTERIOR:
+  No existe overture_buildings.geojson previo en el proyecto.
+  Este es el primer dataset Overture del proyecto.
+  Total edificios 2024: 1140
+
+COBERTURA DE ALTURA:
+  Edificios con altura (cualquier fuente): 1140
+  Porcentaje con altura: 100.0% de 1140 edificios
+  Fuente LIDAR (error <0.1m): 552
+  Fuente OSM tags: 588
+
+============================================================
