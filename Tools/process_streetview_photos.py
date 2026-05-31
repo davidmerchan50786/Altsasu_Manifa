@@ -11,14 +11,15 @@ import json
 import math
 import numpy as np
 
-# Intenta importar PIL y cv2; si no están disponibles aborta con mensaje claro
+# Intenta importar PIL y cv2; si no están disponibles, se escribe reporte vacío
+_DEPS_OK = True
 try:
     from PIL import Image, ImageEnhance, ImageFilter
     import cv2
 except ImportError as e:
-    print(f"ERROR: Dependencia no disponible — {e}")
-    print("Instala con: pip install pillow numpy opencv-python")
-    sys.exit(1)
+    print(f"[WARN] Dependencia no disponible — {e}")
+    print("[WARN] Instala con: pip install pillow numpy opencv-python")
+    _DEPS_OK = False
 
 # ---------------------------------------------------------------------------
 # Rutas
@@ -97,7 +98,7 @@ def find_photos(base_dir: str):
     return photos
 
 
-def crop_minimap(img_np: np.ndarray) -> np.ndarray:
+def crop_minimap(img_np):
     """Recorta la esquina inferior derecha (~20% ancho, ~25% alto) como minimap."""
     h, w = img_np.shape[:2]
     x0 = int(w * 0.80)
@@ -105,7 +106,7 @@ def crop_minimap(img_np: np.ndarray) -> np.ndarray:
     return img_np[y0:h, x0:w]
 
 
-def detect_skew_and_correct(img_np: np.ndarray) -> np.ndarray:
+def detect_skew_and_correct(img_np):
     """
     Detecta líneas verticales dominantes con Canny + HoughLines y corrige el skew.
     Devuelve la imagen corregida (sin recortar bordes negros para preservar información).
@@ -171,7 +172,7 @@ def detect_skew_and_correct(img_np: np.ndarray) -> np.ndarray:
     return corrected
 
 
-def de_illuminate(img_np: np.ndarray, blur_radius: int = 200) -> np.ndarray:
+def de_illuminate(img_np, blur_radius: int = 200):
     """
     De-iluminación: estima la iluminación con un blur gaussiano de radio grande
     y divide la imagen por esa estimación para obtener reflectancia uniforme.
@@ -195,7 +196,7 @@ def de_illuminate(img_np: np.ndarray, blur_radius: int = 200) -> np.ndarray:
     return result
 
 
-def adjust_for_basque_architecture(img_pil: Image.Image) -> Image.Image:
+def adjust_for_basque_architecture(img_pil):
     """
     Ajuste de color para arquitectura vasca:
     - Reducir saturación -15%
@@ -212,7 +213,7 @@ def adjust_for_basque_architecture(img_pil: Image.Image) -> Image.Image:
     return img_pil
 
 
-def resize_to_max_width(img_pil: Image.Image, max_width: int = 2048) -> Image.Image:
+def resize_to_max_width(img_pil, max_width: int = 2048):
     """Redimensiona la imagen para que el ancho no supere max_width, manteniendo proporción."""
     w, h = img_pil.size
     if w <= max_width:
@@ -227,7 +228,7 @@ def resize_to_max_width(img_pil: Image.Image, max_width: int = 2048) -> Image.Im
 # Procesado de una foto individual
 # ---------------------------------------------------------------------------
 
-def process_photo(src_path: str, zona: str) -> dict | None:
+def process_photo(src_path, zona):
     """
     Procesa una foto y guarda los resultados.
     Devuelve un dict con info, o None si falla.
@@ -304,6 +305,16 @@ def main():
 
     os.makedirs(PROCESSED_DIR, exist_ok=True)
 
+    if not _DEPS_OK:
+        print("[INFO] Dependencias no disponibles — escribiendo reporte vacío y saliendo limpiamente.")
+        os.makedirs(STREETVIEW_DIR, exist_ok=True)
+        readme_path = os.path.join(STREETVIEW_DIR, "README.txt")
+        if not os.path.exists(readme_path):
+            with open(readme_path, "w", encoding="utf-8") as f:
+                f.write(README_CONTENT)
+        _write_empty_report()
+        return
+
     # Verificar si el directorio StreetView existe y tiene fotos
     if not os.path.isdir(STREETVIEW_DIR):
         print(f"Directorio StreetView no encontrado: {STREETVIEW_DIR}")
@@ -331,7 +342,7 @@ def main():
     print(f"Fotos encontradas: {len(photos)}")
     print()
 
-    por_zona: dict[str, int] = {}
+    por_zona = {}
     lista_procesadas = []
 
     for photo_path in photos:
