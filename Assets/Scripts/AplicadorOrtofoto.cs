@@ -15,6 +15,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using System.IO;
 
@@ -56,7 +57,8 @@ public class AplicadorOrtofoto : MonoBehaviour
         public bool       cargada;
     }
 
-    List<TiloRuntime> _tilos  = new();
+    List<TiloRuntime>       _tilos      = new();
+    Dictionary<int,Material> _matPool   = new(); // Bug-fix #1: shared material pool per tile
     Transform         _parent;
     Shader            _shader;
     Camera            _cam;
@@ -90,6 +92,15 @@ public class AplicadorOrtofoto : MonoBehaviour
         _parent.SetParent(transform, false);
 
         if (!CargarMeta()) yield break;
+
+        // Bug-fix #1: pre-create one material per tile into the pool (Awake-equivalent)
+        for (int i = 0; i < _tilos.Count; i++)
+        {
+            var mat = CrearMatNuevo();
+            _matPool[i] = mat;
+            var mr = _tilos[i].go.GetComponent<MeshRenderer>();
+            if (mr != null) mr.sharedMaterial = mat;
+        }
 
         _cam      = Camera.main;
         _iniciado = true;
@@ -135,19 +146,21 @@ public class AplicadorOrtofoto : MonoBehaviour
                 float w  = m.ux_max - m.ux_min;
                 float h  = m.uz_max - m.uz_min;
 
-                // Quad plano
+                var worldCenter = new Vector3(cx, 0, cz);
+
+                // Bug-fix #4: quad conforms to terrain surface at all 4 corners
                 var go  = new GameObject($"Tile_{m.file}");
                 go.transform.SetParent(_parent, false);
 
                 var mf  = go.AddComponent<MeshFilter>();
-                mf.sharedMesh = CrearQuad(w, h);
+                mf.sharedMesh = CrearQuadConforme(w, h, worldCenter, offsetY);
 
                 var mr  = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = CrearMat();
+                // sharedMaterial will be set from _matPool after Start initialises it
                 mr.shadowCastingMode  = UnityEngine.Rendering.ShadowCastingMode.Off;
                 mr.receiveShadows     = false;
 
-                float y = AlturaTerreno(new Vector3(cx, 0, cz)) + offsetY;
+                float y = AlturaTerreno(worldCenter) + offsetY;
                 go.transform.position = new Vector3(cx, y, cz);
                 go.isStatic = true;
 
@@ -219,29 +232,38 @@ public class AplicadorOrtofoto : MonoBehaviour
 
         if (!File.Exists(fullPath)) yield break;
 
-        // Leer JPEG desde disco como bytes (no bloquea el main thread mucho)
+        // Bug-fix #2: read file on background thread so main thread is not blocked
         byte[] bytes = null;
-        try   { bytes = File.ReadAllBytes(fullPath); }
-        catch { yield break; }
+        var readTask = Task.Run(() =>
+        {
+            try { bytes = File.ReadAllBytes(fullPath); }
+            catch { bytes = null; }
+        });
+        while (!readTask.IsCompleted) yield return null; // 1 tile per frame max
+        if (bytes == null) yield break;
 
-        yield return null; // frame break antes de cargar en GPU
+        yield return null; // frame break before GPU upload
 
+        // Bug-fix #3: create with mipChain=true and call Apply(generateMips, noLongerReadable=false)
         var tex = new Texture2D(t.meta.width_px, t.meta.height_px,
-                                TextureFormat.RGB24, mipChain: false);
+                                TextureFormat.RGB24, mipChain: true);
         tex.name = t.meta.file;
-        tex.filterMode   = FilterMode.Bilinear;
+        tex.filterMode   = FilterMode.Trilinear; // trilinear benefits from mipmaps
         tex.wrapMode     = TextureWrapMode.Clamp;
 
         if (!tex.LoadImage(bytes)) { Destroy(tex); yield break; }
+        tex.Apply(true, false); // Bug-fix #3: generate full mip chain
 
         t.tex = tex;
         t.cargada = true;
 
-        // Aplicar al renderer
+        // Bug-fix #1: reuse pooled material — just set texture, no new Material()
+        int idx = _tilos.IndexOf(t);
         var mr = t.go.GetComponent<MeshRenderer>();
-        if (mr != null)
+        if (mr != null && _matPool.TryGetValue(idx, out var mat))
         {
-            mr.sharedMaterial = CrearMat(tex);
+            AplicarTexturaMat(mat, tex);
+            mr.sharedMaterial = mat;
             t.go.SetActive(true);
         }
     }
@@ -258,8 +280,10 @@ public class AplicadorOrtofoto : MonoBehaviour
             t.tex = null;
         }
 
-        var mr = t.go.GetComponent<MeshRenderer>();
-        if (mr != null) mr.sharedMaterial = CrearMat();
+        // Bug-fix #1: clear texture from pooled material instead of creating new one
+        int idx = _tilos.IndexOf(t);
+        if (_matPool.TryGetValue(idx, out var mat))
+            AplicarTexturaMat(mat, null);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -288,24 +312,57 @@ public class AplicadorOrtofoto : MonoBehaviour
         return m;
     }
 
-    Material CrearMat(Texture2D tex = null)
+    // Bug-fix #4: build a quad whose 4 corner vertices follow the terrain surface,
+    // so tiles conform to excavated riverbeds instead of floating at fixed Y.
+    // worldCenter is the tile's world-space center (XZ); the mesh is in local space
+    // (centered at origin) but each vertex Y is offset relative to the center height.
+    static Mesh CrearQuadConforme(float w, float h, Vector3 worldCenter, float offsetY)
+    {
+        float hw = w * 0.5f, hh = h * 0.5f;
+        float cy = AlturaTerreno(worldCenter);
+
+        // Sample terrain height at each corner in world space
+        float y00 = AlturaTerreno(new Vector3(worldCenter.x - hw, 0, worldCenter.z - hh)) + offsetY - cy;
+        float y10 = AlturaTerreno(new Vector3(worldCenter.x + hw, 0, worldCenter.z - hh)) + offsetY - cy;
+        float y11 = AlturaTerreno(new Vector3(worldCenter.x + hw, 0, worldCenter.z + hh)) + offsetY - cy;
+        float y01 = AlturaTerreno(new Vector3(worldCenter.x - hw, 0, worldCenter.z + hh)) + offsetY - cy;
+
+        var m = new Mesh { name = "OrtoQuadConforme" };
+        m.SetVertices(new[]
+        {
+            new Vector3(-hw, y00, -hh),
+            new Vector3( hw, y10, -hh),
+            new Vector3( hw, y11,  hh),
+            new Vector3(-hw, y01,  hh),
+        });
+        m.SetTriangles(new[] { 0,2,1, 0,3,2 }, 0);
+        m.SetUVs(0, new[]
+        {
+            new Vector2(0,0), new Vector2(1,0),
+            new Vector2(1,1), new Vector2(0,1),
+        });
+        m.RecalculateNormals();
+        m.RecalculateBounds();
+        return m;
+    }
+
+    // Bug-fix #1: factory called once per tile into _matPool
+    Material CrearMatNuevo()
     {
         var mat = new Material(_shader);
-
-        // HDRP/Unlit
-        if (mat.HasProperty("_UnlitColorMap"))
-        {
-            if (tex != null) mat.SetTexture("_UnlitColorMap", tex);
-            mat.SetFloat("_SurfaceType", 0); // opaque
-        }
-        // Standard fallback
-        else if (mat.HasProperty("_MainTex"))
-        {
-            if (tex != null) mat.SetTexture("_MainTex", tex);
-            mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-        }
-
+        mat.enableInstancing = true; // GPU instancing
+        if (mat.HasProperty("_SurfaceType"))
+            mat.SetFloat("_SurfaceType", 0); // opaque HDRP
         return mat;
+    }
+
+    // Set or clear the texture on an existing pooled material
+    void AplicarTexturaMat(Material mat, Texture2D tex)
+    {
+        if (mat.HasProperty("_UnlitColorMap"))
+            mat.SetTexture("_UnlitColorMap", tex);
+        else if (mat.HasProperty("_MainTex"))
+            mat.SetTexture("_MainTex", tex);
     }
 
     static float AlturaTerreno(Vector3 pos) => GeoDataAlsasua.AlturaTerreno(pos);

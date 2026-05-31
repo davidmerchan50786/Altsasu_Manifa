@@ -809,7 +809,8 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         if (Mathf.Abs(nuevo - altitudRocaM) > 10f)
         {
             altitudRocaM = nuevo;
-            RepintarZona(new Vector3(3200f, 0f, 9400f), 400f);
+            // Bug-fix: repaint full alphamapWidth × alphamapHeight instead of fixed 400m patch
+            StartCoroutine(PintarAlphamap8Biomas());
         }
     }
 
