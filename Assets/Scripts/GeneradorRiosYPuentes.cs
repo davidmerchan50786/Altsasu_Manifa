@@ -92,6 +92,7 @@ public class GeneradorRiosYPuentes : MonoBehaviour
     // ── Datos internos ────────────────────────────────────────────────────
     List<RioCauce> _cauces     = new();
     List<PuenteDato> _puentes  = new();
+    List<LidarAguaPunto> _puntosLidarAgua = new();
     Transform _parentAgua;
     Transform _parentPuentes;
 
@@ -163,8 +164,11 @@ public class GeneradorRiosYPuentes : MonoBehaviour
         // Excavar terrain
         yield return StartCoroutine(ExcavarTerrain());
 
-        // Crear planos de agua
+        // Crear planos de agua (cauces GeoJSON)
         yield return StartCoroutine(CrearPlanosAgua());
+
+        // Colocar láminas de agua en puntos LIDAR clase 9 (charcos, acequias, etc.)
+        yield return StartCoroutine(ColocarAguaLidar());
 
         // Colocar puentes
         yield return StartCoroutine(ColocarPuentes());
@@ -183,7 +187,13 @@ public class GeneradorRiosYPuentes : MonoBehaviour
         if (!File.Exists(fullPath))
         { AlsasuaLogger.Warn("Rios",$"rios_ejes.geojson no encontrado: {fullPath}"); yield break; }
 
-        var task = Task.Run(() => ParsearGeoJSON(fullPath));
+        // Cache terrain data on main thread BEFORE entering Task.Run (Unity API is not thread-safe)
+        var terrainPos  = Terrain.activeTerrain.transform.position;
+        var terrainSize = Terrain.activeTerrain.terrainData.size;
+        int hRes        = Terrain.activeTerrain.terrainData.heightmapResolution;
+        float[,] heightsCopy = Terrain.activeTerrain.terrainData.GetHeights(0, 0, hRes, hRes);
+
+        var task = Task.Run(() => ParsearGeoJSON(fullPath, terrainPos, terrainSize, hRes, heightsCopy));
         yield return EsperarTask(task, "GeoJSON rios");
         if (task.IsCompletedSuccessfully) _cauces = task.Result;
 
@@ -191,11 +201,11 @@ public class GeneradorRiosYPuentes : MonoBehaviour
             $"{_cauces.Count} cauces cargados ({_cauces.FindAll(c=>c.esArakil).Count} Arakil)");
     }
 
-    static List<RioCauce> ParsearGeoJSON(string path)
+    static List<RioCauce> ParsearGeoJSON(string path, Vector3 terrainPos, Vector3 terrainSize, int hRes, float[,] heightsCopy)
     {
         var result = new List<RioCauce>();
         var ci     = System.Globalization.CultureInfo.InvariantCulture;
-        var terrain = Terrain.activeTerrain; // puede ser null en hilo background
+        // NOTE: All terrain data is passed in as plain values — no Unity API access in this method
         try
         {
             string json = File.ReadAllText(path);
@@ -340,12 +350,11 @@ public class GeneradorRiosYPuentes : MonoBehaviour
             || (taskPuentes != null && !taskPuentes.IsCompleted))
             yield return null;
 
-        // Ajuste local de cauces con puntos LIDAR de agua
+        // Guardar puntos LIDAR de agua para uso posterior (colocación de láminas pequeñas)
         if (taskAgua?.IsCompletedSuccessfully == true)
         {
-            var ptsAgua = taskAgua.Result;
-            AlsasuaLogger.Info("Rios",$"LIDAR agua: {ptsAgua.Count} puntos de referencia");
-            // No modifica los cauces aquí; la validación se hace en ExcavarTerrain
+            _puntosLidarAgua = taskAgua.Result;
+            AlsasuaLogger.Info("Rios",$"LIDAR agua: {_puntosLidarAgua.Count} puntos clase 9 cargados");
         }
 
         if (taskPuentes?.IsCompletedSuccessfully == true)
@@ -622,11 +631,24 @@ public class GeneradorRiosYPuentes : MonoBehaviour
         if (mat.HasProperty("_BlendMode"))
             mat.SetFloat("_BlendMode", 0f);     // Alpha
 
-        // Smoothness alta para SSR
+        // Smoothness alta para SSR; metallic 0 (el agua no es metálica)
         if (mat.HasProperty("_Smoothness"))
             mat.SetFloat("_Smoothness", 0.95f);
         if (mat.HasProperty("_Metallic"))
-            mat.SetFloat("_Metallic", 0f);
+            mat.SetFloat("_Metallic", 0.0f);
+
+        // Emisión muy suave azul-verde (#0a1a0f @ 0.1) — simula scattering subsuperficial
+        var emitCol = new Color(0x0a/255f, 0x1a/255f, 0x0f/255f) * 0.1f;
+        if (mat.HasProperty("_EmissiveColor"))
+        {
+            mat.SetColor("_EmissiveColor", emitCol);
+            mat.EnableKeyword("_EMISSION");
+        }
+        else if (mat.HasProperty("_EmissionColor"))
+        {
+            mat.SetColor("_EmissionColor", emitCol);
+            mat.EnableKeyword("_EMISSION");
+        }
 
         // Flow map via UV scroll
         if (mat.HasProperty("_BaseColorMap"))
@@ -667,6 +689,149 @@ public class GeneradorRiosYPuentes : MonoBehaviour
         for (int i = 0; i < 16; i++) tex.SetPixel(i%4, i/4, col);
         tex.Apply();
         return tex;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  LÁMINAS DE AGUA LIDAR (clase 9) — charcos, acequias, balsas
+    // ════════════════════════════════════════════════════════════════════════
+
+    /// Agrupa los puntos LIDAR de agua (clase 9) en clusters por proximidad
+    /// y coloca una pequeña lámina de agua quad en el centroide de cada cluster.
+    IEnumerator ColocarAguaLidar()
+    {
+        if (_puntosLidarAgua.Count == 0) yield break;
+
+        var terrain = Terrain.activeTerrain;
+
+        Shader shAgua = shaderAgua
+                     ?? Shader.Find("HDRP/Lit")
+                     ?? Shader.Find("Universal Render Pipeline/Lit")
+                     ?? Shader.Find("Standard");
+
+        // Convertir coordenadas a Unity. Los puntos en lidar_agua.json pueden estar
+        // en UTM absoluto (E~567xxx) o ya en Unity space — detectar por magnitud.
+        var ptsUnity = new List<Vector3>(_puntosLidarAgua.Count);
+        foreach (var p in _puntosLidarAgua)
+        {
+            float ux, uz;
+            if (p.x > 100000f) // UTM absoluto
+            {
+                ux = (p.x - E_ORIG) + UNITY_OX;
+                uz = (p.z - N_ORIG) + UNITY_OZ;
+            }
+            else // ya en Unity space
+            {
+                ux = p.x;
+                uz = p.z;
+            }
+            float uy = p.altitud > Z_MIN ? p.altitud - Z_MIN
+                     : (terrain != null ? terrain.SampleHeight(new Vector3(ux, 0, uz)) : 0f);
+            ptsUnity.Add(new Vector3(ux, uy, uz));
+        }
+
+        // Clustering simple: radio 5m — agrupar puntos cercanos en un cluster
+        const float CLUSTER_RADIO = 5f;
+        const float CLUSTER_RADIO_SQ = CLUSTER_RADIO * CLUSTER_RADIO;
+        var usados = new bool[ptsUnity.Count];
+        var clusters = new List<(Vector3 centroide, float radio)>();
+
+        for (int i = 0; i < ptsUnity.Count; i++)
+        {
+            if (usados[i]) continue;
+            var centro = ptsUnity[i];
+            int count = 1;
+            float minX = centro.x, maxX = centro.x;
+            float minZ = centro.z, maxZ = centro.z;
+            float sumY = centro.y;
+
+            for (int j = i + 1; j < ptsUnity.Count; j++)
+            {
+                if (usados[j]) continue;
+                float dx = ptsUnity[j].x - centro.x;
+                float dz = ptsUnity[j].z - centro.z;
+                if (dx*dx + dz*dz < CLUSTER_RADIO_SQ)
+                {
+                    usados[j] = true;
+                    count++;
+                    sumY += ptsUnity[j].y;
+                    if (ptsUnity[j].x < minX) minX = ptsUnity[j].x;
+                    if (ptsUnity[j].x > maxX) maxX = ptsUnity[j].x;
+                    if (ptsUnity[j].z < minZ) minZ = ptsUnity[j].z;
+                    if (ptsUnity[j].z > maxZ) maxZ = ptsUnity[j].z;
+                }
+            }
+
+            float cx = (minX + maxX) * 0.5f;
+            float cz = (minZ + maxZ) * 0.5f;
+            float cy  = sumY / count + offsetAguaY;
+            float radioCluster = Mathf.Max(1f, Mathf.Max(maxX - minX, maxZ - minZ) * 0.5f + 0.5f);
+            clusters.Add((new Vector3(cx, cy, cz), radioCluster));
+        }
+
+        // Filtrar clusters que ya están dentro de un cauce GeoJSON (evitar solapamiento)
+        int colocados = 0;
+        foreach (var (centroide, radio) in clusters)
+        {
+            if (EsZonaAgua(centroide.x, centroide.z)) continue; // ya cubierto por cauce GeoJSON
+
+            var go = new GameObject($"AguaLidar_{colocados}");
+            go.transform.SetParent(_parentAgua, false);
+            go.transform.position = centroide;
+
+            var mf = go.AddComponent<MeshFilter>();
+            mf.sharedMesh = CrearPlanoAgua(radio * 2f, radio * 2f);
+
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = CrearMaterialAguaLidar(shAgua);
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows    = true;
+
+            go.isStatic = true;
+            colocados++;
+
+            if (colocados % 20 == 0) yield return null;
+        }
+
+        AlsasuaLogger.Info("Rios",
+            $"✅ LIDAR agua: {colocados} láminas de agua pequeñas colocadas ({clusters.Count} clusters de {_puntosLidarAgua.Count} puntos)");
+    }
+
+    /// Crea un material de agua mejorado para láminas LIDAR (charcos/balsas pequeñas).
+    Material CrearMaterialAguaLidar(Shader sh)
+    {
+        var mat = new Material(sh) { name = "Mat_AguaLidar" };
+
+        // Color base: azul verdoso oscuro, semi-transparente
+        var colorAgua = new Color(0x1a/255f, 0x35/255f, 0x20/255f, 0.78f);
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", colorAgua);
+        if (mat.HasProperty("_Color"))     mat.SetColor("_Color",     colorAgua);
+
+        // Superficie transparente
+        if (mat.HasProperty("_SurfaceType")) mat.SetFloat("_SurfaceType", 1f);
+        if (mat.HasProperty("_BlendMode"))   mat.SetFloat("_BlendMode",   0f);
+
+        // Alta reflectividad, no metálico
+        if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.95f);
+        if (mat.HasProperty("_Metallic"))   mat.SetFloat("_Metallic",   0.0f);
+
+        // Emisión muy suave azul-verde (#0a1a0f) a intensidad 0.1 — simula scattering subsuperficial
+        if (mat.HasProperty("_EmissiveColor"))
+        {
+            var emitColor = new Color(0x0a/255f, 0x1a/255f, 0x0f/255f) * 0.1f;
+            mat.SetColor("_EmissiveColor", emitColor);
+            mat.EnableKeyword("_EMISSION");
+        }
+        else if (mat.HasProperty("_EmissionColor"))
+        {
+            var emitColor = new Color(0x0a/255f, 0x1a/255f, 0x0f/255f) * 0.1f;
+            mat.SetColor("_EmissionColor", emitColor);
+            mat.EnableKeyword("_EMISSION");
+        }
+
+        if (mat.HasProperty("_RefractionModel")) mat.SetFloat("_RefractionModel", 1f);
+        mat.renderQueue = (int)RenderQueue.Transparent;
+        mat.enableInstancing = true;
+        return mat;
     }
 
     // ════════════════════════════════════════════════════════════════════════

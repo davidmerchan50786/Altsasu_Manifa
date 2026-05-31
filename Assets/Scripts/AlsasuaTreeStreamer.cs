@@ -121,14 +121,23 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     // ── Pool de árboles ────────────────────────────────────────────────────
     readonly List<GameObject> _pool = new();
-    [Tooltip("Tamaño inicial del pool (pre-calentado en Start).")]
+    /// Pools por especie para evitar instanciación en caliente de prefabs específicos.
+    readonly Dictionary<string, Queue<GameObject>> _poolEspecies = new();
+    [Tooltip("Tamaño inicial del pool genérico (pre-calentado en Awake).")]
     public int tamañoPool = 150;
+    [Tooltip("Instancias precalentadas por cada especie específica (Roble/Pino/Ribera).")]
+    public int tamañoPoolEspecie = 50;
 
     // ──────────────────────────────────────────────────────────────────────
 
-    void Start()
+    void Awake()
     {
         PreCalentarPool();
+        PreCalentarPoolEspecies();
+    }
+
+    void Start()
+    {
         StartCoroutine(InicializarAsync());
     }
 
@@ -454,25 +463,74 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         }
     }
 
-    GameObject AlquilarArbol(GameObject prefab, Vector3 pos, Quaternion rot)
+    /// Pre-calienta pools de 50 instancias por cada especie específica (Roble, Pino, Ribera).
+    void PreCalentarPoolEspecies()
     {
-        // Buscar uno inactivo del mismo prefab (por nombre de prefab) o cualquiera disponible
-        GameObject go = null;
-        string prefabNombre = prefab.name;
-        for (int i = _pool.Count - 1; i >= 0; i--)
+        PreCalentarPoolEspecie("Roble", prefabsRoble);
+        PreCalentarPoolEspecie("Pino",  prefabsPino);
+        PreCalentarPoolEspecie("Ribera",prefabsRibera);
+    }
+
+    void PreCalentarPoolEspecie(string clave, GameObject[] prefabs)
+    {
+        if (prefabs == null || prefabs.Length == 0) return;
+        if (!_poolEspecies.ContainsKey(clave))
+            _poolEspecies[clave] = new Queue<GameObject>(tamañoPoolEspecie);
+
+        var cola = _poolEspecies[clave];
+        for (int i = 0; i < tamañoPoolEspecie; i++)
         {
-            if (_pool[i] == null) { _pool.RemoveAt(i); continue; }
-            if (!_pool[i].activeInHierarchy)
+            var prefab = prefabs[i % prefabs.Length];
+            if (prefab == null) continue;
+            var go = Instantiate(prefab, transform);
+            go.SetActive(false);
+            go.name = $"Arbol_{clave}_Pool_{i}";
+            cola.Enqueue(go);
+        }
+    }
+
+    /// Clave de pool para una especie (debe coincidir con PreCalentarPoolEspecie).
+    static string ClaveEspecie(int especie) => especie switch
+    {
+        ESP_ROBLE  => "Roble",
+        ESP_PINO   => "Pino",
+        ESP_RIBERA => "Ribera",
+        _          => null,
+    };
+
+    GameObject AlquilarArbol(GameObject prefab, Vector3 pos, Quaternion rot, int especie = ESP_GENERICO)
+    {
+        GameObject go = null;
+
+        // 1. Intentar pool de especie específica primero
+        string clave = ClaveEspecie(especie);
+        if (clave != null && _poolEspecies.TryGetValue(clave, out var cola))
+        {
+            while (cola.Count > 0)
             {
-                // Preferir mismo tipo de árbol para evitar pop visual
-                if (_pool[i].name.Contains(prefabNombre) || go == null)
-                    go = _pool[i];
+                go = cola.Dequeue();
+                if (go != null) break;
             }
         }
 
+        // 2. Fallback al pool genérico
         if (go == null)
         {
-            // Pool exhausto — crear nuevo y añadir al pool para devoluciones futuras
+            string prefabNombre = prefab.name;
+            for (int i = _pool.Count - 1; i >= 0; i--)
+            {
+                if (_pool[i] == null) { _pool.RemoveAt(i); continue; }
+                if (!_pool[i].activeInHierarchy)
+                {
+                    if (_pool[i].name.Contains(prefabNombre) || go == null)
+                        go = _pool[i];
+                }
+            }
+        }
+
+        // 3. Pool exhausto — instanciar nuevo
+        if (go == null)
+        {
             go = Instantiate(prefab, transform);
             _pool.Add(go);
         }
@@ -482,10 +540,16 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         return go;
     }
 
-    void DevolverArbol(GameObject go)
+    void DevolverArbol(GameObject go, int especie = ESP_GENERICO)
     {
         if (go == null) return;
         go.SetActive(false);
+
+        // Devolver al pool de especie si corresponde
+        string clave = ClaveEspecie(especie);
+        if (clave != null && _poolEspecies.TryGetValue(clave, out var cola))
+            cola.Enqueue(go);
+        // Si es genérico ya está en _pool (sigue accesible como inactivo)
     }
 
     void OnDestroy()
