@@ -171,7 +171,12 @@ if __name__ == "__main__":
     overture_old = load_json_file(FILES["overture_old"], "overture_old")
     lidar = load_json_file(FILES["lidar"], "lidar")
     mapillary_raw = load_json_file(FILES["mapillary"], "mapillary")
-    coverage = load_json_file(FILES["coverage_report"], "coverage_report")
+    if os.path.exists(FILES["coverage_report"]):
+        with open(FILES["coverage_report"]) as _f:
+            coverage = json.load(_f)
+        print(f"  coverage_report: dict con {len(coverage.get('edificios_con_cobertura',[]))} edificios con cobertura")
+    else:
+        coverage = None
 
     # Use OSM as catastro fallback if needed
     primary_buildings = catastro
@@ -181,12 +186,23 @@ if __name__ == "__main__":
         primary_label = "osm"
         print("  Usando OSM como fuente primaria (catastro vacío)")
 
-    # Build spatial indices
-    print("\nConstruyendo índices espaciales...")
-    idx_osm = build_spatial_index(osm, "osm") if osm else []
+    # Build ID-based indices for sources sharing OSM IDs
+    print("\nConstruyendo índices...")
+    osm_by_id = {str(b.get("id", b.get("osm_id", ""))): b for b in (osm or []) if b.get("id") or b.get("osm_id")}
+    lidar_by_id = {str(b.get("id", "")): b for b in (lidar or []) if b.get("id")}
+    overture_by_osm_id = {}
+    for feat in (overture_2024 or []):
+        props = feat.get("properties", {})
+        osm_id = str(props.get("osm_id", ""))
+        if osm_id:
+            overture_by_osm_id[osm_id] = feat
+    print(f"  osm_by_id: {len(osm_by_id)}")
+    print(f"  lidar_by_id: {len(lidar_by_id)}")
+    print(f"  overture_by_osm_id: {len(overture_by_osm_id)}")
+
+    # Also build spatial index for overture (for catastro matching via lat/lon)
     idx_overture_2024 = build_spatial_index(overture_2024, "overture_2024") if overture_2024 else []
-    idx_overture_old = build_spatial_index(overture_old, "overture_old") if overture_old else []
-    idx_lidar = build_spatial_index(lidar, "lidar") if lidar else []
+    idx_overture_old = []
 
     # Mapillary coverage lookup
     edificios_con_cobertura = set()
@@ -263,33 +279,39 @@ if __name__ == "__main__":
             buildings_report.append(entry)
             continue
 
-        # Check OSM
-        osm_near = find_nearby(blat, blon, idx_osm, match_threshold)
-        if osm_near:
+        # Check OSM (same IDs as catastro/overture)
+        osm_match = osm_by_id.get(bid)
+        if osm_match:
             entry["en_osm"] = True
-            entry["altura_osm"] = get_height(osm_near[0][1], "osm")
+            entry["altura_osm"] = get_height(osm_match, "osm")
             count_with_osm += 1
 
-        # Check Overture 2024
-        ov24_near = find_nearby(blat, blon, idx_overture_2024, match_threshold)
-        if ov24_near:
+        # Check Overture 2024 (match by osm_id first, then spatial)
+        ov_match = overture_by_osm_id.get(bid)
+        if ov_match:
             entry["en_overture_2024"] = True
-            h = get_height(ov24_near[0][1], "overture_2024")
+            h = get_height(ov_match, "overture_2024")
             entry["altura_overture_2024"] = h
             if h is not None:
                 count_with_height_overture += 1
             count_with_overture_2024 += 1
+        elif blat is not None:
+            ov24_near = find_nearby(blat, blon, idx_overture_2024, match_threshold)
+            if ov24_near:
+                entry["en_overture_2024"] = True
+                h = get_height(ov24_near[0][1], "overture_2024")
+                entry["altura_overture_2024"] = h
+                if h is not None:
+                    count_with_height_overture += 1
+                count_with_overture_2024 += 1
 
-        # Check Overture old
-        ov_old_near = find_nearby(blat, blon, idx_overture_old, match_threshold)
-        if ov_old_near:
-            entry["en_overture_old"] = True
-
-        # Check LIDAR
-        lidar_near = find_nearby(blat, blon, idx_lidar, match_threshold)
-        if lidar_near:
+        # Check LIDAR (match by ID, same OSM IDs)
+        lidar_match = lidar_by_id.get(bid)
+        if not lidar_match and bid.isdigit():
+            lidar_match = lidar_by_id.get(bid)
+        if lidar_match:
             entry["en_lidar"] = True
-            entry["altura_lidar"] = get_height(lidar_near[0][1], "lidar")
+            entry["altura_lidar"] = lidar_match.get("lidar_altura")
             count_with_lidar += 1
 
         # Mapillary coverage
