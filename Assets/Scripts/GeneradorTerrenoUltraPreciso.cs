@@ -49,8 +49,8 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     [Tooltip("RMSE máximo aceptable en metros antes de aplicar corrección local")]
     public float rmseMaxMetros = 0.3f;
 
-    [Tooltip("Número de puntos para validación RMSE (0 = desactivar)")]
-    public int puntosValidacion = 2000;
+    [Tooltip("Número de puntos para validación RMSE (0 = desactivar). 0 en ValidarTerrenoCoroutine = todos los puntos.")]
+    public int puntosValidacion = 10000;
 
     [Tooltip("Ancho de blend gaussiano en metros entre LIDAR y DTM5m en los bordes")]
     public float blendGaussianoBordes = 200f;
@@ -59,20 +59,21 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     public bool logVerboso = true;
 
     // ── Rutas de datos ────────────────────────────────────────────────────
-    const string PATH_LIDAR_RAW  = "Assets/AlsasuaData/lidar_dtm_05m.raw";
-    const string PATH_LIDAR_META = "Assets/AlsasuaData/lidar_dtm_meta.json";
-    const string PATH_LIDAR_GND  = "Assets/AlsasuaData/lidar_ground.xyz";
-    const string PATH_DTM_5M     = "Assets/AlsasuaData/dtm_alsasua_5m.asc";
-    const string PATH_DEM_FB     = "Assets/AlsasuaData/dem_unity_1025.raw";
+    const string PATH_LIDAR_RAW    = "Assets/AlsasuaData/lidar_dtm_05m.raw";
+    const string PATH_LIDAR_META   = "Assets/AlsasuaData/lidar_dtm_meta.json";
+    const string PATH_LIDAR_GND    = "Assets/AlsasuaData/lidar_ground.xyz";
+    const string PATH_DTM_5M       = "Assets/AlsasuaData/dtm_alsasua_5m.asc";
+    const string PATH_DEM_FB       = "Assets/AlsasuaData/dem_unity_1025.raw";
+    const string PATH_VAL_REPORT   = "Assets/AlsasuaData/terrain_validation_report.json";
 
-    // ── Constantes geográficas ────────────────────────────────────────────
-    const float E_ORIG    = 567951f;
-    const float N_ORIG    = 4749902f;
-    const float UNITY_OX  = 1918f;
-    const float UNITY_OZ  = 8570f;
+    // ── Constantes geográficas — fuente única: GeoDataAlsasua ────────────
+    const float E_ORIG    = (float)GeoDataAlsasua.UTM_E_ORIGIN;
+    const float N_ORIG    = (float)GeoDataAlsasua.UTM_N_ORIGIN;
+    const float UNITY_OX  = GeoDataAlsasua.UNITY_OX;
+    const float UNITY_OZ  = GeoDataAlsasua.UNITY_OZ;
     // Z_MIN CRÍTICO: altitud mínima real del área (511.33m, de lidar_dtm_meta.json).
     // AltitudUnity = altitudReal - Z_MIN. Sin este offset todos los picos quedan ~9× fuera de rango.
-    const float Z_MIN     = 511.33f;
+    const float Z_MIN     = GeoDataAlsasua.Z_MIN;
 
     // ── NativeArray persistente del RAW LIDAR (nunca re-leído) ───────────
     NativeArray<ushort> _lidarRaw;
@@ -85,6 +86,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
     float _ultimoRMSE = -1f;
     public float UltimoRMSE => _ultimoRMSE;
+
+    bool metricasValidas = false;
+    public bool MetricasValidas => metricasValidas;
 
     // ════════════════════════════════════════════════════════════════════════
     //  LIFECYCLE
@@ -395,6 +399,151 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     //  VALIDACIÓN RMSE + CORRECCIÓN LOCAL GAUSSIAN SPLAT
     // ════════════════════════════════════════════════════════════════════════
 
+    // ── Struct para métricas de validación ───────────────────────────────────
+    struct ValidationMetrics
+    {
+        public float rmse, mae, maxError, minError, p95;
+        public int   count;
+        // Zonas: 0=urbana(<540m Unity=<28.67m), 1=ladera(540-560m Unity=28.67-48.67m), 2=montaña(>560m Unity>48.67m)
+        public int[]   zoneCount;
+        public double[] zoneSumSq;
+        // Histograma: [0-0.1, 0.1-0.3, 0.3-0.5, 0.5-1, >1]
+        public int[] hist;
+    }
+
+    // Umbrales de altitud Unity para zonas (altitudReal - Z_MIN)
+    // urbana: altReal < 540m  → unityY < 540 - 511.33 = 28.67m
+    // ladera: 540-560m        → unityY 28.67-48.67m
+    // montaña: >560m          → unityY > 48.67m
+    const float ZONA_URBANA_MAX  = 540f - GeoDataAlsasua.Z_MIN;   // ~28.67m
+    const float ZONA_LADERA_MAX  = 560f - GeoDataAlsasua.Z_MIN;   // ~48.67m
+
+    static ValidationMetrics CalcularMetricas(List<(Vector3 pos, float delta)> errores)
+    {
+        var m = new ValidationMetrics
+        {
+            zoneCount = new int[3],
+            zoneSumSq = new double[3],
+            hist      = new int[5],
+            minError  = float.MaxValue,
+            maxError  = float.MinValue
+        };
+
+        double sumSq = 0.0, sumAbs = 0.0;
+        var absErrs = new List<float>(errores.Count);
+
+        foreach (var (pos, delta) in errores)
+        {
+            float ab = Mathf.Abs(delta);
+            sumSq  += delta * delta;
+            sumAbs += ab;
+            if (ab > m.maxError) m.maxError = ab;
+            if (ab < m.minError) m.minError = ab;
+            absErrs.Add(ab);
+            m.count++;
+
+            // Zona por altura Unity del punto (pos.y = altReal - Z_MIN)
+            int zona = pos.y < ZONA_URBANA_MAX ? 0 : (pos.y < ZONA_LADERA_MAX ? 1 : 2);
+            m.zoneCount[zona]++;
+            m.zoneSumSq[zona] += delta * delta;
+
+            // Histograma
+            if      (ab < 0.1f) m.hist[0]++;
+            else if (ab < 0.3f) m.hist[1]++;
+            else if (ab < 0.5f) m.hist[2]++;
+            else if (ab < 1.0f) m.hist[3]++;
+            else                m.hist[4]++;
+        }
+
+        if (m.count == 0) return m;
+        m.rmse = Mathf.Sqrt((float)(sumSq  / m.count));
+        m.mae  = (float)(sumAbs / m.count);
+
+        // Percentil 95
+        absErrs.Sort();
+        int p95idx = Mathf.Clamp(Mathf.RoundToInt(absErrs.Count * 0.95f), 0, absErrs.Count - 1);
+        m.p95 = absErrs[p95idx];
+
+        return m;
+    }
+
+    static void LogMetricas(ValidationMetrics m)
+    {
+        // Formato parseable
+        Debug.Log($"[TerrainRMSE] RMSE={m.rmse:F3}m MAE={m.mae:F3}m MAX={m.maxError:F3}m P95={m.p95:F3}m");
+
+        float[] zRmse = new float[3];
+        for (int z = 0; z < 3; z++)
+            zRmse[z] = m.zoneCount[z] > 0
+                ? Mathf.Sqrt((float)(m.zoneSumSq[z] / m.zoneCount[z]))
+                : 0f;
+        Debug.Log($"[TerrainRMSE] Zonas: urbana={m.zoneCount[0]} pts rmse={zRmse[0]:F3}m | " +
+                  $"ladera={m.zoneCount[1]} pts rmse={zRmse[1]:F3}m | " +
+                  $"montaña={m.zoneCount[2]} pts rmse={zRmse[2]:F3}m");
+
+        float total = Mathf.Max(1, m.count);
+        Debug.Log($"[TerrainRMSE] Histograma: " +
+                  $"<0.1m={m.hist[0]*100f/total:F1}% | " +
+                  $"0.1-0.3m={m.hist[1]*100f/total:F1}% | " +
+                  $"0.3-0.5m={m.hist[2]*100f/total:F1}% | " +
+                  $"0.5-1m={m.hist[3]*100f/total:F1}% | " +
+                  $">1m={m.hist[4]*100f/total:F1}%");
+
+        string estado = m.rmse < 0.3f ? "OK" : (m.rmse < 0.6f ? "ADVERTENCIA" : "CRITICO");
+        Debug.Log($"[TerrainRMSE] Estado: {estado} (threshold 0.3m)");
+    }
+
+    [Serializable]
+    class TerrainValidationReport
+    {
+        public string timestamp;
+        public float  rmse, mae, max_error, p95;
+        public int    puntos_validados;
+        public int[]  histograma;
+        public ZonaReport[] zonas;
+
+        [Serializable]
+        public class ZonaReport { public string nombre; public int puntos; public float rmse; }
+    }
+
+    static void GuardarReporte(ValidationMetrics m, string path)
+    {
+        float[] zRmse = new float[3];
+        for (int z = 0; z < 3; z++)
+            zRmse[z] = m.zoneCount[z] > 0
+                ? Mathf.Sqrt((float)(m.zoneSumSq[z] / m.zoneCount[z]))
+                : 0f;
+
+        var report = new TerrainValidationReport
+        {
+            timestamp        = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+            rmse             = m.rmse,
+            mae              = m.mae,
+            max_error        = m.maxError,
+            p95              = m.p95,
+            puntos_validados = m.count,
+            histograma       = m.hist,
+            zonas            = new[]
+            {
+                new TerrainValidationReport.ZonaReport { nombre="urbana",  puntos=m.zoneCount[0], rmse=zRmse[0] },
+                new TerrainValidationReport.ZonaReport { nombre="ladera",  puntos=m.zoneCount[1], rmse=zRmse[1] },
+                new TerrainValidationReport.ZonaReport { nombre="montana", puntos=m.zoneCount[2], rmse=zRmse[2] },
+            }
+        };
+
+        try
+        {
+            string dir = Path.GetDirectoryName(path);
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(path, JsonUtility.ToJson(report, true));
+            AlsasuaLogger.Info("TerrenoAAA", $"Reporte guardado: {path}");
+        }
+        catch (Exception ex)
+        {
+            AlsasuaLogger.Warn("TerrenoAAA", $"No se pudo guardar reporte: {ex.Message}");
+        }
+    }
+
     IEnumerator ValidarYCorregir(string pathXYZ)
     {
         AlsasuaLogger.Info("TerrenoAAA",
@@ -437,9 +586,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
         // Subsamplear para N puntos de validación
         int paso  = Mathf.Max(1, puntos.Count / puntosValidacion);
-        var errores = new List<(Vector3 pos, float delta)>();
-        double sumSq = 0.0;
-        int count    = 0;
+        var errores = new List<(Vector3 pos, float delta)>(puntos.Count / paso + 1);
 
         for (int i = 0; i < puntos.Count; i += paso)
         {
@@ -448,27 +595,32 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             float yTerrain = terrain.SampleHeight(new Vector3(p.x, 0, p.z))
                            + terrain.transform.position.y;
             float delta = p.y - yTerrain;
-            sumSq += delta * delta;
-            count++;
             errores.Add((p, delta));
         }
 
-        if (count == 0) yield break;
-        float rmse = Mathf.Sqrt((float)(sumSq / count));
-        _ultimoRMSE = rmse;
+        if (errores.Count == 0) yield break;
 
-        AlsasuaLogger.Info("TerrenoAAA",
-            $"Validación RMSE: {rmse:F3}m ({count} pts) — umbral={rmseMaxMetros:F2}m");
+        var m = CalcularMetricas(errores);
+        _ultimoRMSE = m.rmse;
+        LogMetricas(m);
 
-        if (rmse <= rmseMaxMetros)
+        // ── Calcular RMSE por zona para decidir radio ─────────────────────
+        float rmseUrbana  = m.zoneCount[0] > 0 ? Mathf.Sqrt((float)(m.zoneSumSq[0] / m.zoneCount[0])) : 0f;
+        float rmseMontana = m.zoneCount[2] > 0 ? Mathf.Sqrt((float)(m.zoneSumSq[2] / m.zoneCount[2])) : 0f;
+
+        if (m.rmse < rmseMaxMetros)
         {
-            AlsasuaLogger.Info("TerrenoAAA", "✅ RMSE dentro del umbral. Sin corrección necesaria.");
+            AlsasuaLogger.Info("TerrenoAAA", "RMSE < umbral. Corrección omitida.");
             yield break;
         }
 
-        // ── Corrección local Gaussian splat r=2m para puntos con gran error ──
-        AlsasuaLogger.Info("TerrenoAAA",
-            $"RMSE > umbral. Aplicando corrección Gaussian splat r=2m...");
+        // ── Radio dinámico según RMSE por zona ───────────────────────────
+        float splatR = 2f;
+        if (rmseMontana > 1f)        splatR = 5f;
+        else if (rmseUrbana > 0.5f)  splatR = 3f;
+
+        float splatR2 = splatR * splatR;
+        float sigSq   = splatR2 * 0.5f;
 
         int outRes  = td.heightmapResolution;
         float terW  = td.size.x;
@@ -478,13 +630,8 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
         float[,] heights = td.GetHeights(0, 0, outRes, outRes);
 
-        const float SPLAT_R  = 2f;   // radio en metros
-        const float SPLAT_R2 = SPLAT_R * SPLAT_R;
-        float sigSq = SPLAT_R2 * 0.5f;
-
-        // Solo puntos con error > rmse*0.5
+        float umbralError = m.rmse * 0.5f;
         int corregidos = 0;
-        float umbralError = rmse * 0.5f;
 
         foreach (var (pos, delta) in errores)
         {
@@ -495,7 +642,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             int cx   = Mathf.RoundToInt(nx * (outRes - 1));
             int cz   = Mathf.RoundToInt(nz * (outRes - 1));
 
-            int radio_px = Mathf.CeilToInt(SPLAT_R / terW * (outRes - 1)) + 2;
+            int radio_px = Mathf.CeilToInt(splatR / terW * (outRes - 1)) + 2;
             float normDelta = delta / terY;
 
             for (int dy = -radio_px; dy <= radio_px; dy++)
@@ -507,7 +654,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 float wx = dx / (float)(outRes - 1) * terW;
                 float wz = dy / (float)(outRes - 1) * terH;
                 float d2 = wx * wx + wz * wz;
-                if (d2 > SPLAT_R2) continue;
+                if (d2 > splatR2) continue;
 
                 float peso = Mathf.Exp(-d2 / (2f * sigSq));
                 heights[hz, hx] = Mathf.Clamp01(heights[hz, hx] + normDelta * peso);
@@ -515,13 +662,14 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             corregidos++;
         }
 
+        Debug.Log($"[TerrainCorrection] Aplicando {corregidos} splats gaussianos r={splatR:F0}m");
+
         if (corregidos > 0)
         {
             td.SetHeights(0, 0, heights);
             terrain.Flush();
             AlsasuaLogger.Info("TerrenoAAA",
-                $"✅ Corrección Gaussian aplicada a {corregidos} puntos. " +
-                $"RMSE inicial: {rmse:F3}m");
+                $"Corrección Gaussian aplicada a {corregidos} puntos. RMSE inicial: {m.rmse:F3}m");
         }
     }
 
@@ -543,18 +691,21 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
 
         AlsasuaLogger.Info("Validacion","═══ VALIDACIÓN GEOGRÁFICA ALSASUA ═══");
 
-        // ── 1. RMSE contra lidar_ground.xyz ──────────────────────────────
+        // ── 1. RMSE completo contra TODOS los puntos de lidar_ground.xyz ──
         string pathGnd = FullPath(PATH_LIDAR_GND);
+        ValidationMetrics metricas = default;
+
         if (File.Exists(pathGnd))
         {
+            AlsasuaLogger.Info("Validacion","Leyendo TODOS los puntos lidar_ground.xyz...");
+
+            // Leer todos los puntos sin límite
             var taskXyz = Task.Run(() =>
             {
                 var lista = new List<Vector3>();
                 var ci = System.Globalization.CultureInfo.InvariantCulture;
-                int n = 0;
                 foreach (var line in File.ReadLines(pathGnd))
                 {
-                    if (n++ > 10000) break; // limitar para velocidad en Editor
                     var tok = line.Split(' ', '\t');
                     if (tok.Length < 3) continue;
                     if (float.TryParse(tok[0], System.Globalization.NumberStyles.Float, ci, out float x)
@@ -565,27 +716,33 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 }
                 return lista;
             });
-            yield return EsperarTask(taskXyz, "XYZ validacion");
+            yield return EsperarTask(taskXyz, "XYZ validacion completa");
 
             if (taskXyz.IsCompletedSuccessfully && taskXyz.Result.Count > 0)
             {
                 var pts = taskXyz.Result;
-                double sumSq = 0; int cnt = 0;
-                float errMax = 0f; Vector3 posErrMax = default;
-                int paso = Mathf.Max(1, pts.Count / 2000);
-                for (int i = 0; i < pts.Count; i += paso)
+                AlsasuaLogger.Info("Validacion", $"Puntos cargados: {pts.Count}. Calculando errores...");
+                yield return null;
+
+                // Calcular errores para todos los puntos
+                var errores = new List<(Vector3 pos, float delta)>(pts.Count);
+                int lote = 0;
+                for (int i = 0; i < pts.Count; i++)
                 {
-                    // pts[i].y ya en espacio Unity (altReal - Z_MIN); terrain.SampleHeight también.
                     float yT = terrain.SampleHeight(new Vector3(pts[i].x, 0, pts[i].z))
                              + terrain.transform.position.y;
-                    float d = pts[i].y - yT;
-                    sumSq += d * d; cnt++;
-                    if (Mathf.Abs(d) > Mathf.Abs(errMax)) { errMax = d; posErrMax = pts[i]; }
+                    errores.Add((pts[i], pts[i].y - yT));
+                    if (++lote >= 5000) { lote = 0; yield return null; }
                 }
-                float rmse = Mathf.Sqrt((float)(sumSq / Mathf.Max(1, cnt)));
-                _ultimoRMSE = rmse;
-                AlsasuaLogger.Info("Validacion",
-                    $"RMSE: {rmse:F3}m ({cnt} pts) — ErrMax: {errMax:+F2;-F2}m @ {posErrMax}");
+
+                metricas      = CalcularMetricas(errores);
+                _ultimoRMSE   = metricas.rmse;
+                metricasValidas = true;
+                LogMetricas(metricas);
+
+                // Guardar reporte JSON
+                string reportPath = FullPath(PATH_VAL_REPORT);
+                GuardarReporte(metricas, reportPath);
             }
         }
         else AlsasuaLogger.Warn("Validacion","lidar_ground.xyz no encontrado");
@@ -624,7 +781,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         AlsasuaLogger.Info("Validacion","Altitudes de referencia Alsasua:");
         var refsAlt = new (string nombre, Vector3 pos, float altEsperada)[]
         {
-            ("Herriko Plaza",     new(1918f, 0, 8570f), 547f),
+            ("Herriko Plaza",     new(GeoDataAlsasua.OX, 0, GeoDataAlsasua.OZ), 547f),
             ("Estacion de tren",  new(1650f, 0, 8200f), 540f),
             ("N. Carretera N-1",  new(1900f, 0, 8000f), 525f),
         };
