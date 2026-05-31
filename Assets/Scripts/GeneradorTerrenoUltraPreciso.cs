@@ -789,9 +789,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         float terW = td.size.x, terH = td.size.z, terY = td.size.y;
         Vector3 terPos = terrain.transform.position;
 
-        float zMin = float.MaxValue, zMax = float.MinValue;
-        foreach (var p in puntos) { if (p.y < zMin) zMin = p.y; if (p.y > zMax) zMax = p.y; }
-        float zRange = zMax - zMin;
+        // Use absolute altitude datum so fallback path matches primary RAW path
+        float zMin = Z_MIN;
+        float zRange = terY;
         if (zRange < 1f) yield break;
 
         var sumZ   = new float[res, res];
@@ -810,7 +810,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         for (int hy = 0; hy < res; hy++)
         for (int hx = 0; hx < res; hx++)
             heights[hy, hx] = countZ[hy, hx] > 0
-                ? Mathf.Clamp01((sumZ[hy, hx] / countZ[hy, hx] - zMin) / zRange * (zRange / terY))
+                ? Mathf.Clamp01((sumZ[hy, hx] / countZ[hy, hx] - zMin) / terY)
                 : 0f;
 
         // Fill holes
