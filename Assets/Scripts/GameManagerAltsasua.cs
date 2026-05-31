@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 /// no dependan de esta clase concreta — usan ServiceLocator.Get&lt;IWantedSystem&gt;()
 /// y ServiceLocator.Get&lt;IEconomyService&gt;() en su lugar.
 /// </summary>
-public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
+public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService, ISpawnService
 {
     // ─── Singleton ───────────────────────────────────────────────────────────
     public static GameManagerAltsasua Instance { get; private set; }
@@ -126,6 +126,11 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     //  UNITY LIFECYCLE
     // =========================================================================
 
+    // ── ISpawnService ─────────────────────────────────────────────────────────
+    bool ISpawnService.JugadorEnVehiculo             => JugadorEnVehiculo;
+    void ISpawnService.EnemigoEliminado(UnityEngine.GameObject e) => EnemigoEliminado(e);
+    void ISpawnService.SetJugadorEnVehiculo(bool v)  => SetJugadorEnVehiculo(v);
+
     // ── IWantedSystem ─────────────────────────────────────────────────────────
     int IWantedSystem.NivelBusqueda => nivelBusqueda;
     void IWantedSystem.AumentarBusqueda(int cantidad) => AumentarBusqueda(cantidad);
@@ -160,12 +165,14 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         // Registrar servicios para consumo desacoplado por el resto del juego
         ServiceLocator.Registrar<IWantedSystem>(this);
         ServiceLocator.Registrar<IEconomyService>(this);
+        ServiceLocator.Registrar<ISpawnService>(this);
     }
 
     void OnDestroy()
     {
         ServiceLocator.Desregistrar<IWantedSystem>();
         ServiceLocator.Desregistrar<IEconomyService>();
+        ServiceLocator.Desregistrar<ISpawnService>();
     }
 
     void Start()
