@@ -302,7 +302,7 @@ public class ProcesadorMapillaryObjetos : MonoBehaviour
         SincronizarLuzFarolaConHora(luzGO, luz);
     }
 
-    void SincronizarLuzFarolaConHora(GameObject luzGO, Light luz)
+    void SincronizarLuzFarolaConHora(GameObject luzGO, Light _luz)
     {
         // Determinar hora del día: intentar leer de AltsasuCore vía reflexión,
         // igual que hace SistemaVolumenHDRP internamente. Si no disponible,
