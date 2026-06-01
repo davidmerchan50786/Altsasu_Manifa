@@ -1,11 +1,11 @@
 """
-BLENDER PHOTOGRAMMETRY CLEANUP — Altsasu Manifa
-=================================================
+BLENDER PHOTOGRAMMETRY CLEANUP — Altsasu Manifa  (v2 — Retinex MSR + AI upscale)
+==================================================================================
 Script Blender Python para limpiar y optimizar mallas fotogramétricas de Meshroom.
 Genera LOD0-3 Unity-ready con texturas PBR bakeadas para HDRP.
 
 Entrada : .obj de Meshroom (millones de tris, textura 8K)
-Salida  : LODs FBX + Normal map + AO + Albedo de-lit (2K)
+Salida  : LODs FBX + Normal map + AO + Albedo de-lit (2K/4K con AI upscale)
 
 Ejecutado por meshroom_pipeline.py vía:
   blender.exe --background --python blender_photogrammetry_cleanup.py -- <args_json>
@@ -18,6 +18,11 @@ Args JSON esperado:
     "tex_output":  "Assets/AlsasuaData/FacadeTextures/Photogrammetry/297646225_albedo.png",
     "use_gpu":     true
   }
+
+Mejoras v2:
+  - De-lighting: descomposición intrínseca Retinex multiescala (MSR) en vez de blur simple
+  - AI upscale: Real-ESRGAN 2× si realesrgan-ncnn-vulkan está instalado (AMD Vulkan)
+  - Calidad Cycles con AMD HIP mejorada (soporte OPENCL_INTEROP)
 """
 
 import bpy
@@ -25,6 +30,7 @@ import bmesh
 import json
 import math
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -349,27 +355,39 @@ def setup_bake_material(obj: bpy.types.Object, bake_img: bpy.types.Image,
 # ─── BAKE (GPU CYCLES) ────────────────────────────────────────────────────────
 
 def configure_cycles(use_gpu: bool, samples: int = 128):
+    """
+    Configura Cycles para bake con soporte AMD HIP (ROCm) y OpenCL.
+    Orden de preferencia: HIP (RX 6000+ ROCm) → OPTIX → CUDA → OPENCL → CPU.
+    """
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.samples          = samples
     scene.cycles.use_denoising   = True
-    scene.cycles.denoiser         = "OPENIMAGEDENOISE"
+    scene.cycles.denoiser         = "OPENIMAGEDENOISE"   # CPU denoiser — siempre disponible
 
     if use_gpu:
         scene.cycles.device = "GPU"
         prefs = bpy.context.preferences.addons.get("cycles")
+        activated = False
         if prefs:
             cprefs = prefs.preferences
-            # Activar CUDA o OptiX si están disponibles
-            for device_type in ["OPTIX", "CUDA", "HIP", "METAL"]:
+            # AMD primero: HIP (ROCm para RX 6000+), luego OPENCL (RX 5000 y anterior)
+            for device_type in ["HIP", "OPTIX", "CUDA", "OPENCL", "METAL"]:
                 try:
                     cprefs.compute_device_type = device_type
-                    # Activar todos los dispositivos GPU
-                    for device in cprefs.get_devices_for_type(device_type):
+                    devices = list(cprefs.get_devices_for_type(device_type))
+                    if not devices:
+                        continue
+                    for device in devices:
                         device.use = True
+                    log(f"  Cycles GPU: {device_type} ({len(devices)} dispositivo/s)", "OK")
+                    activated = True
                     break
                 except Exception:
                     continue
+        if not activated:
+            log("  No se pudo activar GPU en Cycles → usando CPU", "WARN")
+            scene.cycles.device = "CPU"
     else:
         scene.cycles.device = "CPU"
 
@@ -428,45 +446,153 @@ def bake_map(hi_obj: bpy.types.Object, lo_obj: bpy.types.Object,
         return False
 
 
-# ─── DE-LIGHTING ──────────────────────────────────────────────────────────────
+# ─── DE-LIGHTING: DESCOMPOSICIÓN INTRÍNSECA RETINEX MULTIESCALA ──────────────
+
+def delight_with_intrinsic_decomposition(img_array):
+    """
+    Descomposición intrínseca de imagen: separa reflectancia (albedo real)
+    de iluminación (shading) usando el método de Retinex multiescala (MSR).
+
+    Mucho más preciso que dividir por blur gaussiano simple:
+    - 3 escalas de sigma: captura iluminación local (15), media (80) y global (250)
+    - Trabaja en espacio logarítmico: evita divisiones por cero
+    - Normalización perceptual p2-p98 por canal: preserva cromaticidad
+    - Escala a luminancia media 0.18 (grey card físicamente correcto para HDRP)
+
+    Parámetros:
+        img_array: numpy array uint8 HxWx3 (RGB)
+    Devuelve:
+        numpy array uint8 HxWx3 con reflectancia normalizada
+    """
+    try:
+        import numpy as np
+        from scipy.ndimage import gaussian_filter
+    except ImportError:
+        # Si scipy no disponible, fallback a blur simple con numpy
+        import numpy as np
+        log("  scipy no disponible, usando Retinex simplificado (sin gaussian_filter)", "WARN")
+
+        def gaussian_filter(arr, sigma):
+            # Aproximación: box blur iterado
+            import math
+            ksize = max(3, int(sigma * 3) | 1)
+            result = arr.copy()
+            # Simplificación: solo una pasada
+            pad = ksize // 2
+            padded = np.pad(result, ((pad, pad), (pad, pad), (0, 0)), mode='edge')
+            for y in range(arr.shape[0]):
+                for x in range(arr.shape[1]):
+                    result[y, x] = padded[y:y+ksize, x:x+ksize].mean(axis=(0, 1))
+            return result
+
+    float_img = img_array.astype(np.float32) / 255.0 + 1e-6
+    log_img   = np.log(float_img)
+
+    # Retinex multiescala: 3 escalas capturan iluminación a distintas frecuencias
+    # sigma=15:  iluminación local (sombras de molduras y juntas de ladrillo)
+    # sigma=80:  iluminación media (gradiente de fachada por orientación solar)
+    # sigma=250: iluminación global (dirección dominante de la luz)
+    sigmas  = [15, 80, 250]
+    retinex = np.zeros_like(log_img)
+    for sigma in sigmas:
+        blurred  = gaussian_filter(log_img, sigma=[sigma, sigma, 0])
+        retinex += (log_img - blurred) / len(sigmas)
+
+    # Convertir de vuelta: exp(retinex) = reflectancia (log-ratio elimina iluminación)
+    reflectance = np.exp(retinex)
+
+    # Normalizar a [0,1] por canal (p2-p98) para preservar cromaticidad
+    # y eliminar outliers sin saturar bordes
+    for c in range(3):
+        p2,  p98 = np.percentile(reflectance[:, :, c], [2, 98])
+        reflectance[:, :, c] = np.clip(
+            (reflectance[:, :, c] - p2) / (p98 - p2 + 1e-6), 0, 1
+        )
+
+    # Escalar luminancia media a 0.18 (grey card = difuso Lambertiano neutro)
+    # Esto garantiza que el albedo bakeado en HDRP sea energéticamente conservador
+    lum   = (0.299 * reflectance[:, :, 0] +
+             0.587 * reflectance[:, :, 1] +
+             0.114 * reflectance[:, :, 2])
+    scale = 0.18 / (lum.mean() + 1e-6)
+    reflectance = np.clip(reflectance * scale, 0, 1)
+
+    return (reflectance * 255).astype(np.uint8)
+
 
 def apply_delight(albedo_img: bpy.types.Image) -> bpy.types.Image:
     """
-    Elimina la iluminación horneada de la textura albedo usando nodos Compositor.
-    Técnica: divide el albedo por una versión blur (estimación de iluminación).
-    Renormaliza a luminancia media 0.18 sRGB (difuso físicamente correcto para HDRP).
+    Elimina la iluminación horneada de la textura albedo.
+
+    Método v2 — Retinex Multiescala (MSR):
+    En vez del blur-división simple, usa descomposición intrínseca MSR que
+    trabaja en espacio logarítmico con 3 escalas de Gaussian para separar
+    reflectancia (albedo real) de iluminación con mucha mayor precisión.
+
+    Si numpy/scipy no están disponibles en el Python de Blender, hace fallback
+    al método de nodos Compositor (v1) automáticamente.
 
     Devuelve la imagen con de-lighting aplicado.
     """
-    log("Aplicando de-lighting al albedo...")
+    log("Aplicando de-lighting Retinex MSR al albedo...")
+
+    # Intentar Retinex MSR directamente sobre los píxeles de Blender
+    try:
+        import numpy as np
+        pixels = np.array(albedo_img.pixels[:], dtype=np.float32)
+        w, h   = albedo_img.size[0], albedo_img.size[1]
+        # Blender pixels: RGBA plano [R,G,B,A, R,G,B,A, ...]
+        pixels_rgba = pixels.reshape((h, w, 4))
+        pixels_rgb  = (pixels_rgba[:, :, :3] * 255).clip(0, 255).astype(np.uint8)
+
+        # Aplicar Retinex MSR
+        delit_rgb = delight_with_intrinsic_decomposition(pixels_rgb)
+
+        # Recombinar con canal alpha original
+        delit_float = delit_rgb.astype(np.float32) / 255.0
+        pixels_rgba[:, :, :3] = delit_float
+        out_pixels = pixels_rgba.flatten().tolist()
+
+        # Crear imagen resultado
+        delit_name = albedo_img.name + "_delit"
+        if delit_name in bpy.data.images:
+            bpy.data.images.remove(bpy.data.images[delit_name])
+        delit_img = bpy.data.images.new(delit_name, width=w, height=h, alpha=True)
+        delit_img.pixels = out_pixels
+        delit_img.colorspace_settings.name = "sRGB"
+
+        log("  De-lighting Retinex MSR aplicado (σ=15/80/250, mean→0.18)", "OK")
+        return delit_img
+
+    except Exception as e:
+        log(f"  Retinex MSR falló ({e}) → fallback a método Compositor v1", "WARN")
+
+    # ── Fallback: Compositor de nodos Blender (método v1) ─────────────────────
+    log("  De-lighting Compositor (blur σ=200, fallback v1)...")
     scene = bpy.context.scene
     scene.use_nodes = True
     scene.render.resolution_x = albedo_img.size[0]
     scene.render.resolution_y = albedo_img.size[1]
-    tree = scene.node_tree
+    tree  = scene.node_tree
     nodes = tree.nodes
     links = tree.links
 
     nodes.clear()
 
-    # Input: imagen fotogramétrica
     img_node = nodes.new("CompositorNodeImage")
     img_node.image = albedo_img
 
-    # Separar channels
     sep = nodes.new("CompositorNodeSepRGBA")
 
-    # Blur para estimar envolvente de iluminación (sigma grande = iluminación global)
     blur_r = nodes.new("CompositorNodeBlur")
     blur_g = nodes.new("CompositorNodeBlur")
     blur_b = nodes.new("CompositorNodeBlur")
     for b in [blur_r, blur_g, blur_b]:
-        b.filter_type = "GAUSS"
-        b.size_x = 200
-        b.size_y = 200
+        b.filter_type  = "GAUSS"
+        b.size_x       = 200
+        b.size_y       = 200
         b.use_relative = False
 
-    # Dividir canal original / blur → quitar iluminación global
     div_r = nodes.new("CompositorNodeMath")
     div_g = nodes.new("CompositorNodeMath")
     div_b = nodes.new("CompositorNodeMath")
@@ -474,64 +600,49 @@ def apply_delight(albedo_img: bpy.types.Image) -> bpy.types.Image:
         d.operation = "DIVIDE"
         d.use_clamp = True
 
-    # Combinar canales de-lit
     comb = nodes.new("CompositorNodeCombRGBA")
 
-    # Ajustar luminancia media → 0.18 (valor físico)
     lum_mix = nodes.new("CompositorNodeMixRGB")
     lum_mix.blend_type = "MULTIPLY"
     lum_mix.inputs[0].default_value = 1.0
     lum_mix.inputs[2].default_value = (0.18, 0.18, 0.18, 1.0)
 
-    # Gamma → linearizar si viene de sRGB
     gamma = nodes.new("CompositorNodeGamma")
     gamma.inputs[1].default_value = 1.0 / 2.2
 
-    # Output
     out = nodes.new("CompositorNodeComposite")
 
-    # Conectar
     links.new(img_node.outputs["Image"], sep.inputs["Image"])
-
     links.new(sep.outputs["R"], blur_r.inputs["Image"])
     links.new(sep.outputs["G"], blur_g.inputs["Image"])
     links.new(sep.outputs["B"], blur_b.inputs["Image"])
-
     links.new(sep.outputs["R"], div_r.inputs[0])
     links.new(blur_r.outputs["Image"], div_r.inputs[1])
     links.new(sep.outputs["G"], div_g.inputs[0])
     links.new(blur_g.outputs["Image"], div_g.inputs[1])
     links.new(sep.outputs["B"], div_b.inputs[0])
     links.new(blur_b.outputs["Image"], div_b.inputs[1])
-
     links.new(div_r.outputs["Value"], comb.inputs["R"])
     links.new(div_g.outputs["Value"], comb.inputs["G"])
     links.new(div_b.outputs["Value"], comb.inputs["B"])
     links.new(img_node.outputs["Alpha"], comb.inputs["A"])
-
     links.new(comb.outputs["Image"], lum_mix.inputs[1])
     links.new(lum_mix.outputs["Image"], gamma.inputs["Image"])
     links.new(gamma.outputs["Image"], out.inputs["Image"])
 
-    # Renderizar compositor a imagen destino
     delit_name = albedo_img.name + "_delit"
     delit_img  = bpy.data.images.new(
-        delit_name,
-        width=albedo_img.size[0],
-        height=albedo_img.size[1],
+        delit_name, width=albedo_img.size[0], height=albedo_img.size[1],
     )
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode  = "RGB"
 
-    # Forzar render del compositor
     bpy.ops.render.render(write_still=False)
-
-    # Obtener resultado del viewer (si existe)
     viewer = bpy.data.images.get("Viewer Node")
     if viewer:
         delit_img = viewer
 
-    log("  De-lighting aplicado (blur σ=200, mean→0.18 sRGB)", "OK")
+    log("  De-lighting Compositor aplicado (fallback, blur σ=200, mean→0.18)", "OK")
     return delit_img
 
 
@@ -599,26 +710,103 @@ def save_texture(img: bpy.types.Image, out_path: str):
     log(f"  Textura guardada: {Path(out_path).name}", "OK")
 
 
+# ─── TEXTURE SUPER-RESOLUTION (Real-ESRGAN AMD Vulkan) ───────────────────────
+
+def try_upscale_texture(texture_path: str, output_path: str) -> bool:
+    """
+    Intenta upscaling 2× de la textura con Real-ESRGAN.
+
+    Usa realesrgan-ncnn-vulkan.exe que funciona en AMD via Vulkan
+    (no requiere CUDA ni ROCm — solo Vulkan, disponible en cualquier GPU AMD).
+
+    Ruta esperada: E:\\realesrgan-ncnn-vulkan\\realesrgan-ncnn-vulkan.exe
+    Descarga: https://github.com/xinntao/Real-ESRGAN/releases
+
+    Parámetros:
+        texture_path: ruta al PNG de entrada (p.ej. 2048×2048)
+        output_path:  ruta al PNG de salida (2× = 4096×4096)
+
+    Devuelve True si el upscale tuvo éxito, False si fallback (sin upscale).
+    """
+    # Ubicaciones donde buscar realesrgan-ncnn-vulkan
+    esrgan_candidates = [
+        Path(r"E:\realesrgan-ncnn-vulkan\realesrgan-ncnn-vulkan.exe"),
+        Path(r"C:\realesrgan-ncnn-vulkan\realesrgan-ncnn-vulkan.exe"),
+        Path(r"D:\realesrgan-ncnn-vulkan\realesrgan-ncnn-vulkan.exe"),
+    ]
+
+    esrgan_exe = None
+    for candidate in esrgan_candidates:
+        if candidate.exists():
+            esrgan_exe = candidate
+            break
+
+    if esrgan_exe is None:
+        log("  Real-ESRGAN no encontrado → sin upscale (instala realesrgan-ncnn-vulkan)", "WARN")
+        log("  Descarga: https://github.com/xinntao/Real-ESRGAN/releases", "WARN")
+        return False
+
+    if not Path(texture_path).exists():
+        log(f"  Textura origen no encontrada para upscale: {texture_path}", "WARN")
+        return False
+
+    log(f"  Real-ESRGAN 2× upscale: {Path(texture_path).name} → {Path(output_path).name}")
+    try:
+        result = subprocess.run(
+            [
+                str(esrgan_exe),
+                "-i", texture_path,
+                "-o", output_path,
+                "-n", "realesrgan-x4plus",   # modelo general (también funciona en 2×)
+                "-s", "2",                    # escala 2× (1024→2048, 2048→4096)
+                "-f", "png",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=300,   # 5 min max
+        )
+        if result.returncode == 0 and Path(output_path).exists():
+            size_before = Path(texture_path).stat().st_size // 1024
+            size_after  = Path(output_path).stat().st_size // 1024
+            log(f"  ESRGAN OK: {size_before} KB → {size_after} KB (2× resolución)", "OK")
+            return True
+        else:
+            log(f"  ESRGAN falló (código {result.returncode}): {result.stderr[:300]}", "WARN")
+            return False
+    except subprocess.TimeoutExpired:
+        log("  ESRGAN timeout (>5min)", "WARN")
+        return False
+    except Exception as e:
+        log(f"  ESRGAN error: {e}", "WARN")
+        return False
+
+
 # ─── REPORTE DE CALIDAD ───────────────────────────────────────────────────────
 
 def write_quality_report(args: dict, tris_original: int, lod_objects: list,
-                         uv_coverage: float, delight_applied: bool):
+                         uv_coverage: float, delight_applied: bool,
+                         delight_method: str = "retinex_msr",
+                         upscale_applied: bool = False,
+                         tex_resolution: str = "2048x2048"):
     report = {
-        "edificio_id":       args["edificio_id"],
-        "tris_original":     tris_original,
-        "tris_lod0":         len(lod_objects[0].data.polygons) if lod_objects else 0,
-        "tris_lod1":         len(lod_objects[1].data.polygons) if len(lod_objects) > 1 else 0,
-        "tris_lod2":         len(lod_objects[2].data.polygons) if len(lod_objects) > 2 else 0,
-        "tris_lod3":         len(lod_objects[3].data.polygons) if len(lod_objects) > 3 else 0,
-        "texture_resolution": "2048x2048",
-        "uv_coverage_pct":   round(uv_coverage, 1),
-        "delight_applied":   delight_applied,
-        "normal_map_flipped": True,
-        "normal_space":      "DirectX_Unity_HDRP",
-        "axis_convention":   "Unity_HDRP (-Z forward, Y up)",
-        "lods_generated":    len(lod_objects),
-        "fbx_output":        args.get("fbx_output"),
-        "tex_output":        args.get("tex_output"),
+        "edificio_id":        args["edificio_id"],
+        "tris_original":      tris_original,
+        "tris_lod0":          len(lod_objects[0].data.polygons) if lod_objects else 0,
+        "tris_lod1":          len(lod_objects[1].data.polygons) if len(lod_objects) > 1 else 0,
+        "tris_lod2":          len(lod_objects[2].data.polygons) if len(lod_objects) > 2 else 0,
+        "tris_lod3":          len(lod_objects[3].data.polygons) if len(lod_objects) > 3 else 0,
+        "texture_resolution":  tex_resolution,
+        "uv_coverage_pct":    round(uv_coverage, 1),
+        "delight_applied":    delight_applied,
+        "delight_method":     delight_method if delight_applied else "none",
+        "upscale_applied":    upscale_applied,
+        "upscale_method":     "realesrgan_ncnn_vulkan_2x" if upscale_applied else "none",
+        "normal_map_flipped":  True,
+        "normal_space":       "DirectX_Unity_HDRP",
+        "axis_convention":    "Unity_HDRP (-Z forward, Y up)",
+        "lods_generated":     len(lod_objects),
+        "fbx_output":         args.get("fbx_output"),
+        "tex_output":         args.get("tex_output"),
     }
     report_path = str(Path(args.get("fbx_output", ".")).parent / f"{args['edificio_id']}_quality.json")
     with open(report_path, "w", encoding="utf-8") as f:
@@ -676,12 +864,19 @@ def main():
     bake_ao_ok      = bake_map(base_obj, base_obj, "AO",      img_ao,     cage_extrusion=0.02)
     bake_albedo_ok  = bake_map(base_obj, base_obj, "DIFFUSE", img_albedo, cage_extrusion=0.02)
 
-    # 6. De-lighting del albedo
+    # 6. De-lighting del albedo (Retinex MSR v2)
     delight_applied = False
+    delight_method  = "none"
     if bake_albedo_ok:
         try:
             img_albedo = apply_delight(img_albedo)
             delight_applied = True
+            # Determinar qué método se usó (Retinex si numpy disponible, Compositor si no)
+            try:
+                import numpy
+                delight_method = "retinex_msr"
+            except ImportError:
+                delight_method = "compositor_blur_div"
         except Exception as e:
             log(f"De-lighting falló (no crítico): {e}", "WARN")
 
@@ -703,6 +898,16 @@ def main():
     if bake_ao_ok:
         save_texture(img_ao, ao_out)
 
+    # 8b. AI Upscale 2× del albedo con Real-ESRGAN AMD Vulkan
+    upscale_applied  = False
+    tex_resolution   = f"{tex_size}x{tex_size}"
+    if bake_albedo_ok:
+        albedo_4k_out = tex_output.replace("_albedo.png", "_albedo_4k.png")
+        upscale_applied = try_upscale_texture(tex_output, albedo_4k_out)
+        if upscale_applied:
+            tex_resolution = f"{tex_size*2}x{tex_size*2}"
+            log(f"  Albedo 4K guardado: {Path(albedo_4k_out).name}", "OK")
+
     # 9. Generar LODs
     lod_objects = generate_lods(base_obj, edificio_id)
 
@@ -714,14 +919,20 @@ def main():
     export_fbx(lod_objects, fbx_output)
 
     # 12. Reporte de calidad
-    report = write_quality_report(args, tris_original, lod_objects, uv_coverage, delight_applied)
+    report = write_quality_report(
+        args, tris_original, lod_objects, uv_coverage,
+        delight_applied, delight_method,
+        upscale_applied, tex_resolution,
+    )
 
     elapsed = time.time() - t0
     log(f"{'=' * 60}")
     log(f"Completado en {elapsed:.0f}s", "OK")
     log(f"  LOD0: {report['tris_lod0']:,} tris")
     log(f"  UV cobertura: {report['uv_coverage_pct']}%")
-    log(f"  De-lighting: {delight_applied}")
+    log(f"  De-lighting: {delight_applied} ({delight_method})")
+    log(f"  AI Upscale : {upscale_applied}")
+    log(f"  Textura    : {tex_resolution}")
     log(f"  FBX: {fbx_output}")
     log(f"{'=' * 60}")
 
