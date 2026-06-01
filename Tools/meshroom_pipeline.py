@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 """
 MESHROOM PHOTOGRAMMETRY PIPELINE — Altsasu Manifa
-Genera mallas 3D texturizadas desde fotos Street View reales.
-Procesa cada zona por separado para obtener reconstrucciones precisas.
+===================================================
+Genera mallas 3D texturizadas desde fotos Street View reales de Alsasua.
+Procesa cada zona/edificio por separado para obtener reconstrucciones precisas.
+
+Fuente de fotos : Assets/AlsasuaData/FacadeTextures/Processed/
+Mapping         : Assets/AlsasuaData/photo_building_mapping.json
+Salida FBX      : Assets/Models/Buildings_Photogrammetry/{edificio_id}.fbx
+Salida texturas : Assets/AlsasuaData/FacadeTextures/Photogrammetry/
 
 Uso:
-    python Tools/meshroom_pipeline.py --zona iglesia
     python Tools/meshroom_pipeline.py --all
     python Tools/meshroom_pipeline.py --all --gpu
+    python Tools/meshroom_pipeline.py --zona iglesia
+    python Tools/meshroom_pipeline.py --zona iglesia --gpu
+    python Tools/meshroom_pipeline.py --all --retry   # reintenta solo los fallidos
 
 Rutas Windows esperadas (ejecutar desde E:\\DAM\\Altsasu_Manifa):
-    Meshroom:  E:\\Meshroom\\Meshroom-2025.1.0\\meshroom_batch.exe
-    Blender:   C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe
-    Cache:     E:\\MeshroomCache\\
+    Meshroom : E:\\Meshroom\\Meshroom-2025.1.0\\meshroom_batch.exe
+    Blender  : C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe
+    Cache    : E:\\MeshroomCache\\
 """
 
 import argparse
@@ -27,81 +35,118 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-# ─────────────────────────── CONFIGURACIÓN ───────────────────────────────────
+# ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 
-# Detectar si estamos en Windows o Linux (CI/dev en Linux, ejecución real en Windows)
 IS_WINDOWS = platform.system() == "Windows"
 
-# Rutas absolutas de herramientas (Windows)
 MESHROOM_BATCH = Path(r"E:\Meshroom\Meshroom-2025.1.0\meshroom_batch.exe")
 BLENDER_EXE    = Path(r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe")
 
-# Rutas del proyecto (relativas al script → resolvemos desde __file__)
-SCRIPT_DIR   = Path(__file__).resolve().parent          # Tools/
-PROJECT_ROOT = SCRIPT_DIR.parent                         # Altsasu_Manifa/
+SCRIPT_DIR   = Path(__file__).resolve().parent   # Tools/
+PROJECT_ROOT = SCRIPT_DIR.parent                  # Altsasu_Manifa/
 
-PHOTO_MAPPING_JSON    = PROJECT_ROOT / "Assets" / "AlsasuaData" / "photo_building_mapping.json"
-PROCESSED_PHOTOS_DIR  = PROJECT_ROOT / "Assets" / "AlsasuaData" / "FacadeTextures" / "Processed"
-OUTPUT_FBX_DIR        = PROJECT_ROOT / "Assets" / "Models" / "Buildings_Photogrammetry"
-OUTPUT_TEX_DIR        = PROJECT_ROOT / "Assets" / "AlsasuaData" / "FacadeTextures" / "Photogrammetry"
+PHOTO_MAPPING_JSON     = PROJECT_ROOT / "Assets" / "AlsasuaData" / "photo_building_mapping.json"
+PROCESSED_PHOTOS_DIR   = PROJECT_ROOT / "Assets" / "AlsasuaData" / "FacadeTextures" / "Processed"
+OUTPUT_FBX_DIR         = PROJECT_ROOT / "Assets" / "Models" / "Buildings_Photogrammetry"
+OUTPUT_TEX_DIR         = PROJECT_ROOT / "Assets" / "AlsasuaData" / "FacadeTextures" / "Photogrammetry"
 BLENDER_CLEANUP_SCRIPT = SCRIPT_DIR / "blender_photogrammetry_cleanup.py"
+PHOTOGRAMMETRY_REPORT  = PROJECT_ROOT / "Assets" / "AlsasuaData" / "photogrammetry_report.json"
 
-# Rutas de caché en E:\ (mucho espacio, fuera del repo)
-CACHE_ROOT   = Path(r"E:\MeshroomCache")
-INPUT_ROOT   = CACHE_ROOT / "input"
+CACHE_ROOT     = Path(r"E:\MeshroomCache")
+INPUT_ROOT     = CACHE_ROOT / "input"
 MESHROOM_CACHE = CACHE_ROOT / "cache"
 PROGRESS_FILE  = CACHE_ROOT / "progress.json"
 
-# Orden de prioridad de zonas (edificios más importantes primero)
-ZONA_PRIORITY = ["iglesia", "ayto", "plaza_fueros", "casco_viejo",
-                 "ferial", "gaztetxe", "plaza_zubeztia", "garcia_jimenez"]
+# Prioridad: edificios icónicos primero
+ZONA_PRIORITY = [
+    "iglesia", "ayto", "plaza_fueros", "casco_viejo",
+    "gaztetxe", "plaza_zubeztia", "ferial", "garcia_jimenez",
+]
 
-# Parámetros Meshroom optimizados para fachadas urbanas
-MESHROOM_OVERRIDES = {
-    "FeatureExtraction": {
-        "describerTypes": ["sift", "akaze"],
-        "describerPreset": "high",
-        "maxNbFeatures": 10000
-    },
-    "FeatureMatching": {
-        "geometricEstimator": "acransac",
-        "distanceRatio": 0.8
-    },
-    "StructureFromMotion": {
-        "minAngleForLandmark": 1.0,
-        "minNumberOfObservationsForTriangulation": 2
-    },
-    "Texturing": {
-        "textureSide": 8192,
-        "unwrapMethod": "ABF",
-        "fillHoles": True,
-        "padding": 8
-    },
-    "Meshing": {
-        "maxInputPoints": 50000000,
-        "maxPoints": 2000000,
-        "angleFactor": 2.0,
-        "simFactor": 0.0
-    },
-    "MeshFiltering": {
-        "keepLargestMeshOnly": True,
-        "smoothingSubset": "all",
-        "smoothingIterations": 5
+MIN_FOTOS_POR_EDIFICIO = 3   # mínimo fotogrametría estable
+
+
+# ─── PARÁMETROS MESHROOM OPTIMIZADOS PARA FACHADAS URBANAS ───────────────────
+
+def build_meshroom_overrides(use_gpu: bool) -> dict:
+    """
+    Parámetros calibrados para fachadas de arquitectura vasca:
+    - SIFT para texturas de arenisca rojiza (gradientes suaves)
+    - AKAZE para detección de bordes de balcones y cornisas
+    - Textura 8K → máxima calidad para edificios hero
+    - ABF unwrap → distribución angular de UV óptima
+    """
+    return {
+        "FeatureExtraction": {
+            "describerTypes":     ["sift", "akaze"],
+            "describerPreset":    "high",
+            "maxNbFeatures":      10000,
+            "forceCpuExtraction": not use_gpu,
+        },
+        "FeatureMatching": {
+            "geometricEstimator":    "acransac",
+            "distanceRatio":         0.8,
+            "maxIteration":          2048,
+            "guided_matching":       True,
+        },
+        "StructureFromMotion": {
+            "minAngleForLandmark":                     1.0,
+            "minNumberOfObservationsForTriangulation": 2,
+            "minAngleForSelection":                    0.1,
+            "maxReprojectionError":                    4.0,
+            "localizerEstimator":                      "acransac",
+        },
+        "Texturing": {
+            "textureSide":               8192,
+            "unwrapMethod":              "ABF",
+            "fillHoles":                 True,
+            "padding":                   8,
+            "correctEV":                 True,
+            "visibilityRemappingMethod": "PullPush",
+            "downscale":                 1,
+        },
+        "Meshing": {
+            "maxInputPoints":        50_000_000,
+            "maxPoints":              2_000_000,
+            "angleFactor":            2.0,
+            "simFactor":              0.0,
+            "removeSmallSegments":    True,
+            "estimateSpaceFromSfM":   True,
+        },
+        "MeshFiltering": {
+            "keepLargestMeshOnly":          True,
+            "smoothingSubset":              "all",
+            "smoothingIterations":          5,
+            "filterLargeTrianglesFactor":   60.0,
+            "lambda_":                      1.0,
+        },
+        "DepthMap": {
+            "downscale":          2 if use_gpu else 4,
+            "exportTilePattern":  False,
+        },
+        "DepthMapFilter": {
+            "minNumOfConsistentCams":          3,
+            "minNumOfConsistentCamsWithLowSimilarity": 4,
+        },
     }
-}
 
-# ─────────────────────────── UTILIDADES ──────────────────────────────────────
+
+# ─── UTILIDADES ───────────────────────────────────────────────────────────────
 
 def log(msg: str, level: str = "INFO"):
     ts = datetime.now().strftime("%H:%M:%S")
-    prefix = {"INFO": "[ ]", "OK": "[+]", "WARN": "[!]", "ERR": "[x]"}.get(level, "[ ]")
-    print(f"  {ts}  {prefix}  {msg}", flush=True)
+    icons = {"INFO": "·", "OK": "✓", "WARN": "!", "ERR": "✗"}
+    icon = icons.get(level, "·")
+    print(f"  {ts}  [{icon}]  {msg}", flush=True)
 
 
 def load_progress() -> dict:
     if PROGRESS_FILE.exists():
-        with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            return {}
     return {}
 
 
@@ -116,15 +161,16 @@ def ensure_dirs():
         d.mkdir(parents=True, exist_ok=True)
 
 
-# ─────────────────────────── LECTURA DE MAPEO ────────────────────────────────
+# ─── LECTURA DE DATOS ─────────────────────────────────────────────────────────
 
 def load_building_photo_map() -> dict:
     """
     Lee photo_building_mapping.json y agrupa fotos por edificio_id.
-    Retorna: {edificio_id: {"zona": str, "fotos": [Path, ...]}}
+    Devuelve: {edificio_id: {"zona": str, "fotos": [Path, ...]}}
+    Solo incluye edificios con ≥ MIN_FOTOS_POR_EDIFICIO fotos existentes.
     """
     if not PHOTO_MAPPING_JSON.exists():
-        log(f"No se encuentra {PHOTO_MAPPING_JSON}", "ERR")
+        log(f"No se encuentra photo_building_mapping.json:\n  {PHOTO_MAPPING_JSON}", "ERR")
         sys.exit(1)
 
     with open(PHOTO_MAPPING_JSON, "r", encoding="utf-8") as f:
@@ -134,384 +180,479 @@ def load_building_photo_map() -> dict:
     buildings: dict = defaultdict(lambda: {"zona": "", "fotos": []})
 
     for entry in mappings:
-        eid   = entry.get("edificio_id", "unknown")
-        zona  = entry.get("zona", "")
-        foto  = Path(entry.get("foto_procesada", ""))
+        eid  = entry.get("edificio_id", "")
+        zona = entry.get("zona", "")
+        foto = Path(entry.get("foto_procesada", ""))
 
-        # Ruta puede ser absoluta (Linux dev) o relativa — normalizamos
+        if not eid:
+            continue
+
         if not foto.is_absolute():
             foto = PROJECT_ROOT / foto
+
+        if not foto.exists():
+            # Buscar por nombre en Processed/
+            foto = PROCESSED_PHOTOS_DIR / foto.name
 
         if foto.exists():
             buildings[eid]["zona"] = zona
             buildings[eid]["fotos"].append(foto)
-        else:
-            # Intentar buscar en Processed/ por nombre de archivo
-            candidate = PROCESSED_PHOTOS_DIR / foto.name
-            if candidate.exists():
-                buildings[eid]["zona"] = zona
-                buildings[eid]["fotos"].append(candidate)
 
-    return dict(buildings)
+    # Filtrar edificios con pocas fotos
+    valid = {eid: v for eid, v in buildings.items()
+             if len(v["fotos"]) >= MIN_FOTOS_POR_EDIFICIO}
+
+    log(f"Edificios en mapping: {len(buildings)} → con ≥{MIN_FOTOS_POR_EDIFICIO} fotos: {len(valid)}")
+    return valid
 
 
 def load_zone_photo_map() -> dict:
     """
-    Alternativa: agrupa fotos de Processed/ directamente por zona (prefijo del nombre).
-    Retorna: {zona: [Path, ...]}
+    Alternativa: agrupa fotos de Processed/ por zona (prefijo del nombre de archivo).
+    Devuelve: {zona: [Path, ...]}
     """
     zones: dict = defaultdict(list)
     if not PROCESSED_PHOTOS_DIR.exists():
+        log(f"Directorio Processed/ no encontrado: {PROCESSED_PHOTOS_DIR}", "WARN")
         return {}
     for p in sorted(PROCESSED_PHOTOS_DIR.glob("*.png")):
-        # Nombre: {zona}_{NNN}.png
+        # Formato esperado: {zona}_{NNN}.png
         parts = p.stem.rsplit("_", 1)
-        if len(parts) == 2:
-            zona = parts[0]
-            zones[zona].append(p)
+        if len(parts) == 2 and parts[1].isdigit():
+            zones[parts[0]].append(p)
     return dict(zones)
 
 
-# ─────────────────────────── MESHROOM ────────────────────────────────────────
+def ordered_zone_list(zone_map: dict) -> list:
+    """Devuelve zonas en orden de prioridad."""
+    priority = [z for z in ZONA_PRIORITY if z in zone_map]
+    rest = sorted(z for z in zone_map if z not in ZONA_PRIORITY)
+    return priority + rest
+
+
+# ─── PREPARAR IMÁGENES ────────────────────────────────────────────────────────
+
+def prepare_images(fotos: list, edificio_id: str) -> Path:
+    """
+    Copia fotos a E:\\MeshroomCache\\input\\{edificio_id}\\images\\.
+    Devuelve la ruta al directorio de imágenes.
+    """
+    img_dir = INPUT_ROOT / edificio_id / "images"
+    img_dir.mkdir(parents=True, exist_ok=True)
+
+    # Limpiar anteriores
+    for old in img_dir.glob("*"):
+        old.unlink(missing_ok=True)
+
+    for i, foto in enumerate(fotos):
+        # Prefijo numérico garantiza orden correcto para Meshroom
+        dest = img_dir / f"{i:04d}_{foto.name}"
+        shutil.copy2(foto, dest)
+
+    log(f"  Imágenes preparadas: {len(fotos)} → {img_dir}")
+    return img_dir
+
+
+# ─── EJECUTAR MESHROOM ────────────────────────────────────────────────────────
 
 def run_meshroom(fotos: list, edificio_id: str, use_gpu: bool) -> Path | None:
     """
     Ejecuta meshroom_batch para un edificio.
-    Retorna la ruta al .obj texturizado, o None si falla.
+    Devuelve la ruta al .obj texturizado o None si falla.
     """
     if not IS_WINDOWS:
-        log(f"[SIMULADO] Meshroom no disponible en Linux. Edificio: {edificio_id}", "WARN")
+        log(f"[SIMULADO] Meshroom solo en Windows — {edificio_id}", "WARN")
         return None
 
     if not MESHROOM_BATCH.exists():
-        log(f"meshroom_batch.exe no encontrado en {MESHROOM_BATCH}", "ERR")
+        log(f"meshroom_batch.exe no encontrado:\n  {MESHROOM_BATCH}", "ERR")
         return None
 
-    # Preparar directorio de entrada
-    fotos_dir  = INPUT_ROOT / edificio_id / "images"
+    img_dir    = prepare_images(fotos, edificio_id)
     output_dir = CACHE_ROOT / "output" / edificio_id
-    fotos_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copiar fotos al directorio temporal
-    for foto in fotos:
-        dest = fotos_dir / foto.name
-        if not dest.exists():
-            shutil.copy2(foto, dest)
-
-    overrides = dict(MESHROOM_OVERRIDES)
-    if not use_gpu:
-        # Deshabilitar GPU en Meshing si no se solicita
-        overrides.setdefault("Meshing", {})["useGPU"] = False
+    overrides = build_meshroom_overrides(use_gpu)
 
     cmd = [
         str(MESHROOM_BATCH),
-        "--input",   str(fotos_dir),
-        "--output",  str(output_dir),
-        "--cache",   str(MESHROOM_CACHE),
+        "--input",     str(img_dir),
+        "--output",    str(output_dir),
+        "--cache",     str(MESHROOM_CACHE),
         "--overrides", json.dumps(overrides),
     ]
 
-    log(f"Ejecutando Meshroom para '{edificio_id}' ({len(fotos)} fotos)...")
+    log(f"Meshroom SfM+MVS+Texturing → '{edificio_id}' ({len(fotos)} fotos, GPU={use_gpu})")
     t0 = time.time()
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=3600  # 1 hora máximo por edificio
+            timeout=7200,  # 2h máx por edificio
         )
         elapsed = time.time() - t0
         if result.returncode != 0:
-            log(f"Meshroom falló para '{edificio_id}': {result.stderr[-500:]}", "ERR")
+            log(f"Meshroom falló ({elapsed:.0f}s):\n{result.stderr[-1000:]}", "ERR")
             return None
-        log(f"Meshroom completado en {elapsed:.0f}s para '{edificio_id}'", "OK")
+        log(f"Meshroom OK en {elapsed:.0f}s", "OK")
     except subprocess.TimeoutExpired:
-        log(f"Meshroom timeout para '{edificio_id}'", "ERR")
+        log(f"Meshroom timeout (>2h) para '{edificio_id}'", "ERR")
         return None
     except Exception as e:
         log(f"Error ejecutando Meshroom: {e}", "ERR")
         return None
 
-    # Buscar .obj en output_dir/texturing/
+    # Buscar .obj en output/texturing/
     texturing_dir = output_dir / "texturing"
-    obj_files = list(texturing_dir.glob("*.obj")) if texturing_dir.exists() else []
-    if not obj_files:
-        log(f"No se encontró .obj en {texturing_dir}", "ERR")
+    obj_candidates = []
+    if texturing_dir.exists():
+        obj_candidates = list(texturing_dir.glob("*.obj"))
+    if not obj_candidates:
+        # Meshroom a veces anida en subdirectorios
+        obj_candidates = list(output_dir.rglob("texturedMesh.obj"))
+    if not obj_candidates:
+        obj_candidates = list(output_dir.rglob("*.obj"))
+
+    if not obj_candidates:
+        log(f"No se encontró .obj en {output_dir}", "ERR")
         return None
 
-    return obj_files[0]
+    # El más grande es la malla principal
+    obj_path = max(obj_candidates, key=lambda p: p.stat().st_size)
+    log(f"OBJ encontrado: {obj_path.name} ({obj_path.stat().st_size // 1024} KB)", "OK")
+    return obj_path
 
 
-# ─────────────────────────── BLENDER POST-PROCESO ────────────────────────────
+# ─── POST-PROCESO BLENDER ─────────────────────────────────────────────────────
 
 def run_blender_cleanup(obj_path: Path, edificio_id: str, use_gpu: bool) -> bool:
     """
-    Llama a Blender --background para limpiar y optimizar la malla.
-    Exporta FBX a Assets/Models/Buildings_Photogrammetry/{edificio_id}.fbx
+    Llama a Blender --background para:
+    1. Limpiar malla fotogramétrica (islas, holes, normales)
+    2. Decimar a LOD0-3
+    3. UV unwrap profesional
+    4. Bake Normal + AO + Diffuse (GPU Cycles)
+    5. De-lighting de albedo
+    6. Exportar FBX Unity HDRP ready
     """
     if not IS_WINDOWS:
-        log(f"[SIMULADO] Blender no disponible en Linux. Edificio: {edificio_id}", "WARN")
+        log(f"[SIMULADO] Blender solo en Windows — {edificio_id}", "WARN")
         return False
 
     if not BLENDER_EXE.exists():
-        log(f"blender.exe no encontrado en {BLENDER_EXE}", "ERR")
+        log(f"blender.exe no encontrado:\n  {BLENDER_EXE}", "ERR")
         return False
 
     if not BLENDER_CLEANUP_SCRIPT.exists():
-        log(f"Script Blender no encontrado: {BLENDER_CLEANUP_SCRIPT}", "ERR")
+        log(f"Script Blender no encontrado:\n  {BLENDER_CLEANUP_SCRIPT}", "ERR")
         return False
 
     fbx_out = OUTPUT_FBX_DIR / f"{edificio_id}.fbx"
     tex_out  = OUTPUT_TEX_DIR / f"{edificio_id}_albedo.png"
+
+    # Pasar argumentos como JSON para evitar problemas con espacios en rutas
+    args_json = json.dumps({
+        "edificio_id": edificio_id,
+        "obj_path":    str(obj_path),
+        "fbx_output":  str(fbx_out),
+        "tex_output":  str(tex_out),
+        "use_gpu":     use_gpu,
+    })
 
     cmd = [
         str(BLENDER_EXE),
         "--background",
         "--python", str(BLENDER_CLEANUP_SCRIPT),
         "--",
-        "--obj",          str(obj_path),
-        "--edificio-id",  edificio_id,
-        "--fbx-out",      str(fbx_out),
-        "--tex-out",      str(tex_out),
-        "--gpu" if use_gpu else "--no-gpu",
+        args_json,
     ]
 
-    log(f"Ejecutando Blender cleanup para '{edificio_id}'...")
+    log(f"Blender cleanup → '{edificio_id}' (GPU={use_gpu})")
+    t0 = time.time()
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+        elapsed = time.time() - t0
         if result.returncode != 0:
-            log(f"Blender falló para '{edificio_id}': {result.stderr[-500:]}", "ERR")
+            log(f"Blender falló ({elapsed:.0f}s):\n{result.stderr[-1000:]}", "ERR")
             return False
-        log(f"Blender completado para '{edificio_id}'", "OK")
+        log(f"Blender OK en {elapsed:.0f}s → {fbx_out.name}", "OK")
         return True
     except subprocess.TimeoutExpired:
-        log(f"Blender timeout para '{edificio_id}'", "ERR")
+        log(f"Blender timeout (>1h) para '{edificio_id}'", "ERR")
         return False
     except Exception as e:
         log(f"Error ejecutando Blender: {e}", "ERR")
         return False
 
 
-# ─────────────────────────── CALIDAD ─────────────────────────────────────────
+# ─── ESTIMACIÓN DE CALIDAD ───────────────────────────────────────────────────
 
 def estimate_quality(fotos: list) -> dict:
     """
-    Estima la calidad de la reconstrucción basándose en número de fotos.
+    Calidad estimada basada en nº de fotos y cobertura angular aproximada.
+    Street View Alsasua: ~15° entre tomas consecutivas.
+    high   = ≥8 fotos Y ≥3 ángulos distintos
+    medium = 4–7 fotos
+    low    = 3 fotos (mínimo viable)
     """
     n = len(fotos)
-    if n >= 8:
+    angulos = max(1, n // 4)   # heurística: 4 fotos ≈ 1 ángulo único
+
+    if n >= 8 and angulos >= 3:
         quality = "high"
     elif n >= 4:
         quality = "medium"
     else:
         quality = "low"
 
-    # Cobertura angular aproximada (asumimos ~15° entre tomas consecutivas de Street View)
-    angular_coverage = min(360, n * 15)
-
     return {
-        "n_fotos": n,
-        "quality": quality,
-        "angular_coverage_deg": angular_coverage,
+        "n_fotos":              n,
+        "angulos_estimados":    angulos,
+        "quality":              quality,
+        "angular_coverage_deg": min(360, n * 15),
     }
 
 
-# ─────────────────────────── PIPELINE PRINCIPAL ──────────────────────────────
+# ─── PIPELINE POR EDIFICIO ────────────────────────────────────────────────────
 
-def process_building(edificio_id: str, info: dict, progress: dict, use_gpu: bool) -> dict:
+def process_building(edificio_id: str, info: dict, progress: dict, use_gpu: bool,
+                     force: bool = False) -> dict:
     """
-    Procesa un único edificio: Meshroom → Blender → copy assets.
-    Retorna entrada de progreso actualizada.
+    Ejecuta el pipeline completo para un edificio:
+    Meshroom SfM → MVS → Texturing → Blender cleanup → FBX Unity
     """
     fotos = info["fotos"]
     zona  = info["zona"]
-    quality_info = estimate_quality(fotos)
+    q     = estimate_quality(fotos)
 
-    if progress.get(edificio_id, {}).get("status") == "done":
-        log(f"'{edificio_id}' ya procesado → skip", "OK")
-        return progress.get(edificio_id, {})
+    # Saltar si ya está completo
+    existing = progress.get(edificio_id, {})
+    if existing.get("status") == "done" and not force:
+        log(f"'{edificio_id}' ya completado → skip (usa --force para reprocesar)", "OK")
+        return existing
 
-    log(f"─── Procesando edificio: {edificio_id} ({zona}, {len(fotos)} fotos) ───")
+    log(f"── Edificio: {edificio_id}  zona={zona}  fotos={len(fotos)}  calidad={q['quality']}")
 
+    # Marcar como en proceso
     progress[edificio_id] = {
-        "status": "processing",
-        "zona": zona,
+        "status":     "processing",
+        "zona":       zona,
         "started_at": datetime.now().isoformat(),
-        **quality_info
+        **q,
     }
     save_progress(progress)
 
     # Paso 1: Meshroom
     obj_path = run_meshroom(fotos, edificio_id, use_gpu)
-
     if obj_path is None and IS_WINDOWS:
-        progress[edificio_id]["status"] = "failed"
-        progress[edificio_id]["error"] = "Meshroom no generó .obj"
+        progress[edificio_id].update({
+            "status": "failed",
+            "error":  "meshroom_no_obj",
+            "completed_at": datetime.now().isoformat(),
+        })
         save_progress(progress)
         return progress[edificio_id]
 
-    # Paso 2: Blender cleanup
+    # Paso 2: Blender
     blender_ok = False
-    if obj_path is not None:
+    if obj_path:
         blender_ok = run_blender_cleanup(obj_path, edificio_id, use_gpu)
 
     fbx_path = OUTPUT_FBX_DIR / f"{edificio_id}.fbx"
     tex_path  = OUTPUT_TEX_DIR / f"{edificio_id}_albedo.png"
+    fbx_size  = fbx_path.stat().st_size if fbx_path.exists() else 0
 
+    success = blender_ok or (not IS_WINDOWS)   # en Linux siempre "done" (modo simulado)
     progress[edificio_id].update({
-        "status": "done" if (not IS_WINDOWS or blender_ok) else "failed",
-        "fbx": str(fbx_path) if fbx_path.exists() else None,
-        "albedo_tex": str(tex_path) if tex_path.exists() else None,
-        "completed_at": datetime.now().isoformat(),
-        **quality_info
+        "status":         "done" if success else "failed",
+        "fbx":            str(fbx_path) if fbx_path.exists() else None,
+        "fbx_size_mb":    round(fbx_size / 1_048_576, 2),
+        "albedo_tex":     str(tex_path) if tex_path.exists() else None,
+        "completed_at":   datetime.now().isoformat(),
+        **q,
     })
     save_progress(progress)
     return progress[edificio_id]
 
 
 def process_zona(zona: str, building_map: dict, zone_map: dict,
-                 progress: dict, use_gpu: bool) -> list:
+                 progress: dict, use_gpu: bool, force: bool) -> list:
     """
     Procesa todos los edificios de una zona.
-    Si no hay mapeo por edificio, agrupa todas las fotos de la zona como un único "edificio".
-    Retorna lista de resultados.
+    Si no hay edificios mapeados, usa todas las fotos de la zona como un grupo único.
     """
     results = []
 
-    # Filtrar edificios de esta zona
-    zona_buildings = {eid: info for eid, info in building_map.items()
-                      if info["zona"] == zona and len(info["fotos"]) >= 3}
+    # Edificios con mapeo explícito en esta zona
+    zona_buildings = {
+        eid: info for eid, info in building_map.items()
+        if info["zona"] == zona and len(info["fotos"]) >= MIN_FOTOS_POR_EDIFICIO
+    }
 
     if zona_buildings:
+        log(f"Zona '{zona}': {len(zona_buildings)} edificios mapeados")
         for eid, info in zona_buildings.items():
-            res = process_building(eid, info, progress, use_gpu)
+            res = process_building(eid, info, progress, use_gpu, force)
             results.append({"edificio_id": eid, **res})
     else:
-        # Fallback: usar todas las fotos de la zona como un grupo
+        # Fallback: zona entera como pseudo-edificio
         fotos = zone_map.get(zona, [])
-        if len(fotos) < 3:
-            log(f"Zona '{zona}': solo {len(fotos)} fotos — mínimo 3 requeridas, skip", "WARN")
+        if len(fotos) < MIN_FOTOS_POR_EDIFICIO:
+            log(f"Zona '{zona}': {len(fotos)} fotos < {MIN_FOTOS_POR_EDIFICIO} mínimo → skip", "WARN")
             return []
+        log(f"Zona '{zona}': sin mapeo individual, procesando {len(fotos)} fotos juntas")
         pseudo_id = f"zona_{zona}"
-        info = {"zona": zona, "fotos": fotos}
-        res = process_building(pseudo_id, info, progress, use_gpu)
+        res = process_building(pseudo_id, {"zona": zona, "fotos": fotos},
+                               progress, use_gpu, force)
         results.append({"edificio_id": pseudo_id, **res})
 
     return results
 
 
-# ─────────────────────────── RESUMEN FINAL ───────────────────────────────────
+# ─── RESUMEN FINAL ────────────────────────────────────────────────────────────
 
-def print_summary(all_results: list):
-    print("\n" + "═" * 60)
+def print_summary(results: list, elapsed_s: float):
+    done   = [r for r in results if r.get("status") == "done"]
+    failed = [r for r in results if r.get("status") == "failed"]
+    sim    = [r for r in results if r.get("status") not in ("done", "failed")]
+
+    print("\n" + "═" * 72)
     print("  RESUMEN PIPELINE FOTOGRAMETRÍA — Altsasu Manifa")
-    print("═" * 60)
-
-    total    = len(all_results)
-    done     = sum(1 for r in all_results if r.get("status") == "done")
-    failed   = sum(1 for r in all_results if r.get("status") == "failed")
-    simulated = sum(1 for r in all_results if r.get("status") == "processing")
-
-    print(f"  Edificios procesados : {total}")
-    print(f"  Exitosos             : {done}")
-    print(f"  Fallidos             : {failed}")
-    if simulated:
-        print(f"  Simulados (no-Win)   : {simulated}")
+    print("═" * 72)
+    print(f"  Edificios procesados : {len(results)}")
+    print(f"  Exitosos             : {len(done)}")
+    print(f"  Fallidos             : {len(failed)}")
+    if sim:
+        print(f"  Simulados (no-Win)   : {len(sim)}")
+    print(f"  Tiempo total         : {elapsed_s / 60:.1f} min")
     print()
 
-    for r in all_results:
-        eid    = r.get("edificio_id", "?")
-        status = r.get("status", "?")
-        n_fotos = r.get("n_fotos", 0)
-        quality = r.get("quality", "?")
-        fbx     = r.get("fbx", "—")
-        icon    = "+" if status == "done" else ("~" if status == "processing" else "x")
-        print(f"  [{icon}] {eid:<25} | {n_fotos:>3} fotos | {quality:<6} | {fbx or '—'}")
+    if done:
+        print("  EDIFICIOS RECONSTRUIDOS:")
+        for r in done:
+            eid     = r.get("edificio_id", "?")
+            n       = r.get("n_fotos", 0)
+            quality = r.get("quality", "?")
+            mb      = r.get("fbx_size_mb", 0)
+            fbx     = Path(r["fbx"]).name if r.get("fbx") else "—"
+            print(f"    [{quality:6s}]  {eid:<20}  {n:>3} fotos  {mb:.1f} MB  → {fbx}")
 
-    print("═" * 60 + "\n")
+    if failed:
+        print("\n  EDIFICIOS FALLIDOS:")
+        for r in failed:
+            print(f"    {r.get('edificio_id','?'):<20}  error: {r.get('error','?')}")
+
+    print()
+    print(f"  Progress JSON : {PROGRESS_FILE}")
+    print(f"  FBX dir       : {OUTPUT_FBX_DIR}")
+    print("═" * 72 + "\n")
 
 
-# ─────────────────────────── MAIN ────────────────────────────────────────────
+# ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Pipeline fotogrametría Meshroom para Altsasu Manifa"
+        description="Meshroom photogrammetry pipeline — Altsasu Manifa",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Ejemplos:
+  python Tools/meshroom_pipeline.py --all
+  python Tools/meshroom_pipeline.py --all --gpu
+  python Tools/meshroom_pipeline.py --zona iglesia --gpu
+  python Tools/meshroom_pipeline.py --all --retry
+  python Tools/meshroom_pipeline.py --all --force
+        """,
     )
-    parser.add_argument("--zona", default="", help="Procesar solo esta zona")
-    parser.add_argument("--all",  action="store_true", help="Procesar todas las zonas")
-    parser.add_argument("--gpu",  action="store_true", help="Usar GPU en Meshroom y Blender")
-    parser.add_argument("--force", action="store_true", help="Reprocesar aunque esté done")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--all",  action="store_true", help="Procesa todas las zonas en orden de prioridad")
+    mode.add_argument("--zona", metavar="ZONA",       help="Procesa solo esta zona")
+
+    parser.add_argument("--gpu",   action="store_true", help="Activa GPU en Meshroom (DepthMap) y Blender (Cycles)")
+    parser.add_argument("--force", action="store_true", help="Reprocesa aunque el edificio esté marcado como 'done'")
+    parser.add_argument("--retry", action="store_true", help="Procesa solo edificios con estado 'failed'")
     args = parser.parse_args()
 
-    if not args.zona and not args.all:
-        parser.print_help()
-        sys.exit(1)
-
-    print("\n" + "═" * 60)
+    print("\n" + "═" * 72)
     print("  MESHROOM PIPELINE — Altsasu Manifa")
     print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"  Plataforma: {platform.system()}")
-    print(f"  GPU: {'SI' if args.gpu else 'NO'}")
-    print("═" * 60 + "\n")
+    print(f"  Plataforma : {platform.system()}")
+    print(f"  GPU        : {'SÍ' if args.gpu else 'NO'}")
+    print(f"  Modo       : {'TODAS' if args.all else args.zona}")
+    print("═" * 72 + "\n")
+
+    # Verificaciones previas
+    if IS_WINDOWS:
+        if not MESHROOM_BATCH.exists():
+            log(f"AVISO: meshroom_batch.exe no encontrado:\n  {MESHROOM_BATCH}", "WARN")
+        if not BLENDER_EXE.exists():
+            log(f"AVISO: blender.exe no encontrado:\n  {BLENDER_EXE}", "WARN")
 
     ensure_dirs()
 
-    # Cargar datos
-    log("Cargando mapeo de fotos por edificio...")
+    log("Cargando photo_building_mapping.json...")
     building_map = load_building_photo_map()
     zone_map     = load_zone_photo_map()
+    log(f"Zonas disponibles en Processed/: {sorted(zone_map.keys())}")
 
-    log(f"Edificios mapeados: {len(building_map)}")
-    log(f"Zonas disponibles: {sorted(zone_map.keys())}")
+    progress = load_progress()
 
-    progress = {} if args.force else load_progress()
+    # --retry: solo fallidos
+    if args.retry:
+        retry_ids = {eid for eid, v in progress.items() if v.get("status") == "failed"}
+        log(f"Modo retry: {len(retry_ids)} edificios fallidos")
+        building_map = {eid: v for eid, v in building_map.items() if eid in retry_ids}
+        if not building_map:
+            log("No hay edificios fallidos que reintentar.", "OK")
+            return
+        args.force = True   # forzar reprocesado
+
     all_results = []
+    t_start = time.time()
 
     if args.all:
-        # Procesar en orden de prioridad
-        zonas_a_procesar = [z for z in ZONA_PRIORITY if z in zone_map]
-        # Añadir zonas no priorizadas al final
-        for z in sorted(zone_map.keys()):
-            if z not in zonas_a_procesar:
-                zonas_a_procesar.append(z)
-
-        log(f"Procesando {len(zonas_a_procesar)} zonas en orden: {zonas_a_procesar}")
-        for zona in zonas_a_procesar:
-            log(f"\n{'─'*40}")
-            log(f"ZONA: {zona.upper()}")
-            results = process_zona(zona, building_map, zone_map, progress, args.gpu)
+        zonas = ordered_zone_list(zone_map)
+        log(f"Procesando {len(zonas)} zonas: {zonas}\n")
+        for i, zona in enumerate(zonas, 1):
+            print(f"\n{'─' * 72}")
+            print(f"  [{i}/{len(zonas)}]  ZONA: {zona.upper()}")
+            print(f"{'─' * 72}")
+            results = process_zona(zona, building_map, zone_map, progress, args.gpu, args.force)
             all_results.extend(results)
     else:
         zona = args.zona.lower()
-        if zona not in zone_map and not any(
-            info["zona"] == zona for info in building_map.values()
-        ):
+        if zona not in zone_map and not any(v["zona"] == zona for v in building_map.values()):
             log(f"Zona '{zona}' no encontrada. Disponibles: {sorted(zone_map.keys())}", "ERR")
             sys.exit(1)
-        results = process_zona(zona, building_map, zone_map, progress, args.gpu)
+        results = process_zona(zona, building_map, zone_map, progress, args.gpu, args.force)
         all_results.extend(results)
 
-    print_summary(all_results)
+    elapsed = time.time() - t_start
+    print_summary(all_results, elapsed)
 
-    # Guardar reporte en el proyecto
-    report_path = PROJECT_ROOT / "Assets" / "AlsasuaData" / "photogrammetry_report.json"
-    existing = {}
-    if report_path.exists():
-        with open(report_path, "r", encoding="utf-8") as f:
-            existing = json.load(f)
+    # Actualizar photogrammetry_report.json
+    report = {"status": "pending", "edificios": []}
+    if PHOTOGRAMMETRY_REPORT.exists():
+        try:
+            with open(PHOTOGRAMMETRY_REPORT, "r", encoding="utf-8") as f:
+                report = json.load(f)
+        except json.JSONDecodeError:
+            pass
 
-    existing.update({
-        "status": "done",
-        "last_run": datetime.now().isoformat(),
-        "edificios": all_results,
-        "total": len(all_results),
-        "done": sum(1 for r in all_results if r.get("status") == "done"),
+    done_count = sum(1 for r in all_results if r.get("status") == "done")
+    report.update({
+        "status":          "done" if done_count > 0 else "pending",
+        "last_run":        datetime.now().isoformat(),
+        "total":           len(all_results),
+        "done":            done_count,
+        "failed":          sum(1 for r in all_results if r.get("status") == "failed"),
+        "time_minutes":    round(elapsed / 60, 1),
+        "edificios":       all_results,
     })
-    with open(report_path, "w", encoding="utf-8") as f:
-        json.dump(existing, f, indent=2, ensure_ascii=False)
+    with open(PHOTOGRAMMETRY_REPORT, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
 
-    log(f"Reporte guardado en {report_path}", "OK")
+    log(f"Reporte actualizado: {PHOTOGRAMMETRY_REPORT}", "OK")
 
 
 if __name__ == "__main__":
