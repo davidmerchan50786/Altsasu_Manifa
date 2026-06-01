@@ -1,10 +1,10 @@
 // Assets/Scripts/GeneradorInterioresSimples.cs
 // ═══════════════════════════════════════════════════════════════════════════
-//  GENERADOR DE INTERIORES SIMPLES — LOD0 (<28m del jugador)
+//  GENERADOR DE INTERIORES SIMPLES — LOD0 visibles a <28m del jugador
 //
-//  Genera quads 2×2m con luz interior para edificios cercanos.
-//  ObjectPool para quads y PointLights — sin GC en Update.
-//  Arquetipo detectado desde nombre del GameObject.
+//  Genera un quad 2×2m con textura procedural + PointLight interior para
+//  edificios cercanos que tengan ventanas o escaparates visibles.
+//  ObjectPool para quads/luces — sin instanciar/destruir cada frame.
 // ═══════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
@@ -14,48 +14,54 @@ using System.IO;
 [DefaultExecutionOrder(-48)]
 public class GeneradorInterioresSimples : MonoBehaviour
 {
-    // ── Singleton ─────────────────────────────────────────────────────────
     public static GeneradorInterioresSimples Instance { get; private set; }
 
-    // ── Inspector ─────────────────────────────────────────────────────────
+    // ── Configuración ──────────────────────────────────────────────────────
     [Header("Distancias LOD")]
-    [Tooltip("Radio de activación de interiores")]
-    public float radioActivacion  = 28f;
-    [Tooltip("Radio de desactivación (histéresis)")]
+    public float radioActivacion    = 28f;
     public float radioDesactivacion = 35f;
 
-    [Header("Pool sizes")]
-    public int poolInicialQuads  = 20;
-    public int poolInicialLuces  = 20;
+    [Header("Textura procedural")]
+    public int resolucionTextura = 512;
 
-    [Header("Textura fallback procesada")]
-    [Tooltip("Directorio con texturas procesadas por edificio_id")]
-    public string dirTexturasProcesadas =
-        "Assets/AlsasuaData/FacadeTextures/Processed";
+    [Header("Rutas")]
+    public string rutaFacadeTextures = "Assets/AlsasuaData/FacadeTextures/Processed";
 
-    // ── Tipos internos ────────────────────────────────────────────────────
-    enum Arquetipo { Bar, Comercio, Residencial, Industrial }
+    // ── Estado interno ─────────────────────────────────────────────────────
+    Transform _jugador;
 
-    class DatosInterior
+    struct DatosEdificio
     {
-        public GameObject quad;
-        public Light      luz;
-        public bool       activo;
+        public GameObject go;
+        public Vector3    posicion;
+        public string     arquetipo;
+        public string     edificioId;
     }
 
-    // ── Estado interno ────────────────────────────────────────────────────
-    Transform                         _jugador;
-    List<GameObject>                  _edificios    = new List<GameObject>(256);
-    Dictionary<GameObject, DatosInterior> _interiores = new Dictionary<GameObject, DatosInterior>(64);
+    readonly List<DatosEdificio> _edificios = new List<DatosEdificio>();
 
-    // Pools
-    Queue<GameObject> _poolQuads  = new Queue<GameObject>();
-    Queue<Light>      _poolLuces  = new Queue<Light>();
+    // Interiores activos: clave = InstanceID del GO de edificio
+    readonly Dictionary<int, InteriorActivo> _interioresActivos = new Dictionary<int, InteriorActivo>();
 
-    // Cache de texturas generadas por arquetipo (evita recrearlas cada vez)
-    Dictionary<Arquetipo, Texture2D> _texturasCache = new Dictionary<Arquetipo, Texture2D>();
+    struct InteriorActivo
+    {
+        public GameObject quadGO;
+        public Light      luz;
+    }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────
+    // ── Object Pool ────────────────────────────────────────────────────────
+    readonly Queue<GameObject> _poolQuads = new Queue<GameObject>();
+    readonly Queue<Light>      _poolLuces = new Queue<Light>();
+
+    // ── Caché de texturas procedurales (una por arquetipo) ─────────────────
+    readonly Dictionary<string, Texture2D> _texturasArquetipo = new Dictionary<string, Texture2D>();
+
+    Shader _shaderUnlit;
+    const string SHADER_UNLIT = "HDRP/Unlit";
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  LIFECYCLE
+    // ═══════════════════════════════════════════════════════════════════════
 
     void Awake()
     {
@@ -65,435 +71,426 @@ public class GeneradorInterioresSimples : MonoBehaviour
 
     void Start()
     {
-        // Buscar jugador
-        GameObject jugadorGO = GameObject.FindWithTag("Player");
+        _shaderUnlit = Shader.Find(SHADER_UNLIT) ?? Shader.Find("Unlit/Texture");
+
+        var jugadorGO = GameObject.FindWithTag("Player");
         if (jugadorGO != null) _jugador = jugadorGO.transform;
 
-        // Cachear todos los edificios bajo "Edificios_AAA"
-        GameObject raizEdificios = GameObject.Find("Edificios_AAA");
-        if (raizEdificios != null)
-        {
-            foreach (Transform hijo in raizEdificios.transform)
-                _edificios.Add(hijo.gameObject);
-        }
+        // Pre-generar texturas procedurales por arquetipo
+        _texturasArquetipo["Bar"]         = GenerarTexturaBar();
+        _texturasArquetipo["Comercio"]    = GenerarTexturaComercio();
+        _texturasArquetipo["Residencial"] = GenerarTexturaResidencial();
+        _texturasArquetipo["Industrial"]  = GenerarTexturaIndustrial();
+        _texturasArquetipo["Default"]     = GenerarTexturaResidencial();
 
-        // Pre-llenar pools
-        for (int i = 0; i < poolInicialQuads; i++)
-            _poolQuads.Enqueue(CrearQuadPool());
-
-        for (int i = 0; i < poolInicialLuces; i++)
-            _poolLuces.Enqueue(CrearLuzPool());
-
-        // Pre-generar texturas de arquetipo
-        GenerarTexturasCacheadas();
+        CachearEdificios();
     }
 
     void Update()
     {
-        if (_jugador == null) return;
+        // Localizar jugador si aún no se tiene referencia
+        if (_jugador == null)
+        {
+            var go = GameObject.FindWithTag("Player");
+            if (go != null) _jugador = go.transform;
+            else return;
+        }
 
         Vector3 posJugador = _jugador.position;
 
         for (int i = 0; i < _edificios.Count; i++)
         {
-            GameObject edificio = _edificios[i];
-            if (edificio == null) continue;
+            var dato = _edificios[i];
+            if (dato.go == null) continue;
 
-            float distSq = (edificio.transform.position - posJugador).sqrMagnitude;
+            float dist = Vector3.Distance(posJugador, dato.posicion);
+            int   id   = dato.go.GetInstanceID();
 
-            bool tieneInterior = _interiores.TryGetValue(edificio, out DatosInterior datos);
-
-            if (!tieneInterior || !datos.activo)
-            {
-                if (distSq < radioActivacion * radioActivacion)
-                    CrearInterior(edificio);
-            }
-            else
-            {
-                if (distSq > radioDesactivacion * radioDesactivacion)
-                    DestruirInterior(edificio);
-            }
+            if (dist < radioActivacion && !_interioresActivos.ContainsKey(id))
+                CrearInterior(dato);
+            else if (dist > radioDesactivacion && _interioresActivos.ContainsKey(id))
+                DestruirInterior(id);
         }
     }
 
     void OnDestroy()
     {
-        // Limpiar texturas generadas proceduralmente
-        foreach (var tex in _texturasCache.Values)
+        foreach (var interior in _interioresActivos.Values)
+        {
+            if (interior.quadGO != null) Destroy(interior.quadGO);
+            if (interior.luz    != null) Destroy(interior.luz.gameObject);
+        }
+        _interioresActivos.Clear();
+
+        foreach (var tex in _texturasArquetipo.Values)
             if (tex != null) Destroy(tex);
+        _texturasArquetipo.Clear();
     }
 
-    // ── Crear / Destruir interiores ────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    //  CACHEAR EDIFICIOS
+    // ═══════════════════════════════════════════════════════════════════════
 
-    void CrearInterior(GameObject edificio)
+    void CachearEdificios()
     {
-        // Detectar arquetipo
-        Arquetipo arquetipo = DetectarArquetipo(edificio.name);
+        _edificios.Clear();
+        var raiz = GameObject.Find("Edificios_AAA");
+        if (raiz == null)
+        {
+            Debug.LogWarning("[GeneradorInterioresSimples] No se encontró 'Edificios_AAA' en escena.");
+            return;
+        }
 
-        // Determinar fachada principal (buscar renderer de escaparate/vidrio)
-        Vector3 posQuad    = ObtenerPosicionInterior(edificio);
-        Vector3 normalFachada = -edificio.transform.forward; // Normal hacia afuera
+        foreach (Transform hijo in raiz.transform)
+        {
+            if (hijo == null) continue;
+            _edificios.Add(new DatosEdificio
+            {
+                go         = hijo.gameObject,
+                posicion   = hijo.position,
+                arquetipo  = ExtraerArquetipo(hijo.name),
+                edificioId = ExtraerEdificioId(hijo.name),
+            });
+        }
 
-        // --- Quad interior ---
-        GameObject quad = ObtenerQuadPool();
-        quad.transform.position   = posQuad;
-        quad.transform.rotation   = Quaternion.LookRotation(-normalFachada, Vector3.up);
-        quad.transform.localScale = new Vector3(2f, 2f, 1f);
-        quad.transform.SetParent(edificio.transform, true);
+        Debug.Log($"[GeneradorInterioresSimples] {_edificios.Count} edificios cacheados.");
+    }
 
-        // Textura: intentar textura procesada real primero
-        Texture2D tex = CargarTexturaReal(edificio.name);
-        if (tex == null)
-            _texturasCache.TryGetValue(arquetipo, out tex);
+    static string ExtraerArquetipo(string nombre)
+    {
+        string n = nombre.ToUpperInvariant();
+        if (n.Contains("BAR") || n.Contains("TABERNA") || n.Contains("RESTAURANTE")) return "Bar";
+        if (n.Contains("COMERCIO") || n.Contains("TIENDA") || n.Contains("TALLER"))  return "Comercio";
+        if (n.Contains("INDUSTRIAL") || n.Contains("NAVE") || n.Contains("FABRICA")) return "Industrial";
+        return "Residencial";
+    }
 
-        Renderer rend = quad.GetComponent<Renderer>();
-        if (rend != null && tex != null)
-            rend.material.mainTexture = tex;
+    static string ExtraerEdificioId(string nombre)
+    {
+        // Formato esperado: "Edificio_297646225" o "Bar_297646225_..."
+        var partes = nombre.Split('_');
+        foreach (var p in partes)
+            if (p.Length > 5 && long.TryParse(p, out _)) return p;
+        return string.Empty;
+    }
 
-        quad.SetActive(true);
+    // ═══════════════════════════════════════════════════════════════════════
+    //  CREAR INTERIOR
+    // ═══════════════════════════════════════════════════════════════════════
 
-        // --- Luz puntual ---
-        Light luz          = ObtenerLuzPool();
-        luz.transform.position = posQuad + normalFachada * 0.5f;
-        luz.transform.SetParent(edificio.transform, true);
-        ConfigurarLuz(luz, arquetipo);
+    void CrearInterior(DatosEdificio dato)
+    {
+        Transform fachada = EncontrarFachada(dato.go.transform);
+        if (fachada == null) return;
+
+        // Quad a 0.8m dentro de la fachada, normal apuntando hacia afuera
+        Vector3 normal  = fachada.forward;
+        Vector3 posQuad = fachada.position - normal * 0.8f;
+        posQuad.y       = dato.posicion.y + 1.5f;
+
+        // ── Quad interior ─────────────────────────────────────────────────
+        GameObject quadGO = ObtenerQuadPool();
+        quadGO.transform.position   = posQuad;
+        quadGO.transform.rotation   = Quaternion.LookRotation(normal);
+        quadGO.transform.localScale = new Vector3(2f, 2f, 1f);
+        quadGO.SetActive(true);
+
+        // Textura real si existe, si no procedural
+        Texture2D textura = CargarTexturaReal(dato.edificioId)
+                         ?? ObtenerTexturaProcedural(dato.arquetipo);
+
+        var rend = quadGO.GetComponent<Renderer>();
+        if (rend != null)
+        {
+            var mat = new Material(_shaderUnlit != null ? _shaderUnlit : Shader.Find("Standard"));
+            mat.mainTexture      = textura;
+            mat.enableInstancing = true;
+            rend.sharedMaterial  = mat;
+        }
+
+        // ── Luz interior ──────────────────────────────────────────────────
+        Light luz = ObtenerLuzPool();
+        luz.transform.position = posQuad - normal * 0.3f;
         luz.gameObject.SetActive(true);
+        ConfigurarLuz(luz, dato.arquetipo);
 
-        // --- Vidrio fachada (smoothness/transmitancia) ---
-        AplicarVidrio(edificio);
+        // ── Vidrio fachada ─────────────────────────────────────────────────
+        AplicarVidrio(dato.go.transform);
 
-        // Registrar
-        var datos = new DatosInterior { quad = quad, luz = luz, activo = true };
-        _interiores[edificio] = datos;
-    }
-
-    void DestruirInterior(GameObject edificio)
-    {
-        if (!_interiores.TryGetValue(edificio, out DatosInterior datos)) return;
-
-        // Devolver al pool
-        if (datos.quad != null)
+        _interioresActivos[dato.go.GetInstanceID()] = new InteriorActivo
         {
-            datos.quad.transform.SetParent(transform, true);
-            datos.quad.SetActive(false);
-            _poolQuads.Enqueue(datos.quad);
-        }
+            quadGO = quadGO,
+            luz    = luz,
+        };
+    }
 
-        if (datos.luz != null)
+    Transform EncontrarFachada(Transform raiz)
+    {
+        foreach (Transform t in raiz.GetComponentsInChildren<Transform>(true))
         {
-            datos.luz.transform.SetParent(transform, true);
-            datos.luz.gameObject.SetActive(false);
-            _poolLuces.Enqueue(datos.luz);
+            string n = t.name.ToUpperInvariant();
+            if (n.Contains("FACHADA") || n.Contains("ESCAPARATE") || n.Contains("FRENTE"))
+                return t;
         }
-
-        datos.activo = false;
+        var renderers = raiz.GetComponentsInChildren<Renderer>();
+        return renderers.Length > 0 ? renderers[0].transform : null;
     }
 
-    // ── Detección de arquetipo ─────────────────────────────────────────────
-
-    Arquetipo DetectarArquetipo(string nombre)
+    static void ConfigurarLuz(Light luz, string arquetipo)
     {
-        string n = nombre.ToLowerInvariant();
-        if (n.Contains("bar") || n.Contains("taberna") || n.Contains("jatetxe") ||
-            n.Contains("restaurante") || n.Contains("cafe"))
-            return Arquetipo.Bar;
-        if (n.Contains("comercio") || n.Contains("denda") || n.Contains("tienda") ||
-            n.Contains("supermercado") || n.Contains("farmacia"))
-            return Arquetipo.Comercio;
-        if (n.Contains("industrial") || n.Contains("nave") || n.Contains("fabrika") ||
-            n.Contains("almacen"))
-            return Arquetipo.Industrial;
-        return Arquetipo.Residencial;
-    }
-
-    // ── Posición interior (0.8m dentro de la fachada) ─────────────────────
-
-    Vector3 ObtenerPosicionInterior(GameObject edificio)
-    {
-        // Centro del edificio desplazado hacia dentro 0.8m desde la fachada principal
-        Vector3 centro = edificio.transform.position;
-        // La fachada principal asume que -forward es el frente
-        Vector3 dentro = edificio.transform.forward * 0.8f;
-        // Altura: 1.5m sobre la base del edificio
-        return new Vector3(centro.x + dentro.x, centro.y + 1.5f, centro.z + dentro.z);
-    }
-
-    // ── Vidrio ─────────────────────────────────────────────────────────────
-
-    void AplicarVidrio(GameObject edificio)
-    {
-        Renderer[] renderers = edificio.GetComponentsInChildren<Renderer>();
-        foreach (Renderer r in renderers)
-        {
-            string n = r.name.ToLowerInvariant();
-            if (n.Contains("escaparate") || n.Contains("vidrio") || n.Contains("cristal"))
-            {
-                foreach (Material mat in r.materials)
-                {
-                    if (mat.HasProperty("_Smoothness"))
-                        mat.SetFloat("_Smoothness", 0.92f);
-                    if (mat.HasProperty("_TransmittanceColorFactor"))
-                        mat.SetFloat("_TransmittanceColorFactor", 0.85f);
-                }
-            }
-        }
-    }
-
-    // ── Luz por arquetipo ──────────────────────────────────────────────────
-
-    void ConfigurarLuz(Light luz, Arquetipo arquetipo)
-    {
-        luz.type = LightType.Point;
-        switch (arquetipo)
-        {
-            case Arquetipo.Bar:
-                luz.color       = ColorDesdeKelvin(2700);
-                luz.intensity   = 2.5f;
-                luz.range       = 8f;
-                break;
-            case Arquetipo.Comercio:
-                luz.color       = ColorDesdeKelvin(4000);
-                luz.intensity   = 1.8f;
-                luz.range       = 6f;
-                break;
-            case Arquetipo.Industrial:
-                luz.color       = ColorDesdeKelvin(5000);
-                luz.intensity   = 1.0f;
-                luz.range       = 6f;
-                break;
-            default: // Residencial
-                luz.color       = ColorDesdeKelvin(3200);
-                luz.intensity   = 1.2f;
-                luz.range       = 5f;
-                break;
-        }
-        luz.shadows = LightShadows.None; // sin sombras para LOD de interiores
-    }
-
-    // Aproximación perceptual de temperatura de color (Kelvin → RGB lineal)
-    Color ColorDesdeKelvin(int kelvin)
-    {
-        float t = kelvin / 6500f;
-        float r = Mathf.Clamp01(1.0f);
-        float g = Mathf.Clamp01(0.5f + 0.5f * t);
-        float b = Mathf.Clamp01(t * 1.1f - 0.1f);
-        return new Color(r, g, b);
-    }
-
-    // ── Generación de texturas procedurales ───────────────────────────────
-
-    void GenerarTexturasCacheadas()
-    {
-        _texturasCache[Arquetipo.Bar]         = GenerarTexturaBar();
-        _texturasCache[Arquetipo.Comercio]    = GenerarTexturaComercio();
-        _texturasCache[Arquetipo.Residencial] = GenerarTexturaResidencial();
-        _texturasCache[Arquetipo.Industrial]  = GenerarTexturaIndustrial();
-    }
-
-    // Bar: fondo marrón oscuro + rectángulos simulando botellas
-    Texture2D GenerarTexturaBar()
-    {
-        int sz = 512;
-        Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGB24, false);
-        Color fondoBar = HexAColor("#2a1a0e");
-        Color botella  = HexAColor("#1a3320");
-        Color etiqueta = HexAColor("#c8a040");
-
-        // Fondo
-        RellenarTextura(tex, fondoBar);
-
-        // Botellas (rectángulos verticales)
-        int[] posX = { 60, 140, 220, 300, 380, 450 };
-        foreach (int px in posX)
-        {
-            // Cuerpo
-            DibujarRect(tex, px, 120, 22, 110, botella);
-            // Cuello
-            DibujarRect(tex, px + 5, 230, 12, 40, botella);
-            // Etiqueta
-            DibujarRect(tex, px + 2, 150, 18, 50, etiqueta);
-        }
-
-        // Barra horizontal oscura
-        DibujarRect(tex, 0, 80, sz, 30, HexAColor("#1a0e06"));
-
-        tex.Apply();
-        return tex;
-    }
-
-    // Comercio: fondo blanco + líneas verticales simulando estantes
-    Texture2D GenerarTexturaComercio()
-    {
-        int sz = 512;
-        Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGB24, false);
-        Color fondo    = HexAColor("#f0f0f0");
-        Color estante  = HexAColor("#c8b090");
-        Color producto = HexAColor("#e04030");
-
-        RellenarTextura(tex, fondo);
-
-        // Estantes horizontales
-        int[] alturas = { 80, 180, 280, 380 };
-        foreach (int y in alturas)
-        {
-            DibujarRect(tex, 0, y, sz, 8, estante);
-            // Productos encima
-            for (int x = 20; x < sz - 30; x += 40)
-                DibujarRect(tex, x, y + 8, 25, 50, ColorAleatorio(x + y));
-        }
-
-        tex.Apply();
-        return tex;
-    }
-
-    // Residencial: blanco cálido + silueta simple de muebles
-    Texture2D GenerarTexturaResidencial()
-    {
-        int sz = 512;
-        Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGB24, false);
-        Color fondo  = HexAColor("#f5f0e0");
-        Color mueble = HexAColor("#8b6940");
-        Color pared  = HexAColor("#e8e0d0");
-
-        RellenarTextura(tex, fondo);
-
-        // Pared del fondo más oscura
-        DibujarRect(tex, 0, 0, sz, sz / 3, pared);
-
-        // Sofá (silueta simple)
-        DibujarRect(tex, 80,  100, 350, 80, mueble);  // base sofá
-        DibujarRect(tex, 80,  180, 30,  60, mueble);  // brazo izq
-        DibujarRect(tex, 400, 180, 30,  60, mueble);  // brazo der
-        DibujarRect(tex, 110, 180, 290, 40, HexAColor("#7a5c30")); // respaldo
-
-        // Mesa baja
-        DibujarRect(tex, 150, 40, 200, 50, HexAColor("#6b4e28"));
-        DibujarRect(tex, 155, 10, 15, 35, HexAColor("#6b4e28")); // pata izq
-        DibujarRect(tex, 330, 10, 15, 35, HexAColor("#6b4e28")); // pata der
-
-        tex.Apply();
-        return tex;
-    }
-
-    // Industrial: gris oscuro vacío
-    Texture2D GenerarTexturaIndustrial()
-    {
-        int sz = 512;
-        Texture2D tex = new Texture2D(sz, sz, TextureFormat.RGB24, false);
-        RellenarTextura(tex, HexAColor("#303030"));
-        tex.Apply();
-        return tex;
-    }
-
-    // ── Textura real procesada ─────────────────────────────────────────────
-
-    Texture2D CargarTexturaReal(string nombreEdificio)
-    {
-        // Extraer edificio_id del nombre del GO (patrón: "Edificio_297646225_...")
-        string[] partes = nombreEdificio.Split('_');
-        foreach (string parte in partes)
-        {
-            if (parte.Length >= 6 && long.TryParse(parte, out _))
-            {
-                string ruta = Path.Combine(dirTexturasProcesadas, parte + ".png");
-                if (File.Exists(ruta))
-                {
-                    byte[] bytes = File.ReadAllBytes(ruta);
-                    Texture2D tex = new Texture2D(2, 2);
-                    if (tex.LoadImage(bytes))
-                    {
-                        tex.name = "FacadeReal_" + parte;
-                        return tex;
-                    }
-                }
-                break;
-            }
-        }
-        return null;
-    }
-
-    // ── Pool helpers ───────────────────────────────────────────────────────
-
-    GameObject CrearQuadPool()
-    {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        go.name = "InteriorQuad_Pool";
-        go.transform.SetParent(transform, false);
-        // Destruir collider — los quads de interior no necesitan físicas
-        Destroy(go.GetComponent<Collider>());
-
-        Renderer rend = go.GetComponent<Renderer>();
-        // Material HDRP/Unlit para que no reciba luz exterior
-        Material mat = new Material(Shader.Find("HDRP/Unlit"));
-        if (mat.shader == null || mat.shader.name == "Hidden/InternalErrorShader")
-        {
-            // Fallback si HDRP/Unlit no está disponible en el contexto actual
-            mat = new Material(Shader.Find("Unlit/Texture"));
-        }
-        mat.enableInstancing = true;
-        rend.material = mat;
-
-        go.SetActive(false);
-        return go;
-    }
-
-    Light CrearLuzPool()
-    {
-        GameObject go = new GameObject("InteriorLight_Pool");
-        go.transform.SetParent(transform, false);
-        Light luz = go.AddComponent<Light>();
         luz.type    = LightType.Point;
         luz.shadows = LightShadows.None;
-        go.SetActive(false);
-        return luz;
+
+        switch (arquetipo)
+        {
+            case "Bar":
+                luz.color     = ColorTemperatura(2700f);
+                luz.intensity = 2.5f;
+                luz.range     = 8f;
+                break;
+            case "Comercio":
+                luz.color     = ColorTemperatura(4000f);
+                luz.intensity = 1.8f;
+                luz.range     = 6f;
+                break;
+            case "Industrial":
+                luz.color     = ColorTemperatura(5000f);
+                luz.intensity = 0.8f;
+                luz.range     = 4f;
+                break;
+            default: // Residencial
+                luz.color     = ColorTemperatura(3200f);
+                luz.intensity = 1.2f;
+                luz.range     = 5f;
+                break;
+        }
     }
+
+    // Aproximación temperatura de color Kelvin → RGB
+    static Color ColorTemperatura(float kelvin)
+    {
+        float t = Mathf.InverseLerp(2000f, 6500f, kelvin);
+        return new Color(
+            Mathf.Lerp(1.00f, 0.85f, t),
+            Mathf.Lerp(0.72f, 0.93f, t),
+            Mathf.Lerp(0.40f, 1.00f, t)
+        );
+    }
+
+    static void AplicarVidrio(Transform raiz)
+    {
+        foreach (var rend in raiz.GetComponentsInChildren<Renderer>(true))
+        {
+            string n = rend.name.ToUpperInvariant();
+            if (!n.Contains("ESCAPARATE") && !n.Contains("VIDRIO")) continue;
+
+            foreach (var mat in rend.materials)
+            {
+                if (mat.HasProperty("_Smoothness"))
+                    mat.SetFloat("_Smoothness", 0.92f);
+                if (mat.HasProperty("_TransmittanceColorFactor"))
+                    mat.SetFloat("_TransmittanceColorFactor", 0.85f);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  DESTRUIR INTERIOR (devolver al pool)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    void DestruirInterior(int edificioId)
+    {
+        if (!_interioresActivos.TryGetValue(edificioId, out var interior)) return;
+
+        if (interior.quadGO != null)
+        {
+            interior.quadGO.SetActive(false);
+            _poolQuads.Enqueue(interior.quadGO);
+        }
+        if (interior.luz != null)
+        {
+            interior.luz.gameObject.SetActive(false);
+            _poolLuces.Enqueue(interior.luz);
+        }
+
+        _interioresActivos.Remove(edificioId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  OBJECT POOL
+    // ═══════════════════════════════════════════════════════════════════════
 
     GameObject ObtenerQuadPool()
     {
-        if (_poolQuads.Count > 0)
-            return _poolQuads.Dequeue();
-        return CrearQuadPool();
+        if (_poolQuads.Count > 0) return _poolQuads.Dequeue();
+
+        var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        go.name = "Interior_Quad";
+        Destroy(go.GetComponent<Collider>());
+        go.transform.SetParent(transform);
+        return go;
     }
 
     Light ObtenerLuzPool()
     {
-        if (_poolLuces.Count > 0)
-            return _poolLuces.Dequeue();
-        return CrearLuzPool();
+        if (_poolLuces.Count > 0) return _poolLuces.Dequeue();
+
+        var go = new GameObject("Interior_Luz");
+        go.transform.SetParent(transform);
+        return go.AddComponent<Light>();
     }
 
-    // ── Utilidades textura ─────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    //  TEXTURAS PROCEDURALES
+    // ═══════════════════════════════════════════════════════════════════════
 
-    void RellenarTextura(Texture2D tex, Color color)
+    Texture2D ObtenerTexturaProcedural(string arquetipo)
     {
-        Color[] pixels = new Color[tex.width * tex.height];
-        for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
+        return _texturasArquetipo.TryGetValue(arquetipo, out var t) ? t : _texturasArquetipo["Default"];
+    }
+
+    Texture2D GenerarTexturaBar()
+    {
+        int res = resolucionTextura;
+        var tex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        RellenarColor(tex, HexColor("#2a1a0e"));
+
+        // Mostrador
+        DibujarRect(tex, 0, Mathf.RoundToInt(res * 0.28f), res, Mathf.RoundToInt(res * 0.04f), HexColor("#5a3010"));
+
+        // Botellas: rectángulos verticales alternos
+        Color[] colorBotellas = { HexColor("#4a2e10"), HexColor("#1a0a04") };
+        for (int i = 0; i < 12; i++)
+        {
+            int bx = Mathf.RoundToInt(res * (0.05f + i * 0.08f));
+            int by = Mathf.RoundToInt(res * 0.30f);
+            int bw = Mathf.RoundToInt(res * 0.04f);
+            int bh = Mathf.RoundToInt(res * 0.45f);
+            DibujarRect(tex, bx, by, bw, bh, colorBotellas[i % 2]);
+        }
+
+        tex.Apply();
+        return tex;
+    }
+
+    Texture2D GenerarTexturaComercio()
+    {
+        int res = resolucionTextura;
+        var tex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        RellenarColor(tex, HexColor("#f0f0f0"));
+
+        // Estantes horizontales
+        for (int i = 0; i < 5; i++)
+        {
+            int ey = Mathf.RoundToInt(res * (0.15f + i * 0.15f));
+            DibujarRect(tex, 0, ey, res, Mathf.RoundToInt(res * 0.012f), HexColor("#cccccc"));
+        }
+        // Separadores verticales
+        for (int i = 0; i < 4; i++)
+        {
+            int vx = Mathf.RoundToInt(res * (0.2f + i * 0.2f));
+            DibujarRect(tex, vx, 0, Mathf.RoundToInt(res * 0.008f), res, HexColor("#e0e0e0"));
+        }
+        // Productos en estantes
+        Color[] productos = { HexColor("#e74c3c"), HexColor("#3498db"), HexColor("#2ecc71"), HexColor("#f39c12") };
+        int idx = 0;
+        for (int fi = 0; fi < 5; fi++)
+        {
+            int py = Mathf.RoundToInt(res * (0.15f + fi * 0.15f)) + Mathf.RoundToInt(res * 0.015f);
+            for (int ci = 0; ci < 8; ci++)
+            {
+                int px = Mathf.RoundToInt(res * (0.04f + ci * 0.12f));
+                DibujarRect(tex, px, py, Mathf.RoundToInt(res * 0.07f), Mathf.RoundToInt(res * 0.09f), productos[idx++ % productos.Length]);
+            }
+        }
+
+        tex.Apply();
+        return tex;
+    }
+
+    Texture2D GenerarTexturaResidencial()
+    {
+        int res = resolucionTextura;
+        var tex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        RellenarColor(tex, HexColor("#f5f0e0"));
+
+        // Sofá
+        DibujarRect(tex, Mathf.RoundToInt(res * 0.10f), Mathf.RoundToInt(res * 0.15f),
+                    Mathf.RoundToInt(res * 0.60f), Mathf.RoundToInt(res * 0.25f), HexColor("#c8a87a"));
+        // Respaldo sofá
+        DibujarRect(tex, Mathf.RoundToInt(res * 0.10f), Mathf.RoundToInt(res * 0.38f),
+                    Mathf.RoundToInt(res * 0.60f), Mathf.RoundToInt(res * 0.08f), HexColor("#b89060"));
+        // Mesa baja
+        DibujarRect(tex, Mathf.RoundToInt(res * 0.15f), Mathf.RoundToInt(res * 0.05f),
+                    Mathf.RoundToInt(res * 0.45f), Mathf.RoundToInt(res * 0.08f), HexColor("#8b6914"));
+        // Pantalla lámpara
+        DibujarRect(tex, Mathf.RoundToInt(res * 0.75f), Mathf.RoundToInt(res * 0.60f),
+                    Mathf.RoundToInt(res * 0.12f), Mathf.RoundToInt(res * 0.12f), HexColor("#fff0c0"));
+        // Pie lámpara
+        DibujarRect(tex, Mathf.RoundToInt(res * 0.80f), Mathf.RoundToInt(res * 0.05f),
+                    Mathf.RoundToInt(res * 0.02f), Mathf.RoundToInt(res * 0.58f), HexColor("#888888"));
+
+        tex.Apply();
+        return tex;
+    }
+
+    Texture2D GenerarTexturaIndustrial()
+    {
+        int res = resolucionTextura;
+        var tex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        RellenarColor(tex, HexColor("#303030"));
+        tex.Apply();
+        return tex;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    static void RellenarColor(Texture2D tex, Color c)
+    {
+        var pixels = new Color[tex.width * tex.height];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = c;
         tex.SetPixels(pixels);
     }
 
-    void DibujarRect(Texture2D tex, int x, int y, int w, int h, Color color)
+    static void DibujarRect(Texture2D tex, int x, int y, int w, int h, Color c)
     {
-        int maxX = Mathf.Min(x + w, tex.width);
-        int maxY = Mathf.Min(y + h, tex.height);
-        for (int py = Mathf.Max(y, 0); py < maxY; py++)
-            for (int px = Mathf.Max(x, 0); px < maxX; px++)
-                tex.SetPixel(px, py, color);
+        x = Mathf.Clamp(x, 0, tex.width  - 1);
+        y = Mathf.Clamp(y, 0, tex.height - 1);
+        w = Mathf.Clamp(w, 1, tex.width  - x);
+        h = Mathf.Clamp(h, 1, tex.height - y);
+        for (int py = y; py < y + h; py++)
+            for (int px = x; px < x + w; px++)
+                tex.SetPixel(px, py, c);
     }
 
-    Color HexAColor(string hex)
+    static Color HexColor(string hex)
     {
-        hex = hex.TrimStart('#');
-        if (hex.Length != 6) return Color.magenta;
-        float r = System.Convert.ToInt32(hex.Substring(0, 2), 16) / 255f;
-        float g = System.Convert.ToInt32(hex.Substring(2, 2), 16) / 255f;
-        float b = System.Convert.ToInt32(hex.Substring(4, 2), 16) / 255f;
-        return new Color(r, g, b);
+        ColorUtility.TryParseHtmlString(hex, out Color c);
+        return c;
     }
 
-    // Color semi-aleatorio determinista para productos de comercio
-    Color ColorAleatorio(int seed)
+    // ═══════════════════════════════════════════════════════════════════════
+    //  CARGA TEXTURA REAL DESDE DISCO
+    // ═══════════════════════════════════════════════════════════════════════
+
+    Texture2D CargarTexturaReal(string edificioId)
     {
-        float h = (seed * 0.618033988f) % 1f;
-        return Color.HSVToRGB(h, 0.7f, 0.85f);
+        if (string.IsNullOrEmpty(edificioId)) return null;
+
+        // Ruta relativa al directorio raíz del proyecto (junto a Assets/)
+        string proyectoRaiz = Application.dataPath.Replace("/Assets", "").Replace("\\Assets", "");
+        string dirPath      = Path.Combine(proyectoRaiz, rutaFacadeTextures.Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+        if (!Directory.Exists(dirPath)) return null;
+
+        string[] archivos = Directory.GetFiles(dirPath, $"*{edificioId}*", SearchOption.TopDirectoryOnly);
+        if (archivos.Length == 0) return null;
+
+        byte[] bytes = File.ReadAllBytes(archivos[0]);
+        var tex = new Texture2D(2, 2);
+        if (tex.LoadImage(bytes)) return tex;
+
+        Destroy(tex);
+        return null;
     }
 }
