@@ -57,6 +57,11 @@ public class SistemaZonas : MonoBehaviour
     readonly HashSet<Vector2Int>                        _enCola        = new(); // shadow set para Contains O(1)
     bool _desactivacionEnCurso; // BUG FIX 12: guard para evitar corrutinas ProcesarDesactivaciones concurrentes
 
+    // BUG FIX: guardar referencia a BucleCarga para poder cancelarlo en OnDestroy.
+    // Sin referencia, si SistemaZonas se destruye mientras CargarZona está en yield,
+    // la inner coroutine accede a _parentEdificios/this._zonas ya destruidos → NullRef.
+    Coroutine _crBucleCarga;
+
     // Buffers reutilizables — evitan allocations en ActualizarZonasActivas y ProcesarDesactivaciones
     readonly HashSet<Vector2Int>  _deseadasBuffer  = new(25);
     readonly List<Vector2Int>     _aEliminarBuffer = new(16);
@@ -101,6 +106,9 @@ public class SistemaZonas : MonoBehaviour
     void OnDestroy()
     {
         AltsasuCore.OnJugadorSpawned -= OnJugadorSpawned;
+        // BUG FIX: cancelar BucleCarga para evitar que acceda a _parentEdificios/_zonas
+        // ya destruidos si SistemaZonas es destruido mientras la corrutina está en yield.
+        if (_crBucleCarga != null) StopCoroutine(_crBucleCarga);
     }
 
     void OnJugadorSpawned(Transform t) { _jugador = t; }
@@ -118,7 +126,8 @@ public class SistemaZonas : MonoBehaviour
         }
 
         AlsasuaLogger.Info("Zonas", $"Índice listo: {_datosPorZona.Count} zonas con edificios");
-        StartCoroutine(BucleCarga());
+        // BUG FIX: asignar referencia para poder cancelar el bucle en OnDestroy.
+        _crBucleCarga = StartCoroutine(BucleCarga());
     }
 
     void Update()
@@ -270,6 +279,9 @@ public class SistemaZonas : MonoBehaviour
 
             foreach (var e in edificios)
             {
+                // BUG FIX: guard post-yield — si SistemaZonas fue destruido mientras
+                // esperábamos el frame (yield return null), _parentEdificios ya no existe.
+                if (this == null || _parentEdificios == null) yield break;
                 if (edificiosAAA != null)
                     edificiosAAA.ConstruirEdificio(e, info.root.transform);
                 else
@@ -279,6 +291,9 @@ public class SistemaZonas : MonoBehaviour
             }
         }
 
+        // BUG FIX: guard post-loop antes de tocar _parentCalles
+        if (this == null || _parentCalles == null) yield break;
+
         // ── Calles ──────────────────────────────────────────────────────
         if (_callesPorZona.TryGetValue(key, out var calles))
         {
@@ -287,6 +302,7 @@ public class SistemaZonas : MonoBehaviour
             rootCalles.transform.SetParent(_parentCalles);
             foreach (var c in calles)
             {
+                if (this == null) yield break;
                 GeneradorMundoOSM.Instance?.ConstruirCalle(c, rootCalles.transform);
                 if (++lote >= buildingsPerFrame) { lote = 0; yield return null; }
             }

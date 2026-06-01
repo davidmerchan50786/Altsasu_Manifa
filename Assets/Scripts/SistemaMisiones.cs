@@ -44,18 +44,31 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
         IniciarMision(new Mision_RobarCoche());
     }
 
+    // BUG FIX: guardar referencia a CompletarObjetivo para:
+    // 1. Evitar múltiples instancias concurrentes si la condición permanece true
+    //    varios frames antes de que la corrutina incremente _objetivoActual
+    //    (→ obj.AlCompletar invocado N veces, dinero ganado N veces, crash por
+    //    _objetivoActual fuera de rango en la segunda instancia).
+    // 2. Poder cancelarlo si la misión se reinicia o el objeto es destruido.
+    Coroutine _crCompletarObjetivo;
+
     private void Update()
     {
         if (!_enMision || _misionActual == null) return;
         var obj = _misionActual.Objetivos[_objetivoActual];
+        // Guard: no iniciar si ya hay una completar en curso
+        if (_crCompletarObjetivo != null) return;
         if (obj.Condicion != null && obj.Condicion())
-            StartCoroutine(CompletarObjetivo());
+            _crCompletarObjetivo = StartCoroutine(CompletarObjetivo());
     }
 
     // ─────────────────────────────────────────────────────────────────────
 
     public void IniciarMision(Mision mision)
     {
+        // BUG FIX: cancelar cualquier CompletarObjetivo en curso al iniciar nueva misión
+        // para evitar que el callback del objetivo anterior ejecute sobre el estado nuevo.
+        if (_crCompletarObjetivo != null) { StopCoroutine(_crCompletarObjetivo); _crCompletarObjetivo = null; }
         _misionActual  = mision;
         _objetivoActual = 0;
         _enMision = true;
@@ -94,6 +107,8 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
         {
             MostrarTexto(_misionActual.Nombre, _misionActual.Objetivos[_objetivoActual].Descripcion);
         }
+        // BUG FIX: limpiar referencia al terminar para que Update() pueda lanzar el siguiente objetivo.
+        _crCompletarObjetivo = null;
     }
 
     // ─────────────────────────────────────────────────────────────────────

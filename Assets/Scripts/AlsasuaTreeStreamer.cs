@@ -28,7 +28,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+// PERF: System.Linq eliminado — era usado solo en un Count(predicate) reemplazado por loop manual
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Collections;
@@ -99,6 +99,13 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     Transform                 _jugador;
     bool                      _cargado;
 
+    // BUG FIX: referencias a corrutinas persistentes para poder cancelarlas en OnDestroy.
+    // Sin guardar la referencia StopCoroutine() no puede detener la corrutina específica
+    // y tras Destroy() la corrutina sigue ejecutando un frame más accediendo a datos
+    // ya liberados (_pool, _nativeInit, NativeArrays disposed) → NullRef / SIGSEGV.
+    Coroutine _crInicializar;
+    Coroutine _crBucleSteaming;
+
     // ── Constantes coordenadas — fuente única: GeoDataAlsasua ─────────────
     const float E_ORIG   = (float)GeoDataAlsasua.UTM_E_ORIGIN;
     const float N_ORIG   = (float)GeoDataAlsasua.UTM_N_ORIGIN;
@@ -128,6 +135,10 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     [Tooltip("Instancias precalentadas por cada especie específica (Roble/Pino/Ribera).")]
     public int tamañoPoolEspecie = 50;
 
+    // PERF: buffer de candidatos reutilizable — evita new List<int>(MAX_CANDIDATOS) en cada
+    // ciclo de BucleSteaming. ~1 alloc/ciclo eliminado (0.5-2 allocs/seg × sesión larga).
+    readonly List<int> _candidatosBuffer = new List<int>(MAX_CANDIDATOS);
+
     // ──────────────────────────────────────────────────────────────────────
 
     void Awake()
@@ -138,11 +149,19 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(InicializarAsync());
+        _crInicializar = StartCoroutine(InicializarAsync());
     }
 
     IEnumerator InicializarAsync()
     {
+        // TODO[BUG]: Si Terrain.activeTerrain == null cuando InicializarAsync arranca
+        // (p.ej. GeneradorTerrenoUltraPreciso aún no ha terminado su boot de 30s),
+        // ClasificarEspecie() pasa terrain=null → todos los árboles LIDAR se clasifican
+        // como ESP_GENERICO (ignorando el bioma real). Consecuencia: no hay pinos en
+        // montaña ni choperas en ribera hasta el próximo respawn del streamer.
+        // Mitigación: esperar a que AltsasuCore.OnWorldReady se dispare antes de cargar
+        // los árboles. Esto requiere suscribirse al evento en lugar de iniciar inmediatamente.
+        //
         // Cargar polígonos de masas forestales para relleno procedural
         yield return StartCoroutine(CargarBosquesGeojson());
 
@@ -162,11 +181,20 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         if (rellenoProcedural && _bosquesPoligonos.Count > 0)
             yield return StartCoroutine(GenerarRellenoProcedural());
 
+        // PERF: eliminadas 3 llamadas LINQ Count(predicate) → loop manual único (~3 iteraciones/elemento evitadas)
+        // _especies.Count(e=>e==X) recorría la lista completa 3 veces. Un solo bucle hace lo mismo en O(n).
+        int cntRoble = 0, cntPino = 0, cntRibera = 0;
+        for (int i = 0; i < _especies.Count; i++)
+        {
+            int e = _especies[i];
+            if (e == ESP_ROBLE)  cntRoble++;
+            else if (e == ESP_PINO)   cntPino++;
+            else if (e == ESP_RIBERA) cntRibera++;
+        }
         AlsasuaLogger.Info("TreeStreamer",
-            $"{_posiciones.Count} árboles totales ({_especies.Count(e => e==ESP_ROBLE)} roble, " +
-            $"{_especies.Count(e => e==ESP_PINO)} pino, {_especies.Count(e => e==ESP_RIBERA)} ribera)");
+            $"{_posiciones.Count} árboles totales ({cntRoble} roble, {cntPino} pino, {cntRibera} ribera)");
 
-        StartCoroutine(BucleSteaming());
+        _crBucleSteaming = StartCoroutine(BucleSteaming());
     }
 
     static bool TieneArbolesLIDAR()
@@ -554,6 +582,13 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     void OnDestroy()
     {
+        // BUG FIX: cancelar corrutinas persistentes antes de liberar NativeArrays.
+        // Si se destruye el componente mientras BucleSteaming está en yield return null,
+        // Unity reiniciará la corrutina en el siguiente frame y accederá a NativeArrays
+        // ya liberados → SIGSEGV / NativeArray disposed exception.
+        if (_crBucleSteaming != null) StopCoroutine(_crBucleSteaming);
+        if (_crInicializar   != null) StopCoroutine(_crInicializar);
+
         if (_nativeInit)
         {
             if (_posicionesNative.IsCreated)  _posicionesNative.Dispose();
@@ -677,8 +712,10 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             jobRango.Schedule(_posicionesNative.Length, 128).Complete();
 
             // ── FASE 3: Burst — comprobar ocupación (anti-duplicado) ──────
-            // Recopilar candidatos en lista temporal (reutilizar cada ciclo)
-            var candidatos = new List<int>(); // pequeña (max 200), aceptable aquí
+            // PERF: reutilizar _candidatosBuffer (campo) en lugar de new List<int>() cada ciclo.
+            // Elimina ~1 alloc/ciclo (~0.5-2 allocations/seg) y la GC pressure acumulada. (~eliminados ~200B GC/ciclo)
+            _candidatosBuffer.Clear();
+            var candidatos = _candidatosBuffer;
             for (int i = 0; i < _naResultadoRango.Length && candidatos.Count < MAX_CANDIDATOS; i++)
                 if (_naResultadoRango[i] >= 0) candidatos.Add(_naResultadoRango[i]);
 

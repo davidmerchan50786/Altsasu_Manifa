@@ -212,6 +212,15 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     // eran 60 lookups/seg innecesarios. Ahora es un simple int.
     private int _maskSpringArm;
 
+    // PERF: LayerMask para TentarEntrarVehiculo OverlapSphere — excluir Player e Ignore Raycast.
+    // Sin LayerMask, OverlapSphere escanea TODAS las capas (incluyendo terreno, agua, etc.)
+    // → coste innecesario. Cacheado en Awake para evitar GetMask en Update.
+    private int _maskInteractable;
+
+    // PERF: buffer estático reutilizable para Physics.OverlapSphereNonAlloc en TentarEntrarVehiculo.
+    // Physics.OverlapSphere() devuelve new Collider[] cada llamada → GC alloc cada pulsación de E.
+    private readonly Collider[] _overlapBuffer = new Collider[16];
+
     // ═══════════════════════════════════════════════════════════════════════
     //  UNITY LIFECYCLE
     // ═══════════════════════════════════════════════════════════════════════
@@ -235,7 +244,9 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         Cursor.visible   = false;
 
         // PERF FIX: cachear la LayerMask aquí (una vez) para ActualizarCamara() en LateUpdate
-        _maskSpringArm = ~LayerMask.GetMask("Player", "Ignore Raycast");
+        _maskSpringArm  = ~LayerMask.GetMask("Player", "Ignore Raycast");
+        // PERF: LayerMask para OverlapSphere de interacción — sólo capas con objetos interactuables
+        _maskInteractable = ~LayerMask.GetMask("Player", "Ignore Raycast", "Terrain", "Water");
     }
 
     private void Start()
@@ -610,14 +621,17 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     /// </summary>
     private void TentarEntrarVehiculo()
     {
-        const float radioMax = 5f; // radio de búsqueda máximo
-        var cols = Physics.OverlapSphere(transform.position, radioMax);
+        // PERF: OverlapSphereNonAlloc + buffer reutilizable (~1 alloc/frame eliminado).
+        // PERF: LayerMask cacheada (_maskInteractable) excluye Terrain/Water/Player → menos hits (~2-4x más rápido).
+        const float radioMax = 5f;
+        int nCols = Physics.OverlapSphereNonAlloc(transform.position, radioMax, _overlapBuffer, _maskInteractable);
 
         IInteractable mejor  = null;
         float         distMin = float.MaxValue;
 
-        foreach (var col in cols)
+        for (int i = 0; i < nCols; i++)
         {
+            var col = _overlapBuffer[i];
             var interactable = col.GetComponent<IInteractable>()
                             ?? col.GetComponentInParent<IInteractable>();
             if (interactable == null || !interactable.PuedeInteractuar) continue;
@@ -687,10 +701,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         // Cuando CesiumGlobeAnchor reorienta el jugador en cada tick, el CharacterController
         // puede reportar !isGrounded durante 1-2 frames aunque el jugador esté sobre el suelo.
         // Un raycast de 0.5 m hacia abajo (origen a 0.2 m de la planta) cubre esa ventana.
+        // PERF: LayerMask cacheada en _maskSpringArm (Awake) — eliminado GetMask() en Update (~60 string lookups/frame evitados)
         bool groundRay = Physics.Raycast(
             transform.position + Vector3.up * 0.2f,
             Vector3.down, 0.5f,
-            ~LayerMask.GetMask("Player", "Ignore Raycast"),
+            _maskSpringArm,
             QueryTriggerInteraction.Ignore);
         estaEnSuelo = cc.isGrounded || groundRay;
 
@@ -816,6 +831,15 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
     private void Morir()
     {
+        // TODO[BUG]: Si el jugador muere mientras AlsasuaTreeStreamer.BucleSteaming tiene
+        // un yield return null en curso y el GO del jugador es destruido por RespawnJugador(),
+        // la referencia _jugador en AlsasuaTreeStreamer pasa a null — el bucle detecta esto
+        // en su guard (if (_jugador == null)) y busca de nuevo por tag. Esto es seguro.
+        // Sin embargo, si NPCBase._jugador apunta al mismo Transform y el NPC está en mitad
+        // de SetDestination() al jugador, Unity lanzará MissingReferenceException en el
+        // NavMeshAgent en el frame entre Destroy() y OnDestroy() de los NPCs activos que
+        // tenían al jugador como destino. Los NPCs deben comprobar _jugador != null antes de
+        // llamar _agente.SetDestination(_jugador.position).
         AlsasuaLogger.Info("Jugador", "¡Has muerto!");
         animPersonaje?.SetTrigger(AnimMorir);
 

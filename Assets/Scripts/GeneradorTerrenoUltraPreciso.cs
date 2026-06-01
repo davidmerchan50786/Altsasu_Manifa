@@ -103,7 +103,15 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     IEnumerator Start()
     {
         if (!aplicarAutomatico) yield break;
-        while (Terrain.activeTerrain == null) yield return new WaitForSeconds(0.3f);
+        // BUG FIX: bucle infinito sin timeout → si el terreno nunca aparece la corrutina
+        // vive para siempre consumiendo un slot de corrutina por frame. Límite de 30s.
+        float tw = 0f;
+        while (Terrain.activeTerrain == null && tw < 30f) { tw += 0.3f; yield return new WaitForSeconds(0.3f); }
+        if (Terrain.activeTerrain == null)
+        {
+            AlsasuaLogger.Warn("TerrenoAAA", "Terrain no disponible tras 30s — GeneradorTerreno inactivo");
+            yield break;
+        }
         yield return null;
         yield return StartCoroutine(AplicarMejorDTM());
     }
@@ -163,6 +171,14 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             AlsasuaLogger.Warn("TerrenoAAA",
                 "Sin datos de elevación. Ejecuta PipelineLIDAR_Completo.py");
         }
+        // TODO[BUG]: Si AplicarMejorDTM() falla a mitad (p.ej. td.SetHeights lanza OutOfMemory
+        // con outRes=2049 en plataformas con <1GB RAM libre), el terrain queda en estado
+        // parcialmente modificado: td.heightmapResolution fue cambiado a outRes pero el array
+        // heights[] no fue aplicado. Consecuencia: Unity usa datos de heightmap corruptos de
+        // resolución nueva pero con valores de la resolución anterior → spikes visuales, ríos
+        // flotantes y NavMesh incorrecto. Condición: máquinas con <4GB RAM o builds de 32 bits.
+        // Solución completa: guardar snapshot del heightmap original antes de modificarlo y
+        // restaurarlo en el catch de BootFase o en un nuevo método RollbackTerrain().
     }
 
     // ════════════════════════════════════════════════════════════════════════

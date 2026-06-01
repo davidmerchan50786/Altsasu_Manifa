@@ -250,6 +250,15 @@ public class SistemaChunks : MonoBehaviour
     private IEnumerator DesactivarDiferido(Chunk c, int idx)
     {
         yield return null; // esperar un frame
+        // TODO[BUG]: si el jugador entra en vehículo mientras cruza el radio de desactivación,
+        // jugador.position sigue siendo la posición del jugador (hijo del vehículo), no la del
+        // vehículo raíz — puede diferir varios metros → ComprobarChunks puede desactivar el
+        // chunk donde está el vehículo → colisiones desaparecen con el jugador/vehículo dentro
+        // → caída al vacío. Condición: JugadorEnVehiculo == true y vehículo cerca del borde de
+        // radio de desactivación. Consecuencia: SIGSEGV/caída al void.
+        // Solución requiere que ControladorVehiculoJugador exponga posición del vehículo activo
+        // y ComprobarChunks la use cuando ServiceLocator.Get<ISpawnService>().JugadorEnVehiculo.
+        //
         // BUG FIX 2: doble guard — verificar que el chunk sigue activo Y
         // que el GO sigue existiendo (puede haber sido destruido por SceneManager
         // o por ActivarTodo/DesactivarTodo llamados durante ese frame).
@@ -297,6 +306,11 @@ public class SistemaChunks : MonoBehaviour
     // GUIStyle cacheado — new GUIStyle() en OnGUI() es un alloc por frame
     private GUIStyle _guiStyle;
 
+    // PERF: cache del texto de debug — reconstruir solo cuando cambia el número de activos.
+    // Sin cache, la interpolación $"" genera 3 strings nuevos cada frame a 60fps (~180 allocs/seg).
+    private int    _guiCacheActivos  = -1;
+    private string _guiCacheTexto   = "";
+
     private void OnGUI()
     {
         if (!mostrarGUI || (!Application.isEditor && !Debug.isDebugBuild)) return;
@@ -309,11 +323,17 @@ public class SistemaChunks : MonoBehaviour
             padding   = new RectOffset(6, 6, 4, 4)
         };
 
-        string txt = $"CHUNKS: {_activos.Count} / {ChunksTotales} activos\n" +
-                     $"Radio act.: {radioActivacion} m  desact.: {radioDesactivacion} m\n" +
-                     $"Intervalo: {intervaloCheck} s";
+        // PERF: reconstruir el string solo cuando cambia _activos.Count (~eliminados ~180 allocs/seg).
+        // radioActivacion e intervaloCheck son constantes en runtime → no necesitan recalcularse.
+        if (_activos.Count != _guiCacheActivos)
+        {
+            _guiCacheActivos = _activos.Count;
+            _guiCacheTexto   = $"CHUNKS: {_activos.Count} / {ChunksTotales} activos\n" +
+                               $"Radio act.: {radioActivacion} m  desact.: {radioDesactivacion} m\n" +
+                               $"Intervalo: {intervaloCheck} s";
+        }
 
-        GUI.Box(new Rect(10, 10, 260, 60), txt, _guiStyle);
+        GUI.Box(new Rect(10, 10, 260, 60), _guiCacheTexto, _guiStyle);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

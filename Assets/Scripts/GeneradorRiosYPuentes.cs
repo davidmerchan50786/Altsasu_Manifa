@@ -937,12 +937,33 @@ public class GeneradorRiosYPuentes : MonoBehaviour
     [ContextMenu("Regenerar Ríos y Puentes")]
     public void RegenerarDesdeEditor()
     {
-        // Limpiar instancias anteriores
-        foreach (Transform ch in _parentAgua)  Destroy(ch.gameObject);
-        foreach (Transform ch in _parentPuentes) Destroy(ch.gameObject);
-        _cauces.Clear(); _puentes.Clear();
+        // BUG FIX 1: limpiar planosAgua ANTES de Clear() — después la lista está vacía.
         foreach (var c in _cauces) c.planosAgua.Clear();
-        StartCoroutine(Start());
+        // Limpiar instancias anteriores
+        if (_parentAgua    != null) foreach (Transform ch in _parentAgua)    Destroy(ch.gameObject);
+        if (_parentPuentes != null) foreach (Transform ch in _parentPuentes) Destroy(ch.gameObject);
+        _cauces.Clear(); _puentes.Clear(); _puntosLidarAgua.Clear();
+        // BUG FIX 2: no llamar StartCoroutine(Start()) — Start() es el IEnumerator del ciclo
+        // de vida de Unity y re-ejecutarlo como corrutina omite la espera de Terrain y duplica
+        // los GameObjects _parentAgua/_parentPuentes. Usar AplicarMejorDTM o un método de reinicio.
+        StartCoroutine(Regenerar());
+    }
+
+    IEnumerator Regenerar()
+    {
+        _parentAgua    = new GameObject("Agua_Rios").transform;
+        _parentPuentes = new GameObject("Puentes").transform;
+        _parentAgua.SetParent(transform, false);
+        _parentPuentes.SetParent(transform, false);
+
+        yield return StartCoroutine(CargarGeoJSON());
+        yield return StartCoroutine(CargarLidarAguaYPuentes());
+        if (_cauces.Count == 0) yield break;
+        yield return StartCoroutine(ExcavarTerrain());
+        yield return StartCoroutine(CrearPlanosAgua());
+        yield return StartCoroutine(ColocarAguaLidar());
+        yield return StartCoroutine(ColocarPuentes());
+        AlsasuaLogger.Info("Rios", $"✅ Regenerado: {_cauces.Count} cauces, {_puentes.Count} puentes");
     }
 
     // ════════════════════════════════════════════════════════════════════════

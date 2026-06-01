@@ -111,6 +111,9 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 
     // ─── Estado ───────────────────────────────────────────────────────────────
     private bool  _jugadorVivo = false;
+    // BUG FIX: guardar referencia al respawn para cancelarlo en OnDestroy y evitar
+    // que acceda a jugadorActivo ya destruido tras un cambio de escena.
+    private Coroutine _crRespawn;
 
     // HUD cache — evita string allocs en Update
     private int    _hudDineroCache      = int.MinValue;
@@ -170,6 +173,10 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 
     void OnDestroy()
     {
+        // BUG FIX: desuscribir OnJugadorListoDesdeCore para evitar delegate huérfano
+        // si GameManager se destruye antes de que AltsasuCore dispare OnJugadorSpawned.
+        AltsasuCore.OnJugadorSpawned -= OnJugadorListoDesdeCore;
+        if (_crRespawn != null) StopCoroutine(_crRespawn);
         ServiceLocator.Desregistrar<IWantedSystem>();
         ServiceLocator.Desregistrar<IEconomyService>();
         ServiceLocator.Desregistrar<ISpawnService>();
@@ -241,7 +248,16 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         _jugadorVivo = false;
         nivelBusqueda = 0;
         Debug.Log("[GameManager] Jugador muerto. Respawneando en 3 segundos...");
-        StartCoroutine(RespawnJugador(3f));
+
+        // Notificar a todos los sistemas vía EventBus (sin acoplamiento directo).
+        // Receptores: HUDCanvas (fade), SistemaPolish (efecto muerte), SistemaLogros, AudioManager.
+        EventBus.Publish(new PlayerDeathEvent
+        {
+            posicion = jugadorActivo != null ? jugadorActivo.transform.position : Vector3.zero,
+            causa    = "muerte"
+        });
+
+        _crRespawn = StartCoroutine(RespawnJugador(3f));
     }
 
     IEnumerator RespawnJugador(float delay)
@@ -460,7 +476,8 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         if (textoDinero != null && dinero != _hudDineroCache)
         {
             _hudDineroCache  = dinero;
-            textoDinero.text = "$ " + dinero.ToString();
+            // PERF: string.Format con cache de valor — elimina concat implícita (~2 allocs/cambio)
+            textoDinero.text = string.Concat("$ ", dinero.ToString());
         }
 
         if (textoNivelBusqueda != null && nivelBusqueda != _hudBusquedaCache)
@@ -473,7 +490,8 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         if (textoPuntuacion != null && puntuacion != _hudPuntuacionCache)
         {
             _hudPuntuacionCache  = puntuacion;
-            textoPuntuacion.text = "Score: " + puntuacion.ToString();
+            // PERF: string.Concat elimina la concatenación con boxed string (~2 allocs/cambio evitados)
+            textoPuntuacion.text = string.Concat("Score: ", puntuacion.ToString());
         }
     }
 
