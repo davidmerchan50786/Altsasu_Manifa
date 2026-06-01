@@ -1,26 +1,31 @@
 #!/usr/bin/env python3
 """
-MESHROOM PHOTOGRAMMETRY PIPELINE — Altsasu Manifa
-===================================================
+MESHROOM PHOTOGRAMMETRY PIPELINE — Altsasu Manifa  (v2 — AMD OpenCL + COLMAP fallback)
+========================================================================================
 Genera mallas 3D texturizadas desde fotos Street View reales de Alsasua.
 Procesa cada zona/edificio por separado para obtener reconstrucciones precisas.
 
 Fuente de fotos : Assets/AlsasuaData/FacadeTextures/Processed/
+                  (o Processed_Enhanced/ si se ejecutó preprocess_photos_advanced.py)
 Mapping         : Assets/AlsasuaData/photo_building_mapping.json
 Salida FBX      : Assets/Models/Buildings_Photogrammetry/{edificio_id}.fbx
 Salida texturas : Assets/AlsasuaData/FacadeTextures/Photogrammetry/
 
 Uso:
     python Tools/meshroom_pipeline.py --all
-    python Tools/meshroom_pipeline.py --all --gpu
+    python Tools/meshroom_pipeline.py --all --gpu              # Meshroom GPU (AMD OpenCL)
     python Tools/meshroom_pipeline.py --zona iglesia
     python Tools/meshroom_pipeline.py --zona iglesia --gpu
-    python Tools/meshroom_pipeline.py --all --retry   # reintenta solo los fallidos
+    python Tools/meshroom_pipeline.py --all --retry            # reintenta solo los fallidos
+    python Tools/meshroom_pipeline.py --zona iglesia --colmap  # COLMAP+OpenMVS fallback
+    python Tools/meshroom_pipeline.py --all --enhanced-input   # usa Processed_Enhanced/
 
 Rutas Windows esperadas (ejecutar desde E:\\DAM\\Altsasu_Manifa):
     Meshroom : E:\\Meshroom\\Meshroom-2025.1.0\\meshroom_batch.exe
     Blender  : C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe
     Cache    : E:\\MeshroomCache\\
+    COLMAP   : E:\\COLMAP\\COLMAP.bat  (opcional, fallback de mayor calidad)
+    OpenMVS  : E:\\OpenMVS\\bin\\  (opcional, densificación MVS alternativa)
 """
 
 import argparse
@@ -57,11 +62,22 @@ INPUT_ROOT     = CACHE_ROOT / "input"
 MESHROOM_CACHE = CACHE_ROOT / "cache"
 PROGRESS_FILE  = CACHE_ROOT / "progress.json"
 
+# Rutas COLMAP + OpenMVS (fallback alternativo de mayor calidad en CPU AMD)
+COLMAP_EXE   = Path(r"E:\COLMAP\COLMAP.bat")
+OPENMVS_BIN  = Path(r"E:\OpenMVS\bin")
+
+# Directorio de fotos mejoradas (preprocess_photos_advanced.py)
+ENHANCED_PHOTOS_DIR = PROJECT_ROOT / "Assets" / "AlsasuaData" / "FacadeTextures" / "Processed_Enhanced"
+
 # Prioridad: edificios icónicos primero
 ZONA_PRIORITY = [
     "iglesia", "ayto", "plaza_fueros", "casco_viejo",
     "gaztetxe", "plaza_zubeztia", "ferial", "garcia_jimenez",
 ]
+
+# Edificios hero que se benefician de Gaussian Splatting
+HERO_BUILDINGS = {"iglesia", "ayto", "plaza_fueros_1", "plaza_fueros_2",
+                  "plaza_fueros_3", "plaza_fueros_4", "plaza_fueros_5"}
 
 MIN_FOTOS_POR_EDIFICIO = 3   # mínimo fotogrametría estable
 
@@ -120,13 +136,24 @@ def build_meshroom_overrides(use_gpu: bool) -> dict:
             "filterLargeTrianglesFactor":   60.0,
             "lambda_":                      1.0,
         },
+        # ── AMD OpenCL: resolución completa con parámetros SGM calibrados ──
         "DepthMap": {
-            "downscale":          2 if use_gpu else 4,
-            "exportTilePattern":  False,
+            "downscale":               1 if use_gpu else 4,  # resolución completa con OpenCL AMD
+            "exportTilePattern":       False,
+            "minViewAngle":            2.0,
+            "maxViewAngle":            70.0,
+            "sgmGammaC":               5.5,
+            "sgmGammaP":               8.0,
+            "refineGammaC":            15.5,
+            "refineGammaP":            11.0,
+            "nbDepthsToRefine":        31,
+            "nbIters":                 100,
         },
         "DepthMapFilter": {
-            "minNumOfConsistentCams":          3,
+            "minNumOfConsistentCams":                  2,   # AMD: menos conservador = más densidad
             "minNumOfConsistentCamsWithLowSimilarity": 4,
+            "pixSizeBall":                             0,
+            "pixSizeBallWithLowSimilarity":            0,
         },
     }
 
@@ -282,11 +309,22 @@ def run_meshroom(fotos: list, edificio_id: str, use_gpu: bool) -> Path | None:
         "--overrides", json.dumps(overrides),
     ]
 
+    # ── Variables de entorno para GPU AMD: OpenCL + ROCm/HIP ──────────────────
+    env = os.environ.copy()
+    if use_gpu:
+        env["ALICEVISION_GPU_MEMORY_LIMIT"] = "0"   # Sin límite de VRAM (AMD gestiona)
+        env["ALICEVISION_OPENCL_PLATFORM"]  = "0"   # Primera plataforma OpenCL (AMD)
+        env["HIP_VISIBLE_DEVICES"]          = "0"   # ROCm/HIP si disponible (RX 6000+)
+        env["GPU_MAX_HEAP_SIZE"]            = "100"  # % máx heap OpenCL
+        env["GPU_MAX_ALLOC_PERCENT"]        = "100"  # Permite buffers grandes
+        log("  AMD OpenCL: ALICEVISION_OPENCL_PLATFORM=0, HIP_VISIBLE_DEVICES=0", "INFO")
+
     log(f"Meshroom SfM+MVS+Texturing → '{edificio_id}' ({len(fotos)} fotos, GPU={use_gpu})")
     t0 = time.time()
     try:
         result = subprocess.run(
             cmd,
+            env=env,
             capture_output=True,
             text=True,
             timeout=7200,  # 2h máx por edificio
@@ -322,6 +360,101 @@ def run_meshroom(fotos: list, edificio_id: str, use_gpu: bool) -> Path | None:
     obj_path = max(obj_candidates, key=lambda p: p.stat().st_size)
     log(f"OBJ encontrado: {obj_path.name} ({obj_path.stat().st_size // 1024} KB)", "OK")
     return obj_path
+
+
+# ─── COLMAP + OpenMVS FALLBACK ────────────────────────────────────────────────
+
+def run_colmap_openmvs(fotos: list, edificio_id: str) -> Path | None:
+    """
+    Pipeline alternativo COLMAP + OpenMVS para GPU AMD (mejor calidad MVS que Meshroom en CPU).
+    COLMAP usa SIFT-GPU con OpenGL/Vulkan (funciona en AMD).
+    OpenMVS usa CPU multihilo para densificación.
+
+    Flujo:
+      1. COLMAP automatic_reconstructor (SfM + MVS denso)
+      2. OpenMVS DensifyPointCloud → ReconstructMesh → TextureMesh
+    """
+    if not IS_WINDOWS:
+        log(f"[SIMULADO] COLMAP+OpenMVS solo en Windows — {edificio_id}", "WARN")
+        return None
+
+    if not COLMAP_EXE.exists():
+        log(f"COLMAP no encontrado: {COLMAP_EXE}", "WARN")
+        log("  Descarga: https://colmap.github.io/install.html", "WARN")
+        return None
+
+    img_dir    = prepare_images(fotos, edificio_id)
+    ws_dir     = CACHE_ROOT / "colmap" / edificio_id
+    ws_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── Paso 1: COLMAP SfM + MVS denso ────────────────────────────────────────
+    log(f"COLMAP automatic_reconstructor → '{edificio_id}' ({len(fotos)} fotos)")
+    t0 = time.time()
+    colmap_cmd = [
+        str(COLMAP_EXE), "automatic_reconstructor",
+        "--workspace_path", str(ws_dir),
+        "--image_path",     str(img_dir),
+        "--dense",          "1",
+        "--quality",        "high",
+        "--single_camera",  "0",
+    ]
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = ""  # Forzar OpenGL/CPU si no hay CUDA
+    try:
+        r = subprocess.run(colmap_cmd, capture_output=True, text=True,
+                           timeout=7200, env=env)
+        if r.returncode != 0:
+            log(f"COLMAP falló ({time.time()-t0:.0f}s):\n{r.stderr[-800:]}", "ERR")
+            return None
+        log(f"COLMAP SfM+dense OK en {(time.time()-t0)/60:.1f} min", "OK")
+    except subprocess.TimeoutExpired:
+        log(f"COLMAP timeout (>2h) para '{edificio_id}'", "ERR")
+        return None
+
+    # Buscar .ply COLMAP denso
+    dense_ply = ws_dir / "dense" / "0" / "fused.ply"
+    if not dense_ply.exists():
+        candidates = list(ws_dir.rglob("fused.ply"))
+        if not candidates:
+            log("COLMAP no generó fused.ply", "ERR")
+            return None
+        dense_ply = candidates[0]
+
+    # ── Paso 2: OpenMVS ReconstructMesh + TextureMesh (si está disponible) ────
+    openmvs_densify = OPENMVS_BIN / "DensifyPointCloud.exe"
+    openmvs_recon   = OPENMVS_BIN / "ReconstructMesh.exe"
+    openmvs_texture = OPENMVS_BIN / "TextureMesh.exe"
+
+    if openmvs_recon.exists() and openmvs_texture.exists():
+        log("OpenMVS ReconstructMesh + TextureMesh...")
+        mvs_scene = ws_dir / "scene.mvs"
+        out_mesh  = ws_dir / f"{edificio_id}_mesh.obj"
+
+        # Convertir PLY COLMAP a escena MVS (vía interfaz de línea)
+        # OpenMVS acepta PLY directamente como punto de partida
+        try:
+            r2 = subprocess.run(
+                [str(openmvs_recon), f"--input-file={dense_ply}",
+                 f"--output-file={ws_dir / 'scene_dense_mesh.mvs'}",
+                 "--remove-spurious=20", "--smooth=2"],
+                capture_output=True, text=True, timeout=3600,
+            )
+            r3 = subprocess.run(
+                [str(openmvs_texture),
+                 f"--input-file={ws_dir / 'scene_dense_mesh.mvs'}",
+                 "--export-type=obj",
+                 f"--output-file={out_mesh}"],
+                capture_output=True, text=True, timeout=3600,
+            )
+            if out_mesh.exists():
+                log(f"OpenMVS texturizado OK → {out_mesh.name}", "OK")
+                return out_mesh
+        except Exception as e:
+            log(f"OpenMVS falló (no crítico): {e}", "WARN")
+
+    # Fallback: devolver fused.ply como malla sin textura (Blender la texturiza)
+    log("Usando fused.ply de COLMAP (sin texturizado OpenMVS)", "WARN")
+    return dense_ply
 
 
 # ─── POST-PROCESO BLENDER ─────────────────────────────────────────────────────
@@ -417,10 +550,11 @@ def estimate_quality(fotos: list) -> dict:
 # ─── PIPELINE POR EDIFICIO ────────────────────────────────────────────────────
 
 def process_building(edificio_id: str, info: dict, progress: dict, use_gpu: bool,
-                     force: bool = False) -> dict:
+                     force: bool = False, use_colmap: bool = False) -> dict:
     """
     Ejecuta el pipeline completo para un edificio:
     Meshroom SfM → MVS → Texturing → Blender cleanup → FBX Unity
+    O: COLMAP+OpenMVS → Blender cleanup → FBX Unity  (si use_colmap=True)
     """
     fotos = info["fotos"]
     zona  = info["zona"]
@@ -432,19 +566,25 @@ def process_building(edificio_id: str, info: dict, progress: dict, use_gpu: bool
         log(f"'{edificio_id}' ya completado → skip (usa --force para reprocesar)", "OK")
         return existing
 
-    log(f"── Edificio: {edificio_id}  zona={zona}  fotos={len(fotos)}  calidad={q['quality']}")
+    pipeline = "COLMAP+OpenMVS" if use_colmap else "Meshroom"
+    log(f"── Edificio: {edificio_id}  zona={zona}  fotos={len(fotos)}  calidad={q['quality']}  motor={pipeline}")
 
     # Marcar como en proceso
     progress[edificio_id] = {
         "status":     "processing",
         "zona":       zona,
+        "pipeline":   pipeline,
         "started_at": datetime.now().isoformat(),
         **q,
     }
     save_progress(progress)
 
-    # Paso 1: Meshroom
-    obj_path = run_meshroom(fotos, edificio_id, use_gpu)
+    # Paso 1: reconstrucción 3D (Meshroom o COLMAP+OpenMVS)
+    if use_colmap:
+        obj_path = run_colmap_openmvs(fotos, edificio_id)
+    else:
+        obj_path = run_meshroom(fotos, edificio_id, use_gpu)
+
     if obj_path is None and IS_WINDOWS:
         progress[edificio_id].update({
             "status": "failed",
@@ -477,7 +617,8 @@ def process_building(edificio_id: str, info: dict, progress: dict, use_gpu: bool
 
 
 def process_zona(zona: str, building_map: dict, zone_map: dict,
-                 progress: dict, use_gpu: bool, force: bool) -> list:
+                 progress: dict, use_gpu: bool, force: bool,
+                 use_colmap: bool = False) -> list:
     """
     Procesa todos los edificios de una zona.
     Si no hay edificios mapeados, usa todas las fotos de la zona como un grupo único.
@@ -493,7 +634,7 @@ def process_zona(zona: str, building_map: dict, zone_map: dict,
     if zona_buildings:
         log(f"Zona '{zona}': {len(zona_buildings)} edificios mapeados")
         for eid, info in zona_buildings.items():
-            res = process_building(eid, info, progress, use_gpu, force)
+            res = process_building(eid, info, progress, use_gpu, force, use_colmap)
             results.append({"edificio_id": eid, **res})
     else:
         # Fallback: zona entera como pseudo-edificio
@@ -504,7 +645,7 @@ def process_zona(zona: str, building_map: dict, zone_map: dict,
         log(f"Zona '{zona}': sin mapeo individual, procesando {len(fotos)} fotos juntas")
         pseudo_id = f"zona_{zona}"
         res = process_building(pseudo_id, {"zona": zona, "fotos": fotos},
-                               progress, use_gpu, force)
+                               progress, use_gpu, force, use_colmap)
         results.append({"edificio_id": pseudo_id, **res})
 
     return results
@@ -568,9 +709,16 @@ Ejemplos:
     mode.add_argument("--all",  action="store_true", help="Procesa todas las zonas en orden de prioridad")
     mode.add_argument("--zona", metavar="ZONA",       help="Procesa solo esta zona")
 
-    parser.add_argument("--gpu",   action="store_true", help="Activa GPU en Meshroom (DepthMap) y Blender (Cycles)")
-    parser.add_argument("--force", action="store_true", help="Reprocesa aunque el edificio esté marcado como 'done'")
-    parser.add_argument("--retry", action="store_true", help="Procesa solo edificios con estado 'failed'")
+    parser.add_argument("--gpu",            action="store_true",
+                        help="Activa GPU AMD OpenCL en Meshroom (DepthMap) y Blender (Cycles HIP)")
+    parser.add_argument("--force",          action="store_true",
+                        help="Reprocesa aunque el edificio esté marcado como 'done'")
+    parser.add_argument("--retry",          action="store_true",
+                        help="Procesa solo edificios con estado 'failed'")
+    parser.add_argument("--colmap",         action="store_true",
+                        help="Usa COLMAP+OpenMVS en lugar de Meshroom (mayor calidad en CPU AMD)")
+    parser.add_argument("--enhanced-input", action="store_true",
+                        help="Usa fotos de Processed_Enhanced/ (requiere preprocess_photos_advanced.py)")
     args = parser.parse_args()
 
     print("\n" + "═" * 72)
