@@ -240,6 +240,15 @@ public class DiagnosticoArranque : MonoBehaviour
               "Sin esto no hay manifestación (mecánica central del juego).");
         Check(sb, "SistemaApoyoPopular",   FindAnyObjectByType<SistemaApoyoPopular>() != null, null);
         Check(sb, "SistemaMisiones",       FindAnyObjectByType<SistemaMisiones>() != null, null);
+
+        // Interiores AAA
+        bool intAAA = FindAnyObjectByType<GeneradorInterioresAAA>() != null;
+        Check(sb, "GeneradorInterioresAAA (interior mapping)", intAAA,
+              "Añade GeneradorInterioresAAA a la escena para ventanas con profundidad 3D.");
+        if (intAAA && Shader.Find("Altsasu/InteriorMapping") == null)
+            _mejoras.Add("El shader Altsasu/InteriorMapping no compiló. Revisa Assets/Shaders/InteriorMapping.shader en la Console.");
+        Check(sb, "InterioresExplorables (caminables)", FindAnyObjectByType<InterioresExplorables>() != null,
+              "Añade InterioresExplorables para entrar a bar/comisaría/tienda de misión.");
     }
 
     // ════════════════════════════════════════════════════════════════════════
