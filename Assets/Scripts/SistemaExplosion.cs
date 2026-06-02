@@ -140,8 +140,7 @@ public static class SistemaExplosion
         luz.color     = new Color(1f, 0.7f, 0.3f);
         luz.range     = radio * 3f;
         var hdFlash = luzGO.AddComponent<HDAdditionalLightData>();
-        hdFlash.intensity = 100000f;
-        hdFlash.lightUnit = LightUnit.Lux;
+        hdFlash.SetIntensity(100000f, LightUnit.Lux);
 
         // Auto-destruir todo
         Object.Destroy(root, 5f);

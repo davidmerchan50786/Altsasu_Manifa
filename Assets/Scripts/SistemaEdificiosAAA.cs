@@ -944,8 +944,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
         light.range   = 8f;
         light.enabled = false; // activar en ciclo nocturno
         var hdl = lightGO.AddComponent<HDAdditionalLightData>();
-        hdl.intensity = intensidad * 1000f; // lux: intensidad=1 → 1000 lux (interior cálido)
-        hdl.lightUnit = LightUnit.Lux;
+        hdl.SetIntensity(intensidad * 1000f, LightUnit.Lux); // intensidad=1 → 1000 lux (interior cálido)
         _ventanasNocturnas.Add(null); // placeholder para que el ciclo lo gestione
     }
 

@@ -103,7 +103,7 @@ public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
             if (l == null) continue;
             l.enabled = intensidad > 1f;
             var hd = _hdFarolas[i];
-            if (hd != null) hd.intensity = intensidad;
+            if (hd != null) hd.SetIntensity(intensidad, LightUnit.Lux);
             else l.intensity = intensidad;
         }
     }

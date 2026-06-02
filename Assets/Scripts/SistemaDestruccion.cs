@@ -307,8 +307,7 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
         light.type = LightType.Point; light.color = new Color(1f, 0.5f, 0.1f);
         light.range = size * 8f;
         var hdFire = lightGO.AddComponent<HDAdditionalLightData>();
-        hdFire.intensity = size * 3000f;
-        hdFire.lightUnit = LightUnit.Lux;
+        hdFire.SetIntensity(size * 3000f, LightUnit.Lux);
 
         return go;
     }

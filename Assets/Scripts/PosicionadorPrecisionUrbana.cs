@@ -275,8 +275,7 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         pl.range     = 18f;
         pl.shadows   = LightShadows.Soft;
         var hdPl = lightGO.AddComponent<HDAdditionalLightData>();
-        hdPl.intensity = 800f;
-        hdPl.lightUnit = LightUnit.Lux;
+        hdPl.SetIntensity(800f, LightUnit.Lux);
 
         return go;
     }

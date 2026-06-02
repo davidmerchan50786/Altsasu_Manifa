@@ -149,8 +149,7 @@ public class SistemaPolish : MonoBehaviour
         _sirenLight.color   = Color.blue;
         _sirenLight.shadows = LightShadows.None;
         _hdSiren = go.AddComponent<HDAdditionalLightData>();
-        _hdSiren.intensity  = 0f;
-        _hdSiren.lightUnit  = LightUnit.Lux;
+        _hdSiren.SetIntensity(0f, LightUnit.Lux);
         go.SetActive(false);
     }
 
@@ -251,7 +250,7 @@ public class SistemaPolish : MonoBehaviour
         if (!_sirenActive || _sirenLight == null) return;
         _sirenTimer += dt * 3f;
         float pulse = Mathf.Abs(Mathf.Sin(_sirenTimer * Mathf.PI));
-        if (_hdSiren != null) _hdSiren.intensity = pulse * 3000f;
+        if (_hdSiren != null) _hdSiren.SetIntensity(pulse * 3000f, LightUnit.Lux);
         else _sirenLight.intensity = pulse * 3000f;
         _sirenLight.color     = (_sirenTimer % 2f) < 1f ? Color.blue : Color.red;
         // Seguir al jugador
@@ -357,7 +356,7 @@ public class SistemaPolish : MonoBehaviour
         if (I == null || I._sirenLight == null) return;
         I._sirenActive = activo;
         I._sirenLight.gameObject.SetActive(activo);
-        if (!activo) { if (I._hdSiren != null) I._hdSiren.intensity = 0f; else I._sirenLight.intensity = 0f; }
+        if (!activo) { if (I._hdSiren != null) I._hdSiren.SetIntensity(0f, LightUnit.Lux); else I._sirenLight.intensity = 0f; }
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -390,8 +390,7 @@ public class PropsDestruccionManifestacion : SingletonMono<PropsDestruccionManif
         luz.color = new Color(1f, 0.55f, 0.1f);
         luz.range = 8f;
         var hdLight = go.AddComponent<HDAdditionalLightData>();
-        hdLight.intensity = 600f;
-        hdLight.lightUnit = LightUnit.Lux;
+        hdLight.SetIntensity(600f, LightUnit.Lux);
 
         // Particulas de humo simples
         var humoGO = new GameObject("Humo");
@@ -498,7 +497,7 @@ public class ParpadeadorLuzFuego : MonoBehaviour
         if (_luz == null) return;
         float ruido      = Mathf.PerlinNoise(Time.time * 8f + _offset, _offset * 0.5f);
         float intensidad = _baseIntensidad * (0.6f + ruido * 0.8f);
-        if (_hdLight != null) _hdLight.intensity = intensidad;
+        if (_hdLight != null) _hdLight.SetIntensity(intensidad, LightUnit.Lux);
         else _luz.intensity = intensidad;
     }
 }

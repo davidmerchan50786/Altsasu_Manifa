@@ -295,7 +295,7 @@ public class ProcesadorMapillaryObjetos : MonoBehaviour
 
         // HDRP HDAdditionalLightData
         var hdLight = luzGO.AddComponent<HDAdditionalLightData>();
-        hdLight.intensity    = 3.5f;
+        hdLight.SetIntensity(800f, LightUnit.Lux); // farola sodio ~800 lux
         hdLight.SetColor(new Color(1.0f, 0.76f, 0.38f), 2700f);
 
         // Activar/desactivar según hora del sistema de volumen

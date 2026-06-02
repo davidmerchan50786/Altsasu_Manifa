@@ -121,7 +121,7 @@ public class SistemaClima : MonoBehaviour
         if (solDireccional != null)
         {
             solDireccional.color = c.colorSol;
-            if (_hdSol != null) _hdSol.intensity = c.intensidadSol * 80000f; // lux (sol directo ~80klux)
+            if (_hdSol != null) _hdSol.SetIntensity(c.intensidadSol * 80000f, LightUnit.Lux); // sol directo ~80klux
             else solDireccional.intensity = c.intensidadSol;
         }
         RenderSettings.fogDensity = c.niebla;
@@ -152,7 +152,7 @@ public class SistemaClima : MonoBehaviour
             if (solDireccional != null)
             {
                 float targetLux = objetivo.intensidadSol * 80000f;
-                if (_hdSol != null) _hdSol.intensity = Mathf.Lerp(solInicial, targetLux, f);
+                if (_hdSol != null) _hdSol.SetIntensity(Mathf.Lerp(solInicial, targetLux, f), LightUnit.Lux);
                 else solDireccional.intensity = Mathf.Lerp(solInicial, objetivo.intensidadSol, f);
                 solDireccional.color = Color.Lerp(colorInicial, objetivo.colorSol, f);
             }
@@ -264,13 +264,13 @@ public class SistemaClima : MonoBehaviour
         if (solDireccional != null && _hdSol != null)
         {
             float orig = _hdSol.intensity;
-            _hdSol.intensity = 400000f; // relámpago: ~400klux
+            _hdSol.SetIntensity(400000f, LightUnit.Lux); // relámpago: ~400klux
             yield return new WaitForSeconds(0.08f);
-            _hdSol.intensity = orig;
+            _hdSol.SetIntensity(orig, LightUnit.Lux);
             yield return new WaitForSeconds(0.12f);
-            _hdSol.intensity = 300000f;
+            _hdSol.SetIntensity(300000f, LightUnit.Lux);
             yield return new WaitForSeconds(0.06f);
-            _hdSol.intensity = orig;
+            _hdSol.SetIntensity(orig, LightUnit.Lux);
         }
     }
 

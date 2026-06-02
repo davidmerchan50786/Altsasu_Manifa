@@ -249,22 +249,22 @@ public class GeneradorInterioresSimples : MonoBehaviour
             case "Bar":
                 luz.color  = ColorTemperatura(2700f);
                 luz.range  = 8f;
-                if (hd != null) { hd.intensity = 2500f; hd.lightUnit = LightUnit.Lux; }
+                if (hd != null) hd.SetIntensity(2500f, LightUnit.Lux);
                 break;
             case "Comercio":
                 luz.color  = ColorTemperatura(4000f);
                 luz.range  = 6f;
-                if (hd != null) { hd.intensity = 1800f; hd.lightUnit = LightUnit.Lux; }
+                if (hd != null) hd.SetIntensity(1800f, LightUnit.Lux);
                 break;
             case "Industrial":
                 luz.color  = ColorTemperatura(5000f);
                 luz.range  = 4f;
-                if (hd != null) { hd.intensity = 800f; hd.lightUnit = LightUnit.Lux; }
+                if (hd != null) hd.SetIntensity(800f, LightUnit.Lux);
                 break;
             default: // Residencial
                 luz.color  = ColorTemperatura(3200f);
                 luz.range  = 5f;
-                if (hd != null) { hd.intensity = 1200f; hd.lightUnit = LightUnit.Lux; }
+                if (hd != null) hd.SetIntensity(1200f, LightUnit.Lux);
                 break;
         }
     }

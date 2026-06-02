@@ -278,8 +278,7 @@ public class SceneBootstrapper : MonoBehaviour
 
         // HDRP requiere HDAdditionalLightData en luces direccionales
         var hdSol = go.GetComponent<HDAdditionalLightData>() ?? go.AddComponent<HDAdditionalLightData>();
-        hdSol.intensity = 80000f;
-        hdSol.lightUnit = LightUnit.Lux;
+        hdSol.SetIntensity(80000f, LightUnit.Lux);
 
         Debug.Log("[Bootstrap] ✓ Sol creado (HDRP).");
     }

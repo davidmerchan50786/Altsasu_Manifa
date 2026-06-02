@@ -156,14 +156,6 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         }
         yield return null;
 
-        bool exito = false;
-        try
-        {
-            // Registrar como exitoso solo si las corrutinas no lanzan excepciones
-            // (las excepciones en corrutinas no se propagan — usamos flag _aplicado)
-        }
-        finally { /* noop — el try/finally garantiza que el compilador acepta el bloque */ }
-
         string rutaRaw = FullPath(PATH_LIDAR_RAW);
         string rutaGnd = FullPath(PATH_LIDAR_GND);
         string ruta5m  = FullPath(PATH_DTM_5M);
