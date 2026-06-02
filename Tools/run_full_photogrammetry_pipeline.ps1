@@ -87,7 +87,7 @@ param(
 
 # ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 
-$MeshroomBatch = "E:\Meshroom\Meshroom-2025.1.0\meshroom_batch.exe"
+$MeshroomBatch = "E:\Meshroom-2025.1.0\meshroom_batch.exe"
 $BlenderExe    = "C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 $CacheRoot     = "E:\MeshroomCache"
 $ProjectRoot   = $PSScriptRoot | Split-Path -Parent   # Tools/ → raíz del proyecto

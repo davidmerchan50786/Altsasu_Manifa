@@ -21,7 +21,7 @@ Uso:
     python Tools/meshroom_pipeline.py --all --enhanced-input   # usa Processed_Enhanced/
 
 Rutas Windows esperadas (ejecutar desde E:\\DAM\\Altsasu_Manifa):
-    Meshroom : E:\\Meshroom\\Meshroom-2025.1.0\\meshroom_batch.exe
+    Meshroom : E:\\Meshroom-2025.1.0\\meshroom_batch.exe
     Blender  : C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe
     Cache    : E:\\MeshroomCache\\
     COLMAP   : E:\\COLMAP\\COLMAP.bat  (opcional, fallback de mayor calidad)
@@ -44,7 +44,7 @@ from pathlib import Path
 
 IS_WINDOWS = platform.system() == "Windows"
 
-MESHROOM_BATCH = Path(r"E:\Meshroom\Meshroom-2025.1.0\meshroom_batch.exe")
+MESHROOM_BATCH = Path(r"E:\Meshroom-2025.1.0\meshroom_batch.exe")
 BLENDER_EXE    = Path(r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe")
 
 SCRIPT_DIR   = Path(__file__).resolve().parent   # Tools/
