@@ -43,29 +43,23 @@ internal static class MisionHelper
 //  Herriko Plaza ≈ (1918, y, 8570) — referencia central
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// <summary>
+/// Wrapper de compatibilidad — todos los miembros delegan a GeoDataAlsasua,
+/// que es la única fuente de verdad para coordenadas del pueblo.
+/// </summary>
 public static class PuntosAlsasua
 {
-    // Puntos clave del pueblo — aproximados en coordenadas terreno
-    public static readonly Vector3 HerrikoPlaza       = new(GeoDataAlsasua.OX, 0f, GeoDataAlsasua.OZ);
-    public static readonly Vector3 EstacionTren        = new(1650f, 0f, 8200f);  // sur-oeste
-    public static readonly Vector3 CuartelGC           = new(2180f, 0f, 8720f);  // este
-    public static readonly Vector3 CarreteraN1Norte    = new(1900f, 0f, 8000f);  // sur
-    public static readonly Vector3 CarreteraN1Sur      = new(1900f, 0f, 7800f);
-    public static readonly Vector3 MonteAralar         = new(3200f, 0f, 9400f);  // noreste (2km)
-    public static readonly Vector3 BarrioNorte         = new(1820f, 0f, 8850f);
-    public static readonly Vector3 PoligonoIsasia      = new(2300f, 0f, 8400f);
+    public static Vector3 HerrikoPlaza    => GeoDataAlsasua.HerrikoPlaza;
+    public static Vector3 EstacionTren   => GeoDataAlsasua.EstacionTren;
+    public static Vector3 CuartelGC      => GeoDataAlsasua.CuartelGC;
+    public static Vector3 CarreteraN1Norte => GeoDataAlsasua.CarreteraN1Norte;
+    public static Vector3 CarreteraN1Sur  => GeoDataAlsasua.CarreteraN1Sur;
+    public static Vector3 MonteAralar    => GeoDataAlsasua.MonteAralar;
+    public static Vector3 BarrioNorte    => GeoDataAlsasua.BarrioNorte;
+    public static Vector3 PoligonoIsasia => GeoDataAlsasua.PoligonoIsasia;
 
-    public static float Dist2D(Vector3 a, Vector3 b)
-    {
-        var d = a - b;
-        return Mathf.Sqrt(d.x * d.x + d.z * d.z);
-    }
-
-    public static Vector3 JugadorPos()
-    {
-        var j = AltsasuCore.Jugador;
-        return j != null ? j.position : Vector3.zero;
-    }
+    public static float   Dist2D(Vector3 a, Vector3 b) => GeoDataAlsasua.Dist2D(a, b);
+    public static Vector3 JugadorPos()                 => GeoDataAlsasua.JugadorPos();
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

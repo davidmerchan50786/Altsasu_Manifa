@@ -154,14 +154,18 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     IEnumerator InicializarAsync()
     {
-        // TODO[BUG]: Si Terrain.activeTerrain == null cuando InicializarAsync arranca
-        // (p.ej. GeneradorTerrenoUltraPreciso aún no ha terminado su boot de 30s),
-        // ClasificarEspecie() pasa terrain=null → todos los árboles LIDAR se clasifican
-        // como ESP_GENERICO (ignorando el bioma real). Consecuencia: no hay pinos en
-        // montaña ni choperas en ribera hasta el próximo respawn del streamer.
-        // Mitigación: esperar a que AltsasuCore.OnWorldReady se dispare antes de cargar
-        // los árboles. Esto requiere suscribirse al evento en lugar de iniciar inmediatamente.
-        //
+        // Esperar a que el terreno LIDAR esté listo antes de clasificar especies.
+        // Sin este guard ClasificarEspecie() recibe terrain=null y todos los árboles
+        // quedan como ESP_GENERICO (sin pinos en montaña ni choperas en ribera).
+        float tw = 0f;
+        while (Terrain.activeTerrain == null && tw < 30f)
+        {
+            tw += 0.5f;
+            yield return new WaitForSeconds(0.5f);
+        }
+        if (Terrain.activeTerrain == null)
+            AlsasuaLogger.Warn("TreeStreamer", "Terreno no disponible tras 30s — clasificación de especie sin bioma.");
+
         // Cargar polígonos de masas forestales para relleno procedural
         yield return StartCoroutine(CargarBosquesGeojson());
 

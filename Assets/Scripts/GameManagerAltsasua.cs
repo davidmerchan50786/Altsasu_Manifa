@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -68,13 +67,12 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     [Tooltip("Cada cuántos segundos intentar repoblar enemigos")]
     public float intervalSpawnEnemigos = 10f;
 
-    // ─── Árboles / Decoración ────────────────────────────────────────────────
-    [Header("Vegetación")]
-    [Tooltip("Prefabs de árboles (Tree10_1 … Tree10_5)")]
+    // Vegetación legacy: campos migrados a SembradoVegetacionManual.
+    // Se mantienen solo para serialización de prefabs existentes — no añadir nuevos aquí.
+    [Header("Vegetación (legacy — usar SembradoVegetacionManual)")]
     public GameObject[] prefabsArboles;
-    [Tooltip("Puntos donde colocar árboles al iniciar")]
-    public Transform[] puntosArboles;
-    private bool _arbolesSembrados = false;
+    public Transform[]  puntosArboles;
+    bool _arbolesSembrados;
 
     // ─── Terreno Cloud Compare ────────────────────────────────────────────────
     [Header("Terreno CloudCompare")]
@@ -92,21 +90,17 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 
     // ─── HUD ─────────────────────────────────────────────────────────────────
     [Header("HUD")]
-    [Tooltip("Texto UI para mostrar el dinero (opcional)")]
-    public Text textoDinero;
-    [Tooltip("Texto UI para mostrar el nivel de búsqueda")]
-    public Text textoNivelBusqueda;
-    [Tooltip("Texto UI para mostrar puntuación")]
-    public Text textoPuntuacion;
     [Tooltip("Panel de pausa (opcional)")]
     public GameObject panelPausa;
 
     private bool _enPausa = false;
 
     // ─── Eventos estáticos ────────────────────────────────────────────────────
-    /// <summary>Se dispara cuando cambia el nivel de búsqueda (0-5 estrellas).</summary>
+    /// <summary>Nivel de búsqueda cambió (0-5 estrellas). Suscriptor: HUDCanvas.</summary>
     public static event System.Action<int> OnEstrellasCambia;
-    /// <summary>Se dispara cuando el jugador hace respawn.</summary>
+    /// <summary>Dinero o puntuación cambiaron. Suscriptor: HUDCanvas.</summary>
+    public static event System.Action<int, int> OnEconomiaCambia;
+    /// <summary>El jugador hizo respawn.</summary>
     public static event System.Action OnRespawn;
 
     // ─── Estado ───────────────────────────────────────────────────────────────
@@ -115,15 +109,10 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     // que acceda a jugadorActivo ya destruido tras un cambio de escena.
     private Coroutine _crRespawn;
 
-    // HUD cache — evita string allocs en Update
-    private int    _hudDineroCache      = int.MinValue;
-    private int    _hudBusquedaCache    = -1;
-    private int    _hudPuntuacionCache  = int.MinValue;
-    // Tabla constante de estrellas para los 6 niveles (0-5) — sin concat por frame
-    private static readonly string[] _estrellasTexto =
-    {
-        "☆☆☆☆☆", "★☆☆☆☆", "★★☆☆☆", "★★★☆☆", "★★★★☆", "★★★★★"
-    };
+    // Cache de valores HUD — OnEconomiaCambia y OnEstrellasCambia solo se disparan al cambiar
+    private int _hudDineroCache      = int.MinValue;
+    private int _hudBusquedaCache    = -1;
+    private int _hudPuntuacionCache  = int.MinValue;
 
     // =========================================================================
     //  UNITY LIFECYCLE
@@ -185,7 +174,9 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     void Start()
     {
         SpawnJugador();
-        SembrarArboles();
+        // Delegar siembra a SembradoVegetacionManual si existe en la escena;
+        // si no, ejecutar el método legacy por compatibilidad hacia atrás.
+        if (GetComponent<SembradoVegetacionManual>() == null) SembrarArboles();
         InicializarEnemigos();
         ActualizarHUD();
     }
@@ -419,14 +410,12 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     }
 
     // =========================================================================
-    //  ÁRBOLES / VEGETACIÓN
+    //  ÁRBOLES / VEGETACIÓN (legacy — la lógica real está en SembradoVegetacionManual)
     // =========================================================================
 
     void SembrarArboles()
     {
-        if (_arbolesSembrados || prefabsArboles == null || prefabsArboles.Length == 0) return;
-        if (puntosArboles == null) return;
-
+        if (_arbolesSembrados || prefabsArboles == null || puntosArboles == null) return;
         foreach (var punto in puntosArboles)
         {
             if (punto == null) continue;
@@ -472,26 +461,18 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 
     void ActualizarHUD()
     {
-        // Solo actualizar textos cuando cambian los valores — evita string allocs cada frame
-        if (textoDinero != null && dinero != _hudDineroCache)
+        bool economiaChanged = dinero != _hudDineroCache || puntuacion != _hudPuntuacionCache;
+        if (economiaChanged)
         {
-            _hudDineroCache  = dinero;
-            // PERF: string.Format con cache de valor — elimina concat implícita (~2 allocs/cambio)
-            textoDinero.text = string.Concat("$ ", dinero.ToString());
+            _hudDineroCache     = dinero;
+            _hudPuntuacionCache = puntuacion;
+            OnEconomiaCambia?.Invoke(dinero, puntuacion);
         }
 
-        if (textoNivelBusqueda != null && nivelBusqueda != _hudBusquedaCache)
+        if (nivelBusqueda != _hudBusquedaCache)
         {
-            _hudBusquedaCache       = nivelBusqueda;
-            int idx                 = Mathf.Clamp(nivelBusqueda, 0, _estrellasTexto.Length - 1);
-            textoNivelBusqueda.text = _estrellasTexto[idx];
-        }
-
-        if (textoPuntuacion != null && puntuacion != _hudPuntuacionCache)
-        {
-            _hudPuntuacionCache  = puntuacion;
-            // PERF: string.Concat elimina la concatenación con boxed string (~2 allocs/cambio evitados)
-            textoPuntuacion.text = string.Concat("Score: ", puntuacion.ToString());
+            _hudBusquedaCache = nivelBusqueda;
+            OnEstrellasCambia?.Invoke(nivelBusqueda);
         }
     }
 

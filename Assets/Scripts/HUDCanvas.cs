@@ -101,7 +101,7 @@ public class HUDCanvas : MonoBehaviour
 
     // ── Estado ────────────────────────────────────────────────────────────
     ControladorJugador          _jugador;
-    GameManagerAltsasua         _gm;
+    int                         _dineroCached;    // actualizado por OnEconomiaCambia
     SistemaAtmosfera            _atm;
     ControladorVehiculoJugador  _vehiculo;
     float                       _apoyoActual;   // caché local — actualizado por evento
@@ -145,7 +145,7 @@ public class HUDCanvas : MonoBehaviour
 
     void BuscarReferencias()
     {
-        _gm  = GameManagerAltsasua.Instance;
+        _dineroCached = ServiceLocator.Get<IEconomyService>()?.Dinero ?? 0;
         _atm = AltsasuCore.I?.atmosferaSystem;
         // _jugador se asigna cuando AltsasuCore dispara OnJugadorSpawned
         if (AltsasuCore.Jugador != null)
@@ -159,6 +159,7 @@ public class HUDCanvas : MonoBehaviour
     {
         ControladorJugador.OnDanoRecibido          += OnDano;
         GameManagerAltsasua.OnEstrellasCambia      += OnWanted;
+        GameManagerAltsasua.OnEconomiaCambia       += OnEconomia;
         SistemaMisiones.OnMisionIniciada           += OnMisionIniciada;
         SistemaMisiones.OnObjetivoCompletado       += OnObjetivoCompletado;
         SistemaMisiones.OnMisionCompletada         += OnMisionCompletada;
@@ -175,6 +176,7 @@ public class HUDCanvas : MonoBehaviour
     {
         ControladorJugador.OnDanoRecibido          -= OnDano;
         GameManagerAltsasua.OnEstrellasCambia      -= OnWanted;
+        GameManagerAltsasua.OnEconomiaCambia       -= OnEconomia;
         SistemaMisiones.OnMisionIniciada           -= OnMisionIniciada;
         SistemaMisiones.OnObjetivoCompletado       -= OnObjetivoCompletado;
         SistemaMisiones.OnMisionCompletada         -= OnMisionCompletada;
@@ -257,8 +259,8 @@ public class HUDCanvas : MonoBehaviour
 
     void ActualizarDinero()
     {
-        if (_gm == null || _txtDinero == null) return;
-        int meta = _gm.dinero;
+        if (_txtDinero == null) return;
+        int meta = _dineroCached;
         if (_dineroMostrado != meta)
         {
             _dineroMostrado = (int)Mathf.MoveTowards(_dineroMostrado, meta, Time.deltaTime * 500f);
@@ -268,6 +270,8 @@ public class HUDCanvas : MonoBehaviour
         }
         else _txtDinero.color = Color.white;
     }
+
+    void OnEconomia(int dinero, int _) => _dineroCached = dinero;
 
     void ActualizarApoyo()
     {

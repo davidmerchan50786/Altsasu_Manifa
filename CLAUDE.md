@@ -139,11 +139,15 @@ UI/AUDIO  HUDCanvas · AudioManager · SistemaPolish · SistemaReverbZonas
 - `ChunkLoadedEvent` — publicado por `SistemaZonas` al cargar/descargar zonas OSM.
 - `ZoneChangedEvent` — publicado por `SistemaZonas.Update()` al detectar cambio de celda.
 
-### Deuda técnica documentada (preservar comportamiento)
-- `GameManagerAltsasua.SembrarArboles()` debería moverse a `SistemaVegetacion`
-- `GameManagerAltsasua` contiene referencias HUD legacy (`Text`) — deberían quedar solo en `HUDCanvas`
-- `SistemaChunks.cs` es stub obsoleto (funcionalidad en `SistemaZonas`)
-- `MisionesAltsasua.PuntosAlsasua` duplica constantes de `GeoDataAlsasua`
+### Deuda técnica — RESUELTA
+
+Todas las deudas anteriores están corregidas:
+- `SembrarArboles` extraído a `SembradoVegetacionManual.cs` (GameManager llama fallback legacy si el componente no existe)
+- `GameManagerAltsasua` no tiene referencias a `Text` — publica `OnEconomiaCambia(dinero, puntuacion)` via evento estático; `HUDCanvas` suscribe
+- `PuntosAlsasua` en `MisionesAltsasua.cs` es ahora wrapper delgado que delega a `GeoDataAlsasua`; `GeoDataAlsasua` es la única fuente de verdad para coordenadas
+- `SistemaChunks.ComprobarChunks()` usa posición del vehículo raíz cuando `ISpawnService.JugadorEnVehiculo == true`
+- `AlsasuaTreeStreamer.InicializarAsync()` espera hasta 30s a que `Terrain.activeTerrain != null` antes de clasificar especies
+- `GeoDataAlsasua` expone `JugadorPos()`, `CarreteraN1Norte/Sur`, `HerrikoPlaza` con `OX/OZ` como origen
 
 ## Geografía de referencia
 - Alsasua es una cuenca fluvial a ~530m de altitud

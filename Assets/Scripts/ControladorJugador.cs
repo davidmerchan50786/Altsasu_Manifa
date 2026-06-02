@@ -831,15 +831,6 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
     private void Morir()
     {
-        // TODO[BUG]: Si el jugador muere mientras AlsasuaTreeStreamer.BucleSteaming tiene
-        // un yield return null en curso y el GO del jugador es destruido por RespawnJugador(),
-        // la referencia _jugador en AlsasuaTreeStreamer pasa a null — el bucle detecta esto
-        // en su guard (if (_jugador == null)) y busca de nuevo por tag. Esto es seguro.
-        // Sin embargo, si NPCBase._jugador apunta al mismo Transform y el NPC está en mitad
-        // de SetDestination() al jugador, Unity lanzará MissingReferenceException en el
-        // NavMeshAgent en el frame entre Destroy() y OnDestroy() de los NPCs activos que
-        // tenían al jugador como destino. Los NPCs deben comprobar _jugador != null antes de
-        // llamar _agente.SetDestination(_jugador.position).
         AlsasuaLogger.Info("Jugador", "¡Has muerto!");
         animPersonaje?.SetTrigger(AnimMorir);
 

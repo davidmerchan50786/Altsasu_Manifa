@@ -176,7 +176,14 @@ public class SistemaChunks : MonoBehaviour
     private void ComprobarChunks()
     {
         if (chunks == null || jugador == null) return;
-        Vector3 posJug = jugador.position;
+
+        // Cuando el jugador está en vehículo su Transform es hijo del vehículo,
+        // por lo que jugador.position puede diferir varios metros de la posición
+        // real del vehículo → usar la raíz del padre para el cálculo de distancia.
+        bool enVehiculo = ServiceLocator.Get<ISpawnService>()?.JugadorEnVehiculo ?? false;
+        Vector3 posJug = (enVehiculo && jugador.parent != null)
+            ? jugador.parent.position
+            : jugador.position;
 
         for (int i = 0; i < chunks.Length; i++)
         {
@@ -250,16 +257,7 @@ public class SistemaChunks : MonoBehaviour
     private IEnumerator DesactivarDiferido(Chunk c, int idx)
     {
         yield return null; // esperar un frame
-        // TODO[BUG]: si el jugador entra en vehículo mientras cruza el radio de desactivación,
-        // jugador.position sigue siendo la posición del jugador (hijo del vehículo), no la del
-        // vehículo raíz — puede diferir varios metros → ComprobarChunks puede desactivar el
-        // chunk donde está el vehículo → colisiones desaparecen con el jugador/vehículo dentro
-        // → caída al vacío. Condición: JugadorEnVehiculo == true y vehículo cerca del borde de
-        // radio de desactivación. Consecuencia: SIGSEGV/caída al void.
-        // Solución requiere que ControladorVehiculoJugador exponga posición del vehículo activo
-        // y ComprobarChunks la use cuando ServiceLocator.Get<ISpawnService>().JugadorEnVehiculo.
-        //
-        // BUG FIX 2: doble guard — verificar que el chunk sigue activo Y
+        // Doble guard — verificar que el chunk sigue activo Y
         // que el GO sigue existiendo (puede haber sido destruido por SceneManager
         // o por ActivarTodo/DesactivarTodo llamados durante ese frame).
         // Sin este guard, si el jugador reaparece cerca del chunk en el mismo frame,

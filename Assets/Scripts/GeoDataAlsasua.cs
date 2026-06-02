@@ -64,13 +64,24 @@ public static class GeoDataAlsasua
     public const float ALT_FALLBACK = 240f;
 
     // ── Puntos geográficos clave ──────────────────────────────────────────
-    public static readonly Vector3 HerrikoPlaza    = new(1918f, 0f, 8570f);
-    public static readonly Vector3 EstacionTren    = new(1650f, 0f, 8200f);
-    public static readonly Vector3 CuartelGC       = new(2180f, 0f, 8720f);
-    public static readonly Vector3 CarreteraN1     = new(1900f, 0f, 8000f);
-    public static readonly Vector3 MonteAralar     = new(3200f, 0f, 9400f);
-    public static readonly Vector3 BarrioNorte     = new(1820f, 0f, 8850f);
-    public static readonly Vector3 PoligonoIsasia  = new(2300f, 0f, 8400f);
+    public static readonly Vector3 HerrikoPlaza     = new(OX, 0f, OZ);
+    public static readonly Vector3 EstacionTren     = new(1650f, 0f, 8200f);
+    public static readonly Vector3 CuartelGC        = new(2180f, 0f, 8720f);
+    public static readonly Vector3 CarreteraN1Norte = new(1900f, 0f, 8000f);
+    public static readonly Vector3 CarreteraN1Sur   = new(1900f, 0f, 7800f);
+    public static readonly Vector3 MonteAralar      = new(3200f, 0f, 9400f);
+    public static readonly Vector3 BarrioNorte      = new(1820f, 0f, 8850f);
+    public static readonly Vector3 PoligonoIsasia   = new(2300f, 0f, 8400f);
+
+    /// <summary>Alias para compatibilidad — idéntico a CarreteraN1Norte.</summary>
+    public static readonly Vector3 CarreteraN1 = CarreteraN1Norte;
+
+    /// <summary>Posición del jugador en el frame actual. Devuelve Vector3.zero si no hay jugador.</summary>
+    public static Vector3 JugadorPos()
+    {
+        var j = AltsasuCore.Jugador;
+        return j != null ? j.position : Vector3.zero;
+    }
 
     // ── AlturaTerreno — implementación única con caché de Terrain ────────
 
