@@ -28,7 +28,8 @@ public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
     bool _ventanasRegistradas;
 
     // ── Farolas (registradas por SistemaFarolas) ──────────────────────────
-    readonly List<Light> _farolas = new();
+    readonly List<Light>                 _farolas   = new();
+    readonly List<HDAdditionalLightData> _hdFarolas = new();
 
     // ── Configuración ─────────────────────────────────────────────────────
     const float HORA_ANOCHECER = 19.5f;
@@ -82,7 +83,10 @@ public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
             if (l.gameObject.name.ToLower().Contains("farola") ||
                 l.gameObject.name.ToLower().Contains("streetlight") ||
                 l.gameObject.name.ToLower().Contains("lamppost"))
+            {
                 _farolas.Add(l);
+                _hdFarolas.Add(l.GetComponent<HDAdditionalLightData>());
+            }
 
         AlsasuaLogger.Info("VidaNocturna", $"Farolas registradas: {_farolas.Count}");
     }
@@ -90,14 +94,17 @@ public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
     void ActualizarFarolas()
     {
         float target = Mathf.Lerp(INTENSIDAD_FAROLA_DIA, INTENSIDAD_FAROLA_NOCHE, _transicion);
-        // Parpadeo leve al encenderse
         float parpadeo = _transicion > 0.05f && _transicion < 0.3f
             ? 1f + Mathf.Sin(Time.time * 18f) * 0.15f : 1f;
-        foreach (var l in _farolas)
+        float intensidad = target * parpadeo;
+        for (int i = 0; i < _farolas.Count; i++)
         {
+            var l = _farolas[i];
             if (l == null) continue;
-            l.intensity = target * parpadeo;
-            l.enabled   = target > 1f;
+            l.enabled = intensidad > 1f;
+            var hd = _hdFarolas[i];
+            if (hd != null) hd.intensity = intensidad;
+            else l.intensity = intensidad;
         }
     }
 
@@ -178,7 +185,12 @@ public class SistemaVidaNocturna : SingletonMono<SistemaVidaNocturna>
         AlsasuaLogger.Info("VidaNocturna", esDia ? "Amanecer — apagando farolas" : "Anochecer — encendiendo farolas");
     }
 
-    public void RegistrarFarola(Light l) { if (l != null && !_farolas.Contains(l)) _farolas.Add(l); }
+    public void RegistrarFarola(Light l)
+    {
+        if (l == null || _farolas.Contains(l)) return;
+        _farolas.Add(l);
+        _hdFarolas.Add(l.GetComponent<HDAdditionalLightData>());
+    }
 
     void OnDestroy()
     {

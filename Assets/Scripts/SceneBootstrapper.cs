@@ -19,6 +19,7 @@ using System.IO;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering.HighDefinition;
 
 [DefaultExecutionOrder(-200)]
 public class SceneBootstrapper : MonoBehaviour
@@ -266,7 +267,6 @@ public class SceneBootstrapper : MonoBehaviour
         var luz = go.AddComponent<Light>();
         luz.type      = LightType.Directional;
         luz.color     = new Color(1f, 0.96f, 0.88f);
-        luz.intensity = 5f;   // intensidad alta para iluminar bien en HDRP
         luz.shadows   = LightShadows.Soft;
         go.transform.rotation = Quaternion.Euler(55f, -30f, 0f); // mediodía, ilumina bien el terreno
         // Iluminación ambiental directa — garantiza que el terreno recibe luz
@@ -277,11 +277,9 @@ public class SceneBootstrapper : MonoBehaviour
         RenderSettings.ambientIntensity   = 1.5f;
 
         // HDRP requiere HDAdditionalLightData en luces direccionales
-        var hdLightType = System.Type.GetType(
-            "UnityEngine.Rendering.HighDefinition.HDAdditionalLightData, " +
-            "Unity.RenderPipelines.HighDefinition.Runtime");
-        if (hdLightType != null && go.GetComponent(hdLightType) == null)
-            go.AddComponent(hdLightType);
+        var hdSol = go.GetComponent<HDAdditionalLightData>() ?? go.AddComponent<HDAdditionalLightData>();
+        hdSol.intensity = 80000f;
+        hdSol.lightUnit = LightUnit.Lux;
 
         Debug.Log("[Bootstrap] ✓ Sol creado (HDRP).");
     }

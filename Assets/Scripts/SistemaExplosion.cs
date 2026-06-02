@@ -3,6 +3,7 @@
 // Usada por VehiculoNPC, SistemaDestruccion y SistemaBombas.
 
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 public static class SistemaExplosion
 {
@@ -137,8 +138,10 @@ public static class SistemaExplosion
         var luz = luzGO.AddComponent<Light>();
         luz.type      = LightType.Point;
         luz.color     = new Color(1f, 0.7f, 0.3f);
-        luz.intensity = 8f;
         luz.range     = radio * 3f;
+        var hdFlash = luzGO.AddComponent<HDAdditionalLightData>();
+        hdFlash.intensity = 100000f;
+        hdFlash.lightUnit = LightUnit.Lux;
 
         // Auto-destruir todo
         Object.Destroy(root, 5f);

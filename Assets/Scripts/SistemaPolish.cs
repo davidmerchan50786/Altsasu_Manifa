@@ -61,7 +61,8 @@ public class SistemaPolish : MonoBehaviour
     // ── Flash sirena ─────────────────────────────────────────────────────
     float _sirenTimer;
     bool  _sirenActive;
-    Light _sirenLight;
+    Light                 _sirenLight;
+    HDAdditionalLightData _hdSiren;
 
     // ── Blur de velocidad ─────────────────────────────────────────────────
     float _velocidadActual;
@@ -143,11 +144,13 @@ public class SistemaPolish : MonoBehaviour
         var go = new GameObject("LuzSirena");
         go.transform.SetParent(transform);
         _sirenLight = go.AddComponent<Light>();
-        _sirenLight.type      = LightType.Point;
-        _sirenLight.range     = 40f;
-        _sirenLight.intensity = 0f;
-        _sirenLight.color     = Color.blue;
-        _sirenLight.shadows   = LightShadows.None;
+        _sirenLight.type    = LightType.Point;
+        _sirenLight.range   = 40f;
+        _sirenLight.color   = Color.blue;
+        _sirenLight.shadows = LightShadows.None;
+        _hdSiren = go.AddComponent<HDAdditionalLightData>();
+        _hdSiren.intensity  = 0f;
+        _hdSiren.lightUnit  = LightUnit.Lux;
         go.SetActive(false);
     }
 
@@ -248,7 +251,8 @@ public class SistemaPolish : MonoBehaviour
         if (!_sirenActive || _sirenLight == null) return;
         _sirenTimer += dt * 3f;
         float pulse = Mathf.Abs(Mathf.Sin(_sirenTimer * Mathf.PI));
-        _sirenLight.intensity = pulse * 3000f; // HDRP usa lux
+        if (_hdSiren != null) _hdSiren.intensity = pulse * 3000f;
+        else _sirenLight.intensity = pulse * 3000f;
         _sirenLight.color     = (_sirenTimer % 2f) < 1f ? Color.blue : Color.red;
         // Seguir al jugador
         var j = AltsasuCore.Jugador;
@@ -353,7 +357,7 @@ public class SistemaPolish : MonoBehaviour
         if (I == null || I._sirenLight == null) return;
         I._sirenActive = activo;
         I._sirenLight.gameObject.SetActive(activo);
-        if (!activo) I._sirenLight.intensity = 0f;
+        if (!activo) { if (I._hdSiren != null) I._hdSiren.intensity = 0f; else I._sirenLight.intensity = 0f; }
     }
 
     // ════════════════════════════════════════════════════════════════════════

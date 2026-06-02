@@ -6,6 +6,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 public class SistemaClima : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class SistemaClima : MonoBehaviour
     // ── Sol ───────────────────────────────────────────────────────────────
     [Header("Sol")]
     public Light solDireccional;
+    HDAdditionalLightData _hdSol;
 
     // ── Partículas ────────────────────────────────────────────────────────
     [Header("Partículas de clima")]
@@ -71,6 +73,11 @@ public class SistemaClima : MonoBehaviour
     void Start()
     {
         if (solDireccional == null) solDireccional = FindFirstObjectByType<Light>();
+        if (solDireccional != null)
+        {
+            _hdSol = solDireccional.GetComponent<HDAdditionalLightData>();
+            if (_hdSol == null) _hdSol = solDireccional.gameObject.AddComponent<HDAdditionalLightData>();
+        }
         InicializarAudio();
         InicializarParticulas();
         AplicarClimaInstantaneo(climaActual);
@@ -111,7 +118,12 @@ public class SistemaClima : MonoBehaviour
     void AplicarClimaInstantaneo(EstadoClima e)
     {
         var c = CONFIGS[(int)e];
-        if (solDireccional != null) { solDireccional.intensity = c.intensidadSol; solDireccional.color = c.colorSol; }
+        if (solDireccional != null)
+        {
+            solDireccional.color = c.colorSol;
+            if (_hdSol != null) _hdSol.intensity = c.intensidadSol * 80000f; // lux (sol directo ~80klux)
+            else solDireccional.intensity = c.intensidadSol;
+        }
         RenderSettings.fogDensity = c.niebla;
         RenderSettings.fogColor   = c.colorFog;
         fuerzaViento = c.viento;
@@ -123,7 +135,7 @@ public class SistemaClima : MonoBehaviour
     {
         _transicionando = true;
         float t = 0f;
-        float solInicial   = solDireccional?.intensity ?? 1f;
+        float solInicial   = _hdSol != null ? _hdSol.intensity : (solDireccional?.intensity ?? 1f);
         Color colorInicial = solDireccional?.color ?? Color.white;
         float nieblaInicial = RenderSettings.fogDensity;
         Color fogInicial    = RenderSettings.fogColor;
@@ -139,8 +151,10 @@ public class SistemaClima : MonoBehaviour
 
             if (solDireccional != null)
             {
-                solDireccional.intensity = Mathf.Lerp(solInicial, objetivo.intensidadSol, f);
-                solDireccional.color     = Color.Lerp(colorInicial, objetivo.colorSol, f);
+                float targetLux = objetivo.intensidadSol * 80000f;
+                if (_hdSol != null) _hdSol.intensity = Mathf.Lerp(solInicial, targetLux, f);
+                else solDireccional.intensity = Mathf.Lerp(solInicial, objetivo.intensidadSol, f);
+                solDireccional.color = Color.Lerp(colorInicial, objetivo.colorSol, f);
             }
             RenderSettings.fogDensity = Mathf.Lerp(nieblaInicial, objetivo.niebla, f);
             RenderSettings.fogColor   = Color.Lerp(fogInicial, objetivo.colorFog, f);
@@ -247,16 +261,16 @@ public class SistemaClima : MonoBehaviour
         yield return new WaitForSeconds(Random.Range(1f, 4f));
         if (clipTrueno != null) AudioSource.PlayClipAtPoint(clipTrueno, Camera.main?.transform.position ?? Vector3.zero, 0.9f);
         // Flash de relámpago
-        if (solDireccional != null)
+        if (solDireccional != null && _hdSol != null)
         {
-            float orig = solDireccional.intensity;
-            solDireccional.intensity = 4f;
+            float orig = _hdSol.intensity;
+            _hdSol.intensity = 400000f; // relámpago: ~400klux
             yield return new WaitForSeconds(0.08f);
-            solDireccional.intensity = orig;
+            _hdSol.intensity = orig;
             yield return new WaitForSeconds(0.12f);
-            solDireccional.intensity = 3f;
+            _hdSol.intensity = 300000f;
             yield return new WaitForSeconds(0.06f);
-            solDireccional.intensity = orig;
+            _hdSol.intensity = orig;
         }
     }
 

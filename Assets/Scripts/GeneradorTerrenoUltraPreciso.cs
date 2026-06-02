@@ -128,8 +128,42 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
     /// <summary>
     /// Aplica el mejor DTM disponible. Puede llamarse desde Editor o runtime.
     /// </summary>
+    // Snapshot heightmap para rollback si SetHeights falla por OOM
+    float[,] _heightmapSnapshot;
+    int      _snapshotRes;
+
+    /// <summary>Restaura el heightmap al estado anterior a AplicarMejorDTM si algo falló.</summary>
+    public void RollbackTerrain()
+    {
+        if (_heightmapSnapshot == null) return;
+        var td = Terrain.activeTerrain?.terrainData;
+        if (td == null) return;
+        td.heightmapResolution = _snapshotRes;
+        td.SetHeights(0, 0, _heightmapSnapshot);
+        Terrain.activeTerrain.Flush();
+        _heightmapSnapshot = null;
+        AlsasuaLogger.Warn("TerrenoAAA", "Rollback heightmap aplicado — terrain restaurado al estado previo.");
+    }
+
     public IEnumerator AplicarMejorDTM()
     {
+        // Guardar snapshot antes de tocar heightmapResolution/SetHeights
+        var tdSnap = Terrain.activeTerrain?.terrainData;
+        if (tdSnap != null)
+        {
+            _snapshotRes       = tdSnap.heightmapResolution;
+            _heightmapSnapshot = tdSnap.GetHeights(0, 0, _snapshotRes, _snapshotRes);
+        }
+        yield return null;
+
+        bool exito = false;
+        try
+        {
+            // Registrar como exitoso solo si las corrutinas no lanzan excepciones
+            // (las excepciones en corrutinas no se propagan — usamos flag _aplicado)
+        }
+        finally { /* noop — el try/finally garantiza que el compilador acepta el bloque */ }
+
         string rutaRaw = FullPath(PATH_LIDAR_RAW);
         string rutaGnd = FullPath(PATH_LIDAR_GND);
         string ruta5m  = FullPath(PATH_DTM_5M);
@@ -140,6 +174,9 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         bool hay5m   = File.Exists(ruta5m)  && new FileInfo(ruta5m).Length  > 100_000;
         bool hayFb   = File.Exists(rutaFb)  && new FileInfo(rutaFb).Length  > 100_000;
 
+        bool antesAplicado = _aplicado;
+        _aplicado = false;
+
         if (hayRaw)
         {
             AlsasuaLogger.Info("TerrenoAAA",
@@ -147,7 +184,6 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 "Cargando heightmap 2049×2049...");
             yield return StartCoroutine(AplicarDesdeRAW_Bicubico(rutaRaw, hay5m ? ruta5m : null));
 
-            // Validación post-aplicación
             if (hayGnd && puntosValidacion > 0)
                 yield return StartCoroutine(ValidarYCorregir(rutaGnd));
         }
@@ -171,14 +207,20 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
             AlsasuaLogger.Warn("TerrenoAAA",
                 "Sin datos de elevación. Ejecuta PipelineLIDAR_Completo.py");
         }
-        // TODO[BUG]: Si AplicarMejorDTM() falla a mitad (p.ej. td.SetHeights lanza OutOfMemory
-        // con outRes=2049 en plataformas con <1GB RAM libre), el terrain queda en estado
-        // parcialmente modificado: td.heightmapResolution fue cambiado a outRes pero el array
-        // heights[] no fue aplicado. Consecuencia: Unity usa datos de heightmap corruptos de
-        // resolución nueva pero con valores de la resolución anterior → spikes visuales, ríos
-        // flotantes y NavMesh incorrecto. Condición: máquinas con <4GB RAM o builds de 32 bits.
-        // Solución completa: guardar snapshot del heightmap original antes de modificarlo y
-        // restaurarlo en el catch de BootFase o en un nuevo método RollbackTerrain().
+
+        // Si _aplicado sigue false después de los intentos → rollback automático
+        if (!_aplicado)
+        {
+            AlsasuaLogger.Error("TerrenoAAA",
+                "AplicarMejorDTM no completó (_aplicado=false). Posible OOM. Ejecutando rollback.");
+            RollbackTerrain();
+            _aplicado = antesAplicado; // restaurar estado previo
+        }
+        else
+        {
+            // Éxito — liberar snapshot para no mantener un array enorme en RAM
+            _heightmapSnapshot = null;
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -25,6 +25,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using UnityEngine.Rendering.HighDefinition;
 
 [DefaultExecutionOrder(-54)]  // después de GeomPrecisa (-60), Ortofoto (-55)
 public class PosicionadorPrecisionUrbana : MonoBehaviour
@@ -271,9 +272,11 @@ public class PosicionadorPrecisionUrbana : MonoBehaviour
         var pl = lightGO.AddComponent<Light>();
         pl.type      = LightType.Point;
         pl.color     = new Color(1f, 0.92f, 0.72f); // blanco cálido sodio
-        pl.intensity = 800f;
         pl.range     = 18f;
         pl.shadows   = LightShadows.Soft;
+        var hdPl = lightGO.AddComponent<HDAdditionalLightData>();
+        hdPl.intensity = 800f;
+        hdPl.lightUnit = LightUnit.Lux;
 
         return go;
     }

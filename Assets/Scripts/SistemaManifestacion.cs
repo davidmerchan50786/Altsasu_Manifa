@@ -129,6 +129,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
 
     void OnDestroy()
     {
+        if (_crIniciar != null) StopCoroutine(_crIniciar);
         if (_bPos.IsCreated)      _bPos.Dispose();
         if (_bVel.IsCreated)      _bVel.Dispose();
         if (_bNuevaPos.IsCreated) _bNuevaPos.Dispose();
@@ -167,6 +168,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     // ─── Estado ────────────────────────────────────────────────────────────
     bool     _activa;
     public bool EnCurso => _activa;
+    Coroutine _crIniciar;
     readonly List<ManifestanteIA> _manifestantes = new();
     readonly List<GameObject>     _barricadas    = new();
     AudioSource _srcConsignas, _srcDisturbios;
@@ -176,7 +178,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     {
         _apoyo = SistemaApoyoPopular.Instance;
         InicializarAudio();
-        if (activaAlInicio) StartCoroutine(IniciarManifestacion());
+        if (activaAlInicio) _crIniciar = StartCoroutine(IniciarManifestacion());
     }
 
     // ── Inicio de manifestación ───────────────────────────────────────────

@@ -22,9 +22,10 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
     // Si en el futuro se añade TMPro, crear un CanvasGUI hijo y asignar manualmente.
 
     // ── Estado ───────────────────────────────────────────────────────────
-    private Mision _misionActual;
-    private int    _objetivoActual;
-    private bool   _enMision;
+    private Mision    _misionActual;
+    private int       _objetivoActual;
+    private bool      _enMision;
+    private Coroutine _crIniciarM01;
 
     public static event System.Action<string> OnMisionIniciada;
     public static event System.Action<string> OnObjetivoCompletado;
@@ -34,8 +35,13 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
 
     private void Start()
     {
-        // Auto-iniciar M01 cuando el juego arranca
-        StartCoroutine(IniciarM01ConDelay());
+        _crIniciarM01 = StartCoroutine(IniciarM01ConDelay());
+    }
+
+    protected override void OnDestroyed()
+    {
+        if (_crIniciarM01 != null) { StopCoroutine(_crIniciarM01); _crIniciarM01 = null; }
+        if (_crCompletarObjetivo != null) { StopCoroutine(_crCompletarObjetivo); _crCompletarObjetivo = null; }
     }
 
     private IEnumerator IniciarM01ConDelay()

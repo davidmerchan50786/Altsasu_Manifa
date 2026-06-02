@@ -5,6 +5,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
 {
@@ -304,7 +305,10 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
         lightGO.transform.localPosition = Vector3.up * size;
         var light = lightGO.AddComponent<Light>();
         light.type = LightType.Point; light.color = new Color(1f, 0.5f, 0.1f);
-        light.range = size * 8f; light.intensity = size * 3f;
+        light.range = size * 8f;
+        var hdFire = lightGO.AddComponent<HDAdditionalLightData>();
+        hdFire.intensity = size * 3000f;
+        hdFire.lightUnit = LightUnit.Lux;
 
         return go;
     }

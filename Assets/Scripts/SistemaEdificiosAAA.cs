@@ -29,6 +29,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Rendering.HighDefinition;
 using System.Linq;
 
 [DefaultExecutionOrder(-75)]
@@ -938,11 +939,13 @@ public class SistemaEdificiosAAA : MonoBehaviour
         lightGO.transform.position = new Vector3(b.center.x, b.min.y + 2.5f, b.min.z + 0.5f);
 
         var light = lightGO.AddComponent<Light>();
-        light.type       = LightType.Point;
-        light.color      = colorLuz;
-        light.intensity  = intensidad;
-        light.range      = 8f;
-        light.enabled    = false; // activar en ciclo nocturno
+        light.type    = LightType.Point;
+        light.color   = colorLuz;
+        light.range   = 8f;
+        light.enabled = false; // activar en ciclo nocturno
+        var hdl = lightGO.AddComponent<HDAdditionalLightData>();
+        hdl.intensity = intensidad * 1000f; // lux: intensidad=1 → 1000 lux (interior cálido)
+        hdl.lightUnit = LightUnit.Lux;
         _ventanasNocturnas.Add(null); // placeholder para que el ciclo lo gestione
     }
 

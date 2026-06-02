@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 [DefaultExecutionOrder(-30)]
 public class PropsDestruccionManifestacion : SingletonMono<PropsDestruccionManifestacion>
@@ -383,12 +384,14 @@ public class PropsDestruccionManifestacion : SingletonMono<PropsDestruccionManif
         var go = new GameObject("Fuego_Fallback");
         go.transform.SetParent(_parentProps);
 
-        // Luz puntual naranja parpadeante
+        // Luz puntual naranja parpadeante — HDRP requiere HDAdditionalLightData
         var luz = go.AddComponent<Light>();
         luz.type = LightType.Point;
         luz.color = new Color(1f, 0.55f, 0.1f);
-        luz.intensity = 600f;
         luz.range = 8f;
+        var hdLight = go.AddComponent<HDAdditionalLightData>();
+        hdLight.intensity = 600f;
+        hdLight.lightUnit = LightUnit.Lux;
 
         // Particulas de humo simples
         var humoGO = new GameObject("Humo");
@@ -477,22 +480,25 @@ public class PropsDestruccionManifestacion : SingletonMono<PropsDestruccionManif
 // ═══════════════════════════════════════════════════════════════════════════
 public class ParpadeadorLuzFuego : MonoBehaviour
 {
-    Light _luz;
+    Light                _luz;
+    HDAdditionalLightData _hdLight;
     float _baseIntensidad;
     float _offset;
 
     void Awake()
     {
-        _luz = GetComponent<Light>();
-        if (_luz != null) _baseIntensidad = _luz.intensity;
-        _offset = UnityEngine.Random.Range(0f, 100f);
+        _luz     = GetComponent<Light>();
+        _hdLight = GetComponent<HDAdditionalLightData>();
+        _baseIntensidad = _hdLight != null ? _hdLight.intensity : (_luz != null ? _luz.intensity : 600f);
+        _offset  = UnityEngine.Random.Range(0f, 100f);
     }
 
     void Update()
     {
         if (_luz == null) return;
-        // Perlin noise para parpadeo organico — sin allocs
-        float ruido = Mathf.PerlinNoise(Time.time * 8f + _offset, _offset * 0.5f);
-        _luz.intensity = _baseIntensidad * (0.6f + ruido * 0.8f);
+        float ruido      = Mathf.PerlinNoise(Time.time * 8f + _offset, _offset * 0.5f);
+        float intensidad = _baseIntensidad * (0.6f + ruido * 0.8f);
+        if (_hdLight != null) _hdLight.intensity = intensidad;
+        else _luz.intensity = intensidad;
     }
 }

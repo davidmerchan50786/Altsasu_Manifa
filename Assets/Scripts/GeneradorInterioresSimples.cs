@@ -10,6 +10,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Rendering.HighDefinition;
 
 [DefaultExecutionOrder(-48)]
 public class GeneradorInterioresSimples : MonoBehaviour
@@ -241,27 +242,29 @@ public class GeneradorInterioresSimples : MonoBehaviour
         luz.type    = LightType.Point;
         luz.shadows = LightShadows.None;
 
+        var hd = luz.GetComponent<HDAdditionalLightData>();
+
         switch (arquetipo)
         {
             case "Bar":
-                luz.color     = ColorTemperatura(2700f);
-                luz.intensity = 2.5f;
-                luz.range     = 8f;
+                luz.color  = ColorTemperatura(2700f);
+                luz.range  = 8f;
+                if (hd != null) { hd.intensity = 2500f; hd.lightUnit = LightUnit.Lux; }
                 break;
             case "Comercio":
-                luz.color     = ColorTemperatura(4000f);
-                luz.intensity = 1.8f;
-                luz.range     = 6f;
+                luz.color  = ColorTemperatura(4000f);
+                luz.range  = 6f;
+                if (hd != null) { hd.intensity = 1800f; hd.lightUnit = LightUnit.Lux; }
                 break;
             case "Industrial":
-                luz.color     = ColorTemperatura(5000f);
-                luz.intensity = 0.8f;
-                luz.range     = 4f;
+                luz.color  = ColorTemperatura(5000f);
+                luz.range  = 4f;
+                if (hd != null) { hd.intensity = 800f; hd.lightUnit = LightUnit.Lux; }
                 break;
             default: // Residencial
-                luz.color     = ColorTemperatura(3200f);
-                luz.intensity = 1.2f;
-                luz.range     = 5f;
+                luz.color  = ColorTemperatura(3200f);
+                luz.range  = 5f;
+                if (hd != null) { hd.intensity = 1200f; hd.lightUnit = LightUnit.Lux; }
                 break;
         }
     }
@@ -337,7 +340,9 @@ public class GeneradorInterioresSimples : MonoBehaviour
 
         var go = new GameObject("Interior_Luz");
         go.transform.SetParent(transform);
-        return go.AddComponent<Light>();
+        var l = go.AddComponent<Light>();
+        go.AddComponent<HDAdditionalLightData>();
+        return l;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
