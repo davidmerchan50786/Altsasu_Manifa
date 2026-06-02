@@ -2,1545 +2,1802 @@
   "mappings": [
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_001.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_002.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_003.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_004.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_005.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_006.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_007.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_008.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_009.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_010.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_011.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_012.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_013.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_014.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_015.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_016.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_017.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_018.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_019.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_020.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_021.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_022.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_023.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_024.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_025.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_026.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_027.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_028.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_029.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_030.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_031.png",
-      "edificio_id": "297646225",
+      "edificio_id": "1227104495",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "medium",
+      "distance_m": 71.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_032.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "casco_viejo",
-      "confidence": "low"
+      "confidence": "low",
+      "distance_m": 144.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_001.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 44.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_002.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 52.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_003.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 86.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_004.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797095",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 97.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_005.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797073",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 125.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_006.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797075",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 129.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_007.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797074",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 134.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_008.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797076",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 138.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_009.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797070",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 140.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_010.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 44.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_011.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 52.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_012.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 86.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_013.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797095",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 97.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_014.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797073",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 125.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_015.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797075",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 129.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_016.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797074",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 134.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_017.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797076",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 138.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_018.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797070",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 140.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_019.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 44.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_020.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 52.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_021.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 86.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_022.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797095",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 97.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_023.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797073",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 125.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_024.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797075",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 129.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_025.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797074",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 134.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_026.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797076",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 138.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_027.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797070",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 140.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_028.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 44.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_029.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 52.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_030.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 86.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_031.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797095",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 97.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_032.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797073",
       "zona": "plaza_fueros",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 125.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_001.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_002.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_003.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_004.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_005.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_006.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_007.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_008.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_009.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_010.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_011.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_012.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_013.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_014.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_015.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_016.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_017.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_018.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_019.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_020.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_021.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_022.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_023.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_024.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_025.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_026.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_027.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_028.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646241",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 94.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_029.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797084",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 135.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_030.png",
-      "edificio_id": "102837531",
+      "edificio_id": "297646240",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 137.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_031.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797079",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 69.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_032.png",
-      "edificio_id": "102837531",
+      "edificio_id": "784797078",
       "zona": "ferial",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_001.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_002.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_003.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_004.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_005.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_006.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_007.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_008.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_009.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_010.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_011.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_012.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_013.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_014.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_015.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_016.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_017.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_018.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_019.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_020.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_021.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_022.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_023.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_024.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_025.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_026.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_027.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_028.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784673799",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 116.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_029.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160864",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_030.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297160865",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 133.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_031.png",
-      "edificio_id": "297057690",
+      "edificio_id": "784797100",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_032.png",
-      "edificio_id": "297057690",
+      "edificio_id": "297158488",
       "zona": "gaztetxe",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 110.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_001.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167107",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 9.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_002.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297165191",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 9.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_003.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167109",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 10.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_004.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297165190",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 12.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_005.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167110",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 15.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_006.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297165189",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 19.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_007.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167111",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 19.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_008.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297165188",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 26.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_009.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167113",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 27.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_010.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167112",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 27.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_011.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167114",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 30.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_012.png",
       "edificio_id": "91927762",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 33.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_013.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297146107",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 35.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_014.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297102376",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 37.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_015.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297146108",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 39.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_016.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297146109",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 43.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_017.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167115",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 44.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_018.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167116",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 50.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_019.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297150870",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 50.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_020.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297518880",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 52.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_021.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297102377",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 52.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_022.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297518881",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 53.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_023.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297146665",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 53.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_024.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297146664",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 54.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_025.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297518882",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 56.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_026.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297145830",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 57.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_027.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297518886",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 57.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_028.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297167117",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 57.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_029.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297150871",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 59.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_030.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297145829",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 60.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_031.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297518885",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 62.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_032.png",
-      "edificio_id": "91927762",
+      "edificio_id": "297150868",
       "zona": "iglesia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 64.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_001.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_002.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_003.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_004.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_005.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_006.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_007.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_008.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_009.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_010.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_011.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_012.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_013.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_014.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_015.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_016.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_017.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_018.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_019.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_020.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_021.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_022.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_023.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_024.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_025.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_026.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_027.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_028.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_029.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_030.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646224",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 143.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_031.png",
-      "edificio_id": "783770921",
+      "edificio_id": "784797099",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 106.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_032.png",
-      "edificio_id": "783770921",
+      "edificio_id": "297646225",
       "zona": "ayto",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 126.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_001.png",
-      "edificio_id": "297145361",
+      "edificio_id": "784673799",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 13.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_002.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297158488",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 25.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_003.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160863",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "high",
+      "distance_m": 29.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_004.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160860",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 32.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_005.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160859",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 44.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_006.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160862",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 46.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_007.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162224",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 47.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_008.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160858",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 49.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_009.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160857",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 53.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_010.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162227",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 58.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_011.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160856",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 58.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_012.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162230",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 61.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_013.png",
-      "edificio_id": "297145361",
+      "edificio_id": "784797100",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 64.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_014.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162232",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 68.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_015.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160855",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 72.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_016.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297271238",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 73.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_017.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160854",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 73.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_018.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297272104",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 73.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_019.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297272105",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 74.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_020.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297274398",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 76.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_021.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297274399",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 79.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_022.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162235",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "medium",
+      "distance_m": 79.6
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_023.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297271239",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 80.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_024.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297271237",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 80.8
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_025.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297158487",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 81.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_026.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297160853",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 81.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_027.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297271235",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 82.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_028.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297274400",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 86.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_029.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297162237",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 86.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_030.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297158486",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 87.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_031.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297226312",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 87.4
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_032.png",
-      "edificio_id": "297145361",
+      "edificio_id": "297157704",
       "zona": "plaza_zubeztia",
-      "confidence": "high"
+      "confidence": "low",
+      "distance_m": 88.2
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_001.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646235",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 35.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_002.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646233",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 49.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_003.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646237",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 83.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_004.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 94.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_005.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797099",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_006.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_007.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 146.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_008.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646235",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 35.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_009.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646233",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 49.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_010.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646237",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 83.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_011.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 94.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_012.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797099",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_013.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_014.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 146.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_015.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646235",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 35.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_016.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646233",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 49.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_017.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646237",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 83.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_018.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 94.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_019.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797099",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_020.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_021.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 146.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_022.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646235",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 35.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_023.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646233",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 49.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_024.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646237",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 83.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_025.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 94.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_026.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797099",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_027.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797098",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_028.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797096",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 146.9
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_029.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646235",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 35.7
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_030.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646233",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "medium",
+      "distance_m": 49.5
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_031.png",
-      "edificio_id": "297646225",
+      "edificio_id": "297646237",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 83.0
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_032.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797097",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 94.3
     },
     {
       "foto_procesada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_001.png",
-      "edificio_id": "297646225",
+      "edificio_id": "784797099",
       "zona": "garcia_jimenez",
-      "confidence": "medium"
+      "confidence": "low",
+      "distance_m": 126.1
     }
   ]
 }

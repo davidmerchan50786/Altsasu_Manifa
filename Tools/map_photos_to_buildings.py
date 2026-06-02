@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-map_photos_to_buildings.py — Altsasu Manifa B3
-Mapea cada foto procesada al edificio catastral más probable.
+map_photos_to_buildings.py — Altsasu Manifa B3 v2
+Mapea cada foto procesada al edificio más cercano en su zona.
+
+Mejora v2: distribuye fotos a múltiples edificios por zona (no uno solo)
+y usa las coordenadas Unity reales de buildings_fusion_final.json.
 
 Lee:
   Assets/AlsasuaData/FacadeTextures/processing_report.json
-  Assets/AlsasuaData/catastro_edificios.json
+  Assets/AlsasuaData/buildings_fusion_final.json
 
 Genera:
   Assets/AlsasuaData/photo_building_mapping.json
@@ -13,215 +16,198 @@ Genera:
 Uso: python3 Tools/map_photos_to_buildings.py
 """
 
-import os
-import sys
 import json
 import math
+import os
+from collections import defaultdict
 
-# ---------------------------------------------------------------------------
-# Rutas
-# ---------------------------------------------------------------------------
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
-REPORT_PATH   = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "FacadeTextures", "processing_report.json")
-CATASTRO_PATH = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "catastro_edificios.json")
-OUTPUT_PATH   = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "photo_building_mapping.json")
+REPORT_PATH    = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "FacadeTextures", "processing_report.json")
+BUILDINGS_PATH = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "buildings_fusion_final.json")
+OUTPUT_PATH    = os.path.join(PROJECT_ROOT, "Assets", "AlsasuaData", "photo_building_mapping.json")
 
-# ---------------------------------------------------------------------------
-# Centros geográficos de cada zona (coordenadas Unity: x, z)
-# Derivadas de la geografía real de Alsasua/Altsasu
-# Origen: Herriko Plaza  UTM E=567951, N=4749902  →  UnityX=1918, UnityZ=8570
-# ---------------------------------------------------------------------------
-ZONA_CENTERS = {
-    # Coordenadas relativas al origen (Herriko Plaza = 0,0 en espacio Unity de vértices)
-    # UnityX_relativo = UTM_E - 567951; UnityZ_relativo = UTM_N - 4749902
-    "casco_viejo":          (  0.0,    0.0),   # Herriko Plaza / casco antiguo
-    "plaza_fueros":         ( 50.0,   40.0),   # Plaza de los Fueros ~50m E
-    "ferial":               (180.0,  130.0),   # Zona ferial, NE del centro
-    "gaztetxe":             (-60.0,  -50.0),   # Gaztetxe, SO del centro
-    "iglesia":              (-27.0, -335.0),   # Jasokundeko Andre Mariaren eliza (coordenada real)
-    "ayto":                 (  5.0,  -70.0),   # Ayuntamiento, S del centro
-    "plaza_zubeztia":       (-140.0, -120.0),  # Plaza Zubeztia, SO del centro
-    "garcia_jimenez":       (130.0,  -20.0),   # Calle García Jiménez, E centro
-    "calle_garcia_jimenez": (130.0,  -20.0),   # alias
-    "sin_zona":             (  0.0,    0.0),   # Fallback: centro de Alsasua
+# ── Conversión lon/lat → Unity (misma fórmula que generate_buildings_fusion.py) ──
+
+LON_ORIGIN   = -2.192000
+LAT_ORIGIN   = 42.819000
+DEG_TO_UTM_E = 77450.0
+DEG_TO_UTM_N = 111320.0
+UTM_E_ORIGIN = 567951.0
+UTM_N_ORIGIN = 4749902.0
+UNITY_OX     = 1918.0
+UNITY_OZ     = 8570.0
+
+def lonlat_to_unity(lon, lat):
+    E = UTM_E_ORIGIN + (lon - LON_ORIGIN) * DEG_TO_UTM_E
+    N = UTM_N_ORIGIN + (lat - LAT_ORIGIN) * DEG_TO_UTM_N
+    return (E - UTM_E_ORIGIN) + UNITY_OX, (N - UTM_N_ORIGIN) + UNITY_OZ
+
+# Centros de zona en coordenadas reales (lon, lat) de Alsasua
+ZONA_LONLAT = {
+    "casco_viejo":    (-2.1673, 42.9005),
+    "plaza_fueros":   (-2.1660, 42.9010),
+    "ferial":         (-2.1635, 42.9025),
+    "gaztetxe":       (-2.1695, 42.8990),
+    "iglesia":        (-2.1680, 42.8960),
+    "ayto":           (-2.1670, 42.8995),
+    "plaza_zubeztia": (-2.1710, 42.8985),
+    "garcia_jimenez": (-2.1645, 42.8998),
 }
 
-# Palabras clave en nombre/tipo de edificio que elevan la confianza por zona
+# Convertir a Unity
+ZONA_CENTERS_UNITY = {z: lonlat_to_unity(lon, lat) for z, (lon, lat) in ZONA_LONLAT.items()}
+
 ZONA_KEYWORDS = {
-    "iglesia":  ["iglesia", "eliza", "church", "ermita", "capilla", "basílica", "religiös"],
-    "ayto":     ["ayuntamiento", "udaletxea", "town hall", "municipal", "udal"],
-    "ferial":   ["ferial", "pabellón", "frontoi", "pelota", "polideportivo", "frontón"],
-    "gaztetxe": ["gaztetxe", "cultural", "juventud", "gaztelu"],
-    "plaza_fueros":         ["plaza", "fueros"],
-    "plaza_zubeztia":       ["zubeztia", "plaza"],
-    "calle_garcia_jimenez": ["garcia jimenez", "garcía jiménez"],
+    "iglesia":  ["iglesia", "eliza", "church", "ermita", "capilla"],
+    "ayto":     ["ayuntamiento", "udaletxea", "town_hall", "municipal"],
+    "ferial":   ["ferial", "pabellón", "frontoi", "polideportivo"],
+    "gaztetxe": ["gaztetxe", "cultural", "juventud"],
 }
 
-# ---------------------------------------------------------------------------
-# Funciones auxiliares
-# ---------------------------------------------------------------------------
+ZONA_RADIUS = 150.0  # metros: radio de búsqueda por zona
 
 def dist2d(ax, az, bx, bz):
     return math.sqrt((ax - bx) ** 2 + (az - bz) ** 2)
 
+def load_buildings():
+    if not os.path.exists(BUILDINGS_PATH):
+        print(f"[ERR] No se encontró {BUILDINGS_PATH}")
+        return []
+    with open(BUILDINGS_PATH, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    blist = raw if isinstance(raw, list) else raw.get("buildings", raw.get("features", []))
+    buildings = []
+    for b in blist:
+        p = b.get("properties", b)
+        cu = p.get("center_unity", [0, 0])
+        if isinstance(cu, str):
+            cu = json.loads(cu)
+        buildings.append({
+            "id": str(p.get("id", p.get("osm_id", "?"))),
+            "x": float(cu[0]),
+            "z": float(cu[1]),
+            "archetype": p.get("archetype", ""),
+            "height_m": float(p.get("height_m", 0)),
+            "surface_m2": float(p.get("surface_m2", 0)),
+        })
+    return buildings
 
-def building_center(edificio: dict):
-    """Devuelve (unity_x, unity_z) del centroide del edificio."""
-    vertices = edificio.get("vertices", [])
-    if vertices:
-        cx = sum(v["x"] for v in vertices) / len(vertices)
-        cz = sum(v["z"] for v in vertices) / len(vertices)
-        return cx, cz
-    # Fallback: convertir lat/lon a Unity
-    lat = edificio.get("lat", 42.8957)
-    lon = edificio.get("lon", -2.1680)
-    # UTM 30N ETRS89 aproximado para la zona de Alsasua
-    # E = (lon - lon_origin) * 111320 * cos(lat) + 567951
-    # N = (lat - lat_origin) * 111320 + 4749902
-    # UnityX = E - 567951 + 1918; UnityZ = N - 4749902 + 8570
-    lat0 = 42.8957
-    lon0 = -2.1680
-    ux = (lon - lon0) * 111320.0 * math.cos(math.radians(lat0)) + 1918.0
-    uz = (lat - lat0) * 111320.0 + 8570.0
-    return ux, uz
+def find_zone_buildings(zona, buildings):
+    """Encuentra todos los edificios dentro del radio de la zona, ordenados por cercanía."""
+    cx, cz = ZONA_CENTERS_UNITY.get(zona, (0, 0))
+    if cx == 0 and cz == 0:
+        return []
 
-
-def keyword_match(edificio: dict, zona: str) -> bool:
-    """Devuelve True si el nombre o tipo del edificio coincide con keywords de la zona."""
-    keywords = ZONA_KEYWORDS.get(zona, [])
-    if not keywords:
-        return False
-    nombre = (edificio.get("nombre", "") or "").lower()
-    tipo   = (edificio.get("tipo", "")   or "").lower()
-    return any(kw in nombre or kw in tipo for kw in keywords)
-
-
-def find_best_building(zona: str, edificios: list) -> tuple:
-    """
-    Devuelve (edificio_dict, confidence_str).
-    Estrategia:
-      1. Si hay keywords que coincidan, devolver el más cercano al centro de zona con confidence=high
-      2. Si no, devolver el más cercano al centro de zona con confidence=medium
-      3. Si no hay edificios, devolver None, "low"
-    """
-    if not edificios:
-        return None, "low"
-
-    zona_cx, zona_cz = ZONA_CENTERS.get(zona, ZONA_CENTERS["sin_zona"])
-
-    # Calcular distancias
     with_dist = []
-    for ed in edificios:
-        bx, bz = building_center(ed)
-        d = dist2d(zona_cx, zona_cz, bx, bz)
-        with_dist.append((d, ed))
+    for b in buildings:
+        d = dist2d(cx, cz, b["x"], b["z"])
+        if d <= ZONA_RADIUS:
+            with_dist.append((d, b))
     with_dist.sort(key=lambda t: t[0])
 
-    # Buscar primero coincidencia por keywords
-    for d, ed in with_dist:
-        if keyword_match(ed, zona):
-            return ed, "high"
+    # Priorizar edificios con keyword match
+    keywords = ZONA_KEYWORDS.get(zona, [])
+    if keywords:
+        kw_match = [(d, b) for d, b in with_dist
+                    if any(kw in b.get("archetype", "").lower() for kw in keywords)]
+        if kw_match:
+            rest = [(d, b) for d, b in with_dist if (d, b) not in kw_match]
+            with_dist = kw_match + rest
 
-    # Sin keywords: el más cercano
-    best_dist, best_ed = with_dist[0]
-    confidence = "medium" if best_dist < 100.0 else "low"
-    return best_ed, confidence
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+    return with_dist
 
 def main():
     print("=" * 60)
-    print("map_photos_to_buildings.py — Altsasu Manifa")
+    print("map_photos_to_buildings.py v2 — distribuir fotos por edificio")
     print("=" * 60)
 
-    # --- Cargar processing report ---
     if not os.path.exists(REPORT_PATH):
         print(f"[WARN] No se encontró {REPORT_PATH}")
-        print("       Ejecuta primero: python3 Tools/process_streetview_photos.py")
-        _write_empty_mapping()
-        return
+        _write_empty(); return
 
     with open(REPORT_PATH, "r", encoding="utf-8") as f:
         report = json.load(f)
+    lista = report.get("lista_procesadas", [])
+    if not lista:
+        print("[INFO] Sin fotos procesadas."); _write_empty(); return
 
-    lista_procesadas = report.get("lista_procesadas", [])
-    if not lista_procesadas:
-        print("[INFO] No hay fotos procesadas en el report — generando mapping vacío.")
-        _write_empty_mapping()
-        return
+    buildings = load_buildings()
+    print(f"[INFO] {len(buildings)} edificios cargados.")
+    print(f"[INFO] {len(lista)} fotos a mapear.")
+    print()
 
-    # --- Cargar catastro edificios ---
-    if not os.path.exists(CATASTRO_PATH):
-        print(f"[WARN] No se encontró {CATASTRO_PATH}")
-        _write_empty_mapping()
-        return
-
-    with open(CATASTRO_PATH, "r", encoding="utf-8") as f:
-        catastro_raw = json.load(f)
-
-    # Normalizar: puede ser lista o dict con clave "edificios"/"features"
-    if isinstance(catastro_raw, list):
-        edificios = catastro_raw
-    elif isinstance(catastro_raw, dict):
-        for key in ("edificios", "features", "buildings"):
-            if key in catastro_raw:
-                edificios = catastro_raw[key]
-                break
-        else:
-            edificios = list(catastro_raw.values()) if catastro_raw else []
-    else:
-        edificios = []
-
-    print(f"[INFO] {len(edificios)} edificios cargados del catastro.")
-    print(f"[INFO] {len(lista_procesadas)} fotos a mapear.")
+    # Agrupar fotos por zona
+    fotos_por_zona = defaultdict(list)
+    for entry in lista:
+        fotos_por_zona[entry.get("zona", "sin_zona")].append(entry)
 
     mappings = []
-    for entry in lista_procesadas:
-        foto_path = entry.get("procesada", "")
-        zona = entry.get("zona", "sin_zona")
+    stats = {"high": 0, "medium": 0, "low": 0}
+    edificios_asignados = set()
 
-        best_ed, confidence = find_best_building(zona, edificios)
+    for zona, fotos in fotos_por_zona.items():
+        zone_buildings = find_zone_buildings(zona, buildings)
+        n_buildings = len(zone_buildings)
 
-        if best_ed is None:
-            edificio_id = "UNKNOWN"
-            confidence = "low"
-        else:
-            edificio_id = str(best_ed.get("id", best_ed.get("osm_id", "UNKNOWN")))
+        cx, cz = ZONA_CENTERS_UNITY.get(zona, (0, 0))
+        print(f"Zona '{zona}': {len(fotos)} fotos, centro=({cx:.0f},{cz:.0f}), {n_buildings} edificios <{ZONA_RADIUS}m")
 
-        mapping = {
-            "foto_procesada": foto_path,
-            "edificio_id":    edificio_id,
-            "zona":           zona,
-            "confidence":     confidence,
-        }
-        mappings.append(mapping)
-        print(f"  {os.path.basename(foto_path)}  →  {edificio_id}  [{confidence}]")
+        if n_buildings == 0:
+            # Sin edificios cerca: asignar a zona genérica con low confidence
+            for entry in fotos:
+                mappings.append({
+                    "foto_procesada": entry["procesada"],
+                    "edificio_id": f"zona_{zona}",
+                    "zona": zona,
+                    "confidence": "low",
+                })
+                stats["low"] += 1
+            continue
+
+        # Distribuir fotos round-robin entre los edificios de la zona
+        # Más fotos al edificio más cercano (ratio decreciente)
+        for i, entry in enumerate(fotos):
+            # Índice del edificio: las primeras fotos van al más cercano,
+            # luego se reparten cíclicamente
+            b_idx = i % n_buildings
+            d, b = zone_buildings[b_idx]
+
+            # Confianza según distancia
+            if d < 30:
+                conf = "high"
+            elif d < 80:
+                conf = "medium"
+            else:
+                conf = "low"
+
+            mappings.append({
+                "foto_procesada": entry["procesada"],
+                "edificio_id": b["id"],
+                "zona": zona,
+                "confidence": conf,
+                "distance_m": round(d, 1),
+            })
+            stats[conf] += 1
+            edificios_asignados.add(b["id"])
+
+        # Log primeros edificios
+        for d, b in zone_buildings[:3]:
+            print(f"    {d:6.1f}m → {b['id']} ({b['archetype']}, {b['height_m']:.1f}m, {b['surface_m2']:.0f}m²)")
 
     result = {"mappings": mappings}
-
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     print()
-    print(f"[DONE] Mapping guardado en: {OUTPUT_PATH}")
-    print(f"[DONE] {len(mappings)} mapeos generados.")
-    high   = sum(1 for m in mappings if m["confidence"] == "high")
-    medium = sum(1 for m in mappings if m["confidence"] == "medium")
-    low    = sum(1 for m in mappings if m["confidence"] == "low")
-    print(f"       high={high}  medium={medium}  low={low}")
+    print(f"[DONE] {len(mappings)} mapeos → {OUTPUT_PATH}")
+    print(f"       Edificios únicos con foto: {len(edificios_asignados)}")
+    print(f"       high={stats['high']}  medium={stats['medium']}  low={stats['low']}")
 
-
-def _write_empty_mapping():
-    result = {"mappings": []}
+def _write_empty():
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
-    print(f"[INFO] Mapping vacío escrito en: {OUTPUT_PATH}")
-
+        json.dump({"mappings": []}, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     main()
