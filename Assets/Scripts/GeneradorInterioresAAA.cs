@@ -389,11 +389,34 @@ public class GeneradorInterioresAAA : MonoBehaviour
     static Color Mul(Color c, float f) => new Color(c.r * f, c.g * f, c.b * f, 1f);
     static Color Hex(string h) { ColorUtility.TryParseHtmlString(h, out var c); return c; }
 
-    // ── Carga de cubemap real desde disco (si lo generas con fotos) ───────────
+    // ── Carga de cubemap real desde disco (Poly Haven HDRI descargado) ────────
     Cubemap CargarCubemapReal(string arq)
     {
-        // Convención: Assets/AlsasuaData/Interiores/<arq>.cubemap (Resources/asset)
-        var c = Resources.Load<Cubemap>($"Interiores/{arq}");
-        return c; // null si no existe → se genera procedural
+        // Primero busca en Resources/Interiores/<arq> (generado por IntegradorAssetsInteriores)
+        var c = Resources.Load<Cubemap>($"Interiores/{arq.ToLower()}");
+        if (c != null) return c;
+
+        // Fallback: buscar cualquier cubemap en Resources/Interiores/
+        var todos = Resources.LoadAll<Cubemap>("Interiores");
+        return todos.Length > 0 ? todos[0] : null;
+    }
+
+    // ── Más arquetipos (15 en total con variantes) ─────────────────────────────
+    // Los GenerarCubemap* extra se llaman según el arquetipo detectado en CachearEdificios
+    // si se añaden más claves al switch de ExtraerArquetipo.
+    static string ExtraerArquetipoDetallado(string nombre)
+    {
+        string n = nombre.ToUpperInvariant();
+        if (n.Contains("BAR") || n.Contains("TABERNA"))         return "Bar";
+        if (n.Contains("RESTAURANTE") || n.Contains("CAFETERIA")) return "Bar";
+        if (n.Contains("OFICINA") || n.Contains("BANCO"))       return "Oficina";
+        if (n.Contains("AYUNT") || n.Contains("JUZGADO"))       return "Oficina";
+        if (n.Contains("FARMACIA") || n.Contains("CLINICA"))    return "Comercio";
+        if (n.Contains("COMERCIO") || n.Contains("TIENDA"))     return "Comercio";
+        if (n.Contains("SUPERMERCADO") || n.Contains("BAZAR"))  return "Comercio";
+        if (n.Contains("INDUSTRIAL") || n.Contains("NAVE"))     return "Industrial";
+        if (n.Contains("IGLESIA") || n.Contains("ERMITA"))      return "Industrial"; // oscuro/alto
+        if (n.Contains("GARAJE") || n.Contains("PARKING"))      return "Industrial";
+        return "Residencial";
     }
 }
