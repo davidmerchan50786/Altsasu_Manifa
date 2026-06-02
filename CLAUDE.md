@@ -107,6 +107,44 @@ Meta LIDAR (`lidar_dtm_meta.json`):
 - Jobs Burst para operaciones masivas en arrays
 - GPU Instancing activado en todos los materiales (`enableInstancing = true`)
 
+## Arquitectura de capas
+
+Regla estricta: ninguna capa puede referenciar directamente a la capa superior.
+
+```
+CORE      AltsasuCore · ServiceLocator · EventBus · GeoDataAlsasua
+            ↑ nadie la rompe desde abajo
+WORLD     GeneradorMundoOSM · SistemaZonas · SistemaTerreno · SistemaNavMesh
+            · AlsasuaTreeStreamer · SistemaEdificiosAAA · SistemaClima
+            → publica: ChunkLoadedEvent · ZoneChangedEvent (EventBus)
+ENTITIES  NPCBase · PoliciaForalIA · ControladorJugador · VehiculoBase
+            → publica: PlayerDeathEvent (EventBus)
+GAMEPLAY  GameManagerAltsasua · SistemaMisiones · SistemaArmasExtendido
+            · SistemaManifestacion · SistemaApoyoPopular
+            → consume servicios vía ServiceLocator<IWantedSystem/IEconomyService>
+UI/AUDIO  HUDCanvas · AudioManager · SistemaPolish · SistemaReverbZonas
+            → suscribe a eventos EventBus de todas las capas
+```
+
+### Comunicación entre capas
+| Mecanismo | Uso |
+|-----------|-----|
+| `ServiceLocator.Get<IServicio>()` | Gameplay → Core (Wanted, Economy, Spawn) |
+| `EventBus.Publish/Subscribe<T>()` | World/Entities → UI/Audio (sin acoplamiento) |
+| `static event Action<T>` | Mismo sistema o herencia directa |
+| Inspector `[SerializeField]` | Solo dentro de la misma capa |
+
+### Eventos EventBus activos
+- `PlayerDeathEvent` — publicado por `ControladorJugador.Morir()` y `GameManagerAltsasua.JugadorMuerto()`. Suscriptor: `HUDCanvas` (fade negro).
+- `ChunkLoadedEvent` — publicado por `SistemaZonas` al cargar/descargar zonas OSM.
+- `ZoneChangedEvent` — publicado por `SistemaZonas.Update()` al detectar cambio de celda.
+
+### Deuda técnica documentada (preservar comportamiento)
+- `GameManagerAltsasua.SembrarArboles()` debería moverse a `SistemaVegetacion`
+- `GameManagerAltsasua` contiene referencias HUD legacy (`Text`) — deberían quedar solo en `HUDCanvas`
+- `SistemaChunks.cs` es stub obsoleto (funcionalidad en `SistemaZonas`)
+- `MisionesAltsasua.PuntosAlsasua` duplica constantes de `GeoDataAlsasua`
+
 ## Geografía de referencia
 - Alsasua es una cuenca fluvial a ~530m de altitud
 - Sierra de Aralar al sur: ~1.400m

@@ -843,6 +843,15 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         AlsasuaLogger.Info("Jugador", "¡Has muerto!");
         animPersonaje?.SetTrigger(AnimMorir);
 
+        // Notificar a todos los sistemas vía EventBus (sin acoplamiento directo).
+        // Receptores: HUDCanvas (fade negro), SistemaPolish (efecto muerte),
+        // SistemaLogros, AudioManager, GameManagerAltsasua (respawn).
+        EventBus.Publish(new PlayerDeathEvent
+        {
+            posicion = transform.position,
+            causa    = "muerte"
+        });
+
         // Si el jugador muere dentro de un vehículo → expulsarlo para evitar
         // estado corrupto (CharacterController desactivado, renderer invisible,
         // transform hijo del coche). ForzarSalida() es seguro si no está dentro.

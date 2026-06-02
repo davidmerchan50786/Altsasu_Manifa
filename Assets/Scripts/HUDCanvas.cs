@@ -167,6 +167,8 @@ public class HUDCanvas : MonoBehaviour
         SistemaApoyoPopular.OnApoyoCambia          += v => _apoyoActual = v;
         ControladorVehiculoJugador.OnJugadorEntro  += OnEntroVehiculo;
         ControladorVehiculoJugador.OnJugadorSalio  += OnSalioVehiculo;
+        // EventBus: fade a negro en muerte del jugador (desacoplado de ControladorJugador)
+        EventBus.Subscribe<PlayerDeathEvent>(OnPlayerMuerto);
     }
 
     void DesuscribirEventos()
@@ -181,6 +183,36 @@ public class HUDCanvas : MonoBehaviour
         SistemaApoyoPopular.OnApoyoCambia          -= v => _apoyoActual = v;
         ControladorVehiculoJugador.OnJugadorEntro  -= OnEntroVehiculo;
         ControladorVehiculoJugador.OnJugadorSalio  -= OnSalioVehiculo;
+        EventBus.Unsubscribe<PlayerDeathEvent>(OnPlayerMuerto);
+    }
+
+    void OnPlayerMuerto(PlayerDeathEvent evt)
+    {
+        // Fade a negro y mensaje de muerte en pantalla
+        _notifQueue.Enqueue("☠  Has muerto");
+        StartCoroutine(FadeNegroMuerte());
+    }
+
+    IEnumerator FadeNegroMuerte()
+    {
+        // Crear overlay negro temporal para el efecto de muerte
+        var overlayGO = new GameObject("FadeMuerte");
+        overlayGO.transform.SetParent(_canvas.transform, false);
+        var rt = overlayGO.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        var img = overlayGO.AddComponent<Image>();
+        img.color = new Color(0, 0, 0, 0);
+
+        // Fade in
+        float t = 0f;
+        while (t < 1f) { t += Time.unscaledDeltaTime * 1.5f; img.color = new Color(0, 0, 0, Mathf.Clamp01(t)); yield return null; }
+        yield return new WaitForSecondsRealtime(1.5f);
+        // Fade out
+        t = 1f;
+        while (t > 0f) { t -= Time.unscaledDeltaTime * 1.5f; img.color = new Color(0, 0, 0, Mathf.Clamp01(t)); yield return null; }
+        Destroy(overlayGO);
     }
 
     void OnJugadorSpawned(Transform t)

@@ -139,6 +139,16 @@ public class SistemaZonas : MonoBehaviour
         Vector2Int zonaActual = MundoAZona(_jugador.position);
         if (zonaActual == _zonaJugadorAnterior) return;
 
+        // Notificar cambio de zona vía EventBus antes de actualizar referencias.
+        // Receptores: SistemaReverbZonas, AudioManager, SistemaIA, HUDCanvas.
+        EventBus.Publish(new ZoneChangedEvent
+        {
+            zonaAnterior = TipoZona.Desconocida,
+            zonaNueva    = TipoZona.Desconocida,
+            nombreZona   = $"Zona ({zonaActual.x},{zonaActual.y})",
+            centroUnity  = ZonaCentroMundo(zonaActual)
+        });
+
         _zonaJugadorAnterior = zonaActual;
         ActualizarZonasActivas(zonaActual);
     }
@@ -326,6 +336,9 @@ public class SistemaZonas : MonoBehaviour
 
         // Avisar al NavMesh para hornear esta zona
         Vector3 centro = ZonaCentroMundo(key);
+
+        // Notificar via EventBus para que Gameplay/UI reaccionen sin acoplarse a SistemaZonas.
+        EventBus.Publish(new ChunkLoadedEvent { coord = key, cargado = true, centroUnity = centro });
         SistemaNavMesh.Instance?.ForzarRehornear(centro);
 
         AlsasuaLogger.Info("Zonas", $"✅ Zona ({key.x},{key.y}) cargada");
@@ -347,6 +360,7 @@ public class SistemaZonas : MonoBehaviour
                 Destroy(kv.Value.root);
             aEliminar.Add(kv.Key);
             OnZonaDescargada?.Invoke(kv.Key);
+            EventBus.Publish(new ChunkLoadedEvent { coord = kv.Key, cargado = false, centroUnity = ZonaCentroMundo(kv.Key) });
         }
 
         foreach (var k in aEliminar) _zonas.Remove(k);
