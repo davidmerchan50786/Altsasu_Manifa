@@ -2,6 +2,7 @@
   "dependencies": {
     "com.cesium.unity": "1.23.2",
     "com.unity.burst": "1.8.28",
+    "com.unity.cloud.gltfast": "6.9.0",
     "com.unity.collab-proxy": "2.11.3",
     "com.unity.collections": "2.6.2",
     "com.unity.feature.development": "1.0.2",

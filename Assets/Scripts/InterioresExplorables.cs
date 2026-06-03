@@ -165,20 +165,40 @@ public class InterioresExplorables : MonoBehaviour
             case "TABERNA":
                 Caja(raiz, "Barra", new Vector3(0, 0.55f, fondo*0.2f), new Vector3(ancho*0.7f, 1.1f, 0.8f), Hex("#5a3010"));
                 for (int i = 0; i < 4; i++)
-                    Caja(raiz, $"Taburete{i}", new Vector3(-ancho*0.25f + i*1.4f, 0.45f, fondo*0.05f), new Vector3(0.4f,0.9f,0.4f), Hex("#222"));
+                    Mueble(raiz, "Silla", new Vector3(-ancho*0.25f + i*1.4f, 0f, fondo*0.05f), 0f, 0.9f)
+                        ?? Caja(raiz, $"Taburete{i}", new Vector3(-ancho*0.25f + i*1.4f, 0.45f, fondo*0.05f), new Vector3(0.4f,0.9f,0.4f), Hex("#222"));
+                Mueble(raiz, "Lampara", new Vector3(ancho*0.35f, 0f, -fondo*0.3f), 0f, 1.2f);
                 break;
             case "COMISARIA":
                 Caja(raiz, "Mostrador", new Vector3(0, 0.55f, fondo*0.25f), new Vector3(ancho*0.6f, 1.1f, 0.7f), Hex("#3a4a5a"));
-                Caja(raiz, "Banco", new Vector3(0, 0.25f, -fondo*0.25f), new Vector3(ancho*0.5f, 0.5f, 0.5f), Hex("#555"));
+                Mueble(raiz, "Sofa", new Vector3(0, 0f, -fondo*0.25f), 180f, 1f)
+                    ?? Caja(raiz, "Banco", new Vector3(0, 0.25f, -fondo*0.25f), new Vector3(ancho*0.5f, 0.5f, 0.5f), Hex("#555"));
                 break;
             case "TIENDA_MISION":
                 for (int i = 0; i < 3; i++)
                     Caja(raiz, $"Estante{i}", new Vector3(-ancho*0.3f + i*ancho*0.3f, 1.0f, fondo*0.2f), new Vector3(0.6f,2f,1.2f), Hex("#888"));
+                Mueble(raiz, "Botella", new Vector3(0, 1.05f, fondo*0.2f), 0f, 1f);
                 break;
-            default: // AYUNT u otros
-                Caja(raiz, "Mesa", new Vector3(0, 0.5f, 0), new Vector3(ancho*0.5f, 1f, fondo*0.3f), Hex("#6b4a1a"));
+            default: // AYUNT, residencial u otros
+                Mueble(raiz, "Sofa", new Vector3(-ancho*0.15f, 0f, fondo*0.15f), 90f, 1f)
+                    ?? Caja(raiz, "Mesa", new Vector3(0, 0.5f, 0), new Vector3(ancho*0.5f, 1f, fondo*0.3f), Hex("#6b4a1a"));
+                Mueble(raiz, "Silla",   new Vector3(ancho*0.2f, 0f, -fondo*0.1f), -45f, 1f);
+                Mueble(raiz, "Lampara", new Vector3(ancho*0.3f, 0f, fondo*0.3f), 0f, 1.3f);
                 break;
         }
+    }
+
+    // Carga un mueble PBR real desde Resources/Muebles/ (glTFast). Null si no existe.
+    GameObject Mueble(Transform padre, string nombre, Vector3 posLocal, float yaw, float escala)
+    {
+        var prefab = Resources.Load<GameObject>($"Muebles/{nombre}");
+        if (prefab == null) return null;
+        var go = Instantiate(prefab, padre);
+        go.name = $"Mueble_{nombre}";
+        go.transform.localPosition = posLocal;
+        go.transform.localRotation = Quaternion.Euler(0, yaw, 0);
+        go.transform.localScale    = Vector3.one * escala;
+        return go;
     }
 
     GameObject Caja(Transform padre, string nombre, Vector3 posLocal, Vector3 escala, Color color)
