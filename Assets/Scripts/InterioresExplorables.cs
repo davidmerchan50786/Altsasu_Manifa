@@ -164,41 +164,115 @@ public class InterioresExplorables : MonoBehaviour
             case "BAR":
             case "TABERNA":
                 Caja(raiz, "Barra", new Vector3(0, 0.55f, fondo*0.2f), new Vector3(ancho*0.7f, 1.1f, 0.8f), Hex("#5a3010"));
+                Mueble(raiz, "Estante", new Vector3(0, 0f, fondo*0.42f), 0f, 1f);    // estante de botellas al fondo
+                for (int i = 0; i < 5; i++)
+                    Mueble(raiz, "Botella", new Vector3(-ancho*0.2f + i*0.5f, 1.1f, fondo*0.2f), 0f, 1f);
                 for (int i = 0; i < 4; i++)
-                    Mueble(raiz, "Silla", new Vector3(-ancho*0.25f + i*1.4f, 0f, fondo*0.05f), 0f, 0.9f)
-                        ?? Caja(raiz, $"Taburete{i}", new Vector3(-ancho*0.25f + i*1.4f, 0.45f, fondo*0.05f), new Vector3(0.4f,0.9f,0.4f), Hex("#222"));
-                Mueble(raiz, "Lampara", new Vector3(ancho*0.35f, 0f, -fondo*0.3f), 0f, 1.2f);
+                    Mueble(raiz, "Silla", new Vector3(-ancho*0.25f + i*1.4f, 0f, fondo*0.0f), 180f, 1f)
+                        ?? Caja(raiz, $"Taburete{i}", new Vector3(-ancho*0.25f + i*1.4f, 0.45f, 0f), new Vector3(0.4f,0.9f,0.4f), Hex("#222"));
+                Mueble(raiz, "Mesa", new Vector3(-ancho*0.28f, 0f, -fondo*0.28f), 0f, 1f);
+                Mueble(raiz, "Mesa1", new Vector3(ancho*0.28f, 0f, -fondo*0.28f), 0f, 1f);
+                ColgarLampara(raiz, ancho, fondo);
                 break;
+
             case "COMISARIA":
-                Caja(raiz, "Mostrador", new Vector3(0, 0.55f, fondo*0.25f), new Vector3(ancho*0.6f, 1.1f, 0.7f), Hex("#3a4a5a"));
-                Mueble(raiz, "Sofa", new Vector3(0, 0f, -fondo*0.25f), 180f, 1f)
+                Mueble(raiz, "Escritorio", new Vector3(0, 0f, fondo*0.25f), 0f, 1f)
+                    ?? Caja(raiz, "Mostrador", new Vector3(0, 0.55f, fondo*0.25f), new Vector3(ancho*0.6f, 1.1f, 0.7f), Hex("#3a4a5a"));
+                Mueble(raiz, "Silla", new Vector3(0, 0f, fondo*0.38f), 0f, 1f);
+                Mueble(raiz, "Banco", new Vector3(0, 0f, -fondo*0.3f), 0f, 1f)
                     ?? Caja(raiz, "Banco", new Vector3(0, 0.25f, -fondo*0.25f), new Vector3(ancho*0.5f, 0.5f, 0.5f), Hex("#555"));
+                Mueble(raiz, "Armario", new Vector3(-ancho*0.38f, 0f, 0f), 90f, 1f);
+                Mueble(raiz, "Cuadro", new Vector3(0, 2.2f, fondo*0.48f), 0f, 1f);
                 break;
+
             case "TIENDA_MISION":
                 for (int i = 0; i < 3; i++)
-                    Caja(raiz, $"Estante{i}", new Vector3(-ancho*0.3f + i*ancho*0.3f, 1.0f, fondo*0.2f), new Vector3(0.6f,2f,1.2f), Hex("#888"));
-                Mueble(raiz, "Botella", new Vector3(0, 1.05f, fondo*0.2f), 0f, 1f);
+                    Mueble(raiz, "Estante", new Vector3(-ancho*0.3f + i*ancho*0.3f, 0f, fondo*0.25f), 0f, 1f)
+                        ?? Caja(raiz, $"Estante{i}", new Vector3(-ancho*0.3f + i*ancho*0.3f, 1.0f, fondo*0.2f), new Vector3(0.6f,2f,1.2f), Hex("#888"));
+                Mueble(raiz, "Mesa", new Vector3(0, 0f, -fondo*0.2f), 0f, 1f);   // mostrador
+                Mueble(raiz, "Caja", new Vector3(ancho*0.2f, 0f, -fondo*0.3f), 0f, 1f);
+                Mueble(raiz, "Caja1", new Vector3(-ancho*0.25f, 0f, -fondo*0.3f), 0f, 1f);
                 break;
-            default: // AYUNT, residencial u otros
-                Mueble(raiz, "Sofa", new Vector3(-ancho*0.15f, 0f, fondo*0.15f), 90f, 1f)
+
+            default: // AYUNT, residencial u otros → salón completo
+                Mueble(raiz, "Sofa", new Vector3(-ancho*0.18f, 0f, fondo*0.18f), 90f, 1f)
                     ?? Caja(raiz, "Mesa", new Vector3(0, 0.5f, 0), new Vector3(ancho*0.5f, 1f, fondo*0.3f), Hex("#6b4a1a"));
-                Mueble(raiz, "Silla",   new Vector3(ancho*0.2f, 0f, -fondo*0.1f), -45f, 1f);
-                Mueble(raiz, "Lampara", new Vector3(ancho*0.3f, 0f, fondo*0.3f), 0f, 1.3f);
+                Mueble(raiz, "Mesa",     new Vector3(ancho*0.08f, 0f, fondo*0.10f), 0f, 1f);
+                Mueble(raiz, "Silla",    new Vector3(ancho*0.28f, 0f, -fondo*0.05f), -120f, 1f);
+                Mueble(raiz, "Armario",  new Vector3(ancho*0.38f, 0f, fondo*0.35f), -90f, 1f);
+                Mueble(raiz, "Cuadro",   new Vector3(-ancho*0.4f, 2.0f, 0f), 90f, 1f);
+                Mueble(raiz, "Cuadro1",  new Vector3(0, 2.0f, fondo*0.48f), 0f, 1f);
+                Mueble(raiz, "Cortinas", new Vector3(ancho*0.45f, 1.5f, -fondo*0.3f), -90f, 1f);
+                Mueble(raiz, "Estante",  new Vector3(-ancho*0.4f, 0f, -fondo*0.3f), 90f, 1f);
+                ColgarLampara(raiz, ancho, fondo);
                 break;
         }
     }
 
-    // Carga un mueble PBR real desde Resources/Muebles/ (glTFast). Null si no existe.
+    // Lámpara de techo centrada
+    void ColgarLampara(Transform raiz, float ancho, float fondo)
+    {
+        Mueble(raiz, "Lampara", new Vector3(0, 2.9f, 0), 0f, 1f)
+            ?? Mueble(raiz, "Lampara1", new Vector3(0, 2.9f, 0), 0f, 1f);
+    }
+
+    // Carga un mueble desde Resources. Prioridad:
+    //   1) MueblesCiudad/<nombre>  (pack Polygon City, estilo coherente)
+    //   2) Muebles/<nombre>        (glTFast PBR descargado)
+    // Devuelve null si ninguno existe (el llamador hace fallback a primitiva).
     GameObject Mueble(Transform padre, string nombre, Vector3 posLocal, float yaw, float escala)
     {
-        var prefab = Resources.Load<GameObject>($"Muebles/{nombre}");
+        var prefab = Resources.Load<GameObject>($"MueblesCiudad/{nombre}")
+                  ?? Resources.Load<GameObject>($"Muebles/{nombre}");
         if (prefab == null) return null;
         var go = Instantiate(prefab, padre);
         go.name = $"Mueble_{nombre}";
         go.transform.localPosition = posLocal;
         go.transform.localRotation = Quaternion.Euler(0, yaw, 0);
         go.transform.localScale    = Vector3.one * escala;
+        ConvertirMaterialesHDRP(go);
         return go;
+    }
+
+    // Convierte materiales legacy (Standard/Diffuse) a HDRP/Lit para que no salgan
+    // rosas en HDRP. Conserva textura base y color. Cachea por material original.
+    static readonly Dictionary<Material, Material> _cacheHDRP = new();
+    static Shader _hdrpLit;
+
+    static void ConvertirMaterialesHDRP(GameObject go)
+    {
+        if (_hdrpLit == null) _hdrpLit = Shader.Find("HDRP/Lit");
+        if (_hdrpLit == null) return;
+
+        foreach (var rend in go.GetComponentsInChildren<Renderer>(true))
+        {
+            var mats = rend.sharedMaterials;
+            bool cambiado = false;
+            for (int i = 0; i < mats.Length; i++)
+            {
+                var m = mats[i];
+                if (m == null || m.shader == null) continue;
+                if (m.shader.name.Contains("HDRP")) continue; // ya es HDRP
+
+                if (!_cacheHDRP.TryGetValue(m, out var nuevo))
+                {
+                    nuevo = new Material(_hdrpLit) { enableInstancing = true };
+                    // Color base
+                    if (m.HasProperty("_Color"))
+                        nuevo.SetColor("_BaseColor", m.GetColor("_Color"));
+                    else if (m.HasProperty("_BaseColor"))
+                        nuevo.SetColor("_BaseColor", m.GetColor("_BaseColor"));
+                    // Textura base
+                    Texture tex = m.HasProperty("_MainTex") ? m.GetTexture("_MainTex")
+                                : m.HasProperty("_BaseMap") ? m.GetTexture("_BaseMap") : null;
+                    if (tex != null) nuevo.SetTexture("_BaseColorMap", tex);
+                    _cacheHDRP[m] = nuevo;
+                }
+                mats[i] = nuevo;
+                cambiado = true;
+            }
+            if (cambiado) rend.sharedMaterials = mats;
+        }
     }
 
     GameObject Caja(Transform padre, string nombre, Vector3 posLocal, Vector3 escala, Color color)

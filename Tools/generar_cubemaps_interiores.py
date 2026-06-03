@@ -283,12 +283,88 @@ def generar_cubemap(nombre_arq: str, cfg: dict):
 
     print(f" ✓  ({res}px × 6 = {sum((salida/f'{c}.png').stat().st_size for c in CARAS_UNITY)//1024}KB)")
 
+# ── HDRIs de interior REALES ya en el proyecto (Assets/HDRIs/) ──────────────────
+# Mapeo: archetipo → fichero HDRI equirectangular. Si el .hdr es real (no un
+# puntero LFS), se convierte a las 6 caras del cubemap y SUSTITUYE al procedural.
+HDRI_DIR = RAIZ / "Assets/HDRIs"
+HDRI_POR_ARQUETIPO = {
+    "Residencial": "small_empty_room_3_2k.hdr",
+    "Garaje":      "autoshop_01.hdr",
+    "Industrial":  "autoshop_01.hdr",
+}
+
+def es_lfs_pointer(path: Path) -> bool:
+    """Detecta si un archivo es solo un puntero Git LFS (no descargado)."""
+    try:
+        if path.stat().st_size > 2000:
+            return False
+        with open(path, "rb") as f:
+            return f.read(40).startswith(b"version https://git-lfs")
+    except Exception:
+        return True
+
+def equirect_a_caras(hdr_path: Path, salida: Path, res: int):
+    """Convierte un HDRI equirectangular a 6 caras PNG con tone-mapping."""
+    import numpy as np, imageio
+    img = imageio.imread(str(hdr_path))
+    h, w = img.shape[:2]
+    if img.ndim == 2:
+        img = np.stack([img] * 3, axis=-1)
+
+    def cara(dir_fn):
+        out = np.zeros((res, res, 3), dtype=np.float32)
+        for i in range(res):
+            for j in range(res):
+                a = 2.0 * j / res - 1.0
+                b = 2.0 * i / res - 1.0
+                nx, ny, nz = dir_fn(a, b)
+                ll = math.sqrt(nx*nx + ny*ny + nz*nz)
+                nx, ny, nz = nx/ll, ny/ll, nz/ll
+                lon = math.atan2(nz, nx); lat = math.asin(max(-1, min(1, ny)))
+                u = lon / (2*math.pi) + 0.5; v = lat / math.pi + 0.5
+                px = min(int(u * w), w-1); py = min(int((1-v) * h), h-1)
+                out[i, j] = img[py, px][:3]
+        # Reinhard tone-map + gamma
+        out = out / (out + 1.0)
+        return (np.clip(out, 0, 1) ** (1/2.2) * 255).astype('uint8')
+
+    dirs = {
+        "+X": lambda a,b: ( 1, -b, -a), "-X": lambda a,b: (-1, -b,  a),
+        "+Y": lambda a,b: ( a,  1,  b), "-Y": lambda a,b: ( a, -1, -b),
+        "+Z": lambda a,b: ( a, -b,  1), "-Z": lambda a,b: (-a, -b, -1),
+    }
+    salida.mkdir(parents=True, exist_ok=True)
+    for nombre, fn in dirs.items():
+        imageio.imsave(str(salida / f"{nombre}.png"), cara(fn))
+
+def aplicar_hdris_reales():
+    print("\n═══ Buscando HDRIs de interior reales en el proyecto ═══")
+    try:
+        import imageio  # noqa
+    except ImportError:
+        os.system(f"{sys.executable} -m pip install imageio -q")
+    for arq, fichero in HDRI_POR_ARQUETIPO.items():
+        p = HDRI_DIR / fichero
+        if not p.exists():
+            print(f"  ⚠ {fichero} no encontrado"); continue
+        if es_lfs_pointer(p):
+            print(f"  ⏭  {fichero} es puntero LFS (ejecuta 'git lfs pull') — uso procedural")
+            continue
+        print(f"  📷 {arq} ← {fichero} (HDRI real)...", end="", flush=True)
+        try:
+            equirect_a_caras(p, OUT_DIR / arq.lower(), RES)
+            print(" ✓")
+        except Exception as e:
+            print(f" ✗ {e}")
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print(f"\n═══ Generando cubemaps fotorrealistas para {len(ARQUETIPOS)} arquetipos ═══")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for nombre, cfg in ARQUETIPOS.items():
         generar_cubemap(nombre, cfg)
+    # Sustituir por HDRIs reales donde existan (residencial, garaje, industrial)
+    aplicar_hdris_reales()
     total = sum(1 for _ in OUT_DIR.rglob("*.png"))
     print(f"\n  ✅  {total} imágenes PNG generadas en:\n  {OUT_DIR.relative_to(RAIZ)}")
     print("\n  EN UNITY: Altsasu → Interiores → Integrar todos los assets")
