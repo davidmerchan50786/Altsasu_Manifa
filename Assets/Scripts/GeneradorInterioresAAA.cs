@@ -54,11 +54,18 @@ public class GeneradorInterioresAAA : MonoBehaviour
     readonly Dictionary<string, Cubemap> _cubemaps = new();
     readonly List<Material> _materialesVivos = new(); // para actualizar emisión día/noche
 
-    static readonly int ID_Cube     = Shader.PropertyToID("_InteriorCube");
-    static readonly int ID_Rooms    = Shader.PropertyToID("_Rooms");
-    static readonly int ID_Depth    = Shader.PropertyToID("_RoomDepth");
-    static readonly int ID_Emission = Shader.PropertyToID("_EmissionNight");
-    static readonly int ID_Seed     = Shader.PropertyToID("_Seed");
+    static readonly int ID_Cube        = Shader.PropertyToID("_InteriorCube");
+    static readonly int ID_Rooms       = Shader.PropertyToID("_Rooms");
+    static readonly int ID_Depth       = Shader.PropertyToID("_RoomDepth");
+    static readonly int ID_Emission    = Shader.PropertyToID("_EmissionNight");
+    static readonly int ID_Seed        = Shader.PropertyToID("_Seed");
+    static readonly int ID_PctApag     = Shader.PropertyToID("_PctApagadas");
+    static readonly int ID_ColorTemp   = Shader.PropertyToID("_ColorTemperatura");
+    static readonly int ID_DepthVar    = Shader.PropertyToID("_DepthVariation");
+
+    static readonly string[] ARQUETIPOS_TODOS =
+        { "Bar", "Comercio", "Residencial", "Industrial", "Oficina",
+          "Farmacia", "Supermercado", "Garaje" };
 
     // ════════════════════════════════════════════════════════════════════════
     void Awake()
@@ -89,8 +96,9 @@ public class GeneradorInterioresAAA : MonoBehaviour
         var jugadorGO = GameObject.FindWithTag("Player");
         if (jugadorGO != null) _jugador = jugadorGO.transform;
 
-        // Cubemaps por arquetipo (real desde disco o procedural)
-        foreach (var arq in new[] { "Bar", "Comercio", "Residencial", "Industrial", "Oficina" })
+        // Cubemaps por arquetipo: carga los generados por Python (512px, fotorrealistas)
+        // o fallback al generador procedural en C# si faltan.
+        foreach (var arq in ARQUETIPOS_TODOS)
             _cubemaps[arq] = CargarCubemapReal(arq) ?? GenerarCubemap(arq);
 
         CachearEdificios();
@@ -191,11 +199,14 @@ public class GeneradorInterioresAAA : MonoBehaviour
 
         var rend = quad.GetComponent<Renderer>();
         var mat  = new Material(_shaderInterior);
-        mat.SetTexture(ID_Cube, ObtenerCubemap(d.arquetipo));
-        mat.SetVector(ID_Rooms, new Vector4(habitacionesPorVentana.x, habitacionesPorVentana.y, 0, 0));
-        mat.SetFloat(ID_Depth, profundidadHabitacion);
-        mat.SetFloat(ID_Seed, d.seed);
+        mat.SetTexture(ID_Cube,  ObtenerCubemap(d.arquetipo));
+        mat.SetVector(ID_Rooms,  new Vector4(habitacionesPorVentana.x, habitacionesPorVentana.y, 0, 0));
+        mat.SetFloat(ID_Depth,   profundidadHabitacion);
+        mat.SetFloat(ID_Seed,    d.seed);
         mat.SetFloat(ID_Emission, _emisionNoche);
+        mat.SetFloat(ID_DepthVar, 0.15f);
+        mat.SetFloat(ID_PctApag, ArquetipoEsComercial(d.arquetipo) ? 0.0f : 0.22f); // negocios siempre encendidos
+        mat.SetFloat(ID_ColorTemp, ArquetipoEsCalido(d.arquetipo) ? 0.3f : 0.65f);
         mat.enableInstancing = true;
         rend.sharedMaterial = mat;
         _materialesVivos.Add(mat);
@@ -253,7 +264,13 @@ public class GeneradorInterioresAAA : MonoBehaviour
     }
 
     Cubemap ObtenerCubemap(string arq) =>
-        _cubemaps.TryGetValue(arq, out var c) ? c : _cubemaps["Residencial"];
+        _cubemaps.TryGetValue(arq, out var c) && c != null ? c
+        : _cubemaps.TryGetValue("Residencial", out var fb) ? fb : null;
+
+    static bool ArquetipoEsComercial(string arq) =>
+        arq == "Bar" || arq == "Comercio" || arq == "Farmacia" || arq == "Supermercado";
+    static bool ArquetipoEsCalido(string arq) =>
+        arq == "Bar" || arq == "Residencial" || arq == "Garaje";
 
     // ════════════════════════════════════════════════════════════════════════
     //  GENERACIÓN PROCEDURAL DE CUBEMAPS (6 caras: habitación completa)

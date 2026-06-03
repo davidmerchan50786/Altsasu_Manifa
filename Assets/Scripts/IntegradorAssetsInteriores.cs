@@ -61,13 +61,17 @@ public static class IntegradorAssetsInteriores
         }
 
         // Mapeo arquetipo → slug HDRI preferido
+        // Arquetipos generados por Tools/generar_cubemaps_interiores.py
         var mapa = new Dictionary<string, string>
         {
-            ["bar"]         = "brown_photostudio_02",
-            ["residencial"] = "lebombo",
-            ["comercio"]    = "photography_studio",
-            ["oficina"]     = "office",
-            ["industrial"]  = "artist_workshop",
+            ["bar"]          = "bar",
+            ["residencial"]  = "residencial",
+            ["comercio"]     = "comercio",
+            ["oficina"]      = "oficina",
+            ["industrial"]   = "industrial",
+            ["farmacia"]     = "farmacia",
+            ["supermercado"] = "supermercado",
+            ["garaje"]       = "garaje",
         };
 
         int asignados = 0;
