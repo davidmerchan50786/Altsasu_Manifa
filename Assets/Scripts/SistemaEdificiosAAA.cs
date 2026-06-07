@@ -67,7 +67,9 @@ public class SistemaEdificiosAAA : MonoBehaviour
     int _totalEdificios;
 
     // MaterialPropertyBlock reutilizable (evita instanciar materiales)
-    static readonly MaterialPropertyBlock _mpb = new();
+    // FIX (playtest): crearlo en un field initializer lanzaba "CreateImpl is not allowed
+    // from a MonoBehaviour constructor" → SistemaEdificiosAAA moría y NO se generaban edificios.
+    static MaterialPropertyBlock _mpb;
 
     // ── Textos graffiti vascos ─────────────────────────────────────────────
     static readonly (string texto, Color color)[] GRAFFITI = {
@@ -91,6 +93,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();   // FIX: crear aquí, no en field initializer
     }
 
     void Start()
