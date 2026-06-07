@@ -1,15 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// GameManagerAltsasua — Núcleo del juego estilo GTA ambientado en Alsasua.
 /// Gestiona: nivel de búsqueda, spawn de policía/enemigos, dinero, HUD y respawn.
 /// Coloca este componente en un GameObject vacío llamado "GameManager" en la escena.
+///
+/// Implementa IWantedSystem e IEconomyService para que los sistemas de gameplay
+/// no dependan de esta clase concreta — usan ServiceLocator.Get&lt;IWantedSystem&gt;()
+/// y ServiceLocator.Get&lt;IEconomyService&gt;() en su lugar.
 /// </summary>
-public class GameManagerAltsasua : MonoBehaviour
+public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService, ISpawnService
 {
     // ─── Singleton ───────────────────────────────────────────────────────────
     public static GameManagerAltsasua Instance { get; private set; }
@@ -64,13 +67,12 @@ public class GameManagerAltsasua : MonoBehaviour
     [Tooltip("Cada cuántos segundos intentar repoblar enemigos")]
     public float intervalSpawnEnemigos = 10f;
 
-    // ─── Árboles / Decoración ────────────────────────────────────────────────
-    [Header("Vegetación")]
-    [Tooltip("Prefabs de árboles (Tree10_1 … Tree10_5)")]
+    // Vegetación legacy: campos migrados a SembradoVegetacionManual.
+    // Se mantienen solo para serialización de prefabs existentes — no añadir nuevos aquí.
+    [Header("Vegetación (legacy — usar SembradoVegetacionManual)")]
     public GameObject[] prefabsArboles;
-    [Tooltip("Puntos donde colocar árboles al iniciar")]
-    public Transform[] puntosArboles;
-    private bool _arbolesSembrados = false;
+    public Transform[]  puntosArboles;
+    bool _arbolesSembrados;
 
     // ─── Terreno Cloud Compare ────────────────────────────────────────────────
     [Header("Terreno CloudCompare")]
@@ -88,25 +90,54 @@ public class GameManagerAltsasua : MonoBehaviour
 
     // ─── HUD ─────────────────────────────────────────────────────────────────
     [Header("HUD")]
-    [Tooltip("Texto UI para mostrar el dinero (opcional)")]
-    public Text textoDinero;
-    [Tooltip("Texto UI para mostrar el nivel de búsqueda")]
-    public Text textoNivelBusqueda;
-    [Tooltip("Texto UI para mostrar puntuación")]
-    public Text textoPuntuacion;
     [Tooltip("Panel de pausa (opcional)")]
     public GameObject panelPausa;
 
     private bool _enPausa = false;
 
-    // ─── Eventos ──────────────────────────────────────────────────────────────
-    public static event System.Action<int>  OnEstrellasCambia;  // nivel 0-5
-    public static event System.Action       OnRespawn;
-    public static event System.Action<int>  OnDineroCambia;
+    // ─── Eventos estáticos ────────────────────────────────────────────────────
+    /// <summary>Nivel de búsqueda cambió (0-5 estrellas). Suscriptor: HUDCanvas.</summary>
+    public static event System.Action<int> OnEstrellasCambia;
+    /// <summary>Dinero o puntuación cambiaron. Suscriptor: HUDCanvas.</summary>
+    public static event System.Action<int, int> OnEconomiaCambia;
+    /// <summary>El jugador hizo respawn.</summary>
+    public static event System.Action OnRespawn;
 
     // ─── Estado ───────────────────────────────────────────────────────────────
     private bool  _jugadorVivo = false;
-    private HUDAAA _hudCache;  // HUDAAA es el HUD del juego — GUISystem no existe
+    // BUG FIX: guardar referencia al respawn para cancelarlo en OnDestroy y evitar
+    // que acceda a jugadorActivo ya destruido tras un cambio de escena.
+    private Coroutine _crRespawn;
+
+    // Cache de valores HUD — OnEconomiaCambia y OnEstrellasCambia solo se disparan al cambiar
+    private int _hudDineroCache      = int.MinValue;
+    private int _hudBusquedaCache    = -1;
+    private int _hudPuntuacionCache  = int.MinValue;
+
+    // =========================================================================
+    //  UNITY LIFECYCLE
+    // =========================================================================
+
+    // ── ISpawnService ─────────────────────────────────────────────────────────
+    bool ISpawnService.JugadorEnVehiculo             => JugadorEnVehiculo;
+    void ISpawnService.EnemigoEliminado(UnityEngine.GameObject e) => EnemigoEliminado(e);
+    void ISpawnService.SetJugadorEnVehiculo(bool v)  => SetJugadorEnVehiculo(v);
+
+    // ── IWantedSystem ─────────────────────────────────────────────────────────
+    int IWantedSystem.NivelBusqueda => nivelBusqueda;
+    void IWantedSystem.AumentarBusqueda(int cantidad) => AumentarBusqueda(cantidad);
+    void IWantedSystem.FijarBusqueda(int nivel)
+    {
+        int prev = nivelBusqueda;
+        nivelBusqueda = Mathf.Clamp(nivel, 0, 5);
+        if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
+    }
+
+    // ── IEconomyService ───────────────────────────────────────────────────────
+    int IEconomyService.Dinero     => dinero;
+    int IEconomyService.Puntuacion => puntuacion;
+    void IEconomyService.GanarDinero(int cantidad)  => GanarDinero(cantidad);
+    bool IEconomyService.GastarDinero(int cantidad) => GastarDinero(cantidad);
 
     // =========================================================================
     //  UNITY LIFECYCLE
@@ -122,12 +153,30 @@ public class GameManagerAltsasua : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Registrar servicios para consumo desacoplado por el resto del juego
+        ServiceLocator.Registrar<IWantedSystem>(this);
+        ServiceLocator.Registrar<IEconomyService>(this);
+        ServiceLocator.Registrar<ISpawnService>(this);
+    }
+
+    void OnDestroy()
+    {
+        // BUG FIX: desuscribir OnJugadorListoDesdeCore para evitar delegate huérfano
+        // si GameManager se destruye antes de que AltsasuCore dispare OnJugadorSpawned.
+        AltsasuCore.OnJugadorSpawned -= OnJugadorListoDesdeCore;
+        if (_crRespawn != null) StopCoroutine(_crRespawn);
+        ServiceLocator.Desregistrar<IWantedSystem>();
+        ServiceLocator.Desregistrar<IEconomyService>();
+        ServiceLocator.Desregistrar<ISpawnService>();
     }
 
     void Start()
     {
         SpawnJugador();
-        SembrarArboles();
+        // Delegar siembra a SembradoVegetacionManual si existe en la escena;
+        // si no, ejecutar el método legacy por compatibilidad hacia atrás.
+        if (GetComponent<SembradoVegetacionManual>() == null) SembrarArboles();
         InicializarEnemigos();
         ActualizarHUD();
     }
@@ -154,26 +203,33 @@ public class GameManagerAltsasua : MonoBehaviour
 
     void SpawnJugador()
     {
-        // Si no hay prefab, SceneBootstrapper creará el jugador — esperamos
         if (prefabJugador == null)
         {
             jugadorActivo = GameObject.FindGameObjectWithTag("Player");
             if (jugadorActivo == null)
             {
-                // El SceneBootstrapper lo creará en su coroutine — no es error
-                Debug.Log("[GameManager] Sin prefabJugador — SceneBootstrapper creará el jugador.");
+                // SceneBootstrapper crea el jugador en corrutina — esperar señal de AltsasuCore
+                AltsasuCore.OnJugadorSpawned += OnJugadorListoDesdeCore;
                 return;
             }
         }
         else
         {
-            Vector3 pos = puntoSpawnJugador != null ? puntoSpawnJugador.position : new Vector3(1918f, 245f, 8570f);
+            Vector3 pos = puntoSpawnJugador != null ? puntoSpawnJugador.position : Vector3.zero + Vector3.up * 2f;
             Quaternion rot = puntoSpawnJugador != null ? puntoSpawnJugador.rotation : Quaternion.identity;
             jugadorActivo = Instantiate(prefabJugador, pos, rot);
         }
         jugadorActivo.tag = "Player";
         _jugadorVivo = true;
-        Debug.Log("[GameManager] Jugador spawneado en " + jugadorActivo.transform.position);
+        Debug.Log("[GameManager] ✓ Jugador listo en " + jugadorActivo.transform.position);
+    }
+
+    void OnJugadorListoDesdeCore(UnityEngine.Transform t)
+    {
+        AltsasuCore.OnJugadorSpawned -= OnJugadorListoDesdeCore;
+        jugadorActivo = t.gameObject;
+        _jugadorVivo  = true;
+        Debug.Log("[GameManager] ✓ Jugador recibido desde AltsasuCore: " + t.position);
     }
 
     /// <summary>Llamar desde Health cuando el jugador muere.</summary>
@@ -183,7 +239,16 @@ public class GameManagerAltsasua : MonoBehaviour
         _jugadorVivo = false;
         nivelBusqueda = 0;
         Debug.Log("[GameManager] Jugador muerto. Respawneando en 3 segundos...");
-        StartCoroutine(RespawnJugador(3f));
+
+        // Notificar a todos los sistemas vía EventBus (sin acoplamiento directo).
+        // Receptores: HUDCanvas (fade), SistemaPolish (efecto muerte), SistemaLogros, AudioManager.
+        EventBus.Publish(new PlayerDeathEvent
+        {
+            posicion = jugadorActivo != null ? jugadorActivo.transform.position : Vector3.zero,
+            causa    = "muerte"
+        });
+
+        _crRespawn = StartCoroutine(RespawnJugador(3f));
     }
 
     IEnumerator RespawnJugador(float delay)
@@ -218,10 +283,11 @@ public class GameManagerAltsasua : MonoBehaviour
     /// <summary>Aumentar el nivel de búsqueda (llamar al atacar civiles/policía).</summary>
     public void AumentarBusqueda(int cantidad = 1)
     {
+        int anterior = nivelBusqueda;
         nivelBusqueda = Mathf.Clamp(nivelBusqueda + cantidad, 0, 5);
-        _timerBajarNivel = tiempoBajarNivel; // reinicia el timer
-        OnEstrellasCambia?.Invoke(nivelBusqueda);
-        Debug.Log($"[GameManager] Nivel búsqueda: {nivelBusqueda}★");
+        if (cantidad > 0) _timerBajarNivel = tiempoBajarNivel;
+        if (nivelBusqueda != anterior) OnEstrellasCambia?.Invoke(nivelBusqueda);
+        AlsasuaLogger.Info("GameManager", $"Nivel búsqueda: {nivelBusqueda}★");
     }
 
     void GestionarNivelBusqueda()
@@ -231,7 +297,9 @@ public class GameManagerAltsasua : MonoBehaviour
         _timerBajarNivel -= Time.deltaTime;
         if (_timerBajarNivel <= 0f)
         {
+            int prev = nivelBusqueda;
             nivelBusqueda = Mathf.Max(0, nivelBusqueda - 1);
+            if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
             _timerBajarNivel = tiempoBajarNivel;
 
             // Desactivar helicóptero si baja del umbral
@@ -319,7 +387,7 @@ public class GameManagerAltsasua : MonoBehaviour
         _timerSpawnEnemigo = intervalSpawnEnemigos;
 
         _enemigosActivos.RemoveAll(e => e == null);
-        if (_enemigosActivos.Count >= maxEnemigos || puntosSpawnEnemigos == null) return;
+        if (_enemigosActivos.Count >= maxEnemigos || puntosSpawnEnemigos == null || puntosSpawnEnemigos.Length == 0) return;
 
         Transform punto = puntosSpawnEnemigos[Random.Range(0, puntosSpawnEnemigos.Length)];
         SpawnEnemigo(punto);
@@ -342,14 +410,12 @@ public class GameManagerAltsasua : MonoBehaviour
     }
 
     // =========================================================================
-    //  ÁRBOLES / VEGETACIÓN
+    //  ÁRBOLES / VEGETACIÓN (legacy — la lógica real está en SembradoVegetacionManual)
     // =========================================================================
 
     void SembrarArboles()
     {
-        if (_arbolesSembrados || prefabsArboles == null || prefabsArboles.Length == 0) return;
-        if (puntosArboles == null) return;
-
+        if (_arbolesSembrados || prefabsArboles == null || puntosArboles == null) return;
         foreach (var punto in puntosArboles)
         {
             if (punto == null) continue;
@@ -364,18 +430,11 @@ public class GameManagerAltsasua : MonoBehaviour
     //  ECONOMÍA
     // =========================================================================
 
-    HUDAAA ObtenerHUD()
-    {
-        if (_hudCache == null) _hudCache = FindFirstObjectByType<HUDAAA>();
-        return _hudCache;
-    }
-
     public void GanarDinero(int cantidad)
     {
-        dinero     += cantidad;
+        dinero += cantidad;
         puntuacion += cantidad;
-        OnDineroCambia?.Invoke(dinero);
-        // HUDAAA se actualiza vía evento — no necesita referencia directa
+        ActualizarHUD();
     }
 
     public bool GastarDinero(int cantidad)
@@ -402,19 +461,19 @@ public class GameManagerAltsasua : MonoBehaviour
 
     void ActualizarHUD()
     {
-        if (textoDinero != null)
-            textoDinero.text = "$ " + dinero;
-
-        if (textoNivelBusqueda != null)
+        bool economiaChanged = dinero != _hudDineroCache || puntuacion != _hudPuntuacionCache;
+        if (economiaChanged)
         {
-            string estrellas = "";
-            for (int i = 0; i < 5; i++)
-                estrellas += i < nivelBusqueda ? "★" : "☆";
-            textoNivelBusqueda.text = estrellas;
+            _hudDineroCache     = dinero;
+            _hudPuntuacionCache = puntuacion;
+            OnEconomiaCambia?.Invoke(dinero, puntuacion);
         }
 
-        if (textoPuntuacion != null)
-            textoPuntuacion.text = "Score: " + puntuacion;
+        if (nivelBusqueda != _hudBusquedaCache)
+        {
+            _hudBusquedaCache = nivelBusqueda;
+            OnEstrellasCambia?.Invoke(nivelBusqueda);
+        }
     }
 
     // =========================================================================

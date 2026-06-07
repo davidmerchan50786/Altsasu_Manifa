@@ -42,7 +42,7 @@ public class GuiaManualAltsasua : EditorWindow
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/📋 Guía Manual Paso a Paso", priority = 3)]
+    [MenuItem("Tools/Alsasua/📋 Guia Manual", priority = 50)]
     public static void Abrir()
     {
         var w = GetWindow<GuiaManualAltsasua>("📋 Guía Manual");
@@ -267,8 +267,8 @@ public class GuiaManualAltsasua : EditorWindow
         Cmd("3. Si no gira → pulsa Ctrl+R o ve a Assets → Refresh");
 
         Titulo("Verificación automática:");
-        Texto($"Texturas importadas en Textures_AAA: " +
-              $"{AssetDatabase.FindAssets(\"t:Texture2D\", new[]{\"Assets/Textures_AAA\"}).Length}");
+        var texCount = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Textures_AAA" }).Length;
+        Texto($"Texturas importadas en Textures_AAA: {texCount}");
         Texto("✅ Se activa automáticamente cuando hay más de 100 texturas importadas.");
 
         if (GUILayout.Button("Abrir carpeta Textures_AAA en Project", GUILayout.Height(28)))
@@ -282,17 +282,17 @@ public class GuiaManualAltsasua : EditorWindow
 
     void DibujarPaso_1()
     {
-        Titulo("¿Qué hace el Setup Maestro?");
-        Texto("Ejecuta 35 pasos automáticos: crea la escena, genera edificios, calles, prefabs de coche, animator, tráfico, civiles, waypoints de policía, configura audio/physics/HDRP y aplica texturas PBR.");
+        Titulo("¿Qué hace el Flujo Completo?");
+        Texto("Ejecuta 23 pasos automáticos: crea la escena, genera edificios, calles, prefabs de coche, animator, tráfico, civiles, waypoints de policía, configura audio/physics/HDRP y aplica texturas PBR.");
 
         Titulo("Cómo ejecutarlo:");
-        Cmd("Tools  →  Alsasua  →  ★ SETUP MAESTRO COMPLETO ★");
-        Texto("Pulsa 'Ejecutar todo' en el diálogo de confirmación.");
+        Cmd("Tools  →  Alsasua  →  ▶▶ FLUJO COMPLETO ◀◀");
+        Texto("Pulsa el botón o usa el atajo de menú.");
 
         Advertencia("Unity puede parecer congelado durante 5-15 minutos.\nNo lo cierres. La barra de progreso avanzará.");
 
         Titulo("Verificación:");
-        Texto("En la Consola verás: '★ SETUP MAESTRO COMPLETADO ★'");
+        Texto("En la Consola verás: '✅ Flujo completo terminado'");
         Texto("La escena Assets/#Scenes/Alsasua_Main.unity debe existir.");
 
         bool existe = File.Exists(Path.GetFullPath(Path.Combine(
@@ -300,8 +300,8 @@ public class GuiaManualAltsasua : EditorWindow
         EditorGUILayout.LabelField(existe ? "✅ Escena detectada" : "❌ Escena no existe aún",
             existe ? _estiloOK : _estiloWarn);
 
-        if (GUILayout.Button("Ejecutar Setup Maestro ahora", GUILayout.Height(32)))
-            SETUP_MAESTRO.EjecutarTodo();
+        if (GUILayout.Button("Ejecutar Flujo Completo ahora", GUILayout.Height(32)))
+            FLUJO_COMPLETO.Ejecutar();
     }
 
     void DibujarPaso_2()
@@ -333,7 +333,7 @@ public class GuiaManualAltsasua : EditorWindow
 
         Titulo("Pasos automáticos:");
         if (GUILayout.Button("🧹 Limpiar Missing Scripts ahora", GUILayout.Height(32)))
-            EditorApplication.ExecuteMenuItem("Tools/Alsasua/🧹 Limpiar Missing Scripts");
+            EditorApplication.ExecuteMenuItem("Tools/Alsasua/Debug/🧹 Limpiar Missing Scripts");
 
         Titulo("O manualmente:");
         Cmd("Tools → Alsasua → 🧹 Limpiar Missing Scripts");
@@ -516,7 +516,7 @@ public class GuiaManualAltsasua : EditorWindow
             Cmd("5. En la Hierarchy selecciona el jugador");
             Cmd("6. Inspector → Animator → Controller → arrastra JugadorAnimator");
             if (GUILayout.Button("Configurar Animator automáticamente", GUILayout.Height(32)))
-                EditorApplication.ExecuteMenuItem("Tools/Alsasua/🎭 Configurar Animator Jugador");
+                EditorApplication.ExecuteMenuItem("Tools/Alsasua/Assets/🎭 Animator Jugador");
         }
         else
         {

@@ -14,17 +14,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaMisiones : MonoBehaviour
+public class SistemaMisiones : SingletonMono<SistemaMisiones>
 {
-    public static SistemaMisiones Instance { get; private set; }
+    protected override bool DestroyGameObjectOnDuplicate => true;
 
     // UI: OnGUI puro — sin dependencia de TextMeshPro
     // Si en el futuro se añade TMPro, crear un CanvasGUI hijo y asignar manualmente.
 
     // ── Estado ───────────────────────────────────────────────────────────
-    private Mision _misionActual;
-    private int    _objetivoActual;
-    private bool   _enMision;
+    private Mision    _misionActual;
+    private int       _objetivoActual;
+    private bool      _enMision;
+    private Coroutine _crIniciarM01;
 
     public static event System.Action<string> OnMisionIniciada;
     public static event System.Action<string> OnObjetivoCompletado;
@@ -32,16 +33,15 @@ public class SistemaMisiones : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────────────
 
-    private void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
-
     private void Start()
     {
-        // Auto-iniciar M01 cuando el juego arranca
-        StartCoroutine(IniciarM01ConDelay());
+        _crIniciarM01 = StartCoroutine(IniciarM01ConDelay());
+    }
+
+    protected override void OnDestroyed()
+    {
+        if (_crIniciarM01 != null) { StopCoroutine(_crIniciarM01); _crIniciarM01 = null; }
+        if (_crCompletarObjetivo != null) { StopCoroutine(_crCompletarObjetivo); _crCompletarObjetivo = null; }
     }
 
     private IEnumerator IniciarM01ConDelay()
@@ -50,18 +50,31 @@ public class SistemaMisiones : MonoBehaviour
         IniciarMision(new Mision_RobarCoche());
     }
 
+    // BUG FIX: guardar referencia a CompletarObjetivo para:
+    // 1. Evitar múltiples instancias concurrentes si la condición permanece true
+    //    varios frames antes de que la corrutina incremente _objetivoActual
+    //    (→ obj.AlCompletar invocado N veces, dinero ganado N veces, crash por
+    //    _objetivoActual fuera de rango en la segunda instancia).
+    // 2. Poder cancelarlo si la misión se reinicia o el objeto es destruido.
+    Coroutine _crCompletarObjetivo;
+
     private void Update()
     {
         if (!_enMision || _misionActual == null) return;
         var obj = _misionActual.Objetivos[_objetivoActual];
+        // Guard: no iniciar si ya hay una completar en curso
+        if (_crCompletarObjetivo != null) return;
         if (obj.Condicion != null && obj.Condicion())
-            StartCoroutine(CompletarObjetivo());
+            _crCompletarObjetivo = StartCoroutine(CompletarObjetivo());
     }
 
     // ─────────────────────────────────────────────────────────────────────
 
     public void IniciarMision(Mision mision)
     {
+        // BUG FIX: cancelar cualquier CompletarObjetivo en curso al iniciar nueva misión
+        // para evitar que el callback del objetivo anterior ejecute sobre el estado nuevo.
+        if (_crCompletarObjetivo != null) { StopCoroutine(_crCompletarObjetivo); _crCompletarObjetivo = null; }
         _misionActual  = mision;
         _objetivoActual = 0;
         _enMision = true;
@@ -100,6 +113,8 @@ public class SistemaMisiones : MonoBehaviour
         {
             MostrarTexto(_misionActual.Nombre, _misionActual.Objetivos[_objetivoActual].Descripcion);
         }
+        // BUG FIX: limpiar referencia al terminar para que Update() pueda lanzar el siguiente objetivo.
+        _crCompletarObjetivo = null;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -166,7 +181,9 @@ public class Mision_RobarCoche : Mision
     public override string Nombre => "El Coche de la Ertzaintza";
 
     private bool _dentroDelCoche = false;
+#pragma warning disable CS0414
     private bool _escapado       = false;
+#pragma warning restore CS0414
     private Vector3 _posInicio;
 
     public override System.Action AlIniciar => () =>
@@ -188,14 +205,10 @@ public class Mision_RobarCoche : Mision
             Condicion   = () => _dentroDelCoche,
             AlCompletar = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                if (gm != null) gm.AumentarBusqueda(1);
+                ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
                 // Alertar a los civiles cercanos
-                foreach (var npc in Object.FindObjectsByType<NPCCivil>(FindObjectsSortMode.None))
-                {
-                    var veh = Object.FindFirstObjectByType<ControladorVehiculoJugador>();
-                    if (veh != null) npc.AlertarDisparo(veh.transform.position);
-                }
+                var jug = AltsasuCore.Jugador;
+                if (jug != null) SistemaIA.AlertarCercanos(jug.position, 30f);
             }
         },
         new Objetivo
@@ -209,12 +222,8 @@ public class Mision_RobarCoche : Mision
             },
             AlCompletar = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                if (gm != null)
-                {
-                    gm.GanarDinero(500); // dinero es public — sin reflexión
-                    gm.AumentarBusqueda(1);
-                }
+                ServiceLocator.Get<IEconomyService>()?.GanarDinero(500);
+                ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
             }
         }
     };
@@ -243,9 +252,9 @@ public class Mision_HuirPolicia : Mision
             Descripcion = $"Mantén el nivel de búsqueda bajo durante {TIEMPO_PARA_ESCAPAR}s",
             Condicion   = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                if (gm == null) return false;
-                if (gm.nivelBusqueda == 0)
+                var wanted = ServiceLocator.Get<IWantedSystem>();
+                if (wanted == null) return false;
+                if (wanted.NivelBusqueda == 0)
                     _timerSinBuscado += Time.deltaTime;
                 else
                     _timerSinBuscado = 0f;
@@ -253,9 +262,7 @@ public class Mision_HuirPolicia : Mision
             },
             AlCompletar = () =>
             {
-                var gm = GameManagerAltsasua.Instance;
-                if (gm == null) return;
-                gm.GanarDinero(1000);
+                ServiceLocator.Get<IEconomyService>()?.GanarDinero(1000);
             }
         }
     };

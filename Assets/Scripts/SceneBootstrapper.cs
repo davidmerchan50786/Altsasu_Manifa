@@ -19,14 +19,15 @@ using System.IO;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering.HighDefinition;
 
 [DefaultExecutionOrder(-200)]
 public class SceneBootstrapper : MonoBehaviour
 {
     // ── Parámetros públicos ────────────────────────────────────────────────
     [Header("Coordenadas reales de Alsasua")]
-    public float centroX = 1918f;
-    public float centroZ = 8570f;
+    public float centroX = GeoDataAlsasua.OX;
+    public float centroZ = GeoDataAlsasua.OZ;
 
     [Header("Ajustes de terreno")]
     public bool generarTerrenoDesdeDEM = true;
@@ -38,12 +39,20 @@ public class SceneBootstrapper : MonoBehaviour
 
     // ── Rutas ─────────────────────────────────────────────────────────────
     const string DEM_PATH      = "Assets/AlsasuaData/dem_unity_1025.raw";
-    const float  TER_W         = 5000f;
-    const float  TER_L         = 18000f;
+    // Terreno cuadrado centrado en Herriko Plaza (1918, y, 8570).
+    // 6 km × 6 km cubre todo el casco urbano y las montañas próximas
+    // (Urbasa NW, Aralar SW, Aizkorri NE), con Alsasua en el centro exacto.
+    const float  TER_W         = 6000f;
+    const float  TER_L         = 6000f;
     const float  TER_H         = 900f;
     const int    DEM_RES       = 1025;
+    // Posición origen del terreno para que (centroX, y, centroZ) quede en el centro
+    const float  TER_OX        = GeoDataAlsasua.OX - TER_W * 0.5f;   // -1082
+    const float  TER_OZ        = GeoDataAlsasua.OZ - TER_L * 0.5f;   //  5570
 
+#pragma warning disable CS0414
     bool _listo;
+#pragma warning restore CS0414
 
     // =========================================================================
     //  BOOTSTRAP
@@ -55,9 +64,18 @@ public class SceneBootstrapper : MonoBehaviour
 
         Debug.Log("[Bootstrap] Comprobando escena…");
 
-        // 1. Terrain
-        bool terrenoOK = EnsureTerrain();
-        if (terrenoOK) yield return null; // frame para que el terrain se procese
+        // 1. Terrain — omitir si Cesium Georeference está activo (evita z-fighting)
+        bool cesiumActivo = IsCesiumPresente();
+        bool terrenoOK = false;
+        if (!cesiumActivo)
+        {
+            terrenoOK = EnsureTerrain();
+            if (terrenoOK) yield return null;
+        }
+        else
+        {
+            Debug.Log("[Bootstrap] Cesium detectado — terreno DEM omitido (Cesium provee el terreno).");
+        }
 
         // 2. Sol
         EnsureSol();
@@ -132,14 +150,15 @@ public class SceneBootstrapper : MonoBehaviour
 
             var go = Terrain.CreateTerrainGameObject(td);
             go.name = "Terrain_Alsasua_Runtime";
-            go.transform.position = Vector3.zero;
+            // Centrar el terreno en Herriko Plaza: (centroX - TER_W/2, 0, centroZ - TER_L/2)
+            go.transform.position = new Vector3(TER_OX, 0f, TER_OZ);
             go.layer = 8;
 
             // HDRP/TerrainLit requiere terrain layers — las creamos en runtime
             var terrainComp = go.GetComponent<Terrain>();
             AplicarCapaBaseTerreno(terrainComp);
 
-            Debug.Log("[Bootstrap] ✓ Terrain creado desde DEM (1025×1025, 5×18 km).");
+            Debug.Log($"[Bootstrap] ✓ Terrain 6×6 km centrado en Herriko Plaza ({TER_OX:F0},{TER_OZ:F0})→({TER_OX+TER_W:F0},{TER_OZ+TER_L:F0})");
             return true;
         }
         catch (Exception e)
@@ -188,8 +207,10 @@ public class SceneBootstrapper : MonoBehaviour
 
         // ── Cielo degradado simple ──
         var ve = perfil.Add<UnityEngine.Rendering.HighDefinition.VisualEnvironment>(true);
+        // skyType.value debe ser el ID registrado de GradientSky, no GetHashCode().
+        // Obtenemos el ID desde el atributo SkyUniqueID que HDRP pone en la clase.
         ve.skyType.overrideState        = true;
-        ve.skyType.value                = typeof(UnityEngine.Rendering.HighDefinition.GradientSky).GetHashCode();
+        ve.skyType.value                = ObtenerSkyTypeId<UnityEngine.Rendering.HighDefinition.GradientSky>();
         ve.skyAmbientMode.overrideState = true;
         ve.skyAmbientMode.value         = UnityEngine.Rendering.HighDefinition.SkyAmbientMode.Dynamic;
 
@@ -246,7 +267,6 @@ public class SceneBootstrapper : MonoBehaviour
         var luz = go.AddComponent<Light>();
         luz.type      = LightType.Directional;
         luz.color     = new Color(1f, 0.96f, 0.88f);
-        luz.intensity = 5f;   // intensidad alta para iluminar bien en HDRP
         luz.shadows   = LightShadows.Soft;
         go.transform.rotation = Quaternion.Euler(55f, -30f, 0f); // mediodía, ilumina bien el terreno
         // Iluminación ambiental directa — garantiza que el terreno recibe luz
@@ -256,7 +276,11 @@ public class SceneBootstrapper : MonoBehaviour
         RenderSettings.ambientGroundColor = new Color(0.25f, 0.32f, 0.18f); // suelo oscuro
         RenderSettings.ambientIntensity   = 1.5f;
 
-        Debug.Log("[Bootstrap] ✓ Sol creado.");
+        // HDRP requiere HDAdditionalLightData en luces direccionales
+        var hdSol = go.GetComponent<HDAdditionalLightData>() ?? go.AddComponent<HDAdditionalLightData>();
+        hdSol.SetIntensity(80000f, UnityEngine.Rendering.LightUnit.Lux);
+
+        Debug.Log("[Bootstrap] ✓ Sol creado (HDRP).");
     }
 
     // =========================================================================
@@ -338,9 +362,14 @@ public class SceneBootstrapper : MonoBehaviour
         viz.transform.localScale    = new Vector3(0.5f, 0.9f, 0.5f);
         Destroy(viz.GetComponent<CapsuleCollider>()); // usar sólo el del root
 
-        // Material jugador (azul oscuro visible)
-        var mat = viz.GetComponent<MeshRenderer>().material;
-        mat.color = new Color(0.1f, 0.2f, 0.8f);
+        // Material jugador — color azul oscuro visible en HDRP
+        var mr  = viz.GetComponent<MeshRenderer>();
+        var mat = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"));
+        mat.SetColor("_BaseColor",  new Color(0.1f, 0.2f, 0.7f));
+        mat.SetColor("_EmissiveColor", Color.black);
+        if (mat.HasProperty("_Metallic"))    mat.SetFloat("_Metallic",    0f);
+        if (mat.HasProperty("_Smoothness"))  mat.SetFloat("_Smoothness",  0.3f);
+        mr.material = mat;
 
         // Física
         var col = root.AddComponent<CapsuleCollider>();
@@ -423,10 +452,6 @@ public class SceneBootstrapper : MonoBehaviour
 
     void EnsureCamera()
     {
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null) return;
-
-        // Eliminar cámaras duplicadas/huérfanas
         Camera camExistente = Camera.main;
 
         if (camExistente == null)
@@ -435,20 +460,104 @@ public class SceneBootstrapper : MonoBehaviour
             camGO.tag = "MainCamera";
             var cam = camGO.AddComponent<Camera>();
             camGO.AddComponent<AudioListener>();
-            cam.fieldOfView    = 65f;
-            cam.nearClipPlane  = 0.15f;
-            cam.farClipPlane   = 2000f;
+            cam.fieldOfView   = 65f;
+            cam.nearClipPlane = 0.15f;
+            cam.farClipPlane  = 2000f;
             camExistente = cam;
         }
 
-        // Si la cámara no tiene seguidor, añadir CameraFollow
+        // HDRP requiere HDAdditionalCameraData para renderizar
+        AnadirHDRPCameraData(camExistente.gameObject);
+
+        // CameraFollow — si no hay jugador aún, se conectará cuando llegue
         if (camExistente.GetComponent<CameraFollowGTA>() == null)
             camExistente.gameObject.AddComponent<CameraFollowGTA>();
 
         var follow = camExistente.GetComponent<CameraFollowGTA>();
-        follow.objetivo = player.transform;
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            follow.objetivo = player.transform;
+        }
+        else
+        {
+            // Esperar a que AltsasuCore emita el jugador
+            AltsasuCore.OnJugadorSpawned += t =>
+            {
+                if (follow != null) follow.objetivo = t;
+            };
+        }
 
-        Debug.Log("[Bootstrap] ✓ Cámara configurada.");
+        Debug.Log("[Bootstrap] ✓ Cámara configurada (HDRP).");
+    }
+
+    // Obtiene el ID de tipo de cielo registrado por HDRP para cualquier SkySettings subclass.
+    // HDRP usa un atributo [SkyUniqueID(n)] en cada clase de cielo; GetHashCode() es incorrecto.
+    static int ObtenerSkyTypeId<T>() where T : UnityEngine.Rendering.HighDefinition.SkySettings
+    {
+        // Buscar el atributo SkyUniqueID en el tipo T
+        var skyUIDType = System.Type.GetType(
+            "UnityEngine.Rendering.HighDefinition.SkyUniqueID, " +
+            "Unity.RenderPipelines.HighDefinition.Runtime");
+        if (skyUIDType != null)
+        {
+            var attr = System.Attribute.GetCustomAttribute(typeof(T), skyUIDType);
+            if (attr != null)
+            {
+                // El atributo tiene un campo 'uniqueID' o puede ser el primer constructor arg
+                var field = skyUIDType.GetField("uniqueID")
+                         ?? skyUIDType.GetField("m_UniqueID",
+                                System.Reflection.BindingFlags.NonPublic |
+                                System.Reflection.BindingFlags.Instance);
+                if (field != null)
+                    return (int)field.GetValue(attr);
+            }
+        }
+        // Fallback: GradientSky HDRP 16/17 tiene el ID = 189733825 (constante pública)
+        return 189733825;
+    }
+
+    static void AnadirHDRPCameraData(GameObject camGO)
+    {
+        // HDAdditionalCameraData es el componente que HDRP necesita para renderizar.
+        // Lo añadimos via reflexión para no romper si HDRP no está instalado.
+        var hdType = System.Type.GetType(
+            "UnityEngine.Rendering.HighDefinition.HDAdditionalCameraData, " +
+            "Unity.RenderPipelines.HighDefinition.Runtime");
+        if (hdType == null) return;
+
+        var hdComp = camGO.GetComponent(hdType);
+        if (hdComp == null)
+            hdComp = camGO.AddComponent(hdType);
+
+        // Forzar fondo = Sky (evita pantalla negra en HDRP cuando no hay skybox asignado)
+        // clearColorMode: 0=None, 1=Color, 2=Sky (valor enum HDAdditionalCameraData.ClearColorMode)
+        try
+        {
+            var clearMode = hdType.GetProperty("clearColorMode");
+            if (clearMode != null)
+            {
+                // ClearColorMode.Sky = 2
+                var enumType = clearMode.PropertyType;
+                var skyVal   = System.Enum.ToObject(enumType, 2);
+                clearMode.SetValue(hdComp, skyVal);
+            }
+
+            // volumeLayerMask: capas de volumes activos (incluir default=1)
+            var volMask = hdType.GetProperty("volumeLayerMask");
+            if (volMask != null)
+                volMask.SetValue(hdComp, ~0);   // todas las capas
+
+            // antialiasing en modo FXAA (sin artefactos, barato)
+            var aaMode = hdType.GetProperty("antialiasing");
+            if (aaMode != null)
+            {
+                var enumType = aaMode.PropertyType;
+                if (System.Enum.IsDefined(enumType, 1))   // FXAA=1
+                    aaMode.SetValue(hdComp, System.Enum.ToObject(enumType, 1));
+            }
+        }
+        catch { /* reflexión sin garantías — silenciar */ }
     }
 
     // =========================================================================
@@ -457,45 +566,112 @@ public class SceneBootstrapper : MonoBehaviour
 
     void EnsureGameManager()
     {
-        var gm = FindFirstObjectByType<GameManagerAltsasua>();
-        if (gm != null) return;
+        if (GameManagerAltsasua.Instance != null) return;
 
         var go = new GameObject("GameManager");
-        gm = go.AddComponent<GameManagerAltsasua>();
+        go.AddComponent<GameManagerAltsasua>();
         Debug.Log("[Bootstrap] ✓ GameManager creado en runtime.");
     }
 
     void EnsureCore()
     {
-        if (FindFirstObjectByType<AltsasuCore>() != null) return;
-        var gmGO = FindFirstObjectByType<GameManagerAltsasua>()?.gameObject
-                ?? new GameObject("AltsasuCore");
+        if (AltsasuCore.I != null) return;
+        var gmGO = GameManagerAltsasua.Instance?.gameObject ?? new GameObject("AltsasuCore");
         gmGO.AddComponent<AltsasuCore>();
     }
 
     void EnsureSistemasBasicos()
     {
-        // Solo crea los sistemas más críticos para el gameplay mínimo;
-        // el AltsasuCore creará el resto en su coroutine de Start().
-        var gmGO = FindFirstObjectByType<GameManagerAltsasua>()?.gameObject;
+        var gmGO = GameManagerAltsasua.Instance?.gameObject;
         if (gmGO == null) return;
 
+        // ── Gameplay básico ───────────────────────────────────────────────
         if (FindFirstObjectByType<SistemaApoyoPopular>() == null)
             gmGO.AddComponent<SistemaApoyoPopular>();
-
         if (FindFirstObjectByType<SistemaDestruccion>() == null)
             gmGO.AddComponent<SistemaDestruccion>();
-
         if (FindFirstObjectByType<SistemaClima>() == null)
             gmGO.AddComponent<SistemaClima>();
+        if (FindFirstObjectByType<HUDCanvas>() == null)
+            gmGO.AddComponent<HUDCanvas>();
+        if (FindFirstObjectByType<JuegoManifestacion>() == null)
+            gmGO.AddComponent<JuegoManifestacion>();
+        if (FindFirstObjectByType<HUDManifestacion>() == null)
+            gmGO.AddComponent<HUDManifestacion>();
 
-        if (FindFirstObjectByType<HUDAAA>() == null)
-            gmGO.AddComponent<HUDAAA>();
+        // ── Sistemas de generación del mundo ─────────────────────────────
+        // Estos sistemas tienen DefaultExecutionOrder específico y DEBEN
+        // existir como MonoBehaviours para que Unity respete su orden de ejecución.
+        // Se crean en un GO dedicado para no contaminar GameManager.
+        EnsureGeneradores();
+
+        // ── Mundo vivo EXTRA (migrado): tren, túneles, charcos, humo, viento ─
+        EnsureMundoVivo();
+    }
+
+    // Sistemas de "mundo vivo" migrados desde la otra rama. Arrancan solos en
+    // Play, en un GO dedicado. Son self-contained y defensivos (no rompen si
+    // falta algo). Colocan su geometría según la altura del terreno, así que
+    // lucen correctos con el terreno LIDAR local generado (no con Cesium activo).
+    void EnsureMundoVivo()
+    {
+        var go = GameObject.Find("MundoVivoExtra") ?? new GameObject("MundoVivoExtra");
+
+        void AddVivo<T>() where T : MonoBehaviour
+        {
+            if (FindFirstObjectByType<T>() == null)
+            {
+                go.AddComponent<T>();
+                Debug.Log($"[Bootstrap] [+ mundo vivo] {typeof(T).Name}");
+            }
+        }
+
+        AddVivo<SistemaVientoVegetacion>();   // viento → WindZone + vegetación
+        AddVivo<SistemaCharcos>();            // charcos/suelo mojado con lluvia
+        AddVivo<SistemaHumoFabricas>();       // humo en el Polígono Isasia
+        AddVivo<SistemaTren>();               // tren llega/para/sale de la estación
+        AddVivo<SistemaTuneles>();            // túneles de la autovía N-1
+    }
+
+    void EnsureGeneradores()
+    {
+        // Un solo GO "Generadores" agrupa todos los sistemas de construcción del mundo
+        var genGO = GameObject.Find("Generadores");
+        if (genGO == null) genGO = new GameObject("Generadores");
+
+        void Add<T>() where T : MonoBehaviour
+        {
+            if (FindFirstObjectByType<T>() == null)
+            {
+                genGO.AddComponent<T>();
+                Debug.Log($"[Bootstrap] [+] {typeof(T).Name}");
+            }
+        }
+
+        // Orden de adición = orden de ejecución lógico (Unity respeta DefaultExecutionOrder)
+        Add<ConfiguradorAssetsAAA>();          // -98  primero — provee prefabs a todo
+        Add<GestorMaterialesAlsasua>();        // -85  materiales PBR
+        Add<SistemaSueloAAA>();                // -65  terrain layers + calles
+        Add<GeneradorTerrenoUltraPreciso>();   // -68  heightmap LIDAR
+        Add<FusionadorEdificiosUltra>();       // -62  carga nube de puntos edificios
+        Add<GeneradorGeometriaPrecisa>();      // -60  genera meshes OSM con LIDAR
+        Add<AplicadorOrtofoto>();              // -55  textura aérea PNOA
+        Add<PosicionadorPrecisionUrbana>();    // -54  árboles LIDAR
     }
 
     // =========================================================================
     //  UTILIDADES
     // =========================================================================
+
+    static bool IsCesiumPresente()
+    {
+        // Comprobar si hay un CesiumGeoreference en escena (sin depender del assembly de Cesium)
+        foreach (var go in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+            if (go != null && go.GetType().FullName != null &&
+                go.GetType().FullName.Contains("CesiumGeoreference"))
+                return true;
+        return false;
+    }
 
     static float ObtenerAltura(float x, float z)
     {

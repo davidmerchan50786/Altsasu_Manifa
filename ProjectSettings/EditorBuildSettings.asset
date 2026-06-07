@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/#Scenes/MenuPrincipal.unity
+    guid: 4acebdadc1874dbabf8ef057997fd525
+  - enabled: 1
+    path: Assets/#Scenes/Alsasua_Main.unity
+    guid: 9e2b623ecdb24e06be9e0e42920f6aa2
+  - enabled: 1
     path: Assets/OutdoorsScene.unity
     guid: 8124e5870f4fd4c779e7a5f994e84ad1
   m_configObjects:

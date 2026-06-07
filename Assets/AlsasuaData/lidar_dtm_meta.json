@@ -1,0 +1,15 @@
+{
+  "heightmapResolution": 2049,
+  "terrainWidth": 1024.0,
+  "terrainLength": 1024.0,
+  "terrainHeight": 57.26,
+  "z_min": 511.33,
+  "z_max": 568.59,
+  "res_m": 0.5,
+  "E_origin": 567951.0,
+  "N_origin": 4749902.0,
+  "unity_ox": 1918.0,
+  "unity_oz": 8570.0,
+  "byteOrder": "uint16 little-endian",
+  "note": "Unity terrain: importar como RAW 16bit, width=terrainWidth, length=terrainLength, height=terrainHeight"
+}

@@ -426,7 +426,7 @@ public class SistemaDisparo : MonoBehaviour
         balas          += disponibles;
         balasReserva   -= disponibles;
         estaCargando    = false;
-        AudioManager.I?.Play(AudioManager.Clip.Recarga);   // clic de recarga completada
+        AudioManager.Play(AudioManager.Clip.Recarga);   // clic de recarga completada
         AlsasuaLogger.Info("Disparo", $"Recargado: {balas}/{balasMaxCargador}  Reserva: {balasReserva}");
     }
 
@@ -437,26 +437,26 @@ public class SistemaDisparo : MonoBehaviour
     private void EfectoDisparo(Vector3 origen, Vector3 direccion)
     {
         CrearBurst(origen + direccion * 0.5f, new Color(1f, 0.8f, 0.3f), 0.05f, 8, 0.08f);
-        AudioManager.I?.Play(AudioManager.Clip.Disparo, origen);
+        AudioManager.Play(AudioManager.Clip.Disparo, origen);
     }
 
     private void EfectoImpactoSuelo(Vector3 punto, Vector3 normal)
     {
         CrearBurst(punto, new Color(0.7f, 0.6f, 0.5f), 0.06f, 12, 0.3f);
         ColocarDecal(punto + normal * 0.01f, 8f);
-        AudioManager.I?.Play(AudioManager.Clip.ImpactoSuelo, punto);
+        AudioManager.Play(AudioManager.Clip.ImpactoSuelo, punto);
     }
 
     private void EfectoSangre(Vector3 punto, Vector3 normal)
     {
         CrearBurst(punto, new Color(0.6f, 0f, 0f), 0.06f, 15, 0.25f);
-        AudioManager.I?.Play(AudioManager.Clip.ImpactoSangre, punto);
+        AudioManager.Play(AudioManager.Clip.ImpactoSangre, punto);
     }
 
     private void EfectoChispa(Vector3 punto, Vector3 normal)
     {
         CrearBurst(punto, new Color(1f, 0.9f, 0.3f), 0.04f, 20, 0.15f);
-        AudioManager.I?.Play(AudioManager.Clip.ImpactoMetal, punto);
+        AudioManager.Play(AudioManager.Clip.ImpactoMetal, punto);
     }
 
     // ── Activar un slot de burst del pool ───────────────────────────────

@@ -1,0 +1,788 @@
+{
+  "total": 87,
+  "edificios": [
+    {
+      "edificio_id": "1227104495",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/casco_viejo_003.png",
+      "n_fotos_disponibles": 16,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/1227104495_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797098",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_020.png",
+      "n_fotos_disponibles": 24,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797098_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797096",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_028.png",
+      "n_fotos_disponibles": 8,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797096_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797097",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_025.png",
+      "n_fotos_disponibles": 9,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797097_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797095",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_013.png",
+      "n_fotos_disponibles": 4,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797095_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797073",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_014.png",
+      "n_fotos_disponibles": 4,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797073_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797075",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_024.png",
+      "n_fotos_disponibles": 3,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797075_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797074",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_025.png",
+      "n_fotos_disponibles": 3,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797074_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797076",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_008.png",
+      "n_fotos_disponibles": 3,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797076_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797070",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_fueros_009.png",
+      "n_fotos_disponibles": 3,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797070_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797079",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_016.png",
+      "n_fotos_disponibles": 7,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797079_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797078",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_012.png",
+      "n_fotos_disponibles": 7,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797078_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646241",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_008.png",
+      "n_fotos_disponibles": 6,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646241_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797084",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_004.png",
+      "n_fotos_disponibles": 6,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797084_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646240",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ferial_005.png",
+      "n_fotos_disponibles": 6,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646240_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797100",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_031.png",
+      "n_fotos_disponibles": 8,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797100_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297158488",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_002.png",
+      "n_fotos_disponibles": 8,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297158488_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784673799",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_001.png",
+      "n_fotos_disponibles": 7,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784673799_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160864",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_019.png",
+      "n_fotos_disponibles": 6,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160864_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160865",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/gaztetxe_015.png",
+      "n_fotos_disponibles": 6,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160865_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167107",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_001.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167107_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297165191",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_002.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297165191_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167109",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_003.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167109_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297165190",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_004.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297165190_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167110",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_005.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167110_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297165189",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_006.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297165189_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167111",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_007.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167111_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297165188",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_008.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297165188_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167113",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_009.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167113_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167112",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_010.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167112_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167114",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_011.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167114_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "91927762",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_012.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/91927762_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297146107",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_013.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297146107_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297102376",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_014.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297102376_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297146108",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_015.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297146108_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297146109",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_016.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297146109_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167115",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_017.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167115_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167116",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_018.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167116_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297150870",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_019.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297150870_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297518880",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_020.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297518880_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297102377",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_021.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297102377_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297518881",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_022.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297518881_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297146665",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_023.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297146665_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297146664",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_024.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297146664_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297518882",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_025.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297518882_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297145830",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_026.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297145830_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297518886",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_027.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297518886_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297167117",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_028.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297167117_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297150871",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_029.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297150871_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297145829",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_030.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297145829_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297518885",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_031.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297518885_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297150868",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/iglesia_032.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297150868_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "784797099",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_026.png",
+      "n_fotos_disponibles": 16,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/784797099_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646225",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_017.png",
+      "n_fotos_disponibles": 11,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646225_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646224",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/ayto_009.png",
+      "n_fotos_disponibles": 10,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646224_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160863",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_003.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160863_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160860",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_004.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160860_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160859",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_005.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160859_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160862",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_006.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160862_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162224",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_007.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162224_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160858",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_008.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160858_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160857",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_009.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160857_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162227",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_010.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162227_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160856",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_011.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160856_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162230",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_012.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162230_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162232",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_014.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162232_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160855",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_015.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160855_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297271238",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_016.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297271238_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160854",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_017.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160854_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297272104",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_018.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297272104_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297272105",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_019.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297272105_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297274398",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_020.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297274398_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297274399",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_021.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297274399_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162235",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_022.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162235_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297271239",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_023.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297271239_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297271237",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_024.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297271237_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297158487",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_025.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297158487_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297160853",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_026.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297160853_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297271235",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_027.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297271235_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297274400",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_028.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297274400_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297162237",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_029.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297162237_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297158486",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_030.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297158486_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297226312",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_031.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297226312_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297157704",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/plaza_zubeztia_032.png",
+      "n_fotos_disponibles": 1,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297157704_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646235",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_015.png",
+      "n_fotos_disponibles": 5,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646235_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646233",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_016.png",
+      "n_fotos_disponibles": 5,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646233_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    },
+    {
+      "edificio_id": "297646237",
+      "foto_usada": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/Processed/garcia_jimenez_010.png",
+      "n_fotos_disponibles": 5,
+      "albedo": "/home/user/Altsasu_Manifa/Assets/AlsasuaData/FacadeTextures/AAA/297646237_albedo.png",
+      "normal": null,
+      "ao": null,
+      "fbx_out": null
+    }
+  ]
+}

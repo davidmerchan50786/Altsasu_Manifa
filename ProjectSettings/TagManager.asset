@@ -4,13 +4,15 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - Player
   - Enemy
-  - Vehicle
   - NPC
-  - Bullet
-  - Explosion
-  - Barricada
+  - Vehicle
+  - Projectile
+  - Ground
+  - Building
+  - Prop
+  - Weapon
+  - Manifestante
   layers:
   - Default
   - TransparentFX
@@ -20,13 +22,13 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Ground
+  - Player
+  - NPC
+  - Vehicle
+  - Projectile
+  - Building
+  - Ignore
   - 
   - 
   - 

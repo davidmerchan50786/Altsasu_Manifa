@@ -1,85 +1,94 @@
+// Assets/#Xtra/Health.cs
+// Componente legado de salud para NPCs simples (no-jugador).
+// Integrado con NPCBase/ControladorJugador via IDamageable cuando está disponible.
+// Para el jugador usa ControladorJugador.Danar() directamente.
+
 using UnityEngine;
 using UnityEngine.AI;
 using UnityStandardAssets.Characters.ThirdPerson;
 
-public class Health : MonoBehaviour
+public class Health : MonoBehaviour, IDamageable
 {
-    [Header("Vida")]
+    [Tooltip("Salud actual del personaje.")]
     public float CurrentHealth = 100f;
-    public float MaxHealth     = 100f;
 
-    [Header("Muerte")]
+    [Tooltip("Salud máxima (para IDamageable.VidaMax).")]
+    public float MaxHealth = 100f;
+
+    [Tooltip("Prefab opcional que se instancia al morir (explosión, efecto, etc.).")]
     public GameObject DeathPrefab;
-    public Transform  Pos;
 
-    // ── Estado interno ─────────────────────────────────────────────────────
-    bool _isDead;
+    [Tooltip("Posición donde instanciar DeathPrefab. Si null, usa transform.")]
+    public Transform Pos;
 
-    void Start()
+    private bool _muerto;
+
+    // ── IDamageable (contrato nuevo) ─────────────────────────────────────────
+    // NOTA (migración 2026-06-03): este componente "legado" se quedó con el
+    // contrato viejo (Danar/CurrentHealth) cuando se rediseñó IDamageable.
+    // Adaptado al contrato nuevo delegando en la lógica existente.
+    // Supuesto a revisar por el dueño: VidaMax = MaxHealth (100 por defecto).
+    public int  Vida       => Mathf.Max(0, Mathf.RoundToInt(CurrentHealth));
+    public int  VidaMax    => Mathf.Max(1, Mathf.RoundToInt(MaxHealth));
+    public bool EstaMuerto => _muerto;
+
+    public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
+        => Danar(cantidad);
+
+    public void Curar(int cantidad)
     {
-        CurrentHealth = MaxHealth;
+        if (_muerto) return;
+        CurrentHealth = Mathf.Min(CurrentHealth + cantidad, MaxHealth);
     }
 
-    void Update()
+    /// <summary>Lógica de daño original (se conserva; RecibirDano delega aquí).</summary>
+    public void Danar(int cantidad)
     {
-        if (_isDead || CurrentHealth > 0) return;
-        Morir();
+        if (_muerto) return;
+        CurrentHealth -= cantidad;
+        if (CurrentHealth <= 0f) Morir();
     }
 
-    public void RecibirDaño(float cantidad)
+    // ── Lógica de muerte ─────────────────────────────────────────────────────
+    private void Update()
     {
-        if (_isDead) return;
-        CurrentHealth = Mathf.Max(0, CurrentHealth - cantidad);
+        if (!_muerto && CurrentHealth <= 0f)
+            Morir();
     }
 
-    public void Curar(float cantidad)
+    private void Morir()
     {
-        if (_isDead) return;
-        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + cantidad);
-    }
+        if (_muerto) return;
+        _muerto = true;
 
-    // Llamado por el GameManager al matar al jugador
-    public void RestablecerVida()
-    {
-        _isDead       = false;
-        CurrentHealth = MaxHealth;
-    }
+        if (DeathPrefab != null)
+        {
+            var spawnPos = Pos != null ? Pos.position : transform.position;
+            var spawnRot = Pos != null ? Pos.rotation  : transform.rotation;
+            Instantiate(DeathPrefab, spawnPos, spawnRot);
+        }
 
-    void Morir()
-    {
-        _isDead = true;
-
-        // Animación de muerte (sólo una vez)
         var anim = GetComponent<Animator>();
         if (anim != null) anim.Play("Death");
 
-        // Instanciar prefab de muerte
-        if (DeathPrefab != null && Pos != null)
-            Instantiate(DeathPrefab, Pos.position, Pos.rotation);
+        // Desactivar componentes de control de movimiento de forma segura
+        var aiCtrl = GetComponent<AICharacterControl>();
+        if (aiCtrl != null) Destroy(aiCtrl);
 
-        // Desactivar componentes de movimiento/IA
-        DestruirSi<AICharacterControl>();
-        DestruirSi<ThirdPersonCharacter>();
+        var tpc = GetComponent<ThirdPersonCharacter>();
+        if (tpc != null) Destroy(tpc);
 
-        // Desactivar física (el cadáver queda en el sitio)
         var rb = GetComponent<Rigidbody>();
-        if (rb != null) { rb.linearVelocity = Vector3.zero; rb.isKinematic = true; }
+        if (rb != null) Destroy(rb);
 
-        DestruirSi<NavMeshAgent>();
+        var col = GetComponent<CapsuleCollider>();
+        if (col != null) Destroy(col);
 
-        // Notificar al GameManager
-        var gm = GameManagerAltsasua.Instance;
-        if (gm != null && CompareTag("Player")) gm.JugadorMuerto();
+        var agent = GetComponent<NavMeshAgent>();
+        if (agent != null) Destroy(agent);
 
-        // AutoDestroy si el objeto tiene ese componente
-        var ad = GetComponent<AutoDestroy>();
-        if (ad != null) ad.enabled = true;
-        else Destroy(gameObject, 5f); // limpiar NPCs muertos en 5s
-    }
-
-    void DestruirSi<T>() where T : Component
-    {
-        var c = GetComponent<T>();
-        if (c != null) Destroy(c);
+        // Activar auto-destrucción si existe
+        var autoDestroy = GetComponent<AutoDestroy>();
+        if (autoDestroy != null) autoDestroy.enabled = true;
     }
 }

@@ -3,6 +3,7 @@
 // Usada por VehiculoNPC, SistemaDestruccion y SistemaBombas.
 
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 public static class SistemaExplosion
 {
@@ -13,15 +14,23 @@ public static class SistemaExplosion
     /// <param name="radio">Radio de efecto (metros).</param>
     /// <param name="fuerzaMax">Fuerza de impulso máxima (Newtons).</param>
     /// <param name="dañoMax">Daño máximo en el epicentro.</param>
+    // OPT: buffer estático para OverlapSphere — evita alloc del array Collider[] en cada explosión.
+    // Physics.OverlapSphereNonAlloc reutiliza el buffer; el límite de 64 es suficiente
+    // para una explosión en ciudad densa (edificios, NPCs, vehículos alrededor).
+    // Ahorro: 1 GC alloc (variable, depende del radio) por explosión eliminado.
+    static readonly Collider[] _explodeBuffer = new Collider[64];
+
     public static void Explotar(Vector3 centro, float radio, float fuerzaMax, float dañoMax = 100f)
     {
         // ── VFX procedural ───────────────────────────────────────────────
         CrearVFXExplosion(centro, radio);
 
         // ── Física en área ───────────────────────────────────────────────
-        var colliders = Physics.OverlapSphere(centro, radio);
-        foreach (var col in colliders)
+        // OPT: NonAlloc evita Collider[] alloc; iteramos solo hasta count
+        int count = Physics.OverlapSphereNonAlloc(centro, radio, _explodeBuffer);
+        for (int ei = 0; ei < count; ei++)
         {
+            var col = _explodeBuffer[ei];
             float dist    = Vector3.Distance(col.transform.position, centro);
             float falloff = 1f - Mathf.Clamp01(dist / radio);
 
@@ -34,18 +43,19 @@ public static class SistemaExplosion
                 rb.AddForce(dir * fuerza, ForceMode.Impulse);
             }
 
-            // Daño a entidades
+            // Daño a entidades via IDamageable
             int danoInt = Mathf.RoundToInt(dañoMax * falloff);
-            var jugador = col.GetComponent<ControladorJugador>();
-            if (jugador != null) jugador.RecibirDano(danoInt);
-            var coche = col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (coche != null) coche.RecibirDano(danoInt);
+            var damageable = col.GetComponent<IDamageable>()
+                          ?? col.GetComponentInParent<IDamageable>();
+            damageable?.RecibirDano(danoInt, col.transform.position, TipoDano.Explosion);
 
             // Daño a barricadas
             var barricada = col.GetComponent<BarricadaFuego>();
             if (barricada != null)
                 barricada.RecibirDaño(dañoMax * falloff);
         }
+        // Limpiar referencias en el buffer estático para evitar retener objetos en memoria
+        System.Array.Clear(_explodeBuffer, 0, count);
 
         // ── Flash de post-proceso + polish ──────────────────────────────
         SistemaPostProcesoAAA.FlashExplosion();
@@ -57,10 +67,32 @@ public static class SistemaExplosion
             SistemaMusica.TocarEvento(SistemaMusica.Instance.stingEvento);
     }
 
-    // ── VFX procedural ────────────────────────────────────────────────────
+    // ── VFX — usa HQ Explosions Pack si disponible, procedural si no ─────────
 
     static void CrearVFXExplosion(Vector3 centro, float radio)
     {
+        // Prioridad: HQ Explosions prefab → procedural
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.prefabsExplosion?.Length > 0)
+        {
+            // Seleccionar nivel según radio: pequeño<3m, mediano<6m, grande>6m
+            int nivel = radio < 3f ? 0 : radio < 6f ? 2 : 4;
+            nivel = Mathf.Clamp(nivel, 0, cfg.prefabsExplosion.Length - 1);
+            var explo = Object.Instantiate(cfg.prefabsExplosion[nivel], centro, Quaternion.identity);
+            explo.transform.localScale = Vector3.one * (radio / 4f);
+            Object.Destroy(explo, 6f);
+
+            // Añadir fuego persistente en explosiones grandes
+            if (radio > 5f && cfg.prefabFuego != null)
+            {
+                var fire = Object.Instantiate(cfg.prefabFuego, centro, Quaternion.identity);
+                fire.transform.localScale = Vector3.one * (radio * 0.3f);
+                Object.Destroy(fire, 12f);
+            }
+            return;
+        }
+
+        // Fallback procedural
         var root = new GameObject("Explosion_VFX");
         root.transform.position = centro;
 
@@ -106,8 +138,9 @@ public static class SistemaExplosion
         var luz = luzGO.AddComponent<Light>();
         luz.type      = LightType.Point;
         luz.color     = new Color(1f, 0.7f, 0.3f);
-        luz.intensity = 8f;
         luz.range     = radio * 3f;
+        var hdFlash = luzGO.AddComponent<HDAdditionalLightData>();
+        hdFlash.SetIntensity(100000f, UnityEngine.Rendering.LightUnit.Lux);
 
         // Auto-destruir todo
         Object.Destroy(root, 5f);

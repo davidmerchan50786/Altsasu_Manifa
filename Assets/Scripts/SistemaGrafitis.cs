@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaGrafitis : MonoBehaviour
+public class SistemaGrafitis : SingletonMono<SistemaGrafitis>
 {
     [Header("Texturas de pintadas (asignar en Inspector)")]
     public Texture2D[] texturasGraffiti;   // "Askatasuna", estrella ETA, "Gora Euskal Herria", etc.
@@ -35,9 +35,11 @@ public class SistemaGrafitis : MonoBehaviour
 
     // ── Tipos de pintada ──────────────────────────────────────────────────
     public enum TipoPintada { Graffiti, Pegatina, Pancarta }
+#pragma warning disable CS0414
     TipoPintada _tipoPintada = TipoPintada.Graffiti;
+#pragma warning restore CS0414
 
-    void Start() => _apoyo = FindFirstObjectByType<SistemaApoyoPopular>();
+    protected override void OnAwake() => _apoyo = SistemaApoyoPopular.Instance;
 
     void Update()
     {
@@ -67,6 +69,7 @@ public class SistemaGrafitis : MonoBehaviour
 
     void CambiarTipo(int dir)
     {
+        if (texturasGraffiti == null || texturasGraffiti.Length == 0) return;
         _tipoSeleccionado = (_tipoSeleccionado + dir + texturasGraffiti.Length) % texturasGraffiti.Length;
     }
 
@@ -85,7 +88,7 @@ public class SistemaGrafitis : MonoBehaviour
 
         // Apoyo popular
         _apoyo?.SumarApoyo(apoyoPorPintada, $"Pintada política en {go.name}");
-        GameManagerAltsasua.Instance?.GanarDinero(10);
+        (ServiceLocator.Get<IEconomyService>() ?? (IEconomyService)GameManagerAltsasua.Instance)?.GanarDinero(10);
         OnPintadaRealizada?.Invoke();
     }
 
@@ -140,16 +143,18 @@ public class SistemaGrafitis : MonoBehaviour
         }
     }
 
+    // Buffer reutilizable para evitar allocations en cada pintada
+    readonly List<Texture2D> _bufferTexturas = new();
+
     Texture2D ElegirTexturaGraffiti()
     {
-        // Rotar entre los tipos de pintadas políticas
-        var todas = new List<Texture2D>();
-        if (texturasGraffiti    != null) todas.AddRange(texturasGraffiti);
-        if (texturasEuskara     != null) todas.AddRange(texturasEuskara);
-        if (texturasSolidarias  != null) todas.AddRange(texturasSolidarias);
-        if (texturasAntipolicia != null) todas.AddRange(texturasAntipolicia);
-        if (todas.Count == 0) return CreatePlaceholderTexture();
-        return todas[Random.Range(0, todas.Count)];
+        _bufferTexturas.Clear();
+        if (texturasGraffiti    != null) _bufferTexturas.AddRange(texturasGraffiti);
+        if (texturasEuskara     != null) _bufferTexturas.AddRange(texturasEuskara);
+        if (texturasSolidarias  != null) _bufferTexturas.AddRange(texturasSolidarias);
+        if (texturasAntipolicia != null) _bufferTexturas.AddRange(texturasAntipolicia);
+        if (_bufferTexturas.Count == 0)  return CreatePlaceholderTexture();
+        return _bufferTexturas[Random.Range(0, _bufferTexturas.Count)];
     }
 
     Texture2D CreatePlaceholderTexture()

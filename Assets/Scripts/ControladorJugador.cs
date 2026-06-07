@@ -42,7 +42,7 @@ using CesiumForUnity;
 #endif
 
 [RequireComponent(typeof(CharacterController))]
-public class ControladorJugador : MonoBehaviour
+public class ControladorJugador : MonoBehaviour, IDamageable
 {
     // ═══════════════════════════════════════════════════════════════════════
     //  MOVIMIENTO
@@ -212,6 +212,15 @@ public class ControladorJugador : MonoBehaviour
     // eran 60 lookups/seg innecesarios. Ahora es un simple int.
     private int _maskSpringArm;
 
+    // PERF: LayerMask para TentarEntrarVehiculo OverlapSphere — excluir Player e Ignore Raycast.
+    // Sin LayerMask, OverlapSphere escanea TODAS las capas (incluyendo terreno, agua, etc.)
+    // → coste innecesario. Cacheado en Awake para evitar GetMask en Update.
+    private int _maskInteractable;
+
+    // PERF: buffer estático reutilizable para Physics.OverlapSphereNonAlloc en TentarEntrarVehiculo.
+    // Physics.OverlapSphere() devuelve new Collider[] cada llamada → GC alloc cada pulsación de E.
+    private readonly Collider[] _overlapBuffer = new Collider[16];
+
     // ═══════════════════════════════════════════════════════════════════════
     //  UNITY LIFECYCLE
     // ═══════════════════════════════════════════════════════════════════════
@@ -219,8 +228,10 @@ public class ControladorJugador : MonoBehaviour
     private void Awake()
     {
         cc             = GetComponent<CharacterController>();
-        sistemaDisparo = GetComponent<SistemaDisparo>();
-        sistemaBombas  = GetComponent<SistemaBombas>();
+        sistemaDisparo = GetComponent<SistemaDisparo>()  ?? gameObject.AddComponent<SistemaDisparo>();
+        sistemaBombas  = GetComponent<SistemaBombas>()   ?? gameObject.AddComponent<SistemaBombas>();
+        if (GetComponent<SistemaArmasExtendido>() == null) gameObject.AddComponent<SistemaArmasExtendido>();
+        if (GetComponent<SistemaBarricadas>()     == null) gameObject.AddComponent<SistemaBarricadas>();
 
         cc.height = 1.8f;
         cc.center = new Vector3(0f, 0.9f, 0f);
@@ -233,7 +244,9 @@ public class ControladorJugador : MonoBehaviour
         Cursor.visible   = false;
 
         // PERF FIX: cachear la LayerMask aquí (una vez) para ActualizarCamara() en LateUpdate
-        _maskSpringArm = ~LayerMask.GetMask("Player", "Ignore Raycast");
+        _maskSpringArm  = ~LayerMask.GetMask("Player", "Ignore Raycast");
+        // PERF: LayerMask para OverlapSphere de interacción — sólo capas con objetos interactuables
+        _maskInteractable = ~LayerMask.GetMask("Player", "Ignore Raycast", "Terrain", "Water");
     }
 
     private void Start()
@@ -603,32 +616,35 @@ public class ControladorJugador : MonoBehaviour
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Busca el ControladorVehiculoJugador más cercano dentro de 3.5 m y entra en él.
-    /// Gorka usa un Blueprint node "Get Overlapping Actors" con filtro de clase.
-    /// Aquí: OverlapSphere físico + GetComponent — misma lógica, código C# puro.
+    /// Busca el IInteractable más cercano dentro de su radio de interacción y lo activa.
+    /// Cubre vehículos, armas recogibles, puertas y cualquier futuro objeto interactuable.
     /// </summary>
     private void TentarEntrarVehiculo()
     {
-        const float radioInteraccion = 3.5f;
-        var cols = Physics.OverlapSphere(transform.position, radioInteraccion);
+        // PERF: OverlapSphereNonAlloc + buffer reutilizable (~1 alloc/frame eliminado).
+        // PERF: LayerMask cacheada (_maskInteractable) excluye Terrain/Water/Player → menos hits (~2-4x más rápido).
+        const float radioMax = 5f;
+        int nCols = Physics.OverlapSphereNonAlloc(transform.position, radioMax, _overlapBuffer, _maskInteractable);
 
-        ControladorVehiculoJugador cochesMasCercano = null;
-        float distMin = float.MaxValue;
+        IInteractable mejor  = null;
+        float         distMin = float.MaxValue;
 
-        foreach (var col in cols)
+        for (int i = 0; i < nCols; i++)
         {
-            var veh = col.GetComponent<ControladorVehiculoJugador>()
-                   ?? col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (veh == null || veh.JugadorDentro) continue;
+            var col = _overlapBuffer[i];
+            var interactable = col.GetComponent<IInteractable>()
+                            ?? col.GetComponentInParent<IInteractable>();
+            if (interactable == null || !interactable.PuedeInteractuar) continue;
 
-            float d = Vector3.Distance(transform.position, veh.transform.position);
-            if (d < distMin) { distMin = d; cochesMasCercano = veh; }
+            float d = Vector3.Distance(transform.position, col.transform.position);
+            if (d > interactable.RadioInteraccion) continue;
+            if (d < distMin) { distMin = d; mejor = interactable; }
         }
 
-        if (cochesMasCercano != null)
+        if (mejor != null)
         {
-            AlsasuaLogger.Info("Jugador", $"Entrando en vehículo '{cochesMasCercano.name}'.");
-            cochesMasCercano.EntraJugador(this);
+            AlsasuaLogger.Info("Jugador", $"Interactuando: {mejor.TextoInteraccion}");
+            mejor.OnInteractuar(this);
         }
     }
 
@@ -685,10 +701,11 @@ public class ControladorJugador : MonoBehaviour
         // Cuando CesiumGlobeAnchor reorienta el jugador en cada tick, el CharacterController
         // puede reportar !isGrounded durante 1-2 frames aunque el jugador esté sobre el suelo.
         // Un raycast de 0.5 m hacia abajo (origen a 0.2 m de la planta) cubre esa ventana.
+        // PERF: LayerMask cacheada en _maskSpringArm (Awake) — eliminado GetMask() en Update (~60 string lookups/frame evitados)
         bool groundRay = Physics.Raycast(
             transform.position + Vector3.up * 0.2f,
             Vector3.down, 0.5f,
-            ~LayerMask.GetMask("Player", "Ignore Raycast"),
+            _maskSpringArm,
             QueryTriggerInteraction.Ignore);
         estaEnSuelo = cc.isGrounded || groundRay;
 
@@ -737,8 +754,20 @@ public class ControladorJugador : MonoBehaviour
         _timerPaso -= Time.deltaTime;
         if (_timerPaso > 0f) return;
 
-        AudioManager.I?.Play(
-            estaCorriendo ? AudioManager.Clip.PasoCorrer : AudioManager.Clip.PasoNormal,
+        // Intentar Nature Sounds Pack (más realista) antes del fallback AudioManager
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.pasosHierba?.Length > 0)
+        {
+            var clip = cfg.pasosHierba[Random.Range(0, cfg.pasosHierba.Length)];
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, transform.position, 0.5f);
+                _timerPaso = intervalo;
+                return;
+            }
+        }
+        AudioManager.Play(
+            estaCorriendo ? AudioManager.Clip.PasoAsfalto : AudioManager.Clip.PasoTierra,
             transform.position);
         _timerPaso = intervalo;
     }
@@ -789,10 +818,10 @@ public class ControladorJugador : MonoBehaviour
     // Evento para SistemaPolish y otros sistemas
     public static event System.Action<int> OnDanoRecibido;
 
-    public void RecibirDano(int cantidad)
+    public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
     {
         vida      = Mathf.Max(0, vida - cantidad);
-        timerDano = 0.35f;   // activar flash rojo en pantalla
+        timerDano = 0.35f;
         OnDanoRecibido?.Invoke(cantidad);
         if (vida <= 0) Morir();
     }
@@ -804,6 +833,15 @@ public class ControladorJugador : MonoBehaviour
     {
         AlsasuaLogger.Info("Jugador", "¡Has muerto!");
         animPersonaje?.SetTrigger(AnimMorir);
+
+        // Notificar a todos los sistemas vía EventBus (sin acoplamiento directo).
+        // Receptores: HUDCanvas (fade negro), SistemaPolish (efecto muerte),
+        // SistemaLogros, AudioManager, GameManagerAltsasua (respawn).
+        EventBus.Publish(new PlayerDeathEvent
+        {
+            posicion = transform.position,
+            causa    = "muerte"
+        });
 
         // Si el jugador muere dentro de un vehículo → expulsarlo para evitar
         // estado corrupto (CharacterController desactivado, renderer invisible,

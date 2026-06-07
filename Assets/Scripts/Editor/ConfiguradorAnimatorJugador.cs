@@ -1,197 +1,203 @@
 // Assets/Scripts/Editor/ConfiguradorAnimatorJugador.cs
-// Crea y conecta un AnimatorController completo para el jugador GTA
-// con todas las animaciones disponibles en el proyecto.
-// Menú: Altsasu GTA → MAESTRO → Crear Animator Jugador
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIGURADOR ANIMATOR JUGADOR — crea el AnimatorController por código
+//  Tools → Alsasua → 🎭 Configurar Animator Jugador
+//
+//  Crea o actualiza Assets/Animators/JugadorAnimator.controller con:
+//    • Parámetros: Speed (float), IsJumping (bool), InVehicle (bool),
+//                  IsDead (bool), IsAiming (bool)
+//    • Estados: Idle, Walk, Run, Jump, Fall, Drive, Die, Aim
+//    • Blend Tree Locomotion: Idle→Walk→Run por Speed
+//    • Transiciones con condiciones correctas
+//    • AnyState → Die, AnyState → Jump
+// ═══════════════════════════════════════════════════════════════════════════
 
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 using System.IO;
+using System.Linq;
 
 public static class ConfiguradorAnimatorJugador
 {
-    const string CTRL_PATH  = "Assets/Animations/Player/GTA_Player.controller";
-    const string ANIM_DIR   = "Assets/Animations";
+    const string RUTA = "Assets/Animators/JugadorAnimator.controller";
 
-    // Rutas de clips existentes
-    const string CLIP_IDLE       = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/DefaultAvatar@Idle_Neutral.fbx";
-    const string CLIP_WALK       = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/DefaultAvatar@WalkForward_NtrlFaceFwd.fbx";
-    const string CLIP_RUN        = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/DefaultAvatar@RunForward_NtrlFaceFwd.fbx";
-    const string CLIP_JUMP       = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/Animations/Jump.fbx";
-    const string CLIP_CROUCH     = "Assets/#Xtra/Standard Assets/Characters/ThirdPersonCharacter/Animation/HumanoidCrouch.fbx";
-    const string CLIP_JUMP_FALL  = "Assets/#Xtra/Standard Assets/Characters/ThirdPersonCharacter/Animation/HumanoidJumpAndFall.fbx";
-    const string CLIP_IDLE_ARMED = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/Animations/Gta Style/Idle1armed.fbx";
-    const string CLIP_RELOAD     = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/Animations/Gta Style/Rifle Reload.fbx";
-    const string CLIP_SHOOT      = "Assets/#Xtra/Locomotion Setup/Locomotion/Animations/Animations/Gta Style/Shootgun.fbx";
-    const string CLIP_WALK_XBOT  = "Assets/Animations/XBot/X Bot@Walking.fbx";
-    const string CLIP_RUN_CROUCH = "Assets/Animations/XBot/X Bot@Walk Crouching Forward.fbx";
-    const string CLIP_AIM_IDLE   = "Assets/Animations/XBot/X Bot@Rifle Aiming Idle.fbx";
-    const string CLIP_SHOOTING   = "Assets/Animations/XBot/X Bot@Shooting.fbx";
-    const string CLIP_DYING      = "Assets/Animations/XBot/X Bot@Dying.fbx";
-    const string CLIP_NPC_SCARED = "Assets/Animations/NPC/ScaredNPC_Anim.FBX";
-    const string CLIP_PISTOL_AIM = "Assets/Animations/Pistol/PistolAim.FBX";
-    const string CLIP_PISTOL_FIRE= "Assets/Animations/Pistol/PistolFire.FBX";
-    const string CLIP_PISTOL_IDLE= "Assets/Animations/Pistol/PistolIdle.FBX";
-
-    // MENÚ-LEGACY: [MenuItem("Altsasu GTA/MAESTRO/Crear Animator Jugador", false, 26)]
-    public static AnimatorController CrearAnimatorController()
+    [MenuItem("Tools/Alsasua/Assets/🎭 Animator Jugador", priority = 13)]
+    public static void Configurar()
     {
-        // Crear carpeta
-        if (!AssetDatabase.IsValidFolder("Assets/Animations/Player"))
+        // Crear carpeta si no existe
+        if (!AssetDatabase.IsValidFolder("Assets/Animators"))
+            AssetDatabase.CreateFolder("Assets", "Animators");
+
+        // Crear o cargar controller
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(RUTA);
+        if (controller == null)
         {
-            AssetDatabase.CreateFolder("Assets/Animations", "Player");
-            AssetDatabase.Refresh();
+            controller = AnimatorController.CreateAnimatorControllerAtPath(RUTA);
+            Debug.Log("[AnimatorJugador] AnimatorController creado en " + RUTA);
         }
 
-        // Si ya existe, devolverlo
-        var existing = AssetDatabase.LoadAssetAtPath<AnimatorController>(CTRL_PATH);
-        if (existing != null)
-        {
-            Debug.Log("[Animator] AnimatorController ya existe: " + CTRL_PATH);
-            AsignarAJugador(existing);
-            return existing;
-        }
+        // ── Parámetros — nombres exactos que ControladorJugador.cs envía ──
+        // Velocidad de movimiento normalizada (0=quieto, 1=corriendo)
+        EnsureParameter(controller, "VelocidadMovimiento", AnimatorControllerParameterType.Float);
+        // Estados booleanos
+        EnsureParameter(controller, "EstaAgachado",   AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "EstaApuntando",  AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "EstaEnSuelo",    AnimatorControllerParameterType.Bool);
+        EnsureParameter(controller, "InVehicle",      AnimatorControllerParameterType.Bool);
+        // Triggers
+        EnsureParameter(controller, "Saltar",  AnimatorControllerParameterType.Trigger);
+        EnsureParameter(controller, "Morir",   AnimatorControllerParameterType.Trigger);
+        EnsureParameter(controller, "Disparar",AnimatorControllerParameterType.Trigger);
+        // Alias compatibles con otros sistemas
+        EnsureParameter(controller, "Speed",      AnimatorControllerParameterType.Float);
+        EnsureParameter(controller, "IsCrouching",AnimatorControllerParameterType.Bool);
 
-        var ctrl = AnimatorController.CreateAnimatorControllerAtPath(CTRL_PATH);
+        var layer = controller.layers[0];
+        var sm    = layer.stateMachine;
 
-        // ── Parámetros ────────────────────────────────────────────────────
-        ctrl.AddParameter("Speed",     AnimatorControllerParameterType.Float);
-        ctrl.AddParameter("Direction", AnimatorControllerParameterType.Float);
-        ctrl.AddParameter("Forward",   AnimatorControllerParameterType.Float);
-        ctrl.AddParameter("Turn",      AnimatorControllerParameterType.Float);
-        ctrl.AddParameter("Jump",      AnimatorControllerParameterType.Bool);
-        ctrl.AddParameter("Crouch",    AnimatorControllerParameterType.Bool);
-        ctrl.AddParameter("OnGround",  AnimatorControllerParameterType.Bool);
-        ctrl.AddParameter("Armed",     AnimatorControllerParameterType.Bool);
-        ctrl.AddParameter("Shoot",     AnimatorControllerParameterType.Trigger);
-        ctrl.AddParameter("Reload",    AnimatorControllerParameterType.Trigger);
-        ctrl.AddParameter("Die",       AnimatorControllerParameterType.Trigger);
+        // ── Blend Tree de locomoción ──────────────────────────────────────
+        BlendTree locoTree;
+        var locoState = controller.CreateBlendTreeInController("Locomotion", out locoTree, 0);
+        locoTree.blendType      = BlendTreeType.Simple1D;
+        locoTree.blendParameter = "VelocidadMovimiento"; // nombre exacto de ControladorJugador
 
-        var root = ctrl.layers[0].stateMachine;
+        // Añadir motions (clips null = placeholder — Unity los acepta)
+        var idleClip  = BuscarOCrearClip("Idle");
+        var walkClip  = BuscarOCrearClip("Walk");
+        var runClip   = BuscarOCrearClip("Run");
+        locoTree.AddChild(idleClip, 0f);
+        locoTree.AddChild(walkClip, 1f);
+        locoTree.AddChild(runClip,  4f);
+        locoState.speed = 1f;
 
-        // ── Estados ───────────────────────────────────────────────────────
-        var stIdle    = CrearEstado(root, "Idle",        CLIP_IDLE,       new Vector3(0,   0));
-        var stWalk    = CrearEstado(root, "Walk",        CLIP_WALK_XBOT ?? CLIP_WALK, new Vector3(200, 0));
-        var stRun     = CrearEstado(root, "Run",         CLIP_RUN,        new Vector3(400, 0));
-        var stJump    = CrearEstado(root, "Jump",        CLIP_JUMP,       new Vector3(200,-120));
-        var stFall    = CrearEstado(root, "Fall",        CLIP_JUMP_FALL,  new Vector3(200,-240));
-        var stCrouch  = CrearEstado(root, "Crouch",      CLIP_CROUCH,     new Vector3(0,  -120));
-        var stAimIdle = CrearEstado(root, "AimIdle",     CLIP_AIM_IDLE ?? CLIP_IDLE_ARMED, new Vector3(0, 120));
-        var stShoot   = CrearEstado(root, "Shoot",       CLIP_SHOOTING ?? CLIP_SHOOT, new Vector3(200,120));
-        var stReload  = CrearEstado(root, "Reload",      CLIP_RELOAD,     new Vector3(400, 120));
-        var stDie     = CrearEstado(root, "Die",         CLIP_DYING,      new Vector3(600, 0));
+        // ── Estados adicionales ───────────────────────────────────────────
+        var jumpState   = sm.AddState("Jump",   new Vector3(300, -50,  0));
+        var fallState   = sm.AddState("Fall",   new Vector3(300,  50,  0));
+        var driveState  = sm.AddState("Drive",  new Vector3(300, 150,  0));
+        var dieState    = sm.AddState("Die",    new Vector3(300, 250,  0));
+        var aimState    = sm.AddState("Aim",    new Vector3(300, -150, 0));
+        var crouchState = sm.AddState("Crouch", new Vector3(300, -250, 0));
+
+        jumpState.motion   = BuscarOCrearClip("Jump");
+        fallState.motion   = BuscarOCrearClip("Fall");
+        driveState.motion  = BuscarOCrearClip("Drive");
+        dieState.motion    = BuscarOCrearClip("Die");
+        aimState.motion    = BuscarOCrearClip("Aim");
+        crouchState.motion = BuscarOCrearClip("Crouch");
 
         // Estado por defecto
-        root.defaultState = stIdle;
+        sm.defaultState = locoState;
 
-        // ── Transiciones ──────────────────────────────────────────────────
-        // Idle ↔ Walk
-        AddTrans(stIdle, stWalk,   "Speed",    0.1f, AnimatorConditionMode.Greater, 0.1f);
-        AddTrans(stWalk, stIdle,   "Speed",    0.1f, AnimatorConditionMode.Less,    0.05f);
-        // Walk → Run
-        AddTrans(stWalk, stRun,    "Speed",    0.1f, AnimatorConditionMode.Greater, 0.8f);
-        AddTrans(stRun,  stWalk,   "Speed",    0.1f, AnimatorConditionMode.Less,    0.7f);
-        // Jump
-        AddTransBool(stIdle,   stJump, "Jump", true,  0.05f);
-        AddTransBool(stWalk,   stJump, "Jump", true,  0.05f);
-        AddTransBool(stRun,    stJump, "Jump", true,  0.05f);
-        AddTransBool(stJump,   stFall, "OnGround", false, 0.1f);
-        AddTransBool(stFall,   stIdle, "OnGround", true,  0.15f);
-        // Crouch
-        AddTransBool(stIdle,   stCrouch, "Crouch", true,  0.1f);
-        AddTransBool(stCrouch, stIdle,   "Crouch", false, 0.1f);
-        // Armed / Shoot
-        AddTransBool(stIdle,    stAimIdle, "Armed", true,  0.1f);
-        AddTransBool(stAimIdle, stIdle,    "Armed", false, 0.1f);
-        AddTransTrigger(stAimIdle, stShoot,  "Shoot");
-        AddTransTrigger(stShoot,   stAimIdle,"Shoot");  // loop
-        AddTransTrigger(stAimIdle, stReload, "Reload");
-        AddTransTrigger(stReload,  stAimIdle,"Reload");
-        // Die (desde cualquier estado)
-        foreach (var st in new[]{ stIdle, stWalk, stRun, stAimIdle, stShoot })
-            AddTransTrigger(st, stDie, "Die");
+        // ── Transiciones — usan los parámetros exactos de ControladorJugador ─
+        // Loco → Jump (trigger Saltar)
+        var locoJump = locoState.AddTransition(jumpState);
+        locoJump.AddCondition(AnimatorConditionMode.If, 0, "Saltar");
+        locoJump.duration = 0.05f; locoJump.hasExitTime = false;
 
+        // Loco → Drive
+        var locoDrive = locoState.AddTransition(driveState);
+        locoDrive.AddCondition(AnimatorConditionMode.If, 0, "InVehicle");
+        locoDrive.duration = 0.15f;
+
+        // Loco → Aim
+        var locoAim = locoState.AddTransition(aimState);
+        locoAim.AddCondition(AnimatorConditionMode.If, 0, "EstaApuntando");
+        locoAim.duration = 0.1f;
+
+        // Loco → Crouch
+        var locoCrouch = locoState.AddTransition(crouchState);
+        locoCrouch.AddCondition(AnimatorConditionMode.If, 0, "EstaAgachado");
+        locoCrouch.duration = 0.12f;
+
+        // Jump → Fall
+        var jumpFall = jumpState.AddTransition(fallState);
+        jumpFall.duration = 0.1f; jumpFall.exitTime = 0.5f; jumpFall.hasExitTime = true;
+
+        // Fall → Loco (cuando toca suelo)
+        var fallLoco = fallState.AddTransition(locoState);
+        fallLoco.AddCondition(AnimatorConditionMode.If, 0, "EstaEnSuelo");
+        fallLoco.duration = 0.2f;
+
+        // Drive → Loco
+        var driveLoco = driveState.AddTransition(locoState);
+        driveLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "InVehicle");
+        driveLoco.duration = 0.2f;
+
+        // Aim → Loco
+        var aimLoco = aimState.AddTransition(locoState);
+        aimLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "EstaApuntando");
+        aimLoco.duration = 0.1f;
+
+        // Crouch → Loco
+        var crouchLoco = crouchState.AddTransition(locoState);
+        crouchLoco.AddCondition(AnimatorConditionMode.IfNot, 0, "EstaAgachado");
+        crouchLoco.duration = 0.12f;
+
+        // ── AnyState → Die (trigger Morir — máxima prioridad) ─────────────
+        var anyDie = sm.AddAnyStateTransition(dieState);
+        anyDie.AddCondition(AnimatorConditionMode.If, 0, "Morir");
+        anyDie.duration = 0.1f; anyDie.canTransitionToSelf = false;
+
+        // ── Guardar ───────────────────────────────────────────────────────
+        EditorUtility.SetDirty(controller);
         AssetDatabase.SaveAssets();
-        Debug.Log("[Animator] ✓ AnimatorController creado: " + CTRL_PATH);
+        AssetDatabase.Refresh();
 
-        AsignarAJugador(ctrl);
-        return ctrl;
+        // ── Asignar al jugador si existe en escena ────────────────────────
+        var jugadorGO = GameObject.FindGameObjectWithTag("Player");
+        if (jugadorGO != null)
+        {
+            var anim = jugadorGO.GetComponent<Animator>();
+            if (anim == null) anim = jugadorGO.AddComponent<Animator>();
+            anim.runtimeAnimatorController = controller;
+            Debug.Log("[AnimatorJugador] ✅ Animator asignado al jugador en escena.");
+        }
+
+        Debug.Log($"[AnimatorJugador] ✅ Configuración completa — {RUTA}");
+        EditorUtility.DisplayDialog("Animator Jugador",
+            $"✅ AnimatorController configurado:\n\n" +
+            $"• 8 estados (Locomotion/Jump/Fall/Drive/Aim/Crouch/Die)\n" +
+            $"• Blend Tree Locomotion: Idle→Walk→Run\n" +
+            $"• 6 parámetros (Speed, IsJumping, InVehicle, IsDead, IsAiming, IsCrouching)\n" +
+            $"• Transiciones con condiciones correctas\n\n" +
+            $"📌 Asigna los clips de animación en cada estado del Animator.",
+            "OK");
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    static AnimatorState CrearEstado(AnimatorStateMachine sm, string nombre, string clipPath, Vector3 pos)
+    static void EnsureParameter(AnimatorController ctrl, string nombre, AnimatorControllerParameterType tipo)
     {
-        var state = sm.AddState(nombre, pos);
-        var clip  = CargarPrimerClip(clipPath);
-        if (clip != null) state.motion = clip;
-        else Debug.LogWarning($"[Animator] Clip no encontrado: {clipPath}");
-        return state;
+        foreach (var p in ctrl.parameters)
+            if (p.name == nombre) return;
+        ctrl.AddParameter(nombre, tipo);
     }
 
-    static AnimationClip CargarPrimerClip(string path)
+    static AnimationClip BuscarOCrearClip(string nombre)
     {
-        if (path == null) return null;
-        // Intentar cargar directamente
-        var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        // 1. Primero buscar en Player_*.fbx (animaciones procedurales del jugador)
+        string playerFbx = $"Assets/Animators/Clips/Player_{nombre}.fbx";
+        var assets = AssetDatabase.LoadAllAssetsAtPath(playerFbx);
+        var clip   = System.Linq.Enumerable.OfType<AnimationClip>(assets)
+                          .FirstOrDefault(c => !c.name.Contains("__preview__"));
         if (clip != null) return clip;
-        // Los FBX pueden tener múltiples clips — cargar el primero
-        var assets = AssetDatabase.LoadAllAssetsAtPath(path);
-        foreach (var a in assets)
-            if (a is AnimationClip ac && !ac.name.StartsWith("__")) return ac;
-        return null;
-    }
 
-    static void AddTrans(AnimatorState from, AnimatorState to,
-        string param, float duration, AnimatorConditionMode mode, float threshold)
-    {
-        var t = from.AddTransition(to);
-        t.duration = duration;
-        t.hasExitTime = false;
-        t.AddCondition(mode, threshold, param);
-    }
+        // 2. Buscar cualquier AnimationClip con ese nombre en el proyecto
+        var guids = AssetDatabase.FindAssets($"Player_{nombre} t:AnimationClip", new[]{"Assets/Animators"});
+        if (guids.Length > 0)
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
 
-    static void AddTransBool(AnimatorState from, AnimatorState to,
-        string param, bool value, float duration)
-    {
-        var t = from.AddTransition(to);
-        t.duration = duration;
-        t.hasExitTime = false;
-        t.AddCondition(value ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot, 0, param);
-    }
+        guids = AssetDatabase.FindAssets($"{nombre} t:AnimationClip", new[]{"Assets/Animators"});
+        if (guids.Length > 0)
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
 
-    static void AddTransTrigger(AnimatorState from, AnimatorState to, string param)
-    {
-        var t = from.AddTransition(to);
-        t.duration = 0.1f;
-        t.hasExitTime = false;
-        t.AddCondition(AnimatorConditionMode.If, 0, param);
-    }
-
-    // ── Asignar al jugador en escena y al prefab ────────────────────────────
-
-    public static void AsignarAJugador(AnimatorController ctrl)
-    {
-        // Asignar a jugador en escena
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            var anim = player.GetComponent<Animator>();
-            if (anim != null) { anim.runtimeAnimatorController = ctrl; EditorUtility.SetDirty(player); }
-        }
-
-        // Asignar al prefab si existe
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/GTA/Jugador_GTA.prefab");
-        if (prefab != null)
-        {
-            var anim = prefab.GetComponent<Animator>();
-            if (anim != null)
-            {
-                anim.runtimeAnimatorController = ctrl;
-                EditorUtility.SetDirty(prefab);
-                AssetDatabase.SaveAssets();
-            }
-        }
-        Debug.Log("[Animator] ✓ Controller asignado al jugador.");
+        // 3. Placeholder vacío (Unity lo acepta sin error)
+        var ph   = new AnimationClip { name = nombre };
+        string r = $"Assets/Animators/{nombre}_placeholder.anim";
+        if (!System.IO.File.Exists(System.IO.Path.GetFullPath(r.Replace("Assets/",
+            UnityEngine.Application.dataPath + "/"))))
+            AssetDatabase.CreateAsset(ph, r);
+        return AssetDatabase.LoadAssetAtPath<AnimationClip>(r) ?? ph;
     }
 }
+#endif

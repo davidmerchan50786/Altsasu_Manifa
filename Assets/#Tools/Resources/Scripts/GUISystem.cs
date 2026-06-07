@@ -1,73 +1,61 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
-public class GUISystem : MonoBehaviour
-{
-    public GUISkin CustomSkin;
-    public bool MoneyShow = false;
-    public bool CostShow  = false;
-    public int  Money;
-    public int  Cost;
+public class GUISystem : MonoBehaviour {
+	
+	public GUISkin CustomSkin;
+	private bool GuiIsActive = false;
+	public bool MoneyShow = false;
+	public bool CostShow = false;
+	public int Money;
+	public int Cost;
 
-    // ── Caché (evita Find/GetComponent cada frame) ────────────────────────
-    GameObject _cachedPlayer;
-    Weapons    _cachedWeapons;
-    float      _refreshTimer;
-    const float REFRESH_INTERVAL = 2f; // re-buscar jugador cada 2s (respawn)
+	void OnTriggerEnter(Collider collider)
+	{
+		
+				if (collider.gameObject.name == "MoneyShow") {
+						MoneyShow = true;
+			
+				}
+		}
+	void OnTriggerExit(Collider collider)
+	{
+				if (collider.gameObject.name == "MoneyShow") {
+						MoneyShow = false;
 
-    // ── Sincronización con GameManager ────────────────────────────────────
-    void OnEnable()
-    {
-        GameManagerAltsasua.OnDineroCambia  += (v) => Money = v;
-        GameManagerAltsasua.OnRespawn       += RefrescarCache;
-    }
-    void OnDisable()
-    {
-        GameManagerAltsasua.OnDineroCambia  -= (v) => Money = v;
-        GameManagerAltsasua.OnRespawn       -= RefrescarCache;
-    }
+				}
+		}
+	
+	void OnGUI(){
+		
+		GameObject thePlayer = GameObject.Find("Player");
+		Weapons playerScript = thePlayer.GetComponent<Weapons>();
+		
+		
+		if (playerScript.weaponIndex != 0) {
+			
+			GuiIsActive = true;		
+			
+		} 
+		else {
+			GuiIsActive = false;
+		}
+		
+		
+		GUI.skin = CustomSkin;
+		GUILayout.BeginArea(new Rect(Screen.width - 100,5,100,100));
+		GUILayout.BeginVertical();
 
-    void Start() => RefrescarCache();
+		if (MoneyShow)
+			GUILayout.Label("$ " + Money,"MoneyStyle");
 
-    void Update()
-    {
-        _refreshTimer -= Time.deltaTime;
-        if (_refreshTimer <= 0f) RefrescarCache();
+		if (CostShow)
+			GUILayout.Label("-$ " + Cost,"CostStyle");
+		
+		if (GuiIsActive)
+		GUILayout.Label(playerScript.weaponsSetup[playerScript.weaponIndex].Bullets + " / " + playerScript.weaponsSetup[playerScript.weaponIndex].Magazine,"WeaponInfo");
 
-        // Sincronizar dinero desde GameManager si no hay eventos
-        var gm = GameManagerAltsasua.Instance;
-        if (gm != null) Money = gm.dinero;
-    }
-
-    void RefrescarCache()
-    {
-        _refreshTimer  = REFRESH_INTERVAL;
-        _cachedPlayer  = GameObject.FindGameObjectWithTag("Player");
-        _cachedWeapons = _cachedPlayer != null ? _cachedPlayer.GetComponent<Weapons>() : null;
-    }
-
-    void OnTriggerEnter(Collider col) { if (col.gameObject.name == "MoneyShow") MoneyShow = true;  }
-    void OnTriggerExit (Collider col) { if (col.gameObject.name == "MoneyShow") MoneyShow = false; }
-
-    void OnGUI()
-    {
-        bool armaActiva = _cachedWeapons != null && _cachedWeapons.weaponIndex != 0;
-
-        if (CustomSkin != null) GUI.skin = CustomSkin;
-        GUILayout.BeginArea(new Rect(Screen.width - 110, 5, 105, 110));
-        GUILayout.BeginVertical();
-
-        if (MoneyShow) GUILayout.Label("$ " + Money, CustomSkin != null ? "MoneyStyle" : "label");
-        if (CostShow)  GUILayout.Label("-$ " + Cost,  CustomSkin != null ? "CostStyle"  : "label");
-
-        if (armaActiva)
-        {
-            var setup = _cachedWeapons.weaponsSetup[_cachedWeapons.weaponIndex];
-            GUILayout.Label($"{setup.Bullets} / {setup.Magazine}",
-                CustomSkin != null ? "WeaponInfo" : "label");
-        }
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
+		GUILayout.EndVertical();
+		GUILayout.EndArea();
+	}
 }

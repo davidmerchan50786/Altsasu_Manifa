@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: af8f8acb7eb385c4b8f5c9b1495197f3
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  ambisonic: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 171038
+  packageName: TMM SOUND FX GIANT POOL
+  packageVersion: 1.0
+  assetPath: Assets/Audio/TMM_SFXGIANTPOOLVOL1/CINEMATICS 440/CINEMATICS 351-400/TMM_SFXGIANTPOOLVOL1
+    - CINEMATICS #372.wav
+  uploadId: 373828

@@ -11,11 +11,12 @@ using System.Collections;
 
 public class MenuPrincipal : MonoBehaviour
 {
-    const string ESCENA_JUEGO = "Alsasua_Main";
+    const string ESCENA_JUEGO  = "Alsasua_Main";
+    const string SPLASH_RES    = "UI/splash_altsasu";   // Assets/Resources/UI/splash_altsasu.png
 
     // ── Estado ────────────────────────────────────────────────────────────
-    enum Pantalla { Principal, Opciones, Controles, Creditos }
-    Pantalla _pantalla = Pantalla.Principal;
+    enum Pantalla { Splash, Principal, Opciones, Controles, Creditos }
+    Pantalla _pantalla = Pantalla.Splash;
     bool     _cargando = false;
     float    _progreso = 0f;
     string   _error    = "";
@@ -23,8 +24,14 @@ public class MenuPrincipal : MonoBehaviour
     Vector2 _scrollOpc, _scrollCtrl;
 
     // Estilos
-    GUIStyle _sTitulo, _sSubtitulo, _sBoton, _sLabel, _sSlider, _sCreditos;
+    GUIStyle _sTitulo, _sSubtitulo, _sBoton, _sLabel, _sSlider, _sCreditos, _sIntro;
     bool     _estilosInit;
+
+    // Splash
+    Texture2D _splash;
+    float     _splashAlpha   = 0f;       // fade-in
+    float     _parpadeoTimer = 0f;
+    bool      _parpadeoVis   = true;
 
     // Parallax: fondo procedural animado
     float _bgOffset;
@@ -37,9 +44,39 @@ public class MenuPrincipal : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
         Time.timeScale   = 1f;
+
+        // Cargar imagen de splash desde Resources/UI/
+        _splash = Resources.Load<Texture2D>(SPLASH_RES);
     }
 
-    void Update() => _bgOffset += Time.deltaTime * 8f;
+    void Update()
+    {
+        _bgOffset += Time.deltaTime * 8f;
+
+        if (_pantalla == Pantalla.Splash)
+        {
+            // Fade-in de la imagen
+            _splashAlpha = Mathf.MoveTowards(_splashAlpha, 1f, Time.deltaTime * 1.5f);
+
+            // Parpadeo "PULSA INTRO" — 1.4 ciclos/s
+            _parpadeoTimer += Time.deltaTime;
+            if (_parpadeoTimer >= 0.36f) { _parpadeoVis = !_parpadeoVis; _parpadeoTimer = 0f; }
+
+            // Detectar INTRO / ENTER / ESPACIO / click
+            bool pulsa = Input.GetKeyDown(KeyCode.Return)
+                      || Input.GetKeyDown(KeyCode.KeypadEnter)
+                      || Input.GetKeyDown(KeyCode.Space)
+                      || Input.GetMouseButtonDown(0);
+
+            // Con new Input System
+#if ENABLE_INPUT_SYSTEM
+            pulsa |= UnityEngine.InputSystem.Keyboard.current?.enterKey.wasPressedThisFrame == true
+                  || UnityEngine.InputSystem.Keyboard.current?.spaceKey.wasPressedThisFrame == true;
+#endif
+            if (pulsa && _splashAlpha > 0.5f)
+                _pantalla = Pantalla.Principal;
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     //  GUI
@@ -48,6 +85,9 @@ public class MenuPrincipal : MonoBehaviour
     void OnGUI()
     {
         InicializarEstilos();
+
+        if (_pantalla == Pantalla.Splash) { DibujarSplash(); return; }
+
         DibujarFondo();
 
         if (_cargando) { DibujarCarga(); return; }
@@ -64,6 +104,57 @@ public class MenuPrincipal : MonoBehaviour
         {
             GUI.color = new Color(1f, 0.3f, 0.3f);
             GUI.Label(new Rect(10, Screen.height - 30, Screen.width, 24), "⚠ " + _error);
+            GUI.color = Color.white;
+        }
+    }
+
+    // ── Splash screen ────────────────────────────────────────────────────
+
+    void DibujarSplash()
+    {
+        float W = Screen.width, H = Screen.height;
+
+        // Fondo negro total
+        GUI.color = Color.black;
+        GUI.DrawTexture(new Rect(0, 0, W, H), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        if (_splash != null)
+        {
+            // Imagen centrada, máximo 90% de pantalla manteniendo ratio 16:9
+            float imgRatio = (float)_splash.width / _splash.height;
+            float maxW = W * 0.92f, maxH = H * 0.92f;
+            float drawW, drawH;
+            if (maxW / imgRatio <= maxH) { drawW = maxW; drawH = maxW / imgRatio; }
+            else                         { drawH = maxH; drawW = maxH * imgRatio; }
+
+            float ix = (W - drawW) * 0.5f, iy = (H - drawH) * 0.5f;
+
+            GUI.color = new Color(1f, 1f, 1f, _splashAlpha);
+            GUI.DrawTexture(new Rect(ix, iy, drawW, drawH), _splash, ScaleMode.ScaleToFit);
+            GUI.color = Color.white;
+        }
+        else
+        {
+            // Fallback si la imagen no está: título con estilo GTA
+            InicializarEstilos();
+            GUI.color = new Color(1f, 1f, 1f, _splashAlpha);
+            GUI.Label(new Rect(0, H * 0.32f, W, 80), "ALTSASU_MANIFA", _sTitulo);
+            GUI.color = new Color(0.9f, 0.75f, 0.2f, _splashAlpha);
+            GUI.Label(new Rect(0, H * 0.45f, W, 36), "EUSKAL HERRIAN, 80KO HAMARKADA", _sSubtitulo);
+            GUI.color = Color.white;
+        }
+
+        // "PULSA INTRO" parpadeando — semi-transparente sobre la imagen
+        if (_parpadeoVis && _splashAlpha > 0.4f)
+        {
+            InicializarEstilos();
+            // Sombra
+            GUI.color = new Color(0f, 0f, 0f, 0.7f * _splashAlpha);
+            GUI.Label(new Rect(2, H * 0.872f, W, 42), "PULSA INTRO", _sIntro);
+            // Texto
+            GUI.color = new Color(1f, 0.95f, 0.4f, 0.88f * _splashAlpha);
+            GUI.Label(new Rect(0, H * 0.868f, W, 42), "PULSA INTRO", _sIntro);
             GUI.color = Color.white;
         }
     }
@@ -392,6 +483,12 @@ Input System · GPU Instancing";
             fontSize  = 14, richText = true, wordWrap = true,
             alignment = TextAnchor.UpperCenter,
             normal    = { textColor = new Color(0.85f, 0.88f, 0.95f) }
+        };
+        _sIntro = new GUIStyle(GUI.skin.label)
+        {
+            fontSize  = 22, fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleCenter,
+            normal    = { textColor = new Color(1f, 0.95f, 0.4f) }
         };
     }
 }

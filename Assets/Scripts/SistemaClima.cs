@@ -6,6 +6,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 public class SistemaClima : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class SistemaClima : MonoBehaviour
     // ── Sol ───────────────────────────────────────────────────────────────
     [Header("Sol")]
     public Light solDireccional;
+    HDAdditionalLightData _hdSol;
 
     // ── Partículas ────────────────────────────────────────────────────────
     [Header("Partículas de clima")]
@@ -71,6 +73,11 @@ public class SistemaClima : MonoBehaviour
     void Start()
     {
         if (solDireccional == null) solDireccional = FindFirstObjectByType<Light>();
+        if (solDireccional != null)
+        {
+            _hdSol = solDireccional.GetComponent<HDAdditionalLightData>();
+            if (_hdSol == null) _hdSol = solDireccional.gameObject.AddComponent<HDAdditionalLightData>();
+        }
         InicializarAudio();
         InicializarParticulas();
         AplicarClimaInstantaneo(climaActual);
@@ -111,7 +118,12 @@ public class SistemaClima : MonoBehaviour
     void AplicarClimaInstantaneo(EstadoClima e)
     {
         var c = CONFIGS[(int)e];
-        if (solDireccional != null) { solDireccional.intensity = c.intensidadSol; solDireccional.color = c.colorSol; }
+        if (solDireccional != null)
+        {
+            solDireccional.color = c.colorSol;
+            if (_hdSol != null) _hdSol.SetIntensity(c.intensidadSol * 80000f, LightUnit.Lux); // sol directo ~80klux
+            else solDireccional.intensity = c.intensidadSol;
+        }
         RenderSettings.fogDensity = c.niebla;
         RenderSettings.fogColor   = c.colorFog;
         fuerzaViento = c.viento;
@@ -123,7 +135,7 @@ public class SistemaClima : MonoBehaviour
     {
         _transicionando = true;
         float t = 0f;
-        float solInicial   = solDireccional?.intensity ?? 1f;
+        float solInicial   = _hdSol != null ? _hdSol.intensity : (solDireccional?.intensity ?? 1f);
         Color colorInicial = solDireccional?.color ?? Color.white;
         float nieblaInicial = RenderSettings.fogDensity;
         Color fogInicial    = RenderSettings.fogColor;
@@ -139,8 +151,10 @@ public class SistemaClima : MonoBehaviour
 
             if (solDireccional != null)
             {
-                solDireccional.intensity = Mathf.Lerp(solInicial, objetivo.intensidadSol, f);
-                solDireccional.color     = Color.Lerp(colorInicial, objetivo.colorSol, f);
+                float targetLux = objetivo.intensidadSol * 80000f;
+                if (_hdSol != null) _hdSol.SetIntensity(Mathf.Lerp(solInicial, targetLux, f), LightUnit.Lux);
+                else solDireccional.intensity = Mathf.Lerp(solInicial, objetivo.intensidadSol, f);
+                solDireccional.color = Color.Lerp(colorInicial, objetivo.colorSol, f);
             }
             RenderSettings.fogDensity = Mathf.Lerp(nieblaInicial, objetivo.niebla, f);
             RenderSettings.fogColor   = Color.Lerp(fogInicial, objetivo.colorFog, f);
@@ -228,6 +242,10 @@ public class SistemaClima : MonoBehaviour
     {
         StartCoroutine(FadeAudio(_srcLluvia, c.llueve ? 0.6f : 0f));
         StartCoroutine(FadeAudio(_srcViento, c.viento > 2f ? Mathf.Clamp01(c.viento / 10f) * 0.5f : 0f));
+        // Sincronizar audio ambiente de SistemaAtmosfera con Nature Sounds Pack
+        var atmos = FindFirstObjectByType<SistemaAtmosfera>();
+        if (atmos != null)
+            atmos.SetClimaAudio(c.llueve, climaActual == EstadoClima.Tormenta);
     }
 
     IEnumerator FadeAudio(AudioSource src, float targetVol, float dur = 3f)
@@ -243,16 +261,16 @@ public class SistemaClima : MonoBehaviour
         yield return new WaitForSeconds(Random.Range(1f, 4f));
         if (clipTrueno != null) AudioSource.PlayClipAtPoint(clipTrueno, Camera.main?.transform.position ?? Vector3.zero, 0.9f);
         // Flash de relámpago
-        if (solDireccional != null)
+        if (solDireccional != null && _hdSol != null)
         {
-            float orig = solDireccional.intensity;
-            solDireccional.intensity = 4f;
+            float orig = _hdSol.intensity;
+            _hdSol.SetIntensity(400000f, LightUnit.Lux); // relámpago: ~400klux
             yield return new WaitForSeconds(0.08f);
-            solDireccional.intensity = orig;
+            _hdSol.SetIntensity(orig, LightUnit.Lux);
             yield return new WaitForSeconds(0.12f);
-            solDireccional.intensity = 3f;
+            _hdSol.SetIntensity(300000f, LightUnit.Lux);
             yield return new WaitForSeconds(0.06f);
-            solDireccional.intensity = orig;
+            _hdSol.SetIntensity(orig, LightUnit.Lux);
         }
     }
 

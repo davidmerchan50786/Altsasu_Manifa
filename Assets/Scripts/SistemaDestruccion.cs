@@ -5,10 +5,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
-public class SistemaDestruccion : MonoBehaviour
+public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
 {
-    public static SistemaDestruccion Instance { get; private set; }
 
     [Header("Efectos de fuego")]
     public GameObject prefabFuegoGrande;
@@ -42,11 +42,11 @@ public class SistemaDestruccion : MonoBehaviour
     readonly List<GameObject> _fuegoActivos = new();
     const int MAX_FUEGOS = 30;
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
-        Instance = this;
-    }
+    // ── Pool de molotovs ──────────────────────────────────────────────────
+    const int POOL_MOLOTOVS = 8;
+    GameObject[] _poolMolotovs;
+    int          _molotovIdx;   // round-robin — si todos están en vuelo, recicla el más antiguo
+
 
     // =========================================================================
     //  COCHE BOMBA / EXPLOSIÓN DE COCHE
@@ -60,11 +60,19 @@ public class SistemaDestruccion : MonoBehaviour
 
     IEnumerator SecuenciaExplosionCoche(GameObject coche, bool esCocheBomba)
     {
+        // BUG FIX 3: capturar la posición ANTES de cualquier yield. Si el coche es
+        // destruido por otro sistema (SistemaDestruccion, impacto, etc.) mientras
+        // esperamos el WaitForSeconds, coche.transform lanza MissingReferenceException.
+        // Usando la posición capturada y guardas de null se evita el crash.
+        if (coche == null) yield break;
         Vector3 pos = coche.transform.position;
 
         // 1. Flash de llamas previo
         SpawnFuego(pos + Vector3.up, TamanoFuego.Medio);
         yield return new WaitForSeconds(0.15f);
+
+        // BUG FIX 3: coche puede haber sido destruido durante el yield — guardar pos
+        if (coche != null) pos = coche.transform.position;
 
         // 2. Explosión visual
         if (prefabExplosionGrande != null)
@@ -77,16 +85,18 @@ public class SistemaDestruccion : MonoBehaviour
             AudioSource.PlayClipAtPoint(clipExplosion, pos, 1f);
 
         // 4. El coche sale volando hacia arriba
-        var rb = coche.GetComponent<Rigidbody>();
-        if (rb == null) rb = coche.AddComponent<Rigidbody>();
-        rb.isKinematic = false;
-        rb.mass = 600f;
+        if (coche != null)
+        {
+            var rb = coche.GetComponent<Rigidbody>();
+            if (rb == null) rb = coche.AddComponent<Rigidbody>();
+            rb.isKinematic = false;
+            rb.mass = 600f;
 
-        // Impulso hacia arriba + rotación caótica
-        Vector3 fuerza = Vector3.up * fuerzaExplosionCoche;
-        fuerza += new Vector3(Random.Range(-200f, 200f), 0, Random.Range(-200f, 200f));
-        rb.AddForce(fuerza, ForceMode.Impulse);
-        rb.AddTorque(Random.insideUnitSphere * 1500f, ForceMode.Impulse);
+            Vector3 fuerza = Vector3.up * fuerzaExplosionCoche;
+            fuerza += new Vector3(Random.Range(-200f, 200f), 0, Random.Range(-200f, 200f));
+            rb.AddForce(fuerza, ForceMode.Impulse);
+            rb.AddTorque(Random.insideUnitSphere * 1500f, ForceMode.Impulse);
+        }
 
         // 5. Daño a entidades cercanas
         DanarEntidadesCercanas(pos, esCocheBomba ? radioExplosionCoche * 2f : radioExplosionCoche, esCocheBomba ? 200 : 80);
@@ -94,40 +104,57 @@ public class SistemaDestruccion : MonoBehaviour
         // 6. Esperar a que caiga (~3-5s para 22m)
         yield return new WaitForSeconds(3.5f);
 
+        // BUG FIX 3: actualizar pos si el coche sigue vivo; si fue destruido, usar pos capturada
+        Vector3 posAterrizaje = coche != null ? coche.transform.position : pos;
+
         // 7. Coche aterriza calcinado y en llamas
-        CalcinarCoche(coche);
-        SpawnFuego(coche.transform.position, TamanoFuego.Grande);
-        SpawnHumoNegro(coche.transform.position);
+        if (coche != null) CalcinarCoche(coche);
+        SpawnFuego(posAterrizaje, TamanoFuego.Grande);
+        SpawnHumoNegro(posAterrizaje);
 
         if (esCocheBomba)
         {
-            // Segunda explosión al aterrizar
             yield return new WaitForSeconds(0.5f);
-            ExplosionProcedural(coche.transform.position, 8f);
-            DanarEntidadesCercanas(coche.transform.position, radioExplosionCoche, 150);
+            Vector3 posBomba = coche != null ? coche.transform.position : posAterrizaje;
+            ExplosionProcedural(posBomba, 8f);
+            DanarEntidadesCercanas(posBomba, radioExplosionCoche, 150);
         }
 
         // Fuego durante 60 segundos y luego extinguir
         yield return new WaitForSeconds(60f);
-        ExtinguirFuego(coche.transform.position, 8f);
+        Vector3 posFinal = coche != null ? coche.transform.position : posAterrizaje;
+        ExtinguirFuego(posFinal, 8f);
     }
+
+    // BUG FIX 7: Material calcinado compartido para evitar memory leak.
+    // Antes: new Material() por cada MeshRenderer del coche (6+) nunca destruidos.
+    // Ahora: un único material creado la primera vez, reutilizado con MaterialPropertyBlock.
+    Material _matCalcinadoProcedural;
 
     void CalcinarCoche(GameObject coche)
     {
-        // Cambiar todos los materiales a calcinado
-        foreach (var mr in coche.GetComponentsInChildren<MeshRenderer>())
+        // Obtener o crear el material calcinado compartido
+        Material matUsar = matCalcinado;
+        if (matUsar == null)
         {
-            if (matCalcinado != null)
-                mr.sharedMaterial = matCalcinado;
-            else
+            if (_matCalcinadoProcedural == null)
             {
-                // Crear material calcinado proceduralmente
-                var mat = new Material(mr.sharedMaterial);
-                mat.color = new Color(0.08f, 0.08f, 0.08f);
-                if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.02f);
-                mr.sharedMaterial = mat;
+                // BUG FIX 7: crear UNA sola instancia de material calcinado, no una por renderer.
+                // Usar sharedMaterial del primer renderer disponible como base; si no hay ninguno,
+                // crear con HDRP/Lit. El material se reutiliza para todos los coches calcinados.
+                var baseShader = Shader.Find("HDRP/Lit") ?? Shader.Find("Standard");
+                _matCalcinadoProcedural = new Material(baseShader);
+                _matCalcinadoProcedural.name = "M_Calcinado_Shared";
+                _matCalcinadoProcedural.color = new Color(0.08f, 0.08f, 0.08f);
+                if (_matCalcinadoProcedural.HasProperty("_Smoothness"))
+                    _matCalcinadoProcedural.SetFloat("_Smoothness", 0.02f);
             }
+            matUsar = _matCalcinadoProcedural;
         }
+
+        foreach (var mr in coche.GetComponentsInChildren<MeshRenderer>())
+            mr.sharedMaterial = matUsar;
+
         // Abollar ligeramente (escala irregular)
         coche.transform.localScale = new Vector3(
             Random.Range(0.85f, 1.05f), Random.Range(0.70f, 0.90f), Random.Range(0.85f, 1.05f));
@@ -139,22 +166,51 @@ public class SistemaDestruccion : MonoBehaviour
 
     public void LanzarMolotov(Vector3 posicion, Vector3 velocidad)
     {
-        GameObject molotov;
-        if (prefabMolotov != null)
-            molotov = Instantiate(prefabMolotov, posicion, Quaternion.identity);
-        else
-        {
-            molotov = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            molotov.name = "Molotov";
-            molotov.transform.localScale = Vector3.one * 0.15f;
-            molotov.GetComponent<MeshRenderer>().material.color = new Color(0.8f, 0.5f, 0.2f);
-        }
+        InicializarPoolMolotovs();
 
-        var rb = molotov.GetComponent<Rigidbody>() ?? molotov.AddComponent<Rigidbody>();
-        rb.mass = 0.5f;
+        // Tomar del pool (round-robin — si todos están en vuelo, recicla el más antiguo)
+        var molotov = _poolMolotovs[_molotovIdx];
+        _molotovIdx = (_molotovIdx + 1) % POOL_MOLOTOVS;
+
+        // Forzar explosión del molotov reciclado si aún estaba en vuelo
+        var prevProyectil = molotov.GetComponent<ProyectilMolotov>();
+        if (molotov.activeInHierarchy && prevProyectil != null)
+            prevProyectil.ForzarExplosion();
+
+        molotov.transform.position = posicion;
+        molotov.SetActive(true);
+
+        var rb = molotov.GetComponent<Rigidbody>();
         rb.linearVelocity = velocidad;
+        rb.angularVelocity = Vector3.zero;
 
-        molotov.AddComponent<ProyectilMolotov>().Init(this, radioFuegoMolotov, duracionFuegoMolotov);
+        molotov.GetComponent<ProyectilMolotov>().Init(this, radioFuegoMolotov, duracionFuegoMolotov);
+    }
+
+    void InicializarPoolMolotovs()
+    {
+        if (_poolMolotovs != null) return;
+        _poolMolotovs = new GameObject[POOL_MOLOTOVS];
+        for (int i = 0; i < POOL_MOLOTOVS; i++)
+        {
+            GameObject go;
+            if (prefabMolotov != null)
+            {
+                go = Instantiate(prefabMolotov, Vector3.zero, Quaternion.identity);
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = "Molotov";
+                go.transform.localScale = Vector3.one * 0.15f;
+                go.GetComponent<MeshRenderer>().material.color = new Color(0.8f, 0.5f, 0.2f);
+            }
+            var rb2 = go.GetComponent<Rigidbody>() ?? go.AddComponent<Rigidbody>();
+            rb2.mass = 0.5f;
+            go.AddComponent<ProyectilMolotov>();
+            go.SetActive(false);
+            _poolMolotovs[i] = go;
+        }
     }
 
     public void ExplotarMolotov(Vector3 pos)
@@ -172,7 +228,7 @@ public class SistemaDestruccion : MonoBehaviour
         // Daño
         DanarEntidadesCercanas(pos, radioFuegoMolotov, 30);
         SistemaApoyoPopular.Instance?.SumarParanoia(8f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 
     // =========================================================================
@@ -249,7 +305,9 @@ public class SistemaDestruccion : MonoBehaviour
         lightGO.transform.localPosition = Vector3.up * size;
         var light = lightGO.AddComponent<Light>();
         light.type = LightType.Point; light.color = new Color(1f, 0.5f, 0.1f);
-        light.range = size * 8f; light.intensity = size * 3f;
+        light.range = size * 8f;
+        var hdFire = lightGO.AddComponent<HDAdditionalLightData>();
+        hdFire.SetIntensity(size * 3000f, UnityEngine.Rendering.LightUnit.Lux);
 
         return go;
     }
@@ -314,13 +372,9 @@ public class SistemaDestruccion : MonoBehaviour
             float falloff = 1f - Mathf.Clamp01(Vector3.Distance(col.transform.position, pos) / radio);
             int   danoCal = Mathf.RoundToInt(daño * falloff);
 
-            // Jugador
-            var jugador = col.GetComponent<ControladorJugador>();
-            if (jugador != null) { jugador.RecibirDano(danoCal); continue; }
-
-            // Vehículo del jugador
-            var coche = col.GetComponentInParent<ControladorVehiculoJugador>();
-            if (coche != null) { coche.RecibirDano(danoCal); continue; }
+            var damageable = col.GetComponent<IDamageable>()
+                          ?? col.GetComponentInParent<IDamageable>();
+            if (damageable != null) { damageable.RecibirDano(danoCal, pos, TipoDano.Explosion); continue; }
         }
     }
 }
@@ -333,15 +387,23 @@ public class ProyectilMolotov : MonoBehaviour
     float _radio, _duracion;
     bool  _explotado;
 
-    public void Init(SistemaDestruccion s, float r, float d) { _sistema = s; _radio = r; _duracion = d; }
+    public void Init(SistemaDestruccion s, float r, float d)
+    {
+        _sistema   = s;
+        _radio     = r;
+        _duracion  = d;
+        _explotado = false;
+    }
 
-    void OnCollisionEnter(Collision col)
+    void OnCollisionEnter(Collision col) => Explotar();
+
+    public void ForzarExplosion() => Explotar();
+
+    void Explotar()
     {
         if (_explotado) return;
         _explotado = true;
         _sistema?.ExplotarMolotov(transform.position);
-        Destroy(gameObject);
+        gameObject.SetActive(false);  // devolver al pool
     }
-
-    void Update() { if (_explotado) Destroy(gameObject); }
 }
