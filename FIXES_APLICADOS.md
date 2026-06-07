@@ -26,3 +26,9 @@ Todos compilados a 0 errores en batchmode y respaldados. Rama `fresh`.
 
 ## Cómo verificar
 Abrir `E:/Desk/DAM/Altsasu_Manifa` en Unity 6000.3.10f1 → Play. Backup del código en `C:/Altsasu_Backup_Codigo_320ea047/`.
+
+## Feature grande añadida
+| 9 | SistemasSimulacion.cs, VehiculoNPC.cs | Tráfico estático (props isKinematic) | **Tráfico que CIRCULA** sobre calles reales (roads_unity.json → waypoints → VehiculoNPC). Verificado compilación; pendiente playtest. |
+
+## Estado: a la espera de PLAYTEST
+He agotado los arreglos quirúrgicos seguros del plan. Lo que queda (IA policía a pie, niebla HDRP, draw calls de edificios) necesita verificación visual en Unity. Próximo paso real = el usuario abre Play y reporta.
