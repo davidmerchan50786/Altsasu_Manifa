@@ -212,6 +212,14 @@ public class SistemaVolumenHDRP : MonoBehaviour
         var p = ScriptableObject.CreateInstance<VolumeProfile>();
         _volDia.profile = p;
 
+        // ── Exposición (FIX: sin esto el sol físico de 100k lux quemaba la imagen a blanco) ──
+        var exp = p.Add<Exposure>(true);
+        exp.mode.Override(ExposureMode.Automatic);
+        exp.limitMin.Override(-1f);
+        exp.limitMax.Override(16f);
+        exp.adaptationSpeedDarkToLight.Override(3f);
+        exp.adaptationSpeedLightToDark.Override(1f);
+
         // ── Bloom ──────────────────────────────────────────────────────────
         _bloomDia = p.Add<Bloom>(true);
         _bloomDia.intensity.Override(0.85f);
