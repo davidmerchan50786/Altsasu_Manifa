@@ -50,6 +50,18 @@ public class ConductorMundo : MonoBehaviour
         Resolver("Río + puentes",      typeof(GeneradorRiosYPuentes), null);
         Resolver("Mobiliario urbano",  typeof(MobiliarioUrbano),     null);
 
+        // BUG FIX (auditoría): árboles duplicados. AlsasuaTreeStreamer (streaming LIDAR)
+        // y PosicionadorPrecisionUrbana cargan el MISMO lidar_trees.json. Si el streamer
+        // está presente, desactivamos SOLO la colocación de árboles del Posicionador
+        // (mantiene farolas/portales/mobiliario). Es seguro y evita árboles dobles.
+        var streamer = FindFirstObjectByType<AlsasuaTreeStreamer>();
+        var posic    = FindFirstObjectByType<PosicionadorPrecisionUrbana>();
+        if (streamer != null && posic != null && posic.colocarArboles)
+        {
+            posic.colocarArboles = false;
+            AlsasuaLogger.Info("Conductor", "Árboles: streaming LIDAR (AlsasuaTreeStreamer); desactivada colocación duplicada del Posicionador.");
+        }
+
         AlsasuaLogger.Info("Conductor",
             aplicarRecomendaciones
               ? "Recomendaciones APLICADAS (redundantes desactivados)."
