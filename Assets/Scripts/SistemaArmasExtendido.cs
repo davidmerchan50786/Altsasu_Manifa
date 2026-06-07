@@ -65,7 +65,7 @@ public class SistemaArmasExtendido : MonoBehaviour
     void Start()
     {
         _destruccion = SistemaDestruccion.Instance;
-        _grafitis    = FindFirstObjectByType<SistemaGrafitis>();
+        _grafitis    = SistemaGrafitis.Instance;
         _apoyo       = SistemaApoyoPopular.Instance;
         _tiene[(int)TipoArma.Puños] = true;
         _tiene[(int)TipoArma.Spray] = true; // siempre disponible
@@ -143,7 +143,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         Destroy(piedra, 10f);
 
         _apoyo?.SumarParanoia(3f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(1);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 
     static GameObject CrearPiedra(Vector3 pos)
@@ -170,7 +170,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         _destruccion?.LanzarMolotov(cam.transform.position + cam.transform.forward, vel);
 
         _apoyo?.SumarParanoia(12f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(2);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(2);
     }
 
     // ── Bomba lapa ────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         bomba.AddComponent<BombaLapaComponent>().Init(temporizadorLapa, _destruccion, hit.collider.gameObject);
 
         _apoyo?.SumarParanoia(20f);
-        GameManagerAltsasua.Instance?.AumentarBusqueda(3);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(3);
         Debug.Log($"[Armas] Bomba lapa colocada en {hit.collider.gameObject.name}. Detona en {temporizadorLapa}s");
     }
 
@@ -227,7 +227,7 @@ public class SistemaArmasExtendido : MonoBehaviour
 
         coche.AddComponent<CocheBombaComponent>().Init(_destruccion);
         Debug.Log($"[Armas] ¡Coche bomba armado: {coche.name}! Pulsa G cerca del coche para detonar.");
-        GameManagerAltsasua.Instance?.AumentarBusqueda(4);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(4);
     }
 
     // ── Bandera Euskadi (ikurriña) ────────────────────────────────────────
@@ -293,12 +293,9 @@ public class ImpactoPiedra : MonoBehaviour
         if (col.gameObject.name.Contains("Ventana") || col.gameObject.name.Contains("Window") || col.gameObject.name.Contains("Glass"))
             _destr?.RomperCristales(transform.position, col.contacts[0].normal);
 
-        // Daño a jugador / vehículo / policía
-        col.gameObject.GetComponent<ControladorJugador>()?.RecibirDano(15);
-        col.gameObject.GetComponentInParent<ControladorVehiculoJugador>()?.RecibirDano(15);
-        col.gameObject.GetComponent<PoliciaForalIA>()?.RecibirDano(15);
-        col.gameObject.GetComponent<EnemigoPatrulla>()?.RecibirDano(15);
-        // Civil: solo huye
+        // Daño via IDamageable — un solo GetComponent cubre jugador, policía y vehículo NPC
+        col.gameObject.GetComponent<IDamageable>()?.RecibirDano(15, transform.position, TipoDano.Impacto);
+        // Civil: solo huye (no implementa IDamageable)
         col.gameObject.GetComponent<NPCCivil>()?.AlertarDisparo(transform.position);
         Destroy(gameObject);
     }
@@ -328,9 +325,15 @@ public class BombaLapaComponent : MonoBehaviour
             _destr?.ExplotarCoche(_objetivo);
         else
         {
-            // Explosión genérica
+            // FIX: la explosión genérica sucedía en el ORIGEN del mundo (0,0,0) porque el
+            // GameObject falso se creaba sin posición. Ahora se coloca en la posición de la bomba.
             var destr = _destr ?? SistemaDestruccion.Instance;
-            if (destr != null) destr.ExplotarCoche(new GameObject("Explota"), false);
+            if (destr != null)
+            {
+                var falso = new GameObject("Explota");
+                falso.transform.position = transform.position;
+                destr.ExplotarCoche(falso, false);
+            }
         }
         Destroy(gameObject);
     }

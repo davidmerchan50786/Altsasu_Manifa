@@ -8,9 +8,137 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 
-public class SistemaManifestacion : MonoBehaviour
+public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
 {
+    // ── Boids coordinator ─────────────────────────────────────────────────
+    readonly List<ManifestanteIA> _agentes = new();
+
+    // Arrays persistentes — se reasignan solo cuando cambia n (evita 40+ allocs/s a 10Hz)
+    NativeArray<float3> _bPos;
+    NativeArray<float3> _bVel;
+    NativeArray<float3> _bNuevaPos;
+    NativeArray<float3> _bNuevaVel;
+    int _bCapacidad; // tamaño actual de los arrays
+
+    float _timerBoids;
+    const float BOIDS_TICK = 0.1f; // 10 Hz
+
+    public void RegistrarAgente(ManifestanteIA agente) => _agentes.Add(agente);
+    public void DesregistrarAgente(ManifestanteIA agente) => _agentes.Remove(agente);
+
+    void Update()
+    {
+        if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
+        {
+            if (_activa) TerminarManifestacion();
+            else StartCoroutine(IniciarManifestacion());
+        }
+
+        if (!_activa || _agentes.Count < 2) return;
+        _timerBoids -= Time.deltaTime;
+        if (_timerBoids > 0) return;
+        _timerBoids = BOIDS_TICK;
+        TickBoids();
+    }
+
+    void AsegurarCapacidad(int n)
+    {
+        // Solo reasignar si n SUPERA la capacidad actual — no reducir al bajar agentes.
+        // Esto evita reasignaciones costosas cada vez que un manifestante muere.
+        if (_bCapacidad >= n) return;
+
+        if (_bPos.IsCreated)      _bPos.Dispose();
+        if (_bVel.IsCreated)      _bVel.Dispose();
+        if (_bNuevaPos.IsCreated) _bNuevaPos.Dispose();
+        if (_bNuevaVel.IsCreated) _bNuevaVel.Dispose();
+
+        _bPos      = new NativeArray<float3>(n, Allocator.Persistent);
+        _bVel      = new NativeArray<float3>(n, Allocator.Persistent);
+        _bNuevaPos = new NativeArray<float3>(n, Allocator.Persistent);
+        _bNuevaVel = new NativeArray<float3>(n, Allocator.Persistent);
+        _bCapacidad = n;
+    }
+
+    // Snapshot reutilizable — evita alloc y protege contra modificación concurrente de _agentes
+    readonly List<ManifestanteIA> _snapshot = new();
+
+    void TickBoids()
+    {
+        // Snapshot: copia los agentes vivos en un buffer fijo para esta iteración.
+        // Si un ManifestanteIA muere y llama DesregistrarAgente() durante este tick,
+        // el snapshot no cambia → sin IndexOutOfRange ni accesos a null destruidos.
+        _snapshot.Clear();
+        foreach (var a in _agentes)
+            if (a != null) _snapshot.Add(a);
+
+        // Limpiar nulls acumulados en la lista maestra (muertos sin desregistrar)
+        if (_snapshot.Count != _agentes.Count)
+            _agentes.RemoveAll(a => a == null);
+
+        int n = _snapshot.Count;
+        if (n == 0) return;
+
+        AsegurarCapacidad(n);
+
+        // Copiar estado actual (solo agentes vivos del snapshot)
+        for (int i = 0; i < n; i++)
+        {
+            var p = _snapshot[i].transform.position;
+            var v = _snapshot[i].VelocidadBoids;
+            _bPos[i] = new float3(p.x, p.y, p.z);
+            _bVel[i] = new float3(v.x, v.y, v.z);
+        }
+
+        // Config según tipo del primer agente válido
+        var cfg = _snapshot[0].tipo == TipoManifestante.Disturbios
+            ? IntegradorMatematicas.BOIDS_DISTURBIOS
+            : IntegradorMatematicas.BOIDS_MANIFESTANTE;
+
+        var job = new JobBoidsUpdate
+        {
+            posiciones        = _bPos,
+            velocidades       = _bVel,
+            radioSeparacion   = cfg.radioSep,
+            radioAlineacion   = cfg.radioAlin,
+            radioCohesion     = cfg.radioCoh,
+            pesoSeparacion    = cfg.pesoSep,
+            pesoAlineacion    = cfg.pesoAlin,
+            pesoCohesion      = cfg.pesoCoh,
+            velocidadMax      = cfg.velMax,
+            fuerza            = cfg.fuerza,
+            deltaTime         = BOIDS_TICK,
+            objetivo          = new float3(centroManifestacion.x, centroManifestacion.y, centroManifestacion.z),
+            pesoObjetivo      = cfg.pesoObj,
+            nuevasVelocidades = _bNuevaVel,
+            nuevasPosiciones  = _bNuevaPos,
+        };
+        job.Schedule(n, 8).Complete();
+
+        // Aplicar resultados — snapshot garantiza índices válidos
+        for (int i = 0; i < n; i++)
+        {
+            _snapshot[i].AplicarBoids(
+                new Vector3(_bNuevaPos[i].x, _bNuevaPos[i].y, _bNuevaPos[i].z),
+                new Vector3(_bNuevaVel[i].x, _bNuevaVel[i].y, _bNuevaVel[i].z));
+        }
+    }
+
+    // FIX: era `void OnDestroy()`, que ocultaba el OnDestroy privado de SingletonMono<T>
+    // → Instance nunca se anulaba → MissingReferenceException tras recarga de escena
+    // (ManifestanteIA.Start hace _sistema?.RegistrarAgente, y el ?. no ve el fake-null de Unity).
+    // Ahora usa el hook correcto OnDestroyed(), como el resto de singletons del proyecto.
+    protected override void OnDestroyed()
+    {
+        if (_crIniciar != null) StopCoroutine(_crIniciar);
+        if (_bPos.IsCreated)      _bPos.Dispose();
+        if (_bVel.IsCreated)      _bVel.Dispose();
+        if (_bNuevaPos.IsCreated) _bNuevaPos.Dispose();
+        if (_bNuevaVel.IsCreated) _bNuevaVel.Dispose();
+    }
     // ─── Inspector ─────────────────────────────────────────────────────────
     [Header("Prefabs manifestantes")]
     public GameObject prefabManifestante;   // civil con keffiyeh/pañuelo palestino
@@ -39,11 +167,12 @@ public class SistemaManifestacion : MonoBehaviour
     [Header("Activación")]
     // Tecla M — new Input System
     // [HideInInspector] public KeyCode teclaManifestacion = KeyCode.M; // legacy eliminado
-    public bool    activaAlInicio = false;
+    public bool    activaAlInicio = true;
 
     // ─── Estado ────────────────────────────────────────────────────────────
     bool     _activa;
     public bool EnCurso => _activa;
+    Coroutine _crIniciar;
     readonly List<ManifestanteIA> _manifestantes = new();
     readonly List<GameObject>     _barricadas    = new();
     AudioSource _srcConsignas, _srcDisturbios;
@@ -53,16 +182,7 @@ public class SistemaManifestacion : MonoBehaviour
     {
         _apoyo = SistemaApoyoPopular.Instance;
         InicializarAudio();
-        if (activaAlInicio) StartCoroutine(IniciarManifestacion());
-    }
-
-    void Update()
-    {
-        if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
-        {
-            if (_activa) TerminarManifestacion();
-            else StartCoroutine(IniciarManifestacion());
-        }
+        if (activaAlInicio) _crIniciar = StartCoroutine(IniciarManifestacion());
     }
 
     // ── Inicio de manifestación ───────────────────────────────────────────
@@ -112,20 +232,25 @@ public class SistemaManifestacion : MonoBehaviour
             GameObject barricada;
             if (prefabBarricada != null)
             {
-                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, Random.Range(-20f, 20f), 0));
+                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, UnityEngine.Random.Range(-20f, 20f), 0));
             }
             else
             {
                 // Fallback: apilar cubos como barricada
                 barricada = new GameObject($"Barricada_{i}");
                 barricada.transform.position = pos;
+                // OPT: MaterialPropertyBlock para colorear fallback sin crear instancias de Material
+                // Ahorro: 4 × numBarricadas Material instances evitadas (4×6 = 24 leaks en barricadas).
+                var mpbBarricada = new MaterialPropertyBlock();
+                mpbBarricada.SetColor("_BaseColor", new Color(0.15f, 0.15f, 0.15f));
+                mpbBarricada.SetColor("_Color",     new Color(0.15f, 0.15f, 0.15f));
                 for (int b = 0; b < 4; b++)
                 {
                     var cubo = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cubo.transform.SetParent(barricada.transform);
-                    cubo.transform.localPosition = new Vector3(Random.Range(-1.5f, 1.5f), b * 0.55f, Random.Range(-0.3f, 0.3f));
+                    cubo.transform.localPosition = new Vector3(UnityEngine.Random.Range(-1.5f, 1.5f), b * 0.55f, UnityEngine.Random.Range(-0.3f, 0.3f));
                     cubo.transform.localScale = new Vector3(1.2f, 0.5f, 0.6f);
-                    cubo.GetComponent<MeshRenderer>().material.color = new Color(0.15f, 0.15f, 0.15f); // neumático
+                    cubo.GetComponent<MeshRenderer>().SetPropertyBlock(mpbBarricada); // evita material instance
                 }
             }
             barricada.name = $"Barricada_{i}";
@@ -141,14 +266,14 @@ public class SistemaManifestacion : MonoBehaviour
         {
             // Formar en bloque detrás de las barricadas
             float angle = (i / (float)numManifestantes) * 360f * Mathf.Deg2Rad;
-            float radio = Random.Range(8f, 40f);
+            float radio = UnityEngine.Random.Range(8f, 40f);
             var pos = centroManifestacion + new Vector3(Mathf.Cos(angle) * radio, 0, Mathf.Sin(angle) * radio + 30f);
             float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
             pos.y = py;
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, Random.Range(0f, 360f), 0));
+            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
             go.name = $"Manifestante_{i}";
-            go.transform.localScale = Vector3.one * Random.Range(0.85f, 1.05f);
+            go.transform.localScale = Vector3.one * UnityEngine.Random.Range(0.85f, 1.05f);
 
             var ia = go.AddComponent<ManifestanteIA>();
             ia.tipo = TipoManifestante.Pacifico;
@@ -166,11 +291,11 @@ public class SistemaManifestacion : MonoBehaviour
         for (int i = 0; i < numDisturbios; i++)
         {
             // Grupo de disturbios en la zona de barricadas
-            var pos = centroManifestacion + new Vector3(Random.Range(-15f, 15f), 0, Random.Range(-20f, 20f));
+            var pos = centroManifestacion + new Vector3(UnityEngine.Random.Range(-15f, 15f), 0, UnityEngine.Random.Range(-20f, 20f));
             float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
             pos.y = py;
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, Random.Range(0f, 360f), 0));
+            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
             go.name = $"Encapuchado_{i}";
 
             var ia = go.AddComponent<ManifestanteIA>();
@@ -216,14 +341,21 @@ public class SistemaManifestacion : MonoBehaviour
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         go.name = encapuchado ? "Encapuchado_Template" : "Manifestante_Template";
-        var mat = go.GetComponent<MeshRenderer>().material;
-        mat.color = encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f);
+        // OPT: MaterialPropertyBlock en lugar de .material (evita instancia de Material por prefab)
+        // Ahorro: 2 Material leaks evitados por CreateDefaultManifestante (template reutilizado).
+        var mpbBody = new MaterialPropertyBlock();
+        mpbBody.SetColor("_BaseColor", encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f));
+        mpbBody.SetColor("_Color",     encapuchado ? Color.black : new Color(0.3f, 0.5f, 0.8f));
+        go.GetComponent<MeshRenderer>().SetPropertyBlock(mpbBody);
         // Keffiyeh (cubo pequeño sobre la cabeza)
         var kef = GameObject.CreatePrimitive(PrimitiveType.Cube);
         kef.transform.SetParent(go.transform);
         kef.transform.localPosition = new Vector3(0, 0.55f, 0);
         kef.transform.localScale = new Vector3(0.6f, 0.25f, 0.6f);
-        kef.GetComponent<MeshRenderer>().material.color = encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f); // keffiyeh rojo/negro
+        var mpbKef = new MaterialPropertyBlock();
+        mpbKef.SetColor("_BaseColor", encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f));
+        mpbKef.SetColor("_Color",     encapuchado ? Color.black : new Color(0.8f, 0.1f, 0.1f));
+        kef.GetComponent<MeshRenderer>().SetPropertyBlock(mpbKef);
         return go;
     }
 
@@ -262,24 +394,51 @@ public class SistemaManifestacion : MonoBehaviour
 
 public enum TipoManifestante { Pacifico, Disturbios }
 
-public class ManifestanteIA : MonoBehaviour
+public class ManifestanteIA : MonoBehaviour, IAgente
 {
-    public TipoManifestante   tipo;
-    public Vector3            centro;
+    // IAgente
+    public Vector3 Posicion   => transform.position;
+    public bool    EstaActivo => gameObject.activeInHierarchy;
+    public void    Alertar(Vector3 origen) { /* manifestantes no huyen por disparos */ }
+
+    public TipoManifestante    tipo;
+    public Vector3             centro;
     public SistemaApoyoPopular apoyoSistema;
+
+    // ── Boids API ─────────────────────────────────────────────────────────
+    public Vector3 VelocidadBoids { get; private set; }
+    bool _usandoBoids;
+
+    public void AplicarBoids(Vector3 nuevaPos, Vector3 nuevaVel)
+    {
+        VelocidadBoids = nuevaVel;
+        _usandoBoids   = true;
+        _objetivo      = nuevaPos; // Boids da la dirección
+    }
 
     Rigidbody _rb;
     float     _timer;
     Vector3   _objetivo;
     bool      _huyendo;
+    SistemaManifestacion _sistema;
 
     void Start()
     {
         _rb = GetComponent<Rigidbody>() ?? gameObject.AddComponent<Rigidbody>();
-        _rb.mass = 70f; _rb.linearDamping = 8f; _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        if (GetComponent<CapsuleCollider>() == null) { var col = gameObject.AddComponent<CapsuleCollider>(); col.height = 1.8f; col.radius = 0.3f; col.center = new Vector3(0, 0.9f, 0); }
+        _rb.mass = 70f; _rb.linearDamping = 8f;
+        _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        if (GetComponent<CapsuleCollider>() == null)
+        {
+            var col = gameObject.AddComponent<CapsuleCollider>();
+            col.height = 1.8f; col.radius = 0.3f; col.center = new Vector3(0, 0.9f, 0);
+        }
+        _sistema = SistemaManifestacion.Instance;
+        _sistema?.RegistrarAgente(this);
+        SistemaIA.Registrar(this);
         ElegirObjetivo();
     }
+
+    void OnDestroy() { _sistema?.DesregistrarAgente(this); SistemaIA.Desregistrar(this); }
 
     void FixedUpdate()
     {
@@ -287,7 +446,10 @@ public class ManifestanteIA : MonoBehaviour
         if (_timer < 0) ElegirObjetivo();
 
         var jugador = AltsasuCore.Jugador;
-        bool jugadorCerca = jugador != null && Vector3.Distance(transform.position, jugador.position) < 8f;
+        // OPT: sqrMagnitude evita sqrt — con 100+ manifestantes a 50Hz son 5000 sqrt/s eliminados.
+        // Ahorro estimado: ~0.5-1.0 ms/frame en manifestaciones grandes.
+        bool jugadorCerca = jugador != null
+            && (transform.position - jugador.position).sqrMagnitude < 64f; // 8² = 64
 
         if (tipo == TipoManifestante.Disturbios && jugadorCerca)
         {
@@ -295,22 +457,36 @@ public class ManifestanteIA : MonoBehaviour
             _objetivo = transform.position; // se queda
         }
 
-        var dir = (_objetivo - transform.position); dir.y = 0;
-        if (dir.magnitude < 1f) return;
-        dir.Normalize();
-        float speed = tipo == TipoManifestante.Disturbios ? 2.5f : 1.2f;
-        var vel = dir * speed; vel.y = _rb.linearVelocity.y;
-        _rb.linearVelocity = Vector3.Lerp(_rb.linearVelocity, vel, Time.fixedDeltaTime * 4f);
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.fixedDeltaTime * 5f);
+        Vector3 moveVel;
+        if (_usandoBoids && VelocidadBoids.sqrMagnitude > 0.01f)
+        {
+            // Usar velocidad calculada por Boids (comportamiento de grupo)
+            moveVel = VelocidadBoids;
+            moveVel.y = _rb.linearVelocity.y;
+        }
+        else
+        {
+            // Fallback: movimiento directo al objetivo
+            var dir = (_objetivo - transform.position); dir.y = 0;
+            if (dir.magnitude < 0.5f) return;
+            float speed = tipo == TipoManifestante.Disturbios ? 2.5f : 1.2f;
+            moveVel = dir.normalized * speed;
+            moveVel.y = _rb.linearVelocity.y;
+        }
+        _rb.linearVelocity = Vector3.Lerp(_rb.linearVelocity, moveVel, Time.fixedDeltaTime * 4f);
+        var moveDir = new Vector3(moveVel.x, 0, moveVel.z);
+        if (moveDir.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                Quaternion.LookRotation(moveDir), Time.fixedDeltaTime * 5f);
     }
 
     void ElegirObjetivo()
     {
-        _timer = Random.Range(3f, 10f);
+        _timer = UnityEngine.Random.Range(3f, 10f);
         if (tipo == TipoManifestante.Pacifico)
-            _objetivo = centro + new Vector3(Random.Range(-30f, 30f), 0, Random.Range(-15f, 50f));
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-30f, 30f), 0, UnityEngine.Random.Range(-15f, 50f));
         else
-            _objetivo = centro + new Vector3(Random.Range(-20f, 20f), 0, Random.Range(-25f, 15f));
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-20f, 20f), 0, UnityEngine.Random.Range(-25f, 15f));
         float y = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(_objetivo) : 240f;
         _objetivo.y = y;
     }

@@ -26,9 +26,18 @@ public class SistemaImpactos : MonoBehaviour
     const int POOL_SIZE = 40;
     readonly Queue<ParticleSystem> _pool = new();
 
+    [Header("Prefabs bullet holes (auto desde ConfiguradorAssetsAAA)")]
+    public GameObject prefabImpactoHormigon;
+    public GameObject prefabImpactoMetal;
+    public GameObject prefabImpactoMadera;
+    public GameObject prefabSangre;
+
     // ── Decals de impacto ─────────────────────────────────────────────────
     const int MAX_DECALS = 150;
     readonly List<GameObject> _decals = new();
+    // BUG FIX: un material compartido por tipo de decal procedural (antes: new Material por
+    // impacto → al expulsar el GameObject el material quedaba huérfano = fuga continua).
+    readonly Dictionary<TipoMaterial, Material> _matDecalCache = new();
 
     // ── Configuración por material ────────────────────────────────────────
     enum TipoMaterial { Metal, Hormigon, Madera, Tierra, Cristal, Carne, Asfalto, Generico }
@@ -64,6 +73,16 @@ public class SistemaImpactos : MonoBehaviour
         if (I != null && I != this) { Destroy(this); return; }
         I = this;
         PrecargarPool();
+
+        // Auto-asignar bullet holes desde ConfiguradorAssetsAAA
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg != null)
+        {
+            if (prefabImpactoHormigon == null) prefabImpactoHormigon = cfg.prefabImpactoHormigon;
+            if (prefabImpactoMetal    == null) prefabImpactoMetal    = cfg.prefabImpactoMetal;
+            if (prefabImpactoMadera   == null) prefabImpactoMadera   = cfg.prefabImpactoMadera;
+            if (prefabSangre          == null) prefabSangre          = cfg.prefabSangre;
+        }
     }
 
     void PrecargarPool()
@@ -176,7 +195,7 @@ public class SistemaImpactos : MonoBehaviour
         main.startSize     = new ParticleSystem.MinMaxCurve(cfg.tamano * 0.6f, cfg.tamano * fuerzaMult);
         main.startSpeed    = new ParticleSystem.MinMaxCurve(cfg.velocidad * 0.5f, cfg.velocidad * fuerzaMult);
         main.startLifetime = new ParticleSystem.MinMaxCurve(cfg.duracion * 0.5f, cfg.duracion);
-        main.gravityModifier.Override(cfg.gravedad);
+        main.gravityModifier = new ParticleSystem.MinMaxCurve(cfg.gravedad);
         main.maxParticles = 60;
 
         var emit = ps.emission;
@@ -206,7 +225,7 @@ public class SistemaImpactos : MonoBehaviour
         main.startSize     = new ParticleSystem.MinMaxCurve(0.01f, 0.025f);
         main.startSpeed    = new ParticleSystem.MinMaxCurve(3f, 9f);
         main.startLifetime = new ParticleSystem.MinMaxCurve(0.15f, 0.45f);
-        main.gravityModifier.Override(3f);
+        main.gravityModifier = new ParticleSystem.MinMaxCurve(3f);
         main.maxParticles = 30;
 
         var trails = ps.trails;
@@ -226,22 +245,38 @@ public class SistemaImpactos : MonoBehaviour
     void SpawnDecal(Vector3 pos, Vector3 normal, TipoMaterial tipo, Transform padre)
     {
         var cfg = CONFIGS[tipo];
-        var go  = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        go.name = "Decal_Impacto";
 
-        var col = go.GetComponent<Collider>();
-        if (col != null) Destroy(col);
+        // Usar prefab de bullet hole si disponible (Assets/#Tools/Resources/Particles/BulletHoles)
+        GameObject prefabDecal = tipo switch
+        {
+            TipoMaterial.Metal    => prefabImpactoMetal,
+            TipoMaterial.Madera   => prefabImpactoMadera,
+            TipoMaterial.Carne    => prefabSangre,
+            _                     => prefabImpactoHormigon,
+        };
 
-        go.transform.position = pos + normal * 0.008f;
-        go.transform.rotation = Quaternion.LookRotation(-normal);
+        GameObject go;
+        if (prefabDecal != null)
+        {
+            go = Instantiate(prefabDecal, pos + normal * 0.01f, Quaternion.LookRotation(-normal), padre);
+            go.name = "Decal_Impacto";
+        }
+        else
+        {
+            // Fallback procedural
+            go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = "Decal_Impacto";
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            go.transform.position = pos + normal * 0.008f;
+            go.transform.rotation = Quaternion.LookRotation(-normal);
+            go.GetComponent<MeshRenderer>().sharedMaterial = MaterialDecal(tipo, cfg.colorDecal);
+            go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            go.transform.SetParent(padre, true);
+        }
+
         float size = Random.Range(0.06f, 0.14f);
         go.transform.localScale = Vector3.one * size;
-        go.transform.SetParent(padre, true);
-
-        var mat = new Material(Shader.Find("Unlit/Transparent") ?? Shader.Find("Standard"));
-        mat.color = cfg.colorDecal;
-        go.GetComponent<MeshRenderer>().sharedMaterial = mat;
-        go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
         _decals.Add(go);
         if (_decals.Count > MAX_DECALS)
@@ -298,5 +333,22 @@ public class SistemaImpactos : MonoBehaviour
         col.color = grad;
 
         return ps;
+    }
+
+    // BUG FIX: un material compartido por tipo de decal en vez de uno nuevo por impacto.
+    // Los decals procedurales solo varían en escala (transform), no en material → compartir es correcto.
+    Material MaterialDecal(TipoMaterial tipo, Color color)
+    {
+        if (_matDecalCache.TryGetValue(tipo, out var m) && m != null) return m;
+        m = new Material(Shader.Find("Unlit/Transparent") ?? Shader.Find("Standard")) { color = color };
+        _matDecalCache[tipo] = m;
+        return m;
+    }
+
+    void OnDestroy()
+    {
+        if (I == this) I = null;
+        foreach (var m in _matDecalCache.Values) if (m != null) Destroy(m);
+        _matDecalCache.Clear();
     }
 }
