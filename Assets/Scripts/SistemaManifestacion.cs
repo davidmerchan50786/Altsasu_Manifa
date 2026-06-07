@@ -457,6 +457,10 @@ public class ManifestanteIA : MonoBehaviour, IAgente
             _objetivo = transform.position; // se queda
         }
 
+        // FIX (playtest): re-adquirir el Rigidbody si falta → evita MissingComponentException
+        // cada FixedUpdate (Manifestante sin Rigidbody) que inundaba la consola.
+        if (_rb == null) _rb = GetComponent<Rigidbody>() ?? gameObject.AddComponent<Rigidbody>();
+
         Vector3 moveVel;
         if (_usandoBoids && VelocidadBoids.sqrMagnitude > 0.01f)
         {
