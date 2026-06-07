@@ -333,6 +333,7 @@ public class HUDCanvas : MonoBehaviour
         if (_crossV != null) _crossV.rectTransform.sizeDelta = new Vector2(2f, _crossSize * 2f);
     }
 
+    float _miniTimer;
     void ActualizarMinimap()
     {
         if (_miniCam == null) return;
@@ -340,6 +341,9 @@ public class HUDCanvas : MonoBehaviour
         if (j == null) return;
         _miniCam.transform.position = j.position + Vector3.up * 80f;
         _miniCam.transform.eulerAngles = new Vector3(90f, 0f, 0f);
+        // BUG FIX (auditoría): render manual ~6-7 fps en vez de la escena completa cada frame.
+        _miniTimer -= Time.deltaTime;
+        if (_miniTimer <= 0f) { _miniTimer = 0.15f; _miniCam.Render(); }
     }
 
     void ActualizarDanoIndicators()
@@ -560,6 +564,8 @@ public class HUDCanvas : MonoBehaviour
         _miniCam.cullingMask = ~0; // todo
         _miniCam.targetTexture = _miniRT;
         _miniCam.clearFlags = CameraClearFlags.SolidColor;
+        // BUG FIX (auditoría): sin auto-render cada frame; se renderiza manualmente con throttle.
+        _miniCam.enabled = false;
         _miniCam.backgroundColor = new Color(0.08f, 0.10f, 0.14f);
 
         // Marco circular (panel)
