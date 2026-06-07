@@ -67,15 +67,13 @@ public class SceneBootstrapper : MonoBehaviour
         // 1. Terrain — omitir si Cesium Georeference está activo (evita z-fighting)
         bool cesiumActivo = IsCesiumPresente();
         bool terrenoOK = false;
-        if (!cesiumActivo)
-        {
-            terrenoOK = EnsureTerrain();
-            if (terrenoOK) yield return null;
-        }
-        else
-        {
-            Debug.Log("[Bootstrap] Cesium detectado — terreno DEM omitido (Cesium provee el terreno).");
-        }
+        // FIX (playtest): crear SIEMPRE el terreno LIDAR/DEM local. Antes se omitía si
+        // había Cesium en la escena ("Cesium provee el terreno"), pero Cesium NO carga
+        // tiles (sin token/config) → mundo vacío, jugador flotando sin suelo ni NavMesh.
+        // El mundo de Altsasu usa datos locales, así que el terreno DEM manda.
+        _ = cesiumActivo; // (ya no decide; Cesium no provee terreno funcional)
+        terrenoOK = EnsureTerrain();
+        if (terrenoOK) yield return null;
 
         // 2. Sol
         EnsureSol();
