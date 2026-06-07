@@ -61,6 +61,7 @@ public class SistemaArmasExtendido : MonoBehaviour
 
     // ── Inventario ────────────────────────────────────────────────────────
     bool[] _tiene = new bool[10];
+    int[]  _municionPorArma;   // munición persistente por arma (auditoría: evita recarga gratis al cambiar)
 
     void Start()
     {
@@ -69,7 +70,8 @@ public class SistemaArmasExtendido : MonoBehaviour
         _apoyo       = SistemaApoyoPopular.Instance;
         _tiene[(int)TipoArma.Puños] = true;
         _tiene[(int)TipoArma.Spray] = true; // siempre disponible
-        _municion = MUNICION_INICIAL[(int)armaActual];
+        _municionPorArma = (int[])MUNICION_INICIAL.Clone();
+        _municion = _municionPorArma[(int)armaActual];
         ActualizarUI();
     }
 
@@ -250,8 +252,11 @@ public class SistemaArmasExtendido : MonoBehaviour
 
     void CambiarArma(TipoArma tipo)
     {
+        // BUG FIX (auditoría): munición persistente por arma. Antes cambiar de
+        // arma reseteaba _municion a tope = recarga gratis (munición infinita).
+        if (_municionPorArma != null) _municionPorArma[(int)armaActual] = _municion;
         armaActual = tipo;
-        _municion  = MUNICION_INICIAL[(int)tipo];
+        _municion  = _municionPorArma != null ? _municionPorArma[(int)tipo] : MUNICION_INICIAL[(int)tipo];
         ActualizarUI();
     }
 

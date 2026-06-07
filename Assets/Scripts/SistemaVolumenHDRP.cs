@@ -432,7 +432,10 @@ public class SistemaVolumenHDRP : MonoBehaviour
             {
                 _propHoraBuscada = true;
                 var tipo = atm.GetType();
-                _propHoraActual = tipo.GetProperty("HoraActual")
+                // BUG FIX (auditoría): SistemaAtmosfera expone la hora como "HoraDelDia";
+                // antes sólo se buscaba HoraActual/hora/Hour → null → ciclo día/noche roto.
+                _propHoraActual = tipo.GetProperty("HoraDelDia")
+                               ?? tipo.GetProperty("HoraActual")
                                ?? tipo.GetProperty("hora")
                                ?? tipo.GetProperty("Hour");
             }

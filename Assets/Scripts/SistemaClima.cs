@@ -95,8 +95,11 @@ public class SistemaClima : MonoBehaviour
         if (climaActual == EstadoClima.Tormenta && Random.value < 0.003f)
             StartCoroutine(Trueno());
 
-        // Actualizar Physics wind
-        Physics.gravity = new Vector3(fuerzaViento * 0.1f, -9.81f, 0); // efecto viento en proyectiles
+        // BUG FIX (auditoría): NO tocar Physics.gravity global — metía gravedad
+        // lateral permanente a TODOS los rigidbodies (personajes, coches, ragdolls),
+        // no sólo a los proyectiles. El viento se aplica vía WindZone/partículas.
+        if (Physics.gravity.x != 0f || Physics.gravity.z != 0f)
+            Physics.gravity = new Vector3(0f, -9.81f, 0f);
     }
 
     // ── Cambio de clima ───────────────────────────────────────────────────
