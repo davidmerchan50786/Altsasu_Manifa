@@ -215,7 +215,15 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         }
         else
         {
-            Vector3 pos = puntoSpawnJugador != null ? puntoSpawnJugador.position : Vector3.zero + Vector3.up * 2f;
+            // FIX (playtest): el fallback ponía al jugador en (0,2,0) → ¡240m BAJO el
+            // terreno! (se veía el terreno desde abajo). Spawn en Herriko Plaza sobre el suelo.
+            Vector3 pos;
+            if (puntoSpawnJugador != null) pos = puntoSpawnJugador.position;
+            else
+            {
+                Vector3 c = GeoDataAlsasua.HerrikoPlaza;
+                pos = new Vector3(c.x, GeoDataAlsasua.AlturaTerreno(c.x, c.z) + 1.5f, c.z);
+            }
             Quaternion rot = puntoSpawnJugador != null ? puntoSpawnJugador.rotation : Quaternion.identity;
             jugadorActivo = Instantiate(prefabJugador, pos, rot);
         }

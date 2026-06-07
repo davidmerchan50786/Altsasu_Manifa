@@ -213,12 +213,11 @@ public class SistemaVolumenHDRP : MonoBehaviour
         _volDia.profile = p;
 
         // ── Exposición (FIX: sin esto el sol físico de 100k lux quemaba la imagen a blanco) ──
+        // Exposición FIJA de día (evita que la automática mida del cielo y oscurezca todo).
+        // ~12.5 EV ≈ exterior soleado. Ajustable si queda oscuro (bajar) o claro (subir).
         var exp = p.Add<Exposure>(true);
-        exp.mode.Override(ExposureMode.Automatic);
-        exp.limitMin.Override(-1f);
-        exp.limitMax.Override(16f);
-        exp.adaptationSpeedDarkToLight.Override(3f);
-        exp.adaptationSpeedLightToDark.Override(1f);
+        exp.mode.Override(ExposureMode.Fixed);
+        exp.fixedExposure.Override(8.5f);
 
         // ── Bloom ──────────────────────────────────────────────────────────
         _bloomDia = p.Add<Bloom>(true);
