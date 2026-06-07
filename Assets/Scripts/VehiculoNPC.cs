@@ -197,6 +197,14 @@ public class VehiculoNPC : VehiculoBase
         }
     }
 
+    /// <summary>Asigna una ruta de waypoints desde código (tráfico procedural sobre roads_unity.json).</summary>
+    public void AsignarRuta(List<Transform> ruta, bool bucle = true)
+    {
+        waypoints = ruta;
+        bucleWaypoints = bucle;
+        wpActual = 0;
+    }
+
     private void FixedUpdate()
     {
         if (_destruido || waypoints.Count == 0) return;

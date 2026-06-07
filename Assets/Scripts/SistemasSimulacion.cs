@@ -41,35 +41,69 @@ public class SistemaTrafico : MonoBehaviour
         AlsasuaLogger.Info("Trafico", $"Trafico AAA+: {_activos.Count} vehículos");
     }
 
+    // ── Datos de carreteras (roads_unity.json) ──────────────────────────────
+    [System.Serializable] class Punto { public float x, z; }
+    [System.Serializable] class Road  { public long id; public string type; public bool oneway; public Punto[] points; }
+    [System.Serializable] class RoadList { public Road[] items; }
+
+    static readonly System.Collections.Generic.HashSet<string> TIPOS_CONDUCIBLES = new()
+    { "motorway","trunk","primary","secondary","tertiary","unclassified","residential","living_street","service","road" };
+
+    // MEJORA (auditoría): tráfico que CIRCULA sobre las calles reales en vez de
+    // props estáticos. Carga roads_unity.json, crea waypoints por calle y asigna
+    // la ruta a un VehiculoNPC (que ya sabe seguir waypoints y frenar).
     IEnumerator SpawnCochesIniciales()
     {
-        // Posiciones de calles desde roads_unity.json (usando RoadData si disponible)
-        var terrain = Terrain.activeTerrain;
-        if (terrain == null) yield break;
-
-        // Spawn en grid alrededor del centro
-        int spawned = 0;
-        for (int i = 0; i < maxVehiculos * 3 && spawned < maxVehiculos; i++)
+        string path = System.IO.Path.Combine("Assets", "AlsasuaData", "roads_unity.json");
+        if (!System.IO.File.Exists(path))
         {
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float dist  = Random.Range(30f, radioActivo);
-            float ox = GeoDataAlsasua.OX, oz = GeoDataAlsasua.OZ;
-            float wx = ox + Mathf.Cos(angle) * dist;
-            float wz = oz + Mathf.Sin(angle) * dist;
-            float wy = terrain.SampleHeight(new Vector3(wx, 0, wz))
-                     + terrain.transform.position.y;
+            AlsasuaLogger.Warn("Trafico", "roads_unity.json no encontrado; sin tráfico.");
+            yield break;
+        }
+
+        RoadList rl = null;
+        try { rl = JsonUtility.FromJson<RoadList>("{\"items\":" + System.IO.File.ReadAllText(path) + "}"); }
+        catch (System.Exception e) { AlsasuaLogger.Warn("Trafico", "roads_unity.json ilegible: " + e.Message); yield break; }
+        if (rl?.items == null) yield break;
+
+        Vector3 centro = new(GeoDataAlsasua.OX, 0, GeoDataAlsasua.OZ);
+        int spawned = 0;
+
+        foreach (var road in rl.items)
+        {
+            if (spawned >= maxVehiculos) break;
+            if (road?.points == null || road.points.Length < 2) continue;
+            if (string.IsNullOrEmpty(road.type) || !TIPOS_CONDUCIBLES.Contains(road.type)) continue;
+
+            // Sólo calles que pasan cerca de la zona jugable
+            Vector3 p0 = GeoDataAlsasua.OSMaUnityConAltura(road.points[0].x, road.points[0].z);
+            if (GeoDataAlsasua.Dist2D(p0, centro) > radioActivo * 2.5f) continue;
+
+            // Construir waypoints a lo largo de la calle
+            var rutaParent = new GameObject($"Ruta_{road.id}").transform;
+            rutaParent.SetParent(_parent, false);
+            var ruta = new System.Collections.Generic.List<Transform>(road.points.Length);
+            foreach (var pt in road.points)
+            {
+                var wp = new GameObject("wp").transform;
+                wp.SetParent(rutaParent, false);
+                wp.position = GeoDataAlsasua.OSMaUnityConAltura(pt.x, pt.z) + Vector3.up * 0.2f;
+                ruta.Add(wp);
+            }
+            if (ruta.Count < 2) { Destroy(rutaParent.gameObject); continue; }
 
             var pref = (prefabCamion != null && Random.value < 0.15f) ? prefabCamion : prefabCoche;
-            var go   = Instantiate(pref, new Vector3(wx, wy, wz),
-                                   Quaternion.Euler(0, Random.Range(0f, 360f), 0), _parent);
+            var go = Instantiate(pref, ruta[0].position + Vector3.up * 0.4f, Quaternion.identity, _parent);
             go.name = $"Coche_{spawned}";
-            // Desactivar physics para props estáticos de ambiente
-            foreach (var rb in go.GetComponentsInChildren<Rigidbody>())
-                rb.isKinematic = true;
+            var npc = go.GetComponent<VehiculoNPC>();
+            if (npc == null) npc = go.AddComponent<VehiculoNPC>();
+            npc.AsignarRuta(ruta, true);   // recorre la calle en bucle
             _activos.Add(go);
             spawned++;
-            if (i % 5 == 0) yield return null;
+            if (spawned % 4 == 0) yield return null;
         }
+
+        AlsasuaLogger.Info("Trafico", $"Tráfico circulando: {spawned} coches sobre calles reales.");
     }
 }
 
