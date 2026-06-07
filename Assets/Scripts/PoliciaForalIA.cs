@@ -153,6 +153,14 @@ public class PoliciaForalIA : NPCBase, IDamageable
         if (linterna != null) linterna.enabled = false;
     }
 
+    // BUG FIX (auditoría): liberar el slot de detección al destruirse para que se
+    // reutilice. Antes los slots sólo crecían → tras 32 policías, los nuevos ciegos.
+    protected override void OnDestroy()
+    {
+        if (_slotDeteccion >= 0) { SistemaDeteccionIA.Liberar(_slotDeteccion); _slotDeteccion = -1; }
+        base.OnDestroy();
+    }
+
     protected override void AlActivarAgente()
     {
         _agente.speed            = velPatrulla;

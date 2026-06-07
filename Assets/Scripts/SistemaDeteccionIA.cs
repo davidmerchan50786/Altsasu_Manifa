@@ -24,6 +24,7 @@ public class SistemaDeteccionIA : SingletonMono<SistemaDeteccionIA>
     NativeArray<RaycastHit>     _resultados;
     bool[]  _visionResultado = new bool[MAX_AGENTES];
     int     _slotSiguiente;
+    readonly System.Collections.Generic.Stack<int> _libres = new();  // slots liberados reutilizables (auditoría: evita tope 32 permanente)
     JobHandle _job;
     bool      _jobVivo;
 
@@ -45,8 +46,17 @@ public class SistemaDeteccionIA : SingletonMono<SistemaDeteccionIA>
     /// <summary>Registrar un agente; devuelve su slotId fijo (-1 si lleno).</summary>
     public static int Registrar()
     {
-        if (Instance == null || Instance._slotSiguiente >= MAX_AGENTES) return -1;
+        if (Instance == null) return -1;
+        if (Instance._libres.Count > 0) return Instance._libres.Pop();   // reutilizar slot liberado
+        if (Instance._slotSiguiente >= MAX_AGENTES) return -1;
         return Instance._slotSiguiente++;
+    }
+
+    /// <summary>Liberar el slot de un agente al morir/destruirse para que se reutilice (auditoría).</summary>
+    public static void Liberar(int slot)
+    {
+        if (Instance == null || slot < 0 || slot >= MAX_AGENTES) return;
+        Instance._libres.Push(slot);
     }
 
     /// <summary>
