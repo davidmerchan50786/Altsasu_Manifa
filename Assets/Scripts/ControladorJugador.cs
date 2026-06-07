@@ -818,8 +818,13 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     // Evento para SistemaPolish y otros sistemas
     public static event System.Action<int> OnDanoRecibido;
 
+    // BUG FIX (auditoría): origen del último daño, para que el indicador direccional
+    // del HUD apunte al atacante real (antes siempre apuntaba a Vector3.zero).
+    public static Vector3 UltimoOrigenDano { get; private set; }
+
     public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
     {
+        UltimoOrigenDano = origen;
         vida      = Mathf.Max(0, vida - cantidad);
         timerDano = 0.35f;
         OnDanoRecibido?.Invoke(cantidad);

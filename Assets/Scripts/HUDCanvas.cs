@@ -710,7 +710,8 @@ public class HUDCanvas : MonoBehaviour
     //  CALLBACKS
     // ════════════════════════════════════════════════════════════════════════
 
-    void OnDano(int cantidad) => MostrarDano(Vector3.zero);
+    // BUG FIX (auditoría): apuntar al atacante real, no al origen del mundo.
+    void OnDano(int cantidad) => MostrarDano(ControladorJugador.UltimoOrigenDano);
 
     void OnWanted(int nivel)
     {
