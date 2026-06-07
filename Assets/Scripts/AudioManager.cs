@@ -86,6 +86,12 @@ public class AudioManager : MonoBehaviour
             go.transform.SetParent(transform);
             _pool[i] = go.AddComponent<AudioSource>();
             _pool[i].playOnAwake = false;
+            // BUG FIX (auditoría): atenuación 3D a escala de mundo abierto.
+            // Antes usaban el rolloff logarítmico por defecto (maxDistance 500) → mal escalado.
+            _pool[i].rolloffMode = AudioRolloffMode.Linear;
+            _pool[i].minDistance = 4f;
+            _pool[i].maxDistance = 90f;
+            _pool[i].dopplerLevel = 0.25f;
         }
     }
 
