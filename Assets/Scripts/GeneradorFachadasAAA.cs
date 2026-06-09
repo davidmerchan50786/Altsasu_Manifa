@@ -111,6 +111,12 @@ public class GeneradorFachadasAAA : MonoBehaviour
 
     void EnriquecerEdificio(Transform edif, Mesh meshBase)
     {
+        // DETERMINISMO: cada edificio genera siempre los mismos balcones/graffiti/
+        // props, sembrando Random con su nombre (contiene el id OSM). Sin esto,
+        // la fachada de cada edificio cambiaba en cada partida (nada "real").
+        var _rndPrev = Random.state;
+        Random.InitState(edif.name.GetHashCode());
+
         var bounds  = meshBase.bounds;
         float h     = bounds.size.y;
         float w     = bounds.size.x;
@@ -175,6 +181,8 @@ public class GeneradorFachadasAAA : MonoBehaviour
         if (generarGraffiti && (esHistorico || arquetipo == ArquetipoVasco.Solar)
             && Random.value < 0.35f)
             AnadirGraffiti(edif, bounds);
+
+        Random.state = _rndPrev;   // restaurar el RNG global
     }
 
     // ─────────────────────────────────────────────────────────────────────

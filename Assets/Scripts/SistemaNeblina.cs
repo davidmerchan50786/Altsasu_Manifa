@@ -168,4 +168,6 @@ public static class SistemaClimaExtension
             // Busca la primera instancia en escena (SistemaClima es MonoBehaviour)
             var inst = Object.FindFirstObjectByType<SistemaClima>();
             return inst != null ? inst.climaActual : SistemaClima.EstadoClima.Sol;
-      
+        }
+    }
+}

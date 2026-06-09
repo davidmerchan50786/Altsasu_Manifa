@@ -65,6 +65,10 @@ public class GeneradorTejadosAAA : MonoBehaviour
     {
         if (footprint == null || footprint.Length < 3) return;
 
+        // DETERMINISMO: chimeneas y detalles iguales en cada partida por edificio.
+        var _rndPrev = Random.state;
+        Random.InitState(data != null ? (int)data.id : parent.name.GetHashCode());
+
         float yTejado = yBase + alturaEdificio;
 
         // Determinar forma
@@ -96,6 +100,8 @@ public class GeneradorTejadosAAA : MonoBehaviour
 
         // Chimeneas
         GenerarChimeneas(parent, footprint, yTejado, data);
+
+        Random.state = _rndPrev;   // restaurar el RNG global
     }
 
     // ═══════════════════════════════════════════════════════════════════════

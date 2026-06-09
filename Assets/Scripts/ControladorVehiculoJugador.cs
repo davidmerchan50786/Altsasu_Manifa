@@ -58,7 +58,7 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
     [Tooltip("Ángulo máximo de giro de las ruedas delanteras (°).")]
     [SerializeField] private float anguloMaxDireccion = 35f;
     [Tooltip("Velocidad máxima del vehículo (m/s). 25 ≈ 90 km/h, 33 ≈ 120 km/h.")]
-    [SerializeField] private float velocidadMax       = 25f;
+    [SerializeField] private new float velocidadMax   = 25f; // oculta VehiculoBase.velocidadMax a propósito (CS0108)
     [Tooltip("Tracción: true = 4WD (Montero off-road), false = RWD (coches normales).")]
     [SerializeField] private bool  cuatroRuedas       = false;
 

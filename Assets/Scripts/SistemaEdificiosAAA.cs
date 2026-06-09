@@ -1248,10 +1248,54 @@ public class SistemaEdificiosAAA : MonoBehaviour
         if (!_matCache.TryGetValue(key, out var mat))
         {
             mat = MatPBR(c, key, SmoothnessParaArquetipo(arquetipo), 0.0f);
+            AplicarTexturaFachada(mat, arquetipo);   // PBR real, tintado con el color real
             mat.enableInstancing = true;
             _matCache[key] = mat;
         }
         return mat;
+    }
+
+    // ── Textura PBR por arquetipo (Resources/PBR_Vivo, CC0 Poly Haven) ──────
+    // El color real de ortofoto/OSM se mantiene como tinte (_BaseColor) sobre la
+    // textura: cada edificio conserva SU color, pero la pared deja de ser color
+    // plano y pasa a leerse como revoco/ladrillo/piedra/chapa con relieve.
+    [Tooltip("Repeticiones de textura de fachada por unidad UV. Ajustar si el grano se ve grande/pequeño.")]
+    [SerializeField] float tilingFachada = 0.35f;
+
+    static readonly Dictionary<string, Texture2D> _texCache = new();
+
+    void AplicarTexturaFachada(Material mat, ArquetipoVasco arquetipo)
+    {
+        (string dif, string nor) t = arquetipo switch
+        {
+            ArquetipoVasco.Bloque1940_1975  => ("brick_4_diff_1k",          "brick_4_nor_gl_1k"),
+            ArquetipoVasco.NaveIndustrial   => ("corrugated_iron_diff_1k",  "corrugated_iron_nor_gl_1k"),
+            ArquetipoVasco.Iglesia          => ("cobblestone_03_diff_1k",   "cobblestone_03_nor_gl_1k"),
+            _                               => ("concrete_wall_008_diff_1k","concrete_wall_008_nor_gl_1k")
+        };
+
+        var dif = CargarTexPBR(t.dif);
+        var nor = CargarTexPBR(t.nor);
+        if (dif != null)
+        {
+            mat.SetTexture("_BaseColorMap", dif);
+            mat.SetTextureScale("_BaseColorMap", Vector2.one * tilingFachada);
+        }
+        if (nor != null)
+        {
+            mat.SetTexture("_NormalMap", nor);
+            mat.SetFloat("_NormalScale", 0.8f);
+            mat.EnableKeyword("_NORMALMAP");
+            mat.EnableKeyword("_NORMALMAP_TANGENT_SPACE");
+        }
+    }
+
+    static Texture2D CargarTexPBR(string nombre)
+    {
+        if (_texCache.TryGetValue(nombre, out var tex)) return tex;
+        tex = Resources.Load<Texture2D>($"PBR_Vivo/{nombre}");
+        _texCache[nombre] = tex;   // cachea también null para no reintentar
+        return tex;
     }
 
     void AplicarVariacionColor(MeshRenderer mr, ArquetipoVasco arquetipo, long id)
