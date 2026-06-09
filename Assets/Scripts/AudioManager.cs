@@ -189,15 +189,20 @@ public class AudioManager : MonoBehaviour
             ["explosion"] = Clip.Explosion, ["blast"] = Clip.Explosion,
             ["footstep"] = Clip.PasoAsfalto, ["step"] = Clip.PasoAsfalto,
             ["siren"] = Clip.Sirena, ["sirena"] = Clip.Sirena,
+            ["radio"] = Clip.RadioPolicia,   // PoliceRadio.WAV (GTA Masterclass)
             ["rain"] = Clip.LluviaLigera, ["lluvia"] = Clip.LluviaLigera,
             ["thunder"] = Clip.Trueno, ["trueno"] = Clip.Trueno,
             ["wind"] = Clip.VientoMontana, ["viento"] = Clip.VientoMontana,
             ["click"] = Clip.UIClick, ["button"] = Clip.UIClick,
             ["reload"] = Clip.Recarga, ["recarga"] = Clip.Recarga,
             ["motor"] = Clip.MotorAceleracion, ["engine"] = Clip.MotorAceleracion,
+            // TMM Field Recordings y packs adicionales
+            ["campo"]  = Clip.Pajaros,         ["field"]   = Clip.Pajaros,
+            ["cars"]   = Clip.MotorArranque,   ["guns"]    = Clip.Disparo,
+            ["nature"] = Clip.VientoMontana,   ["ambient"] = Clip.VientoMontana,
         };
 
-        // Cargar desde Resources/Audio (no requiere Addressables)
+        // Cargar desde Resources/Audio (recursivo — incluye SFX/ y Ambiente/)
         var clips = Resources.LoadAll<AudioClip>("Audio");
         foreach (var c in clips)
         {

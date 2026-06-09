@@ -104,7 +104,19 @@ public class SistemaSpawnCiviles : MonoBehaviour
 
     GameObject CrearCivil(int idx)
     {
-        // Intentar con prefab del configurador
+        // 1. SistemaAssets (Resources/Prefabs/NPCs) — fuente principal
+        var assets = SistemaAssets.Instance;
+        if (assets != null && assets.ContarCiviles() > 0)
+        {
+            var prefab = assets.CivilAleatorio();
+            if (prefab != null)
+            {
+                var go = Instantiate(prefab, Vector3.down * 500f, Quaternion.identity, transform);
+                go.name = $"Civil_{idx:00}";
+                return go;
+            }
+        }
+        // 2. Fallback: ConfiguradorAssetsAAA (SerializeField asignado en Inspector)
         var cfg = ConfiguradorAssetsAAA.Instance;
         if (cfg != null)
         {
@@ -116,7 +128,7 @@ public class SistemaSpawnCiviles : MonoBehaviour
                 return go;
             }
         }
-        // Fallback: cápsula procedural
+        // 3. Último recurso: cápsula procedural
         return CrearCivilProcedural(idx);
     }
 

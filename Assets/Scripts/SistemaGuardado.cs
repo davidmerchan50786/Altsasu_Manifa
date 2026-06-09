@@ -50,6 +50,16 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
         public int    totalManifestaciones;
         public float  tiempoJugado;
         public int    misionesCompletadas;
+
+        // Configuración (restaurada al cargar)
+        public int    tierCalidad    = 1;   // 0=Ultra … 3=Performance
+
+        // Logros desbloqueados (IDs separados por coma para JSON)
+        public string logrosDesbloqueados = "";
+
+        // Director — estado de tensión al guardar
+        public float  intensidadDirector;
+        public int    totalRedadas;
     }
 
     DatosPartida _datos = new();
@@ -142,6 +152,18 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
         if (ap != null) { _datos.apoyoPopular = ap.apoyo; _datos.paranoia = ap.paranoia; }
         if (at != null) { _datos.horaDelDia = at.HoraDelDia; }
         if (cl != null) { _datos.estadoClima = (int)cl.climaActual; }
+
+        // Quality tier
+        _datos.tierCalidad = SistemaOptimizacion.TierCalidad;
+
+        // Director
+        _datos.intensidadDirector = DirectorMundo.IntensidadActual;
+
+        // Logros desbloqueados
+        var ids = new System.Text.StringBuilder();
+        foreach (var l in SistemaLogros.Todos)
+            if (l.Desbloqueado) { if (ids.Length > 0) ids.Append(','); ids.Append(l.Id); }
+        _datos.logrosDesbloqueados = ids.ToString();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -186,6 +208,18 @@ public class SistemaGuardado : SingletonMono<SistemaGuardado>
 
         // Misión
         // (SistemaMisiones no se reinicia — la misión se retoma al vuelo)
+
+        // Quality tier
+        SistemaCalidadGrafica.AplicarTier(_datos.tierCalidad);
+
+        // Logros — restaurar estado desbloqueado (evita perderlos al cargar)
+        if (!string.IsNullOrEmpty(_datos.logrosDesbloqueados))
+        {
+            var ids = new System.Collections.Generic.HashSet<string>(
+                _datos.logrosDesbloqueados.Split(','));
+            foreach (var l in SistemaLogros.Todos)
+                if (ids.Contains(l.Id) && !l.Desbloqueado) l.Desbloquear();
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

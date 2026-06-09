@@ -206,9 +206,15 @@ public abstract class NPCBase : MonoBehaviour, IAgente
 
     private void InicializarModelo()
     {
-        if (prefabModelo != null)
+        // Si no hay prefab asignado en el Inspector, tirar de SistemaAssets (pull).
+        // Así CUALQUIER NPC instanciado en cualquier momento (incluida la policía
+        // que spawnea minutos después del arranque) recibe su modelo real, en vez
+        // de depender de que SistemaAssets lo empuje (push) en su Awake único.
+        var prefab = prefabModelo != null ? prefabModelo : ObtenerModeloPorDefecto();
+
+        if (prefab != null)
         {
-            var go = Instantiate(prefabModelo, transform);
+            var go = Instantiate(prefab, transform);
             go.transform.localPosition = Vector3.zero;
             _animator = go.GetComponentInChildren<Animator>();
         }
@@ -216,5 +222,34 @@ public abstract class NPCBase : MonoBehaviour, IAgente
         {
             CrearCuerpoFallback();
         }
+
+        GarantizarCollider();
     }
+
+    /// <summary>
+    /// Si tras crear el modelo no hay NINGÚN Collider en la jerarquía (caso de
+    /// modelos importados que solo traen mallas, p.ej. civilian_girl), añade una
+    /// CapsuleCollider humana al root para que el NPC sea sólido y DISPARABLE.
+    /// Los modelos que ya traen su propio collider se respetan (no se duplica).
+    /// El raycast de disparo usa capasImpacto = todo salvo IgnoreRaycast, así que
+    /// con estar en una capa normal (Default) basta para recibir impactos.
+    /// </summary>
+    private void GarantizarCollider()
+    {
+        if (GetComponentInChildren<Collider>(true) != null) return;
+        var cap = gameObject.AddComponent<CapsuleCollider>();
+        cap.radius    = 0.3f;
+        cap.height    = 1.8f;
+        cap.center    = new Vector3(0f, 0.9f, 0f);
+        cap.direction = 1; // eje Y (capsula vertical)
+    }
+
+    /// <summary>
+    /// Modelo visual usado cuando prefabModelo no está asignado. Por defecto un
+    /// civil aleatorio de SistemaAssets; las subclases lo sobreescriben (p.ej. la
+    /// policía devuelve un modelo de Guardia Civil). Devuelve null si no hay
+    /// catálogo cargado, en cuyo caso se usa el cuerpo procedural.
+    /// </summary>
+    protected virtual GameObject ObtenerModeloPorDefecto()
+        => SistemaAssets.Instance != null ? SistemaAssets.Instance.CivilAleatorio() : null;
 }

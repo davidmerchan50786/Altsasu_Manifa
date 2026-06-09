@@ -56,15 +56,18 @@ public class SistemaVolumenHDRP : MonoBehaviour
     Light             _luzDireccional;
     HDAdditionalLightData _luzHDRP;
 
-    // ── HDRIs indexados por hora ───────────────────────────────────────────
-    // Orden: amanecer, mediodía, tarde, atardecer, noche_clara, noche_tormenta
+    // ── HDRIs indexados por hora y clima ─────────────────────────────────
+    // 0=amanecer  1=mediodía  2=tarde  3=atardecer  4=noche  5=tormenta
+    // 6=nieve     7=overcast/nublado   (nuevos)
     static readonly string[] HDRP_HDRI_PATHS = {
-        "Assets/HDRIs/autumn_field_2k.hdr",           // amanecer 5-9h
-        "Assets/HDRIs/blaubeuren_outskirts_2k.hdr",   // mediodía 9-14h
-        "Assets/HDRIs/autumn_forest_04_2k.hdr",       // tarde 14-18h
-        "Assets/HDRIs/belfast_sunset_2k.hdr",         // atardecer 18-21h
-        "Assets/HDRIs/kloppenheim_06_puresky_2k.hdr", // noche 21-5h
-        "Assets/HDRIs/approaching_storm_2k.hdr",      // tormenta (override)
+        "Assets/HDRIs/autumn_field_2k.hdr",           // 0 amanecer 5-9h
+        "Assets/HDRIs/blaubeuren_outskirts_2k.hdr",   // 1 mediodía 9-14h
+        "Assets/HDRIs/autumn_forest_04_2k.hdr",       // 2 tarde 14-18h
+        "Assets/HDRIs/belfast_sunset_2k.hdr",         // 3 atardecer 18-21h
+        "Assets/HDRIs/kloppenheim_06_puresky_2k.hdr", // 4 noche 21-5h
+        "Assets/HDRIs/approaching_storm_2k.hdr",      // 5 tormenta (override)
+        "Assets/HDRIs/snowy_hillside_2k.hdr",         // 6 nieve
+        "Assets/HDRIs/overcast_soil.hdr",             // 7 nublado/lluvia
     };
 
     Cubemap[] _hdris;
@@ -161,9 +164,10 @@ public class SistemaVolumenHDRP : MonoBehaviour
 #endif
         // Fallback a Resources si los anteriores fallan en runtime
         string[] fallbackNames = {
-            "HDRIs/autumn_field_2k", "HDRIs/blaubeuren_outskirts_2k",
-            "HDRIs/autumn_forest_04_2k", "HDRIs/belfast_sunset_2k",
-            "HDRIs/kloppenheim_06_puresky_2k", "HDRIs/approaching_storm_2k"
+            "HDRIs/autumn_field_2k",          "HDRIs/blaubeuren_outskirts_2k",
+            "HDRIs/autumn_forest_04_2k",      "HDRIs/belfast_sunset_2k",
+            "HDRIs/kloppenheim_06_puresky_2k","HDRIs/approaching_storm_2k",
+            "HDRIs/snowy_hillside_2k",        "HDRIs/overcast_soil",
         };
         for (int i = 0; i < _hdris.Length; i++)
         {
@@ -252,12 +256,15 @@ public class SistemaVolumenHDRP : MonoBehaviour
         _ssrDia.reflectSky.Override(true);
 
         // ── Depth of Field ────────────────────────────────────────────────
+        // FIX mundo abierto: en Manual, far blur a 180m emborronaba edificios y
+        // montes (efecto maqueta). Far blur empujado a varios km — solo suaviza
+        // el anillo de fondo; el pueblo queda nítido como en GTA.
         _dofDia = p.Add<DepthOfField>(true);
-        _dofDia.focusMode.Override(DepthOfFieldMode.UsePhysicalCamera);
+        _dofDia.focusMode.Override(DepthOfFieldMode.Manual);
         _dofDia.nearFocusStart.Override(0.3f);
         _dofDia.nearFocusEnd.Override(1.2f);
-        _dofDia.farFocusStart.Override(80f);
-        _dofDia.farFocusEnd.Override(180f);
+        _dofDia.farFocusStart.Override(3000f);
+        _dofDia.farFocusEnd.Override(9000f);
 
         // ── SSGI ──────────────────────────────────────────────────────────
         _ssgiDia = p.Add<GlobalIllumination>(true);
@@ -272,7 +279,8 @@ public class SistemaVolumenHDRP : MonoBehaviour
         _fogDia.enabled.Override(true);
         _fogDia.enableVolumetricFog.Override(true);
         _fogDia.albedo.Override(new Color(0.88f, 0.90f, 0.95f));
-        _fogDia.meanFreePath.Override(1500f);  // visibilidad 1.5km en día
+        _fogDia.meanFreePath.Override(6500f);  // visibilidad 6.5km: las sierras de fondo asoman con bruma (SistemaMontesFondo)
+        _fogDia.maxFogDistance.Override(16000f); // alcanza el anillo de montes antes de fundir a cielo
         _fogDia.baseHeight.Override(200f);
         _fogDia.maximumHeight.Override(1200f);
         _fogDia.anisotropy.Override(0.7f);     // scattering forward (sol)
@@ -300,6 +308,22 @@ public class SistemaVolumenHDRP : MonoBehaviour
         var taa = p.Add<TemporalAntialiasing>(true);
         taa.jitterSpread.Override(0.75f);
         taa.sharpness.Override(0.5f);
+
+        // ── Nubes volumétricas — cielo AAA con sombras de nube sobre el valle ──
+        var nubes = p.Add<VolumetricClouds>(true);
+        nubes.enable.Override(true);
+        nubes.shadows.Override(true);
+
+        // ── Contact Shadows — contacto suelo/objeto (quita el look "flotante") ──
+        var cs = p.Add<ContactShadows>(true);
+        cs.enable.Override(true);
+        cs.length.Override(0.6f);
+        cs.opacity.Override(0.8f);
+
+        // ── Micro Shadows — sombra del detalle de normal map a sol directo ──
+        var micro = p.Add<MicroShadowing>(true);
+        micro.enable.Override(true);
+        micro.opacity.Override(0.85f);
 
         // ── Lens Dirt — mancha de cámara en bloom de explosiones ──────────
         // Textura procedural 16×16: degradado radial con manchas aleatorias.
@@ -703,11 +727,33 @@ public class SistemaVolumenHDRP : MonoBehaviour
         if (hdri != null) Instance._skyDia?.hdriSky.Override(hdri);
         if (Instance._fogDia != null)
         {
-            Instance._fogDia.meanFreePath.Override(activo ? 150f : 1500f);
+            Instance._fogDia.meanFreePath.Override(activo ? 150f : 6500f);
             Instance._fogDia.albedo.Override(activo
                 ? new Color(0.65f, 0.65f, 0.70f)
                 : new Color(0.88f, 0.90f, 0.95f));
         }
+    }
+
+    /// <summary>
+    /// Aplica el HDRI correcto según el estado del clima.
+    /// Llama desde SistemaClima.CambiarClima() para mantener el cielo coherente.
+    /// </summary>
+    public static void SetHdriClima(SistemaClima.EstadoClima clima)
+    {
+        if (Instance == null) return;
+
+        // _hdris array: 0=amanecer 1=mediodía 2=tarde 3=atardecer 4=noche 5=tormenta 6=nieve 7=nublado
+        int idx = clima switch
+        {
+            SistemaClima.EstadoClima.Tormenta     => 5,
+            SistemaClima.EstadoClima.NieveLigera  => Instance._hdris.Length > 6 ? 6 : 1,
+            SistemaClima.EstadoClima.Nublado      => Instance._hdris.Length > 7 ? 7 : 1,
+            SistemaClima.EstadoClima.LluviaLigera => Instance._hdris.Length > 7 ? 7 : 1,
+            _                                     => Instance._hdriActual >= 0 ? Instance._hdriActual : 1,
+        };
+
+        if (idx < Instance._hdris.Length && Instance._hdris[idx] != null)
+            Instance._skyDia?.hdriSky.Override(Instance._hdris[idx]);
     }
 
     /// <summary>Activa DoF para vista de francotirador o ADS.</summary>
@@ -826,32 +872,4 @@ public class SistemaVolumenHDRP : MonoBehaviour
         var vig = p.Add<Vignette>(true);
         vig.intensity.Override(0.32f);
         vig.smoothness.Override(0.5f);
-        vig.color.Override(new Color(0.15f, 0.06f, 0.02f));
-    }
-
-    void ActualizarTransicion()
-    {
-        if (_volTransicion == null) return;
-        // Pico en 7.5h (amanecer) y en 19h (atardecer)
-        float peso = 0f;
-        if (_horaActual >= 6f && _horaActual < 9f)
-            peso = 1f - Mathf.Abs((_horaActual - 7.5f) / 1.5f);
-        else if (_horaActual >= 17f && _horaActual < 21f)
-            peso = 1f - Mathf.Abs((_horaActual - 19f) / 2f);
-        peso = Mathf.Clamp01(peso);
-        _blendTransicion = Mathf.MoveTowards(_blendTransicion, peso, Time.deltaTime * 0.05f);
-        _volTransicion.weight = _blendTransicion;
-    }
-
-    void ActualizarShaderGlobals()
-    {
-        // _GlobalNightLevel (0=día, 1=noche): edificios lo leen para iluminar ventanas
-        Shader.SetGlobalFloat(ID_NightLevel, _blendNoche);
-        // _GlobalFocusDist: escrito por SetFocusDistance() desde SistemaPolish
-        // Aquí solo refrescamos el valor actual del DoF por si acaso.
-        if (_dofDia != null)
-            Shader.SetGlobalFloat(ID_FocusDist, _dofDia.farFocusStart.value);
-    }
-
-
-}
+        vig.color.Override(new Color(0.15f, 0.06

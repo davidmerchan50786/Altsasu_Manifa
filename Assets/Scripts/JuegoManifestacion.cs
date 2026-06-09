@@ -233,8 +233,8 @@ public class JuegoManifestacion : MonoBehaviour
         AlsasuaLogger.Info("Manifa", $"🚔 Guardia Civil desplegada ({numGuardias} agentes)");
 
         var prefab = prefabGuardiaCivil
-            ?? ConfiguradorAssetsAAA.Instance?.GetPrefabCivil()  // fallback civil
-            ?? null;
+            ?? (SistemaAssets.Instance != null ? SistemaAssets.Instance.GuardiaAleatorio() : null)  // Guardia Civil real
+            ?? ConfiguradorAssetsAAA.Instance?.GetPrefabCivil();  // último recurso: civil
 
         if (prefab == null) yield break;
 

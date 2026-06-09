@@ -460,7 +460,7 @@ public class SceneBootstrapper : MonoBehaviour
             camGO.AddComponent<AudioListener>();
             cam.fieldOfView   = 65f;
             cam.nearClipPlane = 0.15f;
-            cam.farClipPlane  = 2000f;
+            cam.farClipPlane  = 16000f; // anillo de montes de fondo a 5-9 km (SistemaMontesFondo)
             camExistente = cam;
         }
 
@@ -592,10 +592,28 @@ public class SceneBootstrapper : MonoBehaviour
             gmGO.AddComponent<SistemaClima>();
         if (FindFirstObjectByType<HUDCanvas>() == null)
             gmGO.AddComponent<HUDCanvas>();
+
+        // AudioManager — sin él no hay sonido (sintético + clips reales TMM).
+        if (FindFirstObjectByType<AudioManager>() == null)
+            gmGO.AddComponent<AudioManager>();
+
+        // SistemaManifestacion — mecánica CENTRAL. JuegoManifestacion espera a su
+        // Instance (timeout 10s) pero NO lo crea: debe existir antes que él.
+        if (FindFirstObjectByType<SistemaManifestacion>() == null)
+            gmGO.AddComponent<SistemaManifestacion>();
+        // SistemaMisiones — misiones/objetivos del juego.
+        if (FindFirstObjectByType<SistemaMisiones>() == null)
+            gmGO.AddComponent<SistemaMisiones>();
+
         if (FindFirstObjectByType<JuegoManifestacion>() == null)
             gmGO.AddComponent<JuegoManifestacion>();
         if (FindFirstObjectByType<HUDManifestacion>() == null)
             gmGO.AddComponent<HUDManifestacion>();
+
+        // ConductorMundo — resuelve duplicados (vegetación/río/mobiliario) de forma
+        // segura (component.enabled=false, reversible). Debe correr en Play.
+        if (FindFirstObjectByType<ConductorMundo>() == null)
+            gmGO.AddComponent<ConductorMundo>();
 
         // ── Sistemas de generación del mundo ─────────────────────────────
         // Estos sistemas tienen DefaultExecutionOrder específico y DEBEN
@@ -605,6 +623,67 @@ public class SceneBootstrapper : MonoBehaviour
 
         // ── Mundo vivo EXTRA (migrado): tren, túneles, charcos, humo, viento ─
         EnsureMundoVivo();
+
+        // ── Sistemas de ASSETS + población del mundo (antes nunca se instanciaban) ─
+        EnsureSistemasAssets();
+    }
+
+    // Sistemas que dan vida real al mundo usando los prefabs de Resources/:
+    // civiles, tráfico, fauna, mobiliario urbano, animaciones de NPCs, rocas HD,
+    // fuego real y el director de intensidad. NINGUNO estaba en escena en Play,
+    // así que aunque los prefabs y scripts existían, no se ejecutaban. Aquí se
+    // instancian en el orden correcto: primero los "targets" que SistemaAssets
+    // auto-rellena en su Awake, luego SistemaAssets (carga Resources/ + auto-asigna),
+    // y por último los consumidores que usan SistemaAssets.Instance en su Start.
+    void EnsureSistemasAssets()
+    {
+        var go = GameObject.Find("SistemasAssets") ?? new GameObject("SistemasAssets");
+
+        void Add<T>() where T : MonoBehaviour
+        {
+            if (FindFirstObjectByType<T>() == null)
+            {
+                go.AddComponent<T>();
+                Debug.Log($"[Bootstrap] [+ assets] {typeof(T).Name}");
+            }
+        }
+
+        // 1) Targets que SistemaAssets auto-rellena por reflexión en su Awake.
+        //    Deben existir ANTES de añadir SistemaAssets (Awake corre al instante
+        //    al hacer AddComponent en runtime). SistemaDestruccion y
+        //    ConfiguradorAssetsAAA ya existen (creados arriba / en EnsureGeneradores).
+        Add<SistemaArmasExtendido>();          // Molotov + lapas con fuego real
+
+        // 2) Cargador central — carga Resources/ y auto-asigna prefabs a:
+        //    SistemaDestruccion (fuego), ConfiguradorAssetsAAA (explosiones),
+        //    SistemaArmasExtendido (molotov), PoliciaForalIA (modelos GC),
+        //    AlsasuaTreeStreamer (árboles vascos), SistemaManifestacion (barricadas).
+        Add<SistemaAssets>();
+
+        // 3) Director de intensidad ("clima de seguridad") — alimenta la barra de
+        //    tensión del HUD y a los consumidores de eventos.
+        Add<DirectorMundo>();
+
+        // 4) Consumidores — usan SistemaAssets.Instance en Start (orden por
+        //    DefaultExecutionOrder, todos > 0, así que corren tras SistemaAssets).
+        Add<SistemaAnimacionesRuntime>();      // 150 · saca a civiles/GC del T-pose
+        Add<SistemaTrafico>();                 // 150 · coches reales (pool de prefabs)
+        Add<SistemaSpawnCiviles>();            // 160 · civiles reales en las calles
+        Add<SistemaFauna>();                   // 170 · perros/ciervos/lobo por bioma
+        Add<SistemaReaccionNPCs>();            // 180 · reacción a disparos/redadas
+        Add<SistemaMobiliarioUrbano>();        // 185 · bancos, farolas, contenedores
+        Add<SistemaRocasHD>();                 // 190 · rocas HD cerca del jugador
+        Add<SistemaVidaNocturna>();            // farolas se encienden de noche
+
+        // 5) Interiores caminables — entra a bar/comisaría/tienda. Usa los 27
+        //    muebles reales de Resources/MueblesCiudad/ (Mesa, Silla, Sofá, Armario…).
+        //    Se auto-detecta sobre "Edificios_AAA"; degrada limpio si no existe.
+        Add<InterioresExplorables>();
+
+        // 6) Montes de fondo — anillo de cumbres en el horizonte (sierras vascas),
+        //    sube el far clip y relaja la niebla. Antes el horizonte quedaba vacío
+        //    a 2 km. Decorativo, sin coste de gameplay.
+        Add<SistemaMontesFondo>();
     }
 
     // Sistemas de "mundo vivo" migrados desde la otra rama. Arrancan solos en

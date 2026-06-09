@@ -225,8 +225,15 @@ public class SistemaTrafico : MonoBehaviour
     {
         for (int i = 0; i < vehiculosMax; i++)
         {
-            var go = prefabVehiculo != null
-                ? Instantiate(prefabVehiculo, Vector3.down * 200f, Quaternion.identity)
+            // Prioridad: 1) SerializeField, 2) SistemaAssets (Resources), 3) procedural
+            GameObject prefab = prefabVehiculo;
+            if (prefab == null)
+            {
+                var sa = SistemaAssets.Instance;
+                if (sa != null && sa.ContarCoches() > 0) prefab = sa.CocheAleatorio();
+            }
+            var go = prefab != null
+                ? Instantiate(prefab, Vector3.down * 200f, Quaternion.identity)
                 : CrearVehiculoProcedural(i);
             go.transform.SetParent(transform);
             go.name = $"VehiculoTrafico_{i:00}";

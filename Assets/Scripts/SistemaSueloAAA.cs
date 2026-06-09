@@ -654,11 +654,23 @@ public class SistemaSueloAAA : MonoBehaviour
             }
         }
 #endif
-        // Fallback: buscar en Resources
+        // Fallback: buscar en Resources — primero raíz, luego subcarpetas
+        string[] subcarpetas = { "", "ArbolesPais/", "Arboles/", "Animales/", "Coches/", "Props/Urbano/", "Mobiliario/" };
         foreach (var n in nombres)
         {
-            var go = Resources.Load<GameObject>($"Prefabs/{n}");
-            if (go != null && !lista.Contains(go)) lista.Add(go);
+            bool encontrado = false;
+            foreach (var sub in subcarpetas)
+            {
+                var go = Resources.Load<GameObject>($"Prefabs/{sub}{n}");
+                if (go != null && !lista.Contains(go)) { lista.Add(go); encontrado = true; break; }
+            }
+            // Si aún no se encontró, buscar por keyword en todos los prefabs de ArbolesPais
+            if (!encontrado)
+            {
+                var todos = Resources.LoadAll<GameObject>("Prefabs/ArbolesPais");
+                foreach (var p in todos)
+                    if (p.name.Contains(n) && !lista.Contains(p)) { lista.Add(p); break; }
+            }
         }
         return lista;
     }

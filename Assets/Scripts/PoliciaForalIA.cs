@@ -130,6 +130,14 @@ public class PoliciaForalIA : NPCBase, IDamageable
         maskObstaculo = capasObstaculo & ~LayerMask.GetMask("Player");
     }
 
+    // Modelo por defecto = Guardia Civil real (NPC_GuardiaCivil / GC_*) en vez de
+    // un civil. Funciona para policías spawneadas en cualquier momento, no solo al
+    // arranque, porque NPCBase tira de esto cuando prefabModelo no está asignado.
+    protected override GameObject ObtenerModeloPorDefecto()
+        => SistemaAssets.Instance != null
+            ? SistemaAssets.Instance.GuardiaAleatorio()
+            : null;
+
     private IEnumerator BuscarAtmosfera()
     {
         float t = 0f;

@@ -111,6 +111,8 @@ public class SistemaClima : MonoBehaviour
         StartCoroutine(TransicionClima(CONFIGS[(int)nuevo]));
         // Notificar al sistema de post-proceso para ajustar color grading según el clima
         SistemaPostProcesoAAA.SetClimaGrading(nuevo);
+        // Actualizar HDRI del cielo según el nuevo clima (nieve/nublado/tormenta)
+        SistemaVolumenHDRP.SetHdriClima(nuevo);
     }
 
     public void SetSol()        => CambiarClima(EstadoClima.Sol);

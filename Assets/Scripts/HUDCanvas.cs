@@ -52,6 +52,10 @@ public class HUDCanvas : MonoBehaviour
     Slider  _barraApoyo;
     Text    _txtApoyo;
 
+    // ── Tensión del Director (DirectorMundo.IntensidadActual) ─────────────
+    Slider  _barraTension;
+    Image   _fillTension;
+
     // ── Honor del movimiento ──────────────────────────────────────────────
     Slider  _barraHonor;
     Text    _txtHonor;
@@ -142,6 +146,7 @@ public class HUDCanvas : MonoBehaviour
         CrearWanted();
         CrearApoyo();
         CrearHonor();
+        CrearBarraTension();
         CrearHoraSClima();
         CrearVelocimetro();
         CrearBrujula();
@@ -265,6 +270,7 @@ public class HUDCanvas : MonoBehaviour
         ActualizarHoraClima();
         ActualizarVehiculo();
         ActualizarBrujula();
+        ActualizarTension();
         ActualizarCrosshair();
         ActualizarMinimap();
         ActualizarDanoIndicators();
@@ -299,6 +305,19 @@ public class HUDCanvas : MonoBehaviour
         if (_barraApoyo == null) return;
         _barraApoyo.value = Mathf.Lerp(_barraApoyo.value, _apoyoActual / 100f, Time.deltaTime * 2f);
         if (_txtApoyo != null) _txtApoyo.text = $"♥ {_apoyoActual:F0}%";
+    }
+
+    void ActualizarTension()
+    {
+        if (_barraTension == null || DirectorMundo.Instance == null) return;
+        float t = DirectorMundo.IntensidadActual;
+        _barraTension.value = Mathf.Lerp(_barraTension.value, t, Time.deltaTime * 1.5f);
+        // Color: verde → amarillo → rojo según tensión
+        if (_fillTension != null)
+            _fillTension.color = Color.Lerp(
+                Color.Lerp(new Color(0.1f, 0.8f, 0.2f), new Color(1f, 0.7f, 0f), t * 2f),
+                new Color(1f, 0.1f, 0.1f),
+                Mathf.Max(0f, t * 2f - 1f));
     }
 
     void ActualizarHonor()
@@ -488,6 +507,26 @@ public class HUDCanvas : MonoBehaviour
             new Vector2(10, 45), new Vector2(200, 30));
         _barraHonor = CrearBarra(panel, "BarraHonor", new Vector2(0,0), COL_HONOR, 0.5f, 20);
         _txtHonor   = CrearText(panel, "TxtHonor", new Vector2(4,4), Color.white, 11, FontStyle.Normal);
+    }
+
+    // ── Barra de tensión (DirectorMundo) ─────────────────────────────────
+    // Aparece en la esquina inferior derecha, discreta, solo cuando hay tensión > 0
+    void CrearBarraTension()
+    {
+        var panel = Panel("PanelTension", _canvas.transform,
+            new Vector2(1,0), new Vector2(1,0),
+            new Vector2(-12, 8), new Vector2(120, 12));
+
+        // Fondo semitransparente
+        var bg = panel.gameObject.AddComponent<UnityEngine.UI.Image>();
+        bg.color = new Color(0f, 0f, 0f, 0.45f);
+
+        _barraTension = CrearBarra(panel, "BarraTension",
+            Vector2.zero, new Color(0.1f, 0.8f, 0.2f), 1f, 10);
+
+        // Guardar referencia al fill para cambiar color
+        var fill = panel.Find("BarraTension/Fill Area/Fill");
+        if (fill != null) _fillTension = fill.GetComponent<UnityEngine.UI.Image>();
     }
 
     // ── Hora y clima ──────────────────────────────────────────────────────

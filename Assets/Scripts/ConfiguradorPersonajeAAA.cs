@@ -61,8 +61,10 @@ public class ConfiguradorPersonajeAAA : MonoBehaviour
     private readonly List<Material> _createdMaterials = new List<Material>();
 
     // Known character FBX paths (relative to Assets/, without extension for Resources.Load)
+    // PRIORIDAD: Survivalist PlayerArmature rigged HDRP > Meshy AI > legacy Ch20
     private static readonly string[] KnownCharacterPaths = new string[]
     {
+        "Prefabs/Personajes/PlayerArmature",   // Survivalist HDRP rigged (Resources/)
         "#Xtra/Ch20_nonPBR",
         "_ExtractedAssets/Personajes/MeshyAI/Civil_Casual_01/Civil_Casual_01",
         "_ExtractedAssets/Personajes/MeshyAI/Civil_UrbanEdge/Civil_UrbanEdge",

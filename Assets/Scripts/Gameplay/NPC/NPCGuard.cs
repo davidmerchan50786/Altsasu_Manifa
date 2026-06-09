@@ -27,6 +27,12 @@ public class NPCGuard : NPCBase
     enum Estado { Vigilando, Alertado }
     Estado _estado = Estado.Vigilando;
 
+    // Figura de autoridad → modelo de Guardia Civil real si prefabModelo está vacío.
+    protected override GameObject ObtenerModeloPorDefecto()
+        => SistemaAssets.Instance != null
+            ? SistemaAssets.Instance.GuardiaAleatorio()
+            : null;
+
     protected override void AlActivarAgente()
     {
         _agente.speed = velocidadBase;

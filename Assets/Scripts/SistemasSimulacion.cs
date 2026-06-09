@@ -1,14 +1,17 @@
 // SistemasSimulacion.cs — Simulación AAA+
-// SistemaTrafico · SistemaVegetacion · SistemaAtmosfera · SistemaFauna · SistemaMultitud · SistemaParanoia
+// NOTA: SistemaTrafico y SistemaFauna renombrados a *Legacy para evitar
+// colisión con los sistemas completos en SistemaTrafico.cs y SistemaFauna.cs.
+// SistemaVegetacion · SistemaAtmosfera · SistemaMultitud · SistemaParanoia siguen activos.
 
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  SISTEMA TRÁFICO — vehículos reales de Alsasua (Trabant, Retro, Tractor…)
+//  SISTEMA TRÁFICO LEGACY — sustituido por SistemaTrafico.cs (roads + semáforos)
+//  Renombrado para evitar colisión. No instanciar — usar SistemaTrafico.
 // ─────────────────────────────────────────────────────────────────────────────
-public class SistemaTrafico : MonoBehaviour
+public class SistemaTraficoLegacy : MonoBehaviour
 {
     [Header("Configuración")]
     public int   maxVehiculos = 20;
@@ -227,7 +230,11 @@ public class SistemaAtmosfera : MonoBehaviour
 // ─────────────────────────────────────────────────────────────────────────────
 //  SISTEMA FAUNA — lobo en periferia, pastor alemán en el pueblo
 // ─────────────────────────────────────────────────────────────────────────────
-public class SistemaFauna : MonoBehaviour
+// ─────────────────────────────────────────────────────────────────────────────
+//  SISTEMA FAUNA LEGACY — sustituido por SistemaFauna.cs (NavMesh + quality tier)
+//  Renombrado para evitar colisión. No instanciar — usar SistemaFauna.
+// ─────────────────────────────────────────────────────────────────────────────
+public class SistemaFaunaLegacy : MonoBehaviour
 {
     [Header("Prefabs (auto desde ConfiguradorAssetsAAA)")]
     public GameObject prefabLobo;
@@ -291,7 +298,8 @@ public class SistemaFauna : MonoBehaviour
 // ─────────────────────────────────────────────────────────────────────────────
 //  SISTEMA MULTITUD — NPCs MeshyAI caminando por el pueblo
 // ─────────────────────────────────────────────────────────────────────────────
-public class SistemaMultitud : MonoBehaviour
+// Legacy — sustituido por SistemaSpawnCiviles.cs (pool + NavMesh + QualityTier + Director)
+public class SistemaMultitudLegacy : MonoBehaviour
 {
     [Header("Configuración")]
     public int   numAgentes   = 40;
