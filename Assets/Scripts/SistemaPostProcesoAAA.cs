@@ -306,7 +306,7 @@ public class SistemaPostProcesoAAA : MonoBehaviour
             CambiarEstado(EstadoGrading.Normal);
     }
 
-    void OnDano(int cantidad, Vector3 _)
+    void OnDano(int cantidad)
     {
         // Si la vida baja del 30% → grading de vida baja
         var ctrl = AltsasuCore.Jugador?.GetComponent<ControladorJugador>();

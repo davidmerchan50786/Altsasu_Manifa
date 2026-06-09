@@ -172,6 +172,9 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     // ─── Estado ────────────────────────────────────────────────────────────
     bool     _activa;
     public bool EnCurso => _activa;
+
+    /// <summary>true si una misión gobierna la manifestación (el director no la toca).</summary>
+    public bool ControladaPorMision { get; set; }
     Coroutine _crIniciar;
     readonly List<ManifestanteIA> _manifestantes = new();
     readonly List<GameObject>     _barricadas    = new();

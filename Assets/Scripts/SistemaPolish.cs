@@ -520,6 +520,9 @@ public class SistemaPolish : MonoBehaviour
     void DesactivarLensDirt() => SistemaVolumenHDRP.SetLensDirt(0f);
 
     /// <summary>Sacudida de cámara. intensidad 0-1 (0.2=disparo, 0.5=explosión cercana, 1=explosión directa)</summary>
+    /// <summary>Trauma de screen-shake acumulable (API nueva; delega en Shake).</summary>
+    public static void AddTrauma(float cantidad) => Shake(cantidad);
+
     public static void Shake(float intensidad)
     {
         if (I == null) return;
