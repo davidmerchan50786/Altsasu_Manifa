@@ -44,7 +44,8 @@ public class SistemaDirectorConsumos : MonoBehaviour
         switch (ev)
         {
             case DirectorMundo.EventoMundo.Calma:
-                // El wanted system ya gestiona el descenso; nada que hacer aquí.
+                ApagonParcial(false, 0f);
+                PararTren(false, 0f);
                 break;
 
             case DirectorMundo.EventoMundo.MercadoDia:
@@ -58,6 +59,7 @@ public class SistemaDirectorConsumos : MonoBehaviour
             case DirectorMundo.EventoMundo.ControlPolicial:
                 DisparaSirena(duracionSirenaControl);
                 NotificarHUD("¡Control policial!");
+                PararTren(true, 30f);
                 break;
 
             case DirectorMundo.EventoMundo.Disturbio:
@@ -68,6 +70,9 @@ public class SistemaDirectorConsumos : MonoBehaviour
                 SubirWanted(2);
                 DisparaSirena(duracionSirenaRedada);
                 NotificarHUD("¡REDADA!");
+                ApagonParcial(true, 55f);
+                PararTren(true, 55f);
+                BoostPolicia(true, 55f);
                 break;
         }
 
@@ -117,8 +122,120 @@ public class SistemaDirectorConsumos : MonoBehaviour
 
     void NotificarHUD(string mensaje)
     {
-        // Si existe un sistema de HUD con método de notificación, llamarlo aquí.
-        // Por ahora log visible — sin acoplamiento a implementaciones concretas.
         AlsasuaLogger.Info("DirectorConsumos", mensaje);
+    }
+
+    // ── Apagón parcial (redada / toque de queda) ──────────────────────────
+    // Desactiva SistemaVidaNocturna temporalmente para que ventanas y
+    // farolas se apaguen — los vecinos apagan las luces durante la redada.
+    Coroutine _apagonCoroutine;
+
+    void ApagonParcial(bool activar, float duracion)
+    {
+        if (_apagonCoroutine != null) StopCoroutine(_apagonCoroutine);
+
+        var vida = SistemaVidaNocturna.Instance;
+        if (vida == null) return;
+
+        if (!activar)
+        {
+            vida.enabled = true;
+            return;
+        }
+        _apagonCoroutine = StartCoroutine(ApagonCoroutine(vida, duracion));
+    }
+
+    System.Collections.IEnumerator ApagonCoroutine(SistemaVidaNocturna vida, float duracion)
+    {
+        vida.enabled = false;
+        AlsasuaLogger.Info("DirectorConsumos", "Apagón parcial activado (redada)");
+        yield return new UnityEngine.WaitForSeconds(duracion);
+        vida.enabled = true;
+        AlsasuaLogger.Info("DirectorConsumos", "Iluminación restaurada");
+        _apagonCoroutine = null;
+    }
+
+    // ── Tren — suspender servicio durante operaciones policiales ─────────
+    Coroutine _trenCoroutine;
+
+    void PararTren(bool parar, float duracion)
+    {
+        var tren = SistemaTren.Instance;
+        if (tren == null) return;
+
+        if (_trenCoroutine != null) StopCoroutine(_trenCoroutine);
+
+        if (!parar)
+        {
+            tren.enabled = true;
+            return;
+        }
+        _trenCoroutine = StartCoroutine(TrenCoroutine(tren, duracion));
+    }
+
+    System.Collections.IEnumerator TrenCoroutine(SistemaTren tren, float duracion)
+    {
+        tren.enabled = false;
+        AlsasuaLogger.Info("DirectorConsumos", "Servicio ferroviario suspendido (operación policial)");
+        yield return new UnityEngine.WaitForSeconds(duracion);
+        tren.enabled = true;
+        AlsasuaLogger.Info("DirectorConsumos", "Servicio ferroviario reanudado");
+        _trenCoroutine = null;
+    }
+
+    // ── Boost de policía durante redada ───────────────────────────────────
+    // Incrementa radioVision y velocidad de persecución temporalmente.
+    // No modifica PoliciaForalIA directamente — accede por reflexión de campos.
+
+    Coroutine _boostCoroutine;
+
+    void BoostPolicia(bool activar, float duracion)
+    {
+        if (_boostCoroutine != null) StopCoroutine(_boostCoroutine);
+        if (!activar) return;
+        _boostCoroutine = StartCoroutine(BoostCoroutine(duracion));
+    }
+
+    System.Collections.IEnumerator BoostCoroutine(float duracion)
+    {
+        var policias = UnityEngine.Object.FindObjectsByType<PoliciaForalIA>(
+            UnityEngine.FindObjectsSortMode.None);
+
+        // Guardar valores originales y aplicar boost
+        float[] visionOrig  = new float[policias.Length];
+        float[] velOrig     = new float[policias.Length];
+
+        var radioVisionField = typeof(PoliciaForalIA)
+            .GetField("radioVision", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var velPersField = typeof(PoliciaForalIA)
+            .GetField("velPerseguir", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        if (radioVisionField == null || velPersField == null)
+        {
+            AlsasuaLogger.Warn("DirectorConsumos", "Boost policía: campos privados no encontrados");
+            yield break;
+        }
+
+        for (int i = 0; i < policias.Length; i++)
+        {
+            visionOrig[i] = (float)radioVisionField.GetValue(policias[i]);
+            velOrig[i]    = (float)velPersField.GetValue(policias[i]);
+            radioVisionField.SetValue(policias[i], visionOrig[i] * 1.4f);
+            velPersField.SetValue(policias[i],    velOrig[i]    * 1.3f);
+        }
+
+        AlsasuaLogger.Info("DirectorConsumos",
+            $"Boost policía activado: {policias.Length} agentes ({duracion}s)");
+
+        yield return new UnityEngine.WaitForSeconds(duracion);
+
+        for (int i = 0; i < policias.Length; i++)
+        {
+            if (policias[i] == null) continue;
+            radioVisionField.SetValue(policias[i], visionOrig[i]);
+            velPersField.SetValue(policias[i],    velOrig[i]);
+        }
+        AlsasuaLogger.Info("DirectorConsumos", "Boost policía desactivado");
+        _boostCoroutine = null;
     }
 }

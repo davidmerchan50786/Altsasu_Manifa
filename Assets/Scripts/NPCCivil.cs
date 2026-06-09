@@ -51,6 +51,17 @@ public class NPCCivil : NPCBase
 
     protected override void AlActivarAgente() => CambiarEstado(Estado.Idle);
 
+    /// <summary>Reacciona a alertas externas (redada, disparo cercano) huyendo del origen.</summary>
+    public override void Alertar(Vector3 origen)
+    {
+        if (_estado == Estado.GCRevelado) return;   // ya está huyendo del jugador
+        _estado      = Estado.Huyendo;
+        _timerEstado = 12f;
+        _agente.isStopped = false;
+        _agente.speed     = velocidadHuida;
+        HuirDe(origen);
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     //  MÁQUINA DE ESTADOS
     // ════════════════════════════════════════════════════════════════════════
