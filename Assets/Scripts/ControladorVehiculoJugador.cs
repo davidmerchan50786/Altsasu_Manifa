@@ -195,6 +195,11 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
     private WheelCollider[] _todasLasRuedas;
     private Coroutine       _corrutinaCamara; // para cancelarla en ForzarSalida
 
+    // Huellas de neumático (conexión con SistemaHuellasAsfalto).
+    // Timers de throttle: [0..3] derrape por rueda, [4] frenada por eje trasero.
+    // Sin throttle, spawnear cada FixedUpdate agotaría el pool de 64 decals al instante.
+    private readonly float[] _huellaTimer = new float[5];
+
     // OPT: LayerMask para spring arm de cámara, cacheada en Awake.
     // LayerMask.GetMask hace string lookup por nombre → coste O(capas) cada Update.
     // Ahorro estimado: ~0.02 ms/frame (pequeño pero constante mientras se conduce).
@@ -256,6 +261,54 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         AplicarPacejka();
         AplicarAntiRoll();
         LimitarVelocidad();
+        ActualizarHuellas();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  HUELLAS DE NEUMÁTICO  → SistemaHuellasAsfalto
+    //  Frenada fuerte (eje trasero) + derrape lateral (por rueda). Throttled.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void ActualizarHuellas()
+    {
+        if (SistemaHuellasAsfalto.Instance == null) return;
+
+        float speed = rb.linearVelocity.magnitude;
+        if (speed < 4f) return;                       // ~14 km/h mínimo para dejar marca
+
+        Quaternion orient = Quaternion.LookRotation(
+            Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized, Vector3.up);
+
+        // ── Frenada fuerte: marca recta negra bajo el eje trasero ───────────
+        bool frenadaFuerte = (inputAcel < -0.05f || inputFrenoMano) && speed > 8f;
+        if (frenadaFuerte && rTI != null && rTD != null
+            && rTI.GetGroundHit(out WheelHit hTI) && rTD.GetGroundHit(out WheelHit hTD))
+        {
+            _huellaTimer[4] -= Time.fixedDeltaTime;
+            if (_huellaTimer[4] <= 0f)
+            {
+                _huellaTimer[4] = 0.10f;
+                float intensidad = Mathf.Clamp01(speed / velocidadMax);
+                SistemaHuellasAsfalto.RegistrarFrenada(hTI.point, hTD.point, orient, intensidad);
+            }
+        }
+
+        // ── Derrape lateral: arco por rueda que patina ──────────────────────
+        for (int i = 0; i < _todasLasRuedas.Length; i++)
+        {
+            var wc = _todasLasRuedas[i];
+            if (wc == null || !wc.GetGroundHit(out WheelHit hit)) continue;
+
+            float slip = Mathf.Abs(hit.sidewaysSlip);
+            if (slip < 0.5f) continue;                // umbral de derrape
+
+            _huellaTimer[i] -= Time.fixedDeltaTime;
+            if (_huellaTimer[i] > 0f) continue;
+            _huellaTimer[i] = 0.09f;
+
+            SistemaHuellasAsfalto.RegistrarDerrape(
+                hit.point, orient, Mathf.Clamp01(slip), izquierda: hit.sidewaysSlip < 0f);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

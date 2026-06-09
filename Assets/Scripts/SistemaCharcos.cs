@@ -54,6 +54,18 @@ public class SistemaCharcos : MonoBehaviour
     static readonly int ID_Color         = Shader.PropertyToID("_Color");
     static readonly int ID_Smoothness    = Shader.PropertyToID("_Smoothness");
     static readonly int ID_Metallic      = Shader.PropertyToID("_Metallic");
+    // Ripple y SSR wetness — nuevos globals
+    static readonly int ID_RippleTime    = Shader.PropertyToID("_GlobalRippleTime");
+    static readonly int ID_WetnessSSR    = Shader.PropertyToID("_GlobalWetnessSSR");
+    static readonly int ID_BaseColorMap  = Shader.PropertyToID("_BaseColorMap");
+
+    // Ripple: animamos las escalas de los charcos individualmente
+    // para simular anillos de lluvia sin un shader personalizado.
+    float[] _ripplePhase;   // fase aleatoria por charco (0-2π)
+    float   _rippleTimer;
+    // BUG FIX #1: guardar escala base de cada charco para evitar drift acumulativo.
+    // Sin esto, cada frame multiplica osc sobre la escala ya-oscillada del frame anterior.
+    float[] _charcoEscalaBase;
 
     void Awake()
     {
@@ -114,6 +126,12 @@ public class SistemaCharcos : MonoBehaviour
             _charcos.Add(q.transform);
             _rends.Add(r);
         }
+        // Fase aleatoria por charco para que los anillos no sean síncronos
+        _ripplePhase    = new float[numCharcos];
+        _charcoEscalaBase = new float[numCharcos];
+        for (int i = 0; i < numCharcos; i++)
+            _ripplePhase[i] = Random.Range(0f, Mathf.PI * 2f);
+        // _charcoEscalaBase se rellena en RepartirCharcos cuando se asigna la escala real.
     }
 
     void Update()
@@ -133,6 +151,13 @@ public class SistemaCharcos : MonoBehaviour
         // ── Global de shader (PBR del suelo puede leerlo) ────────────────────
         Shader.SetGlobalFloat(ID_GlobalWetness, _humedad);
         Shader.SetGlobalFloat(ID_Wetness, _humedad);
+        // _GlobalWetnessSSR: smoothness adicional para que el suelo mojado
+        // refleje más el entorno (SSR lo recoge si el shader expone la propiedad).
+        Shader.SetGlobalFloat(ID_WetnessSSR, _humedad * 0.95f);
+        // _GlobalRippleTime: tiempo escalado — shaders de charco pueden usarlo
+        // para desplazar sus UVs de Normal Map y animar la superficie del agua.
+        _rippleTimer += Time.deltaTime;
+        Shader.SetGlobalFloat(ID_RippleTime, _rippleTimer);
 
         // ── Reparto de charcos alrededor del jugador ─────────────────────────
         if (_objetivo != null && _humedad > 0.01f)
@@ -141,7 +166,27 @@ public class SistemaCharcos : MonoBehaviour
                 RepartirCharcos(_objetivo.position);
         }
 
-        // Transparencia de los charcos sigue a la humedad (aparecen/desaparecen)
+        // ── Ripple rings: pulsar escala de cada charco con onda sinusoidal ───
+        // Cada charco tiene una fase aleatoria → los anillos no son síncronos.
+        // La amplitud del pulso escala con la humedad: sin lluvia no hay ripple.
+        float rippleAmp = _humedad * 0.18f; // max 18% de variación en escala
+        float rippleFreq = 1.4f;            // Hz — 1.4 anillos/seg por charco
+        for (int i = 0; i < _charcos.Count; i++)
+        {
+            if (_ripplePhase == null || i >= _ripplePhase.Length) break;
+            var t = _charcos[i];
+            if (t == null || !t.gameObject.activeSelf) continue;
+            // BUG FIX #1: usar _charcoEscalaBase (inmutable) en lugar de t.localScale.x
+            // que ya contenía la oscilación del frame anterior → drift acumulativo corregido.
+            float sBase = (_charcoEscalaBase != null && i < _charcoEscalaBase.Length)
+                        ? _charcoEscalaBase[i] : t.localScale.x;
+            float sBaseY = sBase * (t.localScale.y > 0.001f ? t.localScale.y / Mathf.Max(0.001f, t.localScale.x) : 1f);
+            float osc = 1f + Mathf.Sin(_rippleTimer * rippleFreq * Mathf.PI * 2f
+                                        + _ripplePhase[i]) * rippleAmp;
+            t.localScale = new Vector3(sBase * osc, sBaseY, 1f);
+        }
+
+        // ── Transparencia de los charcos sigue a la humedad ──────────────────
         float alpha = Mathf.SmoothStep(0f, 0.85f, _humedad);
         bool visibles = _humedad > 0.04f;
         for (int i = 0; i < _rends.Count; i++)
@@ -153,6 +198,15 @@ public class SistemaCharcos : MonoBehaviour
             var c = new Color(0.03f, 0.045f, 0.06f, alpha);
             if (_matCharco.HasProperty(ID_BaseColor)) _matCharco.SetColor(ID_BaseColor, c);
             if (_matCharco.HasProperty(ID_Color))     _matCharco.SetColor(ID_Color, c);
+            // Animar offset UV del Normal Map del charco si el shader lo soporta
+            // → simula la superficie agitada sin geometría extra.
+            if (_matCharco.HasProperty(ID_BaseColorMap))
+            {
+                float uvX = Mathf.Sin(_rippleTimer * 0.3f) * 0.04f;
+                float uvY = Mathf.Cos(_rippleTimer * 0.25f) * 0.04f;
+                _matCharco.SetTextureOffset("_BaseColorMap", new Vector2(uvX, uvY));
+                _matCharco.SetTextureOffset("_NormalMap",    new Vector2(-uvX * 2f, uvY * 2f));
+            }
         }
     }
 
@@ -169,7 +223,9 @@ public class SistemaCharcos : MonoBehaviour
             {
                 _charcos[i].position = hit.point + Vector3.up * 0.03f;
                 float s = Random.Range(tamano.x, tamano.y);
-                _charcos[i].localScale = new Vector3(s, s * Random.Range(0.6f, 1f), 1f);
+                float sy = s * Random.Range(0.6f, 1f);
+                _charcos[i].localScale = new Vector3(s, sy, 1f);
+                if (_charcoEscalaBase != null && i < _charcoEscalaBase.Length) _charcoEscalaBase[i] = s;
                 _charcos[i].gameObject.SetActive(true);
             }
             else

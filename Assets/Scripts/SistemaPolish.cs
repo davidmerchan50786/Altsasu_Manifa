@@ -10,6 +10,13 @@
 //  • Flash de sirena en wanted alto
 //  • Zoom de cámara al apuntar
 //  • Hit stop (freeze frame 2-3 frames en impacto crítico)
+//  [NUEVO] Auto-focus DoF — raycast al centro de pantalla cada 0.2 s
+//  [NUEVO] Sprint blur    — LensDistortion leve al correr
+//  [NUEVO] Explosion bloom burst — boost temporal de bloom en explosión
+//  [NUEVO] Rain screen    — aberración cromática + distorsión al llover
+//  [NUEVO] Mouse chromatic — aberración proporcional a velocidad del ratón
+//  [NUEVO] Aiming vignette — vignette oscura al apuntar con RMB
+//  [NUEVO] Explosion light — pool de 4 luces de punto en explosiones
 //
 //  Uso: SistemaPolish.Shake(intensidad); SistemaPolish.FlashDano();
 //  Singleton accedido via instancia estática.
@@ -67,6 +74,43 @@ public class SistemaPolish : MonoBehaviour
     // ── Blur de velocidad ─────────────────────────────────────────────────
     float _velocidadActual;
 
+    // ── Auto-focus DoF ────────────────────────────────────────────────────
+    float _dofFocusDistTarget = 80f;
+    float _dofFocusCurrent    = 80f;
+    float _timerAutoFocus;
+    const float AUTOFOCUS_INTERVAL = 0.2f;
+
+    // ── Sprint blur ───────────────────────────────────────────────────────
+    float _sprintBlurTarget;
+    float _sprintBlurCurrent;
+    ControladorJugador  _jugadorCache;
+    CharacterController _ccCache;       // CRÍTICO: cache de CC — evita GetComponent cada frame
+
+    // ── Explosion bloom burst ─────────────────────────────────────────────
+    float _bloomBurstTimer;
+    float _bloomBase = 0.6f;
+    const float BLOOM_EXPLOSION = 3.5f;
+    const float BLOOM_BURST_DUR = 0.8f;
+
+    // ── Rain screen effect ────────────────────────────────────────────────
+    float _rainChromatic;
+    float _rainDistortion;
+
+    // ── Mouse chromatic ───────────────────────────────────────────────────
+    float _mouseChromaticTarget;
+
+    // ── Aiming vignette ───────────────────────────────────────────────────
+    bool  _estaApuntando;
+    float _vignetteAimTarget;
+
+    // ── Explosion lights (pool de 4) ──────────────────────────────────────
+    Light[]                 _explosionLights;
+    HDAdditionalLightData[] _explosionLightsHD;
+    float[]                 _explosionLightTimers;
+    int                     _explosionLightIdx;
+    const int   EXPLOSION_LIGHT_POOL = 4;
+    const float EXPLOSION_LIGHT_DUR  = 0.35f;
+
     // OPT: referencia cacheada al coche del jugador — evita FindFirstObjectByType (O(n))
     // en ActualizarMotionBlur() cada frame. Ahorro estimado: ~0.3-0.8 ms/frame con 50+ objetos.
     ControladorVehiculoJugador _cocheJugadorCache;
@@ -96,6 +140,19 @@ public class SistemaPolish : MonoBehaviour
         // SistemaPolish garantiza que el Volume de polish coexiste con el Volume HDRP
         // ajustando la prioridad para no pisar los efectos de atmósfera.
         if (_volume != null) _volume.priority = 5f; // más bajo que SistemaVolumenHDRP (10/11)
+
+        InicializarLucesExplosion();
+
+        AltsasuCore.OnJugadorSpawned += t =>
+        {
+            _jugadorCache = t?.GetComponent<ControladorJugador>();
+            _ccCache      = t?.GetComponent<CharacterController>();
+        };
+        if (AltsasuCore.Jugador != null)
+        {
+            _jugadorCache = AltsasuCore.Jugador.GetComponent<ControladorJugador>();
+            _ccCache      = AltsasuCore.Jugador.GetComponent<CharacterController>();
+        }
     }
 
     static void AplicarConfigGraficos()
@@ -178,6 +235,14 @@ public class SistemaPolish : MonoBehaviour
         ActualizarHitStop(dt);
         ActualizarSirena(dt);
         ActualizarMotionBlur();
+        ActualizarAutoFocus(dt);
+        ActualizarSprintBlur(dt);
+        ActualizarExplosionBloom(dt);
+        ActualizarRainEffect(dt);
+        ActualizarMouseChromatic(dt);
+        ActualizarAimingVignette(dt);
+        AplicarVignetteUnificada();   // BUG FIX #2: escritura única al volumen
+        ActualizarExplosionLights(dt);
     }
 
     // ── Screen shake ──────────────────────────────────────────────────────
@@ -210,19 +275,12 @@ public class SistemaPolish : MonoBehaviour
 
     // ── Vignette ──────────────────────────────────────────────────────────
 
+    // BUG FIX #2: ActualizarVignette ya NO escribe al volumen directamente.
+    // Solo actualiza el estado interno. La escritura ocurre una sola vez
+    // en AplicarVignetteUnificada() que combina TODAS las fuentes sin conflicto.
     void ActualizarVignette(float dt)
     {
-        // Pulso rojo al recibir daño
         _vignetteIntensTarget = Mathf.MoveTowards(_vignetteIntensTarget, _vignetteIntensBase, dt * 2.5f);
-        float intens  = Mathf.Lerp(_vignetteIntensBase, _vignetteIntensTarget,
-                        Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 0.3f + 0.7f);
-        float t = Mathf.InverseLerp(_vignetteIntensBase, 0.7f, _vignetteIntensTarget);
-        Color col = Color.Lerp(_vignetteColorBase, _vignetteColorDano, t);
-        if (_vignette != null)
-        {
-            _vignette.intensity.Override(intens);
-            _vignette.color.Override(col);
-        }
     }
 
     // ── Time scale ────────────────────────────────────────────────────────
@@ -278,9 +336,188 @@ public class SistemaPolish : MonoBehaviour
         }
     }
 
+
+    // ── Vignette unificada (BUG FIX #2) ──────────────────────────────────
+    // Única fuente de verdad para _vignette.intensity y .color.
+    // Combina: base + daño (pulsante) + apuntado.
+    // Antes había dos métodos escribiendo a la misma propiedad → race condition.
+    void AplicarVignetteUnificada()
+    {
+        if (_vignette == null) return;
+        // Contribución de daño (pulso rojo)
+        float t      = Mathf.InverseLerp(_vignetteIntensBase, 0.7f, _vignetteIntensTarget);
+        float danoPulse = Mathf.Lerp(_vignetteIntensBase, _vignetteIntensTarget,
+                          Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 0.3f + 0.7f);
+        // Contribución de apuntado (oscurece bordes)  
+        float aimContrib = _vignetteIntensBase + _vignetteAimTarget;
+        // Contribución de lluvia (vignette sutil acuática)
+        float rainContrib = _vignetteIntensBase + _rainChromatic * 0.15f;
+        // Winner: la fuente más intensa domina, sin conflicto
+        float finalIntens = Mathf.Max(danoPulse, aimContrib, rainContrib);
+        Color finalColor  = Color.Lerp(_vignetteColorBase, _vignetteColorDano, t);
+        _vignette.intensity.Override(finalIntens);
+        _vignette.color.Override(finalColor);
+    }
+
+    // ── Auto-focus DoF ─────────────────────────────────────────────────────
+
+    void ActualizarAutoFocus(float dt)
+    {
+        if (_cam == null) return;
+        _timerAutoFocus -= dt;
+        if (_timerAutoFocus <= 0f)
+        {
+            _timerAutoFocus = AUTOFOCUS_INTERVAL;
+            var ray  = _cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            int mask = ~LayerMask.GetMask("Player", "Ignore Raycast");
+            float dist = Physics.Raycast(ray, out var hit, 500f, mask) ? hit.distance : 200f;
+            _dofFocusDistTarget = Mathf.Clamp(dist, 1f, 500f);
+        }
+        _dofFocusCurrent = Mathf.Lerp(_dofFocusCurrent, _dofFocusDistTarget, dt * 5f);
+        SistemaVolumenHDRP.SetFocusDistance(_dofFocusCurrent);
+    }
+
+    // ── Sprint blur ────────────────────────────────────────────────────────
+
+    void ActualizarSprintBlur(float dt)
+    {
+        if (_lensDistortion == null) return;
+        float velocidad = 0f;
+        // CRÍTICO: _ccCache cacheado en Start → 0 alloc/frame
+        if (_jugadorCache != null && (_cocheJugadorCache == null || !_cocheJugadorCache.JugadorDentro))
+            velocidad = _ccCache != null ? _ccCache.velocity.magnitude : 0f;
+        float target = Mathf.InverseLerp(5f, 9f, velocidad) * -0.08f;
+        _sprintBlurCurrent = Mathf.MoveTowards(_sprintBlurCurrent, target, dt * 1.5f);
+        _sprintBlurTarget  = target;
+        if (Mathf.Abs(_lensDistortion.intensity.value) < 0.2f)
+            _lensDistortion.intensity.Override(_sprintBlurCurrent);
+    }
+
+    // ── Explosion bloom burst ──────────────────────────────────────────────
+
+    void ActualizarExplosionBloom(float dt)
+    {
+        if (_bloom == null || _bloomBurstTimer <= 0f) return;
+        _bloomBurstTimer -= dt;
+        float t     = 1f - Mathf.Clamp01(_bloomBurstTimer / BLOOM_BURST_DUR);
+        float curva = Mathf.Pow(1f - t, 1.5f);
+        _bloom.intensity.Override(Mathf.Lerp(_bloomBase, BLOOM_EXPLOSION, curva));
+        if (_bloomBurstTimer <= 0f) _bloom.intensity.Override(_bloomBase);
+    }
+
+    // ── Rain screen effect ─────────────────────────────────────────────────
+
+    void ActualizarRainEffect(float dt)
+    {
+        float humedad = SistemaCharcos.Instance != null ? SistemaCharcos.Instance.Humedad : 0f;
+        float targetRainChromatic = humedad * 0.28f;
+        _rainChromatic = Mathf.MoveTowards(_rainChromatic, targetRainChromatic, dt * 0.8f);
+        float targetRainDist = humedad * 0.06f;
+        _rainDistortion = Mathf.MoveTowards(_rainDistortion, targetRainDist, dt * 0.5f);
+        if (_chromaticCurrent < _rainChromatic && _chromatic != null)
+            _chromatic.intensity.Override(Mathf.Max(_chromaticCurrent, _rainChromatic));
+        if (_lensDistortion != null && Mathf.Abs(_sprintBlurCurrent) < 0.01f
+            && _lensDistortion.intensity.value >= -0.01f)
+            _lensDistortion.intensity.Override(_rainDistortion);
+    }
+
+    // ── Mouse-speed chromatic aberration ──────────────────────────────────
+
+    void ActualizarMouseChromatic(float dt)
+    {
+        if (_chromatic == null) return;
+        var m = UnityEngine.InputSystem.Mouse.current;
+        if (m == null) return;
+        float speed = m.delta.ReadValue().magnitude;
+        float spike = Mathf.InverseLerp(40f, 160f, speed) * 0.22f;
+        _mouseChromaticTarget = Mathf.Max(_mouseChromaticTarget, spike);
+        _mouseChromaticTarget = Mathf.MoveTowards(_mouseChromaticTarget, 0f, dt * 3.5f);
+        if (_mouseChromaticTarget > _chromaticCurrent)
+            _chromatic.intensity.Override(_mouseChromaticTarget);
+    }
+
+    // ── Aiming vignette ────────────────────────────────────────────────────
+
+    // BUG FIX #2: solo actualiza estado interno.
+    void ActualizarAimingVignette(float dt)
+    {
+        var m = UnityEngine.InputSystem.Mouse.current;
+        _estaApuntando = m != null && m.rightButton.isPressed
+                         && Cursor.lockState == CursorLockMode.Locked;
+        float targetExtra = _estaApuntando ? 0.10f : 0f;
+        _vignetteAimTarget = Mathf.MoveTowards(_vignetteAimTarget, targetExtra, dt * 6f);
+    }
+
+    // ── Explosion lights (pool) ────────────────────────────────────────────
+
+    void InicializarLucesExplosion()
+    {
+        _explosionLights      = new Light[EXPLOSION_LIGHT_POOL];
+        _explosionLightsHD    = new HDAdditionalLightData[EXPLOSION_LIGHT_POOL];
+        _explosionLightTimers = new float[EXPLOSION_LIGHT_POOL];
+        for (int i = 0; i < EXPLOSION_LIGHT_POOL; i++)
+        {
+            var go = new GameObject($"ExplosionLight_{i}");
+            go.transform.SetParent(transform);
+            var l  = go.AddComponent<Light>();
+            l.type = LightType.Point; l.range = 25f;
+            l.color = new Color(1.0f, 0.65f, 0.20f);
+            l.shadows = LightShadows.None;
+            var hd = go.AddComponent<HDAdditionalLightData>();
+            hd.SetIntensity(0f, LightUnit.Lumen);
+            hd.volumetricDimmer = 0.8f;
+            _explosionLights[i]   = l;
+            _explosionLightsHD[i] = hd;
+            go.SetActive(false);
+        }
+    }
+
+    void ActualizarExplosionLights(float dt)
+    {
+        for (int i = 0; i < EXPLOSION_LIGHT_POOL; i++)
+        {
+            if (_explosionLightTimers[i] <= 0f) continue;
+            _explosionLightTimers[i] -= dt;
+            float t = Mathf.Clamp01(_explosionLightTimers[i] / EXPLOSION_LIGHT_DUR);
+            _explosionLightsHD[i]?.SetIntensity(Mathf.Pow(t, 0.4f) * 80000f, LightUnit.Lumen);
+            if (_explosionLightTimers[i] <= 0f)
+                _explosionLights[i].gameObject.SetActive(false);
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     //  API ESTÁTICA — llamada desde otros sistemas
     // ════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Activa una luz de punto naranja en la posición de la explosión.
+    /// </summary>
+    public static void ExplosionLight(Vector3 posicion)
+    {
+        if (I == null) return;
+        int idx = I._explosionLightIdx % EXPLOSION_LIGHT_POOL;
+        I._explosionLightIdx++;
+        var l = I._explosionLights?[idx];
+        if (l == null) return;
+        l.transform.position = posicion + Vector3.up * 1.5f;
+        l.gameObject.SetActive(true);
+        I._explosionLightTimers[idx] = EXPLOSION_LIGHT_DUR;
+    }
+
+    /// <summary>
+    /// Burst de bloom + luz de punto — llamar desde SistemaExplosion.
+    /// </summary>
+    public static void ExplosionBloom(float intensidad = 1f)
+    {
+        if (I == null) return;
+        I._bloomBurstTimer = BLOOM_BURST_DUR * Mathf.Clamp01(intensidad);
+        Shake(intensidad * 0.4f);
+        // Activar lens dirt proporcional a la intensidad — vuelve a 0 cuando el bloom cae
+        SistemaVolumenHDRP.SetLensDirt(intensidad);
+        I.Invoke(nameof(DesactivarLensDirt), BLOOM_BURST_DUR * 0.9f);
+    }
+
+    void DesactivarLensDirt() => SistemaVolumenHDRP.SetLensDirt(0f);
 
     /// <summary>Sacudida de cámara. intensidad 0-1 (0.2=disparo, 0.5=explosión cercana, 1=explosión directa)</summary>
     public static void Shake(float intensidad)

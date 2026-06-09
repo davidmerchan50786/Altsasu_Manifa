@@ -51,6 +51,7 @@ public class GeneradorRocasProcedurales : MonoBehaviour
         public Vector3 escala;
         public Quaternion rotacion;
         public float tintVariacion; // 0..1 para colorizar ligeramente
+        public bool  esMusgo;       // true = ladera norte húmeda → material verde
     }
 
     List<DatoRoca> _todasLasRocas = new List<DatoRoca>();
@@ -60,6 +61,8 @@ public class GeneradorRocasProcedurales : MonoBehaviour
     Mesh   _meshLow;     // esfera sin ruido, ~80 tris
     Material _matFull;   // HDRP/Lit con normalmap cliff_side
     Material _matLow;    // HDRP/Lit sin normalmap
+    Material _matMusgo;  // variante verde musgo para laderas norte húmedas
+    Material _matMusgoLow;
 
     // Chunks de 1023 instancias para DrawMeshInstanced
     const int CHUNK_SIZE = 1023;
@@ -74,7 +77,8 @@ public class GeneradorRocasProcedurales : MonoBehaviour
         public int countLow;
     }
 
-    List<ChunkInstancias> _chunks = new List<ChunkInstancias>();
+    List<ChunkInstancias> _chunks      = new List<ChunkInstancias>();  // rocas normales
+    List<ChunkInstancias> _chunksMusgo = new List<ChunkInstancias>(); // rocas con musgo
 
     // Buffer de matrices reutilizables (no new en Update)
     Matrix4x4[] _bufMatFull = new Matrix4x4[CHUNK_SIZE];
@@ -145,7 +149,27 @@ public class GeneradorRocasProcedurales : MonoBehaviour
             ReconstruirChunks();
         }
 
-        // Dibujar chunks visibles
+        // Dibujar chunks — rocas normales
+        foreach (var chunk in _chunks)
+        {
+            if (chunk.countFull > 0)
+                Graphics.DrawMeshInstanced(_meshFull, 0, _matFull,
+                    chunk.matricesFull, chunk.countFull, chunk.propsFull);
+            if (chunk.countLow > 0)
+                Graphics.DrawMeshInstanced(_meshLow, 0, _matLow,
+                    chunk.matricesLow, chunk.countLow, chunk.propsLow);
+        }
+        // Dibujar chunks — rocas con musgo
+        foreach (var chunk in _chunksMusgo)
+        {
+            if (chunk.countFull > 0)
+                Graphics.DrawMeshInstanced(_meshFull, 0, _matMusgo,
+                    chunk.matricesFull, chunk.countFull, chunk.propsFull);
+            if (chunk.countLow > 0)
+                Graphics.DrawMeshInstanced(_meshLow, 0, _matMusgoLow,
+                    chunk.matricesLow, chunk.countLow, chunk.propsLow);
+        }
+        // (FIN dibujo — eliminar el bloque duplicado que sigue)
         foreach (var chunk in _chunks)
         {
             if (chunk.countFull > 0)
@@ -172,24 +196,24 @@ public class GeneradorRocasProcedurales : MonoBehaviour
         int ah      = td.alphamapHeight;
         int nLayers = td.alphamapLayers;
 
-        // Canal 2 = Roca (según SistemaTerreno: capaRoca en índice 2)
         const int CANAL_ROCA = 2;
         if (nLayers <= CANAL_ROCA)
         {
-            Debug.LogWarning("[RocasProcedurales] El terrain no tiene suficientes capas TerrainLayer; se necesita al menos la capa 2 (Roca).");
+            Debug.LogWarning("[RocasProcedurales] Sin suficientes capas TerrainLayer.");
             yield break;
         }
 
         float[,,] alpha = td.GetAlphamaps(0, 0, aw, ah);
-        float terW = td.size.x;
-        float terL = td.size.z;
+        float terW   = td.size.x;
+        float terL   = td.size.z;
         Vector3 terPos = terrain.transform.position;
 
-        // Paso de muestreo en píxeles de alphamap
-        int pasoPixel = Mathf.Max(1, Mathf.RoundToInt(paseoMuestreoM * aw / terW));
+        // Paso de muestreo = celda de cluster (~6m para clusters más espaciados)
+        float pasoCluster = Mathf.Max(paseoMuestreoM * 2f, 6f);
+        int pasoPixel = Mathf.Max(1, Mathf.RoundToInt(pasoCluster * aw / terW));
 
         int frameCounter = 0;
-        const int POR_FRAME = 200; // filas por frame para no bloquear
+        const int POR_FRAME = 80; // clusters por frame (cada cluster genera 3-8 rocas)
 
         for (int ay = 0; ay < ah; ay += pasoPixel)
         {
@@ -198,57 +222,75 @@ public class GeneradorRocasProcedurales : MonoBehaviour
                 float valorRoca = alpha[ay, ax, CANAL_ROCA];
                 if (valorRoca < umbralRoca) continue;
 
-                // Convertir alphamap pixel → posición Unity
                 float nx = (float)ax / aw;
                 float nz = (float)ay / ah;
                 float wx = terPos.x + nx * terW;
                 float wz = terPos.z + nz * terL;
-                float wy = terrain.SampleHeight(new Vector3(wx, 0, wz)) + terPos.y;
 
-                // Seed por posición para determinismo
                 int seed = Mathf.RoundToInt(wx * 73.1f + wz * 131.7f);
                 var rng  = new System.Random(seed);
 
-                // Calcular pendiente local para tamaño
-                float pendiente = td.GetSteepness(nx, nz);
-                bool rocaGrande = pendiente > 40f;
+                // ── CLUSTERING ────────────────────────────────────────────
+                // Solo el 35% de las celdas genera un cluster → distribución
+                // menos uniforme, más realista (grupos con claros entre ellos).
+                if (rng.NextDouble() > 0.35f) continue;
 
-                int numRocas = rng.Next(1, 5); // 1-4 rocas
-                for (int r = 0; r < numRocas; r++)
+                float pendiente = td.GetSteepness(nx, nz);
+                bool  rocaGrande = pendiente > 35f;
+
+                // Normal local → detectar ladera norte para musgo
+                Vector3 normalLocal = td.GetInterpolatedNormal(nx, nz);
+                // En el hemisferio norte, laderas norte = normal apunta hacia -Z (sur en Unity = +Z)
+                // Se aproxima: si el componente Z de la normal horizontal es negativo = cara norte
+                bool laderaNorte = normalLocal.z < -0.25f && pendiente > 12f;
+
+                // Tamaño del cluster: 3-8 rocas, radio 1-4m
+                int  numCluster  = rng.Next(3, 9);
+                float radioCluster = Mathf.Lerp(1f, 4f, (float)rng.NextDouble());
+
+                // Roca "ancla" del cluster — la más grande
+                float sAncla = rocaGrande
+                    ? Mathf.Lerp(0.5f, 2.2f, (float)rng.NextDouble())
+                    : Mathf.Lerp(0.2f, 1.0f, (float)rng.NextDouble());
+
+                for (int r = 0; r < numCluster; r++)
                 {
-                    float jx = (float)(rng.NextDouble() - 0.5) * paseoMuestreoM;
-                    float jz = (float)(rng.NextDouble() - 0.5) * paseoMuestreoM;
+                    // Posición orgánica: ángulo+distancia aleatorios desde el centro del cluster
+                    double angulo   = rng.NextDouble() * System.Math.PI * 2.0;
+                    double distRad  = System.Math.Pow(rng.NextDouble(), 0.6) * radioCluster; // más rocas cerca del centro
+                    float jx = (float)(System.Math.Cos(angulo) * distRad);
+                    float jz = (float)(System.Math.Sin(angulo) * distRad);
                     float px = wx + jx;
                     float pz = wz + jz;
                     float py = terrain.SampleHeight(new Vector3(px, 0, pz)) + terPos.y;
 
-                    // Tamaño base según bioma
-                    float sBase = rocaGrande
-                        ? Mathf.Lerp(0.3f, 1.8f, (float)rng.NextDouble())
-                        : Mathf.Lerp(0.1f, 0.8f, (float)rng.NextDouble());
+                    // Las rocas periféricas son más pequeñas (pebbles de dispersión)
+                    float factorDistancia = 1f - (float)(distRad / radioCluster) * 0.65f;
+                    float sBase = r == 0
+                        ? sAncla                                                      // roca ancla
+                        : sAncla * Mathf.Lerp(0.15f, 0.7f, factorDistancia * (float)rng.NextDouble());
 
-                    // Variación Perlin ±20% en cada eje para romper simetría
+                    // Variación Perlin por eje para romper simetría
                     float noiseX = 1f + (Mathf.PerlinNoise(px * 0.05f, pz * 0.05f) - 0.5f) * 0.4f;
-                    float noiseY = 1f + (Mathf.PerlinNoise(px * 0.05f + 100f, pz * 0.05f) - 0.5f) * 0.4f;
+                    float noiseY = 1f + (Mathf.PerlinNoise(px * 0.05f + 100f, pz * 0.05f) - 0.5f) * 0.35f;
                     float noiseZ = 1f + (Mathf.PerlinNoise(px * 0.05f, pz * 0.05f + 100f) - 0.5f) * 0.4f;
-
                     Vector3 escala = new Vector3(sBase * noiseX, sBase * noiseY, sBase * noiseZ);
 
-                    // Semi-enterrar: bajar 30% de la escala Y
-                    py -= escala.y * 0.3f;
+                    // Semi-enterrado: rocas grandes más enterradas (más estables geológicamente)
+                    float entierro = Mathf.Lerp(0.20f, 0.60f, sBase / 2.2f);
+                    py -= escala.y * entierro;
 
-                    // Rotación: Y aleatorio, X/Z leve inclinación (±15°)
                     float ry = (float)(rng.NextDouble() * 360.0);
-                    float rx = (float)((rng.NextDouble() - 0.5) * 30.0); // ±15°
+                    float rx = (float)((rng.NextDouble() - 0.5) * 30.0);
                     float rz = (float)((rng.NextDouble() - 0.5) * 30.0);
-                    Quaternion rot = Quaternion.Euler(rx, ry, rz);
 
                     _todasLasRocas.Add(new DatoRoca
                     {
                         posicion      = new Vector3(px, py, pz),
                         escala        = escala,
-                        rotacion      = rot,
-                        tintVariacion = (float)rng.NextDouble()
+                        rotacion      = Quaternion.Euler(rx, ry, rz),
+                        tintVariacion = (float)rng.NextDouble(),
+                        esMusgo       = laderaNorte && (float)rng.NextDouble() < 0.65f,
                     });
                 }
             }
@@ -262,15 +304,13 @@ public class GeneradorRocasProcedurales : MonoBehaviour
         }
 
         if (logVerboso)
-            Debug.Log($"[RocasProcedurales] Lista generada: {_todasLasRocas.Count} rocas.");
+            Debug.Log($"[RocasProcedurales] Clusters generados: {_todasLasRocas.Count} rocas.");
     }
 
     // ── Construcción de chunks visibles ───────────────────────────────────
 
     void ReconstruirChunks()
     {
-        _chunks.Clear();
-
         Vector3 posRef = _jugador != null ? _jugador.position
                        : Camera.main != null ? Camera.main.transform.position
                        : Vector3.zero;
@@ -280,8 +320,10 @@ public class GeneradorRocasProcedurales : MonoBehaviour
         float r2Max  = radioVisibilidad * radioVisibilidad;
 
         // Listas temporales (no en Update, solo en este método)
-        var tmpFull = new List<(Matrix4x4 m, float t)>();
-        var tmpLow  = new List<(Matrix4x4 m, float t)>();
+        var tmpFull  = new List<(Matrix4x4 m, float t)>();
+        var tmpLow   = new List<(Matrix4x4 m, float t)>();
+        var tmpMFull = new List<(Matrix4x4 m, float t)>();  // musgo full
+        var tmpMLow  = new List<(Matrix4x4 m, float t)>();  // musgo low
 
         foreach (var roca in _todasLasRocas)
         {
@@ -293,17 +335,26 @@ public class GeneradorRocasProcedurales : MonoBehaviour
 
             var mat = Matrix4x4.TRS(roca.posicion, roca.rotacion, roca.escala);
 
-            if (d2 < r2Full)
-                tmpFull.Add((mat, roca.tintVariacion));
-            else if (d2 < r2Low)
-                tmpLow.Add((mat, roca.tintVariacion));
+            if (roca.esMusgo)
+            {
+                if (d2 < r2Full) tmpMFull.Add((mat, roca.tintVariacion));
+                else if (d2 < r2Low) tmpMLow.Add((mat, roca.tintVariacion));
+            }
+            else
+            {
+                if (d2 < r2Full) tmpFull.Add((mat, roca.tintVariacion));
+                else if (d2 < r2Low) tmpLow.Add((mat, roca.tintVariacion));
+            }
         }
 
-        // Partir en chunks de 1023
-        EmitirChunks(tmpFull, tmpLow);
+        _chunks.Clear();
+        _chunksMusgo.Clear();
+        EmitirChunks(tmpFull,  tmpLow,  _chunks);
+        EmitirChunks(tmpMFull, tmpMLow, _chunksMusgo);
     }
 
-    void EmitirChunks(List<(Matrix4x4 m, float t)> full, List<(Matrix4x4 m, float t)> low)
+    void EmitirChunks(List<(Matrix4x4 m, float t)> full, List<(Matrix4x4 m, float t)> low,
+                      List<ChunkInstancias> destino)
     {
         // Calculamos cuántos chunks necesitamos
         int nChunks = Mathf.Max(
@@ -362,7 +413,7 @@ public class GeneradorRocasProcedurales : MonoBehaviour
             pbFull.SetVectorArray("_BaseColor", v4Full);
             pbLow.SetVectorArray("_BaseColor", v4Low);
 
-            _chunks.Add(new ChunkInstancias
+            destino.Add(new ChunkInstancias
             {
                 matricesFull = mFull,
                 matricesLow  = mLow,
@@ -504,6 +555,17 @@ public class GeneradorRocasProcedurales : MonoBehaviour
             _matFull.SetTexture("_MaskMap", arm);
             _matLow.SetTexture("_MaskMap",  arm);
         }
+
+        // Material musgo: igual que _matFull pero con tinte verde
+        _matMusgo    = new Material(_matFull);    _matMusgo.name = "Roca_Musgo_HDRP";
+        _matMusgoLow = new Material(_matLow);     _matMusgoLow.name = "Roca_MusgoLow_HDRP";
+        var tintMusgo = new Color(0.48f, 0.55f, 0.38f); // verde-gris
+        _matMusgo.SetColor("_BaseColor",    tintMusgo);
+        _matMusgoLow.SetColor("_BaseColor", tintMusgo);
+        _matMusgo.SetFloat("_Smoothness",    0.10f); // musgo = menos brillante
+        _matMusgoLow.SetFloat("_Smoothness", 0.10f);
+        _matMusgo.enableInstancing    = true;
+        _matMusgoLow.enableInstancing = true;
 
         if (logVerboso)
             Debug.Log($"[RocasProcedurales] Material creado — albedo:{albedo != null}, normal:{normal != null}, ARM:{arm != null}");

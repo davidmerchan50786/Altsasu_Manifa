@@ -73,6 +73,12 @@ public class SistemaChunks : MonoBehaviour
              "se renderizan en baja calidad (LOD 1).")]
     [SerializeField] private float radioLOD           = 120f;
 
+    [Header("═══ FADE SUAVE ═══")]
+    [Tooltip("Si true, los chunks se ven aparecer/desaparecer con un fade de LODGroup en lugar de SetActive duro.")]
+    [SerializeField] private bool  fadeActivacion     = true;
+    [Tooltip("Duración del fade de activación (s).")]
+    [SerializeField] private float duracionFade       = 0.6f;
+
     [Header("═══ RENDIMIENTO ═══")]
     [Tooltip("Intervalo (s) entre comprobaciones de distancia. " +
              "0.4 s es suficiente — sin necesidad de hacerlo cada frame.")]
@@ -224,8 +230,26 @@ public class SistemaChunks : MonoBehaviour
         c.go.SetActive(true);
         c.activo = true;
         _activos.Add(idx);
-        if (c.lodGroup != null) c.lodGroup.ForceLOD(0);
+        if (c.lodGroup != null)
+        {
+            // OPTIMIZADOR: fade suave usando LODGroup crossFadeWidth.
+            // En lugar de aparecer de golpe, el chunk entra con transición.
+            // LODGroup.ForceLOD(-1) + crossFadeWidth > 0 activa el blend.
+            c.lodGroup.ForceLOD(-1); // volver a automático
+            if (fadeActivacion)
+                StartCoroutine(FadeEntradaChunk(c));
+        }
         AlsasuaLogger.Info("Chunks", $"[+] '{c.nombre}' activado. Activos: {_activos.Count}/{ChunksTotales}");
+    }
+
+    private IEnumerator FadeEntradaChunk(Chunk c)
+    {
+        if (c.lodGroup == null) yield break;
+        // Arrancar con LOD bajo (menos detalle) y subir a LOD0 gradualmente
+        // usando el crossFadeWidth del LODGroup para que Unity interpole.
+        c.lodGroup.ForceLOD(1);   // arrancar en LOD medio
+        yield return new WaitForSeconds(duracionFade * 0.5f);
+        c.lodGroup.ForceLOD(-1);  // soltar → Unity elige el correcto por distancia
     }
 
     private void DesactivarChunk(Chunk c, int idx)
@@ -344,7 +368,8 @@ public class SistemaChunks : MonoBehaviour
 
         foreach (var c in chunks)
         {
-            if (c.go == null) continue;
+            // Mismo guard doble que en runtime: Unity puede dejar slots null en el array.
+            if (c == null || c.go == null) continue;
             Vector3 centro = Application.isPlaying ? c.centro : c.go.transform.position;
 
             // Verde = activo, rojo translúcido = inactivo

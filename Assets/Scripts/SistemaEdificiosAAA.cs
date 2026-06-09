@@ -1338,37 +1338,64 @@ public class SistemaEdificiosAAA : MonoBehaviour
     //  LUCES NOCTURNAS
     // ═══════════════════════════════════════════════════════════════════════
 
+    // ── Ventanas nocturnas ────────────────────────────────────────────────
+    // Mejora sobre la versión anterior:
+    //   · Usa MaterialPropertyBlock en lugar de r.material para evitar
+    //     instanciar un material por renderer (memory leak + draw calls extra).
+    //   · Gradiente suave según _GlobalNightLevel en lugar de binario on/off.
+    //   · Cada ventana tiene una temperatura de color aleatoria seed-ed por índice:
+    //     mezcla de cálido (vela/sodio), neutro (LED) y frío (pantalla TV).
+    //   · CicloLucesNocturnas ahora corre cada 2s en lugar de 30s para que
+    //     reaccione al ciclo día/noche dinámico del SistemaVolumenHDRP.
+
+    static readonly int ID_EmissiveColor = Shader.PropertyToID("_EmissiveColor");
+    static readonly int ID_EmissiveHDR   = Shader.PropertyToID("_EmissiveColorHDR");
+    // Semilla de aleatoriedad para las ventanas (determinista por índice)
+    static readonly Color[] COLS_VENTANA = {
+        new Color(1.0f, 0.85f, 0.55f),   // cálido — bombilla incandescente
+        new Color(1.0f, 0.92f, 0.78f),   // neutro-cálido — LED blanco
+        new Color(0.80f, 0.90f, 1.0f),   // frío — pantalla TV/monitor
+        new Color(1.0f, 0.78f, 0.40f),   // ámbar — sodio de cocina
+    };
+
     IEnumerator CicloLucesNocturnas()
     {
         while (true)
         {
-            yield return new WaitForSeconds(30f);
-            var atm = AltsasuCore.I?.atmosferaSystem;
-            bool noche = atm != null && !atm.EsDeDia;
-            if (noche != _esNoche)
-            {
-                _esNoche = noche;
-                yield return StartCoroutine(TransicionLuces(noche));
-            }
+            yield return new WaitForSeconds(2f); // 2s: reacciona al ciclo dinámico
+            float nightLevel = Shader.GetGlobalFloat("_GlobalNightLevel");
+            yield return StartCoroutine(ActualizarVentanasMPB(nightLevel));
         }
     }
 
-    IEnumerator TransicionLuces(bool encender)
+    IEnumerator ActualizarVentanasMPB(float nightLevel)
     {
-        for (int i = 0; i < _ventanasNocturnas.Count; i += 3)
+        // nightLevel: 0 = pleno día (ventanas apagadas), 1 = plena noche (todas encendidas)
+        // A partir de 0.25 las ventanas empiezan a encenderse; a 0.75 están al máximo.
+        float intensidadBase = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.25f, 0.75f, nightLevel));
+
+        for (int i = 0; i < _ventanasNocturnas.Count; i++)
         {
             var r = _ventanasNocturnas[i];
             if (r == null) continue;
-            bool activa = encender && (i % 10 != 0) && (i % 7 != 0);
-            var mat = r.material;
-            if (mat.HasProperty("_EmissiveColor"))
-            {
-                mat.SetColor("_EmissiveColor", activa
-                    ? new Color(1.0f, 0.88f, 0.62f) * 2.5f : Color.black);
-                if (activa) mat.EnableKeyword("_EMISSION");
-                else        mat.DisableKeyword("_EMISSION");
-            }
-            if (i % 50 == 0) yield return null;
+
+            // Patrón de encendido: no todas las ventanas lit al mismo tiempo.
+            // Combina módulos y la semilla del índice para apariencia realista.
+            bool lit = (i % 3 != 0) && (i % 11 != 2);  // ~60% encendidas
+            float intensidad = lit ? intensidadBase : intensidadBase * 0.12f; // apagadas = muy tenue
+
+            // Color de la ventana: determinista por índice (sin Random.value cada frame)
+            int colorIdx = (i * 7 + (i / 4)) % COLS_VENTANA.Length;
+            Color col = COLS_VENTANA[colorIdx] * (intensidad * 3.5f); // HDR intensity
+
+            // MaterialPropertyBlock: no crea instancias de material
+            _mpb.Clear();
+            _mpb.SetColor(ID_EmissiveColor, col);
+            _mpb.SetColor(ID_EmissiveHDR,   col);
+            r.SetPropertyBlock(_mpb);
+
+            // Spread el trabajo: procesar 80 ventanas por frame máximo
+            if (i % 80 == 0) yield return null;
         }
     }
 

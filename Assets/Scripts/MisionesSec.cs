@@ -21,6 +21,13 @@ public class MisionSec_Fotografo : Mision
 {
     public override string Nombre => "[SECUNDARIA] Fotógrafo de la Resistencia";
 
+    /// <summary>
+    /// True mientras esta misión está activa y espera un input de tecla F.
+    /// ControladorJugador lo consulta para no colocar una bomba accidentalmente
+    /// cuando el jugador pulsa F para fotografiar. Ver BUG FIX en ControladorJugador.cs.
+    /// </summary>
+    public static bool ModoFotoActivo { get; private set; }
+
     int   _fotos = 0;
     const int META = 3;
 
@@ -33,8 +40,9 @@ public class MisionSec_Fotografo : Mision
 
     public override System.Action AlIniciar => () =>
     {
+        ModoFotoActivo = true;   // bloquea la bomba mientras dure la misión
         AlsasuaLogger.Info("MS01", $"Fotógrafo: acércate a {META} puntos de interés y pulsa F");
-        AlsasuaLogger.Info("MS01", "Modo fotógrafo activo"); // logro se dispara al completar
+        AlsasuaLogger.Info("MS01", "Modo fotógrafo activo");
     };
 
     public override List<Objetivo> Objetivos => new()
@@ -64,8 +72,10 @@ public class MisionSec_Fotografo : Mision
             },
             AlCompletar = () =>
             {
+                ModoFotoActivo = false;  // devuelve la tecla F a la bomba
                 MisionHelper.GanarDinero(400);
                 SistemaApoyoPopular.Instance?.SumarApoyo(100f, "Fotos de denuncia publicadas");
+                SistemaApoyoPopular.Instance?.SumarHonor(20f, "Denuncia fotográfica publicada");
             }
         }
     };
@@ -328,23 +338,4 @@ public class GestorMisionesSecundarias : MonoBehaviour
             AlsasuaLogger.Info("MisionSec", $"✅ Objetivo: {obj.Descripcion}");
             _objetivoIdx[i] = idx + 1;
 
-            if (_objetivoIdx[i] >= m.Objetivos.Count)
-            {
-                m.AlCompletar?.Invoke();
-                AlsasuaLogger.Info("MisionSec", $"🏆 {m.Nombre}");
-                _aEliminar.Add(m);
-            }
-        }
-        foreach (var m in _aEliminar)
-        {
-            int i = _activas.IndexOf(m);
-            if (i >= 0) { _activas.RemoveAt(i); _objetivoIdx.RemoveAt(i); }
-        }
-    }
-
-    void OnDestroy()
-    {
-        AltsasuCore.OnWorldReady -= DesbloquearPrimeras;
-        SistemaMisiones.OnMisionCompletada -= OnMisionPrincipalCompletada;
-    }
-}
+            if (_obje

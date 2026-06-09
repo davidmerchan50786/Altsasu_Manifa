@@ -22,10 +22,35 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         {
             if (Desbloqueado) return;
             PlayerPrefs.SetInt("logro_" + Id, 1);
-            PlayerPrefs.Save();
+            // BUG FIX: NO llamar PlayerPrefs.Save() aquí.
+            // Save() es una escritura síncrona a disco. Si varios logros se
+            // desbloquean en el mismo frame (ej. al completar M12 se disparan
+            // 12_misiones + victoria + manifa_grande) se generan N escrituras
+            // seguidas. SistemaLogros.Instance encola los saves y los ejecuta
+            // de uno en uno al final del frame via coroutine.
+            SistemaLogros.Instance?.ProgramarSave();
             OnLogroDesbloqueado?.Invoke(this);
             AlsasuaLogger.Info("Logros", $"🏆 {Nombre}");
         }
+    }
+
+    // ── Batch save ────────────────────────────────────────────────────────
+    bool _savePendiente;
+
+    /// <summary>Marca que hay datos sin guardar. El save real ocurre al final del frame.</summary>
+    public void ProgramarSave()
+    {
+        if (_savePendiente) return;   // ya hay uno programado este frame
+        _savePendiente = true;
+        StartCoroutine(SaveAlFinalDelFrame());
+    }
+
+    private System.Collections.IEnumerator SaveAlFinalDelFrame()
+    {
+        yield return new WaitForEndOfFrame();
+        PlayerPrefs.Save();
+        _savePendiente = false;
+        AlsasuaLogger.Info("Logros", "PlayerPrefs guardados (batch)");
     }
 
     // ── Catálogo ──────────────────────────────────────────────────────────
@@ -204,30 +229,4 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
             _estiloNotif = new GUIStyle(GUI.skin.box)
             {
                 fontSize = 14, richText = true,
-                alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = Color.white,
-                           background = MenuPausa.MakeTex2x2(new Color(0.1f,0.35f,0.1f,0.9f)) },
-                padding = new RectOffset(14, 14, 10, 10)
-            };
-
-        float alpha = Mathf.Clamp01(_timerNotif);
-        GUI.color = new Color(1,1,1, alpha);
-        float w = 320f, h = 54f;
-        float x = Screen.width - w - 16f, y = Screen.height * 0.35f;
-        GUI.Box(new Rect(x, y, w, h),
-            $"{_logroMostrado.Icono}  <b>{_logroMostrado.Nombre}</b>\n<size=11><color=#AAFFAA>{_logroMostrado.Descripcion}</color></size>",
-            _estiloNotif);
-        GUI.color = Color.white;
-    }
-
-    protected override void OnDestroyed()
-    {
-        SistemaGrafitis.OnPintadaRealizada        -= OnGraffiti;
-        SistemaMisiones.OnMisionCompletada        -= OnMisionCompletada;
-        SistemaMisiones.OnMisionIniciada          -= OnMisionIniciada;
-        GameManagerAltsasua.OnEstrellasCambia     -= OnWanted;
-        ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
-        VehiculoNPC.OnVehiculoDestruido           -= OnVehiculoDestruido;
-        OnLogroDesbloqueado                       -= MostrarNotificacion;
-    }
-}
+                alignment = Te

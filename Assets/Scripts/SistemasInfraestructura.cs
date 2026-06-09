@@ -128,20 +128,11 @@ public class SistemaMusica : MonoBehaviour
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  POST PROCESO AAA  (wrapper → redirige a SistemaPolish)
-// ─────────────────────────────────────────────────────────────────────────────
-public class SistemaPostProcesoAAA : MonoBehaviour
-{
-    void Start() => AlsasuaLogger.Info("PostProceso", "Activo — efectos via SistemaPolish");
-
-    /// <summary>Flash de explosión: shake + bloom spike. Llamado desde SistemaExplosion.</summary>
-    public static void FlashExplosion()
-    {
-        SistemaPolish.Shake(0.9f);
-        // El bloom lo maneja SistemaPolish internamente cuando trauma > 0.5
-    }
-}
+// NOTA: la clase stub 'SistemaPostProcesoAAA' que vivía aquí se ELIMINÓ —
+// estaba duplicada con la versión completa de SistemaPostProcesoAAA.cs
+// (mismo tipo top-level sin namespace → error de compilación CS0101).
+// La versión completa ya expone FlashExplosion/FlashDisparo/SetClimaGrading/
+// CambiarEstado, así que todos los llamadores siguen funcionando.
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  ENEMIGO PATRULLA  (NPC genérico sin IA compleja — simplificado)

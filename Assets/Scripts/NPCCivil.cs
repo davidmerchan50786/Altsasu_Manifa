@@ -22,10 +22,18 @@ public class NPCCivil : NPCBase
     [Header("Reacción")]
     public float radioEscucha = 30f;
 
+    [Header("Paranoia — GC infiltrado")]
+    [Tooltip("Radio al que se evalúa si este NPC es un GC disfrazado (requiere paranoia alta).")]
+    public float radioInfiltracion = 8f;
+    [Tooltip("Segundos entre evaluaciones de EsGCDisfrazado para no llamarlo cada frame.")]
+    public float intervaloCheckInfiltrado = 3f;
+
     // ── Estado ────────────────────────────────────────────────────────────
-    private enum Estado { Idle, Caminando, Huyendo }
+    private enum Estado { Idle, Caminando, Huyendo, GCRevelado }
     private Estado _estado = Estado.Idle;
     private float  _timerEstado;
+    private float  _timerCheckInfiltrado;
+    private bool   _esInfiltrado;   // true = se reveló como GC este ciclo de vida
 
     // ════════════════════════════════════════════════════════════════════════
 
@@ -74,6 +82,25 @@ public class NPCCivil : NPCBase
         // Separación del jugador (evita que el NPC bloquee la cámara)
         if (_jugador != null && Vector3.Distance(transform.position, _jugador.position) < 2f)
             HuirDe(_jugador.position);
+
+        // ── Detección de GC infiltrado ────────────────────────────────────
+        // Solo evaluar si el jugador está cerca y no se ha revelado ya.
+        // Se hace con un timer para no llamar EsGCDisfrazado() cada frame.
+        if (!_esInfiltrado && _jugador != null && _estado != Estado.GCRevelado)
+        {
+            _timerCheckInfiltrado -= Time.deltaTime;
+            if (_timerCheckInfiltrado <= 0f)
+            {
+                _timerCheckInfiltrado = intervaloCheckInfiltrado;
+                float dist = Vector3.Distance(transform.position, _jugador.position);
+                if (dist < radioInfiltracion)
+                {
+                    var apoyo = SistemaApoyoPopular.Instance;
+                    if (apoyo != null && apoyo.EsGCDisfrazado(gameObject))
+                        RevelarComoGC();
+                }
+            }
+        }
     }
 
     private void CambiarEstado(Estado nuevo)
@@ -99,55 +126,34 @@ public class NPCCivil : NPCBase
                 _agente.speed     = velocidadHuida;
                 _timerEstado      = 8f;
                 break;
+
+            case Estado.GCRevelado:
+                // El NPC revelado huye rápido y no vuelve a Idle
+                _agente.isStopped = false;
+                _agente.speed     = velocidadHuida * 1.5f;
+                if (_jugador != null) HuirDe(_jugador.position);
+                break;
         }
     }
 
-    // ── API pública ───────────────────────────────────────────────────────
+    // ── Revelar como GC disfrazado ────────────────────────────────────────
 
-    /// <summary>El GameManager llama esto cuando hay un disparo cerca.</summary>
-    public void AlertarDisparo(Vector3 origenDisparo) => Alertar(origenDisparo);
-
-    public override void Alertar(Vector3 origen)
+    private void RevelarComoGC()
     {
-        if (Vector3.Distance(transform.position, origen) > radioEscucha) return;
-        HuirDe(origen);
-        CambiarEstado(Estado.Huyendo);
-    }
+        _esInfiltrado = true;
+        _estado = Estado.GCRevelado;
+        CambiarEstado(Estado.GCRevelado);
 
-    // ── Cuerpo procedural ─────────────────────────────────────────────────
+        // Feedback visual inmediato: el "civil" queda en rojo para indicar el reveal
+        var renderers = GetComponentsInChildren<Renderer>();
+        foreach (var r in renderers)
+        {
+            var mat = new Material(r.sharedMaterial);
+            if (mat.HasProperty("_BaseColor"))
+                mat.SetColor("_BaseColor", new Color(0.8f, 0.1f, 0.1f));
+            else
+                mat.color = new Color(0.8f, 0.1f, 0.1f);
+            r.sharedMaterial = mat;
+        }
 
-    protected override void CrearCuerpoFallback()
-    {
-        Color[] colores = {
-            new Color(0.2f,0.3f,0.6f), new Color(0.6f,0.2f,0.2f),
-            new Color(0.2f,0.6f,0.3f), new Color(0.5f,0.5f,0.15f),
-            new Color(0.15f,0.15f,0.15f), new Color(0.8f,0.7f,0.6f)
-        };
-        Color ropa = colores[Random.Range(0, colores.Length)];
-        Color piel = new Color(0.85f, 0.72f, 0.58f);
-
-        var raiz = new GameObject("_Cuerpo");
-        raiz.transform.SetParent(transform, false);
-
-        Parte(raiz, "Tronco",  new Vector3(0f,   1.0f, 0f), new Vector3(0.35f, 0.55f, 0.2f),  ropa);
-        Parte(raiz, "Cabeza",  new Vector3(0f,   1.7f, 0f), new Vector3(0.22f, 0.22f, 0.22f), piel);
-        Parte(raiz, "PiernaI", new Vector3(-0.1f,0.38f,0f), new Vector3(0.14f, 0.75f, 0.14f), ropa);
-        Parte(raiz, "PiernaD", new Vector3( 0.1f,0.38f,0f), new Vector3(0.14f, 0.75f, 0.14f), ropa);
-        Parte(raiz, "BrazoI",  new Vector3(-0.25f,1.05f,0f),new Vector3(0.12f, 0.5f, 0.12f),  ropa);
-        Parte(raiz, "BrazoD",  new Vector3( 0.25f,1.05f,0f),new Vector3(0.12f, 0.5f, 0.12f),  ropa);
-    }
-
-    private static void Parte(GameObject raiz, string nombre, Vector3 localPos, Vector3 escala, Color color)
-    {
-        var go  = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = nombre;
-        go.transform.SetParent(raiz.transform, false);
-        go.transform.localPosition = localPos;
-        go.transform.localScale    = escala;
-        var mat = new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"));
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-        else mat.color = color;
-        go.GetComponent<Renderer>().sharedMaterial = mat;
-        Object.Destroy(go.GetComponent<Collider>());
-    }
-}
+        // Sube el wanted (llamó a 

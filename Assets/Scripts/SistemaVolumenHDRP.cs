@@ -27,9 +27,16 @@ public class SistemaVolumenHDRP : MonoBehaviour
     // ── Volúmenes ──────────────────────────────────────────────────────────
     Volume _volDia;
     Volume _volNoche;
+    Volume _volTransicion;   // hora dorada: amanecer (6-9h) y atardecer (17-21h)
+
+    // ── Efectos volumen transición ─────────────────────────────────────────
+    Bloom          _bloomTransicion;
+    ColorAdjustments _caTransicion;
+    float          _blendTransicion;
 
     // ── Efectos volumen día ────────────────────────────────────────────────
     Bloom             _bloomDia;
+    Texture2D         _lensDirtTex;   // textura procedural de suciedad de lente
     ScreenSpaceAmbientOcclusion  _ssaoDia;
     ScreenSpaceReflection _ssrDia;
     DepthOfField      _dofDia;
@@ -65,11 +72,16 @@ public class SistemaVolumenHDRP : MonoBehaviour
 
     // ── Farolas ────────────────────────────────────────────────────────────
     readonly List<Light> _farolas = new();
-    bool _farolasEncendidas;
+    bool  _farolasEncendidas;
+    float _flickerTimer;
 
     // ── Estado ────────────────────────────────────────────────────────────
     float _horaActual = 12f; // 0-24
     float _blendNoche;       // 0=día, 1=noche
+
+    // ── Shader globals ─────────────────────────────────────────────────────
+    static readonly int ID_NightLevel = Shader.PropertyToID("_GlobalNightLevel");
+    static readonly int ID_FocusDist  = Shader.PropertyToID("_GlobalFocusDist");
 
     // PERF: cache de PropertyInfo para ActualizarHora() — Type.GetProperty() hace string hash
     // lookups en cada llamada. Cacheando la referencia, la reflexión ocurre solo una vez (~0.3ms
@@ -108,6 +120,7 @@ public class SistemaVolumenHDRP : MonoBehaviour
         CrearLuzDireccional();
         CrearVolumenDia();
         CrearVolumenNoche();
+        CrearVolumenTransicion();
         _crFarolas = StartCoroutine(BuscarFarolasYConectar());
         _crCiclo   = StartCoroutine(CicloAtmosfera());
 
@@ -281,6 +294,18 @@ public class SistemaVolumenHDRP : MonoBehaviour
         // ── Tone Mapping ──────────────────────────────────────────────────
         var tm = p.Add<Tonemapping>(true);
         tm.mode.Override(TonemappingMode.ACES);
+
+        // ── TAA (Temporal Anti-Aliasing) — elimina aliasing en bordes ─────
+        // HDRP usa TemporalAntialiasing como VolumeComponent para el perfil global.
+        var taa = p.Add<TemporalAntialiasing>(true);
+        taa.jitterSpread.Override(0.75f);
+        taa.sharpness.Override(0.5f);
+
+        // ── Lens Dirt — mancha de cámara en bloom de explosiones ──────────
+        // Textura procedural 16×16: degradado radial con manchas aleatorias.
+        _lensDirtTex = GenerarLensDirt();
+        _bloomDia.dirtTexture.Override(_lensDirtTex);
+        _bloomDia.dirtIntensity.Override(0f); // 0 en reposo; se sube desde SetLensDirt()
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -363,8 +388,11 @@ public class SistemaVolumenHDRP : MonoBehaviour
             ActualizarHora();
             ActualizarSol();
             ActualizarBlendVolumenes();
+            ActualizarTransicion();
             ActualizarHDRI();
             ActualizarFarolas();
+            ActualizarShaderGlobals();
+            ActualizarFlickerFarolas();
             // PERF: desactivar features HDRP costosas cuando no aportan visualmente (~2-4ms/frame ahorrados)
             ActualizarFeaturesHDRPDinamicas();
             yield return new WaitForSeconds(2f); // cada 2s es suficiente
@@ -641,6 +669,32 @@ public class SistemaVolumenHDRP : MonoBehaviour
     //  API PÚBLICA
     // ════════════════════════════════════════════════════════════════════════
 
+
+    /// <summary>
+    /// Actualiza la distancia de foco del DoF físico.
+    /// Llamado por SistemaPolish.ActualizarAutoFocus() cada 0.2 s con
+    /// el resultado del raycast al centro de pantalla.
+    /// </summary>
+    public static void SetFocusDistance(float distancia)
+    {
+        if (Instance?._dofDia == null) return;
+        // En UsePhysicalCamera mode el foco se controla con farFocusStart/End
+        float d = Mathf.Clamp(distancia, 1f, 500f);
+        Instance._dofDia.farFocusStart.Override(Mathf.Max(0.5f, d - d * 0.08f));
+        Instance._dofDia.farFocusEnd.Override(d + d * 0.12f);
+        Shader.SetGlobalFloat(ID_FocusDist, d);
+    }
+
+    /// <summary>
+    /// Activa la textura de lens dirt en el bloom.
+    /// intensidad 0 = off, 1 = máximo. Llamar desde SistemaPolish.ExplosionBloom.
+    /// </summary>
+    public static void SetLensDirt(float intensidad)
+    {
+        if (Instance?._bloomDia == null) return;
+        Instance._bloomDia.dirtIntensity.Override(Mathf.Clamp(intensidad * 4f, 0f, 4f));
+    }
+
     /// <summary>Fuerza transición a cielo de tormenta temporalmente.</summary>
     public static void SetTormenta(bool activo)
     {
@@ -665,4 +719,139 @@ public class SistemaVolumenHDRP : MonoBehaviour
         Instance._dofDia.farFocusStart.Override(activo ? focusDist - 3f : 80f);
         Instance._dofDia.farFocusEnd.Override(activo ? focusDist + 3f : 180f);
     }
+
+    // ── Generador de textura Lens Dirt ────────────────────────────────────
+
+    static Texture2D GenerarLensDirt()
+    {
+        const int S = 32;
+        var tex = new Texture2D(S, S, TextureFormat.RGBA32, false);
+        tex.name = "LensDirt_Procedural";
+        var pixels = new Color[S * S];
+        var rng    = new System.Random(42); // semilla fija → determinista
+
+        for (int y = 0; y < S; y++)
+        for (int x = 0; x < S; x++)
+        {
+            // Degradado radial oscuro en los bordes (vignette de suciedad)
+            float nx = (x / (float)(S - 1)) * 2f - 1f;
+            float ny = (y / (float)(S - 1)) * 2f - 1f;
+            float r2 = nx * nx + ny * ny;
+            float radial = Mathf.Clamp01(r2 * 0.7f);
+
+            // Manchas de polvo: ruido random sparse
+            float dust = rng.NextDouble() < 0.04 ? (float)rng.NextDouble() * 0.4f : 0f;
+
+            float brightness = radial * 0.6f + dust;
+            pixels[y * S + x] = new Color(brightness, brightness * 0.95f, brightness * 0.9f, 1f);
+        }
+        tex.SetPixels(pixels);
+        tex.Apply();
+        return tex;
+    }
+
+    // ── Flicker de farolas durante tormenta ───────────────────────────────
+
+    void ActualizarFlickerFarolas()
+    {
+        var clima = AltsasuCore.I?.climaSystem;
+        bool tormenta = clima != null
+            && clima.climaActual == SistemaClima.EstadoClima.Tormenta;
+
+        if (!tormenta || !_farolasEncendidas) return;
+
+        _flickerTimer -= 2f; // se llama cada 2 s desde CicloAtmosfera
+        // Probabilidad de flicker: ~8% cada ciclo de 2 s
+        if (UnityEngine.Random.value > 0.08f) return;
+
+        // Apagar una farola aleatoria 0.12 s y volver a encender
+        int idx = UnityEngine.Random.Range(0, _farolas.Count);
+        var l = _farolas.Count > idx ? _farolas[idx] : null;
+        if (l == null || !l.gameObject.activeSelf) return;
+
+        StartCoroutine(FlickerLuz(l));
+    }
+
+    System.Collections.IEnumerator FlickerLuz(Light l)
+    {
+        var hd = l.GetComponent<HDAdditionalLightData>();
+        float orig = hd != null ? 2200f : l.intensity;
+        // Pulso: off → dim → off → on
+        hd?.SetIntensity(0f,    LightUnit.Lumen); yield return new WaitForSeconds(0.04f);
+        hd?.SetIntensity(500f,  LightUnit.Lumen); yield return new WaitForSeconds(0.02f);
+        hd?.SetIntensity(0f,    LightUnit.Lumen); yield return new WaitForSeconds(0.06f);
+        hd?.SetIntensity(orig,  LightUnit.Lumen);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  VOLUMEN TRANSICIÓN — hora dorada (amanecer / atardecer)
+    // ════════════════════════════════════════════════════════════════════════
+
+    void CrearVolumenTransicion()
+    {
+        var go = new GameObject("Volume_Transicion_HDRP");
+        _volTransicion = go.AddComponent<Volume>();
+        _volTransicion.isGlobal = true;
+        _volTransicion.priority = 12f;
+        _volTransicion.weight   = 0f;
+
+        var p = ScriptableObject.CreateInstance<VolumeProfile>();
+        _volTransicion.profile = p;
+
+        // Bloom cálido — naranja
+        _bloomTransicion = p.Add<Bloom>(true);
+        _bloomTransicion.intensity.Override(2.2f);
+        _bloomTransicion.scatter.Override(0.75f);
+        _bloomTransicion.tint.Override(new Color(1.0f, 0.72f, 0.35f));
+
+        // Color grading hora dorada
+        _caTransicion = p.Add<ColorAdjustments>(true);
+        _caTransicion.postExposure.Override(0.8f);
+        _caTransicion.contrast.Override(18f);
+        _caTransicion.colorFilter.Override(new Color(1.0f, 0.82f, 0.60f));
+        _caTransicion.saturation.Override(20f);
+
+        // Niebla dorada con scatter forward — diagonales de luz visibles
+        var fogT = p.Add<Fog>(true);
+        fogT.enabled.Override(true);
+        fogT.enableVolumetricFog.Override(true);
+        fogT.albedo.Override(new Color(0.90f, 0.72f, 0.50f));
+        fogT.meanFreePath.Override(800f);
+        fogT.baseHeight.Override(150f);
+        fogT.maximumHeight.Override(600f);
+        fogT.anisotropy.Override(0.85f);
+        fogT.globalLightProbeDimmer.Override(0.65f);
+
+        // Vignette bordes oscuros naranjas
+        var vig = p.Add<Vignette>(true);
+        vig.intensity.Override(0.32f);
+        vig.smoothness.Override(0.5f);
+        vig.color.Override(new Color(0.15f, 0.06f, 0.02f));
+    }
+
+    void ActualizarTransicion()
+    {
+        if (_volTransicion == null) return;
+        // Pico en 7.5h (amanecer) y en 19h (atardecer)
+        float peso = 0f;
+        if (_horaActual >= 6f && _horaActual < 9f)
+            peso = 1f - Mathf.Abs((_horaActual - 7.5f) / 1.5f);
+        else if (_horaActual >= 17f && _horaActual < 21f)
+            peso = 1f - Mathf.Abs((_horaActual - 19f) / 2f);
+        peso = Mathf.Clamp01(peso);
+        _blendTransicion = Mathf.MoveTowards(_blendTransicion, peso, Time.deltaTime * 0.05f);
+        _volTransicion.weight = _blendTransicion;
+    }
+
+    void ActualizarShaderGlobals()
+    {
+        // _GlobalNightLevel (0=día, 1=noche): edificios lo leen para iluminar ventanas
+        Shader.SetGlobalFloat(ID_NightLevel, _blendNoche);
+        // _GlobalFocusDist: escrito por SetFocusDistance() desde SistemaPolish
+        // Aquí solo refrescamos el valor actual del DoF por si acaso.
+        if (_dofDia != null)
+            Shader.SetGlobalFloat(ID_FocusDist, _dofDia.farFocusStart.value);
+    }
+
+
 }

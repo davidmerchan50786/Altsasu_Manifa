@@ -52,6 +52,15 @@ public class HUDCanvas : MonoBehaviour
     Slider  _barraApoyo;
     Text    _txtApoyo;
 
+    // ── Honor del movimiento ──────────────────────────────────────────────
+    Slider  _barraHonor;
+    Text    _txtHonor;
+
+    // ── Panel manifestación (migrado desde HUDManifestacion IMGUI) ─────────
+    GameObject     _panelManifa;
+    Text           _txtManifaFase;
+    Text           _txtManifaObjetivo;
+
     // ── Hora / Clima ──────────────────────────────────────────────────────
     Text    _txtHora;
     Text    _txtClima;
@@ -105,11 +114,13 @@ public class HUDCanvas : MonoBehaviour
     SistemaAtmosfera            _atm;
     ControladorVehiculoJugador  _vehiculo;
     float                       _apoyoActual;   // caché local — actualizado por evento
+    float                       _honorActual;   // caché local — actualizado por evento
 
     // ── Colores ───────────────────────────────────────────────────────────
     static readonly Color COL_VIDA     = new(0.95f, 0.22f, 0.22f);
     static readonly Color COL_ARMADURA = new(0.30f, 0.68f, 1.00f);
     static readonly Color COL_APOYO    = new(0.22f, 0.85f, 0.30f);
+    static readonly Color COL_HONOR    = new(0.95f, 0.75f, 0.10f); // dorado
     static readonly Color COL_WANTED   = new(1.00f, 0.82f, 0.10f);
     static readonly Color COL_HUD_BG   = new(0.00f, 0.00f, 0.00f, 0.62f);
     static readonly Color COL_HUD_BORDE= new(0.18f, 0.45f, 0.90f, 0.80f);
@@ -130,6 +141,7 @@ public class HUDCanvas : MonoBehaviour
         CrearPanelEstado();
         CrearWanted();
         CrearApoyo();
+        CrearHonor();
         CrearHoraSClima();
         CrearVelocimetro();
         CrearBrujula();
@@ -138,6 +150,7 @@ public class HUDCanvas : MonoBehaviour
         CrearMisionTexto();
         CrearBannerMision();
         CrearPanelNotificaciones();
+        CrearPanelManifa();
         SuscribirEventos();
         BuscarReferencias();
         StartCoroutine(ProcesarColaNotificaciones());
@@ -150,9 +163,11 @@ public class HUDCanvas : MonoBehaviour
         // _jugador se asigna cuando AltsasuCore dispara OnJugadorSpawned
         if (AltsasuCore.Jugador != null)
             _jugador = AltsasuCore.Jugador.GetComponent<ControladorJugador>();
-        // apoyo inicial
+        // apoyo/honor inicial
         _apoyoActual = SistemaApoyoPopular.Instance != null
                      ? SistemaApoyoPopular.Instance.apoyo : 50f;
+        _honorActual = SistemaApoyoPopular.Instance != null
+                     ? SistemaApoyoPopular.Instance.honor : 50f;
     }
 
     void SuscribirEventos()
@@ -166,6 +181,7 @@ public class HUDCanvas : MonoBehaviour
         SistemaLogros.OnLogroDesbloqueado          += OnLogro;
         AltsasuCore.OnJugadorSpawned               += OnJugadorSpawned;
         SistemaApoyoPopular.OnApoyoCambia          += OnApoyo;   // FIX: método nombrado (antes lambda → el -= con otra lambda no quitaba nada → fuga de suscripción)
+        SistemaApoyoPopular.OnHonorCambia          += OnHonor;
         ControladorVehiculoJugador.OnJugadorEntro  += OnEntroVehiculo;
         ControladorVehiculoJugador.OnJugadorSalio  += OnSalioVehiculo;
         // EventBus: fade a negro en muerte del jugador (desacoplado de ControladorJugador)
@@ -183,12 +199,14 @@ public class HUDCanvas : MonoBehaviour
         SistemaLogros.OnLogroDesbloqueado          -= OnLogro;
         AltsasuCore.OnJugadorSpawned               -= OnJugadorSpawned;
         SistemaApoyoPopular.OnApoyoCambia          -= OnApoyo;
+        SistemaApoyoPopular.OnHonorCambia          -= OnHonor;
         ControladorVehiculoJugador.OnJugadorEntro  -= OnEntroVehiculo;
         ControladorVehiculoJugador.OnJugadorSalio  -= OnSalioVehiculo;
         EventBus.Unsubscribe<PlayerDeathEvent>(OnPlayerMuerto);
     }
 
-    void OnApoyo(float v) => _apoyoActual = v;
+    void OnApoyo(float v)  => _apoyoActual = v;
+    void OnHonor(float v)  => _honorActual = v;
 
     void OnPlayerMuerto(PlayerDeathEvent evt)
     {
@@ -243,6 +261,7 @@ public class HUDCanvas : MonoBehaviour
         ActualizarVida();
         ActualizarDinero();
         ActualizarApoyo();
+        ActualizarHonor();
         ActualizarHoraClima();
         ActualizarVehiculo();
         ActualizarBrujula();
@@ -280,6 +299,13 @@ public class HUDCanvas : MonoBehaviour
         if (_barraApoyo == null) return;
         _barraApoyo.value = Mathf.Lerp(_barraApoyo.value, _apoyoActual / 100f, Time.deltaTime * 2f);
         if (_txtApoyo != null) _txtApoyo.text = $"♥ {_apoyoActual:F0}%";
+    }
+
+    void ActualizarHonor()
+    {
+        if (_barraHonor == null) return;
+        _barraHonor.value = Mathf.Lerp(_barraHonor.value, _honorActual / 100f, Time.deltaTime * 2f);
+        if (_txtHonor != null) _txtHonor.text = $"★ {_honorActual:F0}%";
     }
 
     void ActualizarHoraClima()
@@ -451,6 +477,17 @@ public class HUDCanvas : MonoBehaviour
             new Vector2(10, 10), new Vector2(200, 30));
         _barraApoyo = CrearBarra(panel, "BarraApoyo", new Vector2(0,0), COL_APOYO, 0.5f, 20);
         _txtApoyo   = CrearText(panel, "TxtApoyo", new Vector2(4,4), Color.white, 11, FontStyle.Normal);
+    }
+
+    // ── Honor del movimiento ──────────────────────────────────────────────
+    // Posicionado justo encima del panel de apoyo (y offset +35)
+    void CrearHonor()
+    {
+        var panel = Panel("PanelHonor", _canvas.transform,
+            new Vector2(0,0), new Vector2(0,0),
+            new Vector2(10, 45), new Vector2(200, 30));
+        _barraHonor = CrearBarra(panel, "BarraHonor", new Vector2(0,0), COL_HONOR, 0.5f, 20);
+        _txtHonor   = CrearText(panel, "TxtHonor", new Vector2(4,4), Color.white, 11, FontStyle.Normal);
     }
 
     // ── Hora y clima ──────────────────────────────────────────────────────
@@ -674,6 +711,35 @@ public class HUDCanvas : MonoBehaviour
     }
 
     /// <summary>Muestra pantalla de victoria al completar M12.</summary>
+    // ── API manifestación (usada por HUDManifestacion como delegado) ─────────
+
+    /// <summary>Muestra u oculta el panel de manifestación.</summary>
+    public static void SetManifaVisible(bool visible)
+    {
+        if (I?._panelManifa != null) I._panelManifa.SetActive(visible);
+    }
+
+    /// <summary>Cambia el texto de fase mostrado en el panel de manifestación.</summary>
+    public static void SetManifaFase(string fase)
+    {
+        if (I?._txtManifaFase != null) I._txtManifaFase.text = $"⚡ {fase}";
+    }
+
+    /// <summary>Cambia el texto de objetivo del panel de manifestación.</summary>
+    public static void SetManifaObjetivo(string objetivo)
+    {
+        if (I?._txtManifaObjetivo != null) I._txtManifaObjetivo.text = objetivo;
+    }
+
+    /// <summary>
+    /// Encola una notificación tipo toast (también usada por NPCCivil para el reveal de GC).
+    /// </summary>
+    public static void MostrarNotificacion(string mensaje)
+    {
+        if (I == null) return;
+        I._notifQueue.Enqueue(mensaje);
+    }
+
     public static void MostrarVictoria()
     {
         if (I == null) return;
@@ -968,41 +1034,4 @@ public class HUDCanvas : MonoBehaviour
         {
             if (_notifQueue.Count > 0 && !_notifMostrando)
                 yield return StartCoroutine(MostrarNotificacion(_notifQueue.Dequeue()));
-            yield return new WaitForSecondsRealtime(0.5f);
-        }
-    }
-
-    IEnumerator MostrarNotificacion(string msg)
-    {
-        _notifMostrando = true;
-        if (_txtNotif != null) _txtNotif.text = msg;
-
-        // Slide desde la derecha
-        float dur = 0.3f, t = 0f;
-        while (t < dur)
-        {
-            t += Time.unscaledDeltaTime;
-            float x = Mathf.Lerp(420f, -16f, t / dur);
-            if (_panelNotif != null) _panelNotif.anchoredPosition = new Vector2(x, -20f);
-            yield return null;
-        }
-
-        yield return new WaitForSecondsRealtime(3.5f);
-
-        // Slide hacia fuera
-        t = 0f;
-        while (t < dur)
-        {
-            t += Time.unscaledDeltaTime;
-            float x = Mathf.Lerp(-16f, 420f, t / dur);
-            if (_panelNotif != null) _panelNotif.anchoredPosition = new Vector2(x, -20f);
-            yield return null;
-        }
-
-        _notifMostrando = false;
-    }
-
-    // ── Tipos auxiliares ──────────────────────────────────────────────────
-    class DanoIndicator { public Image image; public float timer, duracion; }
-    class MarcadorMision { public Transform objetivo; public Image imagen; public Text texto; public string label; }
-}
+            yield return new W

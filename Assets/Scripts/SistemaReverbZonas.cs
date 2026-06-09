@@ -1,6 +1,6 @@
 // Assets/Scripts/SistemaReverbZonas.cs
 // ═══════════════════════════════════════════════════════════════════════════
-//  REVERB POR ZONA — AudioMixerSnapshot + oclusión acústica
+//  REVERB POR ZONA — AudioMixerSnapshot + oclusión acústica AAA
 //
 //  Detecta en qué zona está el jugador y aplica el preset de reverb
 //  correspondiente vía AudioReverbZone o AudioMixerSnapshot.
@@ -12,7 +12,12 @@
 //    Interior    → reverb medio-alto
 //    Monte       → reverb mínimo (espacio abierto)
 //
-//  Oclusión: reduce volumen de sonidos que tienen muro entre ellos y la cámara
+//  Oclusión AAA (fase 4):
+//    • Raycast fuente→oyente; si hay pared → volumen ×0.4 + low-pass a 800 Hz
+//    • AudioLowPassFilter se añade/elimina dinámicamente (zero GC steady-state)
+//    • cutoffFree  = 22000 Hz  (sin filtro perceptible)
+//    • cutoffOcluido = 800 Hz  (sonido apagado tras hormigón/piedra vasca)
+//    • Suavizado con Lerp 4 Hz para evitar clicks
 // ═══════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
@@ -50,10 +55,18 @@ public class SistemaReverbZonas : MonoBehaviour
     };
 
     // ── Oclusión ──────────────────────────────────────────────────────────
-    readonly List<AudioSource> _fuentesRegistradas = new();
-    float    _timerOclusion;
-    Camera   _camCache;
-    int      _maskOclusion;
+    readonly List<AudioSource>                        _fuentesRegistradas = new();
+    readonly Dictionary<AudioSource, AudioLowPassFilter> _filtros         = new();
+    readonly Dictionary<AudioSource, float>           _volBase            = new();
+
+    const float CUTOFF_FREE    = 22000f;
+    const float CUTOFF_OCLUIDO =   800f;
+    const float VOL_OCLUSION   =   0.4f;   // factor de volumen tras pared
+    const float LERP_VEL       =     4f;   // Hz de suavizado
+
+    float  _timerOclusion;
+    Camera _camCache;
+    int    _maskOclusion;
 
     // ════════════════════════════════════════════════════════════════════════
 
@@ -134,35 +147,81 @@ public class SistemaReverbZonas : MonoBehaviour
         }
     }
 
-    // ── Oclusión acústica ─────────────────────────────────────────────────
+    // ── Oclusión acústica AAA ─────────────────────────────────────────────
+    //  Por cada fuente registrada:
+    //    · Raycast fuente→oyente; si choca → hay pared
+    //    · Con pared:  baja volumen a VOL_OCLUSION × volBase, cutoff → CUTOFF_OCLUIDO
+    //    · Sin pared:  restaura volBase, cutoff → CUTOFF_FREE
+    //    · AudioLowPassFilter se añade la primera vez y se reutiliza (zero GC estable)
 
     void ActualizarOclusion()
     {
         if (_camCache == null) _camCache = Camera.main;
         if (_camCache == null) return;
+        float dt     = Time.deltaTime;
         Vector3 oyente = _camCache.transform.position;
 
         for (int i = _fuentesRegistradas.Count - 1; i >= 0; i--)
         {
             var src = _fuentesRegistradas[i];
-            if (src == null) { _fuentesRegistradas.RemoveAt(i); continue; }
+            if (src == null)
+            {
+                _fuentesRegistradas.RemoveAt(i);
+                continue;
+            }
+
+            // Guardar volumen base la primera vez
+            if (!_volBase.ContainsKey(src))
+                _volBase[src] = src.volume > 0f ? src.volume : 1f;
 
             Vector3 dir  = oyente - src.transform.position;
             float   dist = dir.magnitude;
-            if (dist < 0.5f) { src.volume = src.maxDistance > 0 ? 1f : src.volume; continue; }
 
-            int colisiones = 0;
-            if (Physics.Raycast(src.transform.position, dir.normalized, dist, _maskOclusion))
-                colisiones++;
+            // Demasiado cerca: sin filtro
+            if (dist < 0.5f)
+            {
+                SetFiltro(src, CUTOFF_FREE, dt);
+                src.volume = Mathf.Lerp(src.volume, _volBase[src], dt * LERP_VEL);
+                continue;
+            }
 
-            float oclusion = Mathf.Clamp01(1f - colisiones * 0.6f);
-            src.volume = Mathf.Lerp(src.volume, oclusion, Time.deltaTime * 2f);
+            bool pared = Physics.Raycast(src.transform.position, dir.normalized, dist, _maskOclusion);
+
+            float cutoffObj = pared ? CUTOFF_OCLUIDO : CUTOFF_FREE;
+            float volObj    = pared ? _volBase[src] * VOL_OCLUSION : _volBase[src];
+
+            SetFiltro(src, cutoffObj, dt);
+            src.volume = Mathf.Lerp(src.volume, volObj, dt * LERP_VEL);
         }
+    }
+
+    // Gestiona el AudioLowPassFilter de una fuente (añade si falta, suaviza cutoff)
+    void SetFiltro(AudioSource src, float cutoffObj, float dt)
+    {
+        if (!_filtros.TryGetValue(src, out var lpf) || lpf == null)
+        {
+            lpf = src.gameObject.GetComponent<AudioLowPassFilter>();
+            if (lpf == null) lpf = src.gameObject.AddComponent<AudioLowPassFilter>();
+            lpf.cutoffFrequency = cutoffObj;   // sin lerp en el primer frame
+            _filtros[src] = lpf;
+            return;
+        }
+        lpf.cutoffFrequency = Mathf.Lerp(lpf.cutoffFrequency, cutoffObj, dt * LERP_VEL);
     }
 
     public static void RegistrarFuente(AudioSource src)
     {
         if (Instance != null && src != null && !Instance._fuentesRegistradas.Contains(src))
             Instance._fuentesRegistradas.Add(src);
+    }
+
+    public static void DesregistrarFuente(AudioSource src)
+    {
+        if (Instance == null || src == null) return;
+        Instance._fuentesRegistradas.Remove(src);
+        if (Instance._filtros.TryGetValue(src, out var lpf) && lpf != null)
+            Destroy(lpf);
+        Instance._filtros.Remove(src);
+        Instance._volBase.Remove(src);
     }
 }

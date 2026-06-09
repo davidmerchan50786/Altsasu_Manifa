@@ -192,6 +192,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     // Referencia al Animator del personaje instanciado (null si se usa cuerpo procedural)
     private Animator animPersonaje;
 
+    // ── Cuerpo procedural humanoide — pivotes de extremidades para caminar ──
+    // Solo se usan si NO hay Animator Mixamo (cuerpo procedural de cápsulas).
+    private Transform _piernaIzq, _piernaDer, _brazoIzq, _brazoDer;
+    private float _walkPhase;
+
     // IDs de parámetros del Animator cacheados como hash → evita string lookup cada frame.
     // Animator.StringToHash() es O(1) y el resultado es un int constante.
     private static readonly int AnimVelocidad  = Animator.StringToHash("VelocidadMovimiento");
@@ -211,6 +216,34 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     // LayerMask.GetMask() hace string lookups en cada llamada → en LateUpdate (60fps)
     // eran 60 lookups/seg innecesarios. Ahora es un simple int.
     private int _maskSpringArm;
+
+    // ── Camera bob — oscilación de respiración y paso ──────────────────────
+    // Rockstar usa un bob sutil que hace el mundo sentirse vivo.
+    // Dos componentes: respiración (lenta, siempre activa) + paso (rítmico, solo andando).
+    [Header("═══ CAMERA BOB ═══")]
+    [SerializeField] private float bobAmpBreath  = 0.008f;  // amplitud respiración
+    [SerializeField] private float bobFreqBreath = 0.5f;    // Hz respiración
+    [SerializeField] private float bobAmpWalk    = 0.012f;  // amplitud paso
+    [SerializeField] private float bobFreqWalk   = 2.2f;    // Hz paso (a velocidad normal)
+    private float _bobTimer;
+    private Vector3 _camBobOffset;
+
+    // ── Cámara cinética — sensación de velocidad al esprintar ──────────────
+    // Al correr, la cámara se abre (FOV kick) y se retrasa un poco (pullback).
+    // Clásico recurso AAA para transmitir velocidad. Se desactiva al apuntar.
+    [Header("═══ CÁMARA CINÉTICA ═══")]
+    [SerializeField] private float sprintFovKick  = 7f;     // grados extra de FOV al esprintar
+    [SerializeField] private float sprintPullback = 0.45f;  // metros que la cámara se aleja
+    [SerializeField] private float sprintAttack   = 0.35f;  // s en alcanzar el efecto pleno
+    private float _sprintFeel;                              // 0..1 suavizado
+    [Tooltip("Anticipación: cuánto se adelanta la mirada de la cámara hacia el movimiento (m por m/s).")]
+    [SerializeField] private float lookAheadFactor = 0.12f;
+    private Vector3 _lookAhead;                             // offset suavizado del objetivo de mirada
+
+    // ── Blob shadow — sombra suave proyectada bajo el jugador ─────────────
+    // Sin esto el jugador parece flotar sobre el terreno.
+    private GameObject _blobShadow;
+    private static readonly int ID_BlobAlpha = Shader.PropertyToID("_BaseColor");
 
     // PERF: LayerMask para TentarEntrarVehiculo OverlapSphere — excluir Player e Ignore Raycast.
     // Sin LayerMask, OverlapSphere escanea TODAS las capas (incluyendo terreno, agua, etc.)
@@ -245,6 +278,7 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
         // PERF FIX: cachear la LayerMask aquí (una vez) para ActualizarCamara() en LateUpdate
         _maskSpringArm  = ~LayerMask.GetMask("Player", "Ignore Raycast");
+        CrearBlobShadow();
         // PERF: LayerMask para OverlapSphere de interacción — sólo capas con objetos interactuables
         _maskInteractable = ~LayerMask.GetMask("Player", "Ignore Raycast", "Terrain", "Water");
     }
@@ -270,10 +304,13 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     {
         if (EstaMuerto) return;
         LeerInput();
+        ActualizarCameraBob();
+        ActualizarBlobShadow();
         GestionarCursor();
         MoverJugador();
         Gravedad();
         ActualizarAnimaciones();
+        ActualizarAnimacionProcedural();
         if (timerDano > 0f) timerDano -= Time.deltaTime;
     }
 
@@ -373,6 +410,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
                 // Culling Mode: solo animar cuando el personaje es visible en cámara (optimización).
                 animPersonaje.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
 
+                // AAA+++: Foot IK automático en el personaje humanoide (se auto-desactiva
+                // si el avatar no es Humanoid). Requiere "IK Pass" en la capa del controller.
+                if (animPersonaje.gameObject.GetComponent<SistemaFootIK>() == null)
+                    animPersonaje.gameObject.AddComponent<SistemaFootIK>();
+
                 AlsasuaLogger.Info("Jugador", $"✓ Personaje Mixamo '{prefabPersonaje.name}' instanciado con Animator.");
             }
             else
@@ -406,47 +448,78 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         Color piel   = new Color(0.72f, 0.56f, 0.42f);   // tono piel
         Color metal  = new Color(0.18f, 0.18f, 0.20f);   // acero
 
-        // ── Piernas ─────────────────────────────────────────────────────────
-        Box(raiz, "PiernaI",  new Vector3(-0.13f, 0.44f, 0f),  new Vector3(0.19f, 0.70f, 0.20f), negro);
-        Box(raiz, "PiernaD",  new Vector3( 0.13f, 0.44f, 0f),  new Vector3(0.19f, 0.70f, 0.20f), negro);
-        Box(raiz, "BotaI",    new Vector3(-0.13f, 0.08f, 0.04f),new Vector3(0.21f, 0.15f, 0.32f), bota);
-        Box(raiz, "BotaD",    new Vector3( 0.13f, 0.08f, 0.04f),new Vector3(0.21f, 0.15f, 0.32f), bota);
+        // ── HUMANOIDE PROCEDURAL (cápsulas, no cubos) ───────────────────────
+        // Extremidades pivotadas en la articulación → animación de caminar.
 
-        // ── Pelvis y torso ──────────────────────────────────────────────────
-        Box(raiz, "Pelvis",   new Vector3(0f, 0.84f, 0f),   new Vector3(0.48f, 0.28f, 0.22f), negro);
-        Box(raiz, "Torso",    new Vector3(0f, 1.22f, 0f),   new Vector3(0.52f, 0.52f, 0.24f), negro);
+        // Piernas (pivote en la cadera, cápsula colgando) + botas
+        _piernaIzq = Extremidad(raiz, "PiernaI", new Vector3(-0.12f, 0.86f, 0f), 0.80f, 0.095f, negro);
+        _piernaDer = Extremidad(raiz, "PiernaD", new Vector3( 0.12f, 0.86f, 0f), 0.80f, 0.095f, negro);
+        Capsula(_piernaIzq.gameObject, "BotaI", new Vector3(0f, -0.78f, 0.05f), 0.18f, 0.085f, bota, new Vector3(90f,0,0));
+        Capsula(_piernaDer.gameObject, "BotaD", new Vector3(0f, -0.78f, 0.05f), 0.18f, 0.085f, bota, new Vector3(90f,0,0));
 
-        // ── Chaleco / armadura táctica (encima del torso) ───────────────────
-        Box(raiz, "Chaleco",  new Vector3(0f, 1.24f, 0.04f),new Vector3(0.46f, 0.46f, 0.09f), verde);
-        Box(raiz, "PlacaF",   new Vector3(0f, 1.28f, 0.09f),new Vector3(0.30f, 0.22f, 0.04f), new Color(0.25f,0.28f,0.22f));
+        // Pelvis y torso (cápsulas verticales)
+        Capsula(raiz, "Pelvis", new Vector3(0f, 0.90f, 0f), 0.26f, 0.15f, negro);
+        Capsula(raiz, "Torso",  new Vector3(0f, 1.28f, 0f), 0.55f, 0.16f, negro);
 
-        // ── Mochila táctica ─────────────────────────────────────────────────
-        Box(raiz, "Mochila",  new Vector3(0f, 1.22f, -0.19f),new Vector3(0.34f, 0.40f, 0.18f), verde);
+        // Chaleco táctico (cápsula algo más ancha y plana al frente)
+        var chaleco = Capsula(raiz, "Chaleco", new Vector3(0f, 1.26f, 0.03f), 0.46f, 0.18f, verde);
+        chaleco.transform.localScale = new Vector3(0.40f, chaleco.transform.localScale.y, 0.22f);
+        Box(raiz, "PlacaF", new Vector3(0f, 1.30f, 0.16f), new Vector3(0.26f, 0.22f, 0.04f), new Color(0.25f,0.28f,0.22f));
 
-        // ── Brazos ──────────────────────────────────────────────────────────
-        Box(raiz, "BrazoI",   new Vector3(-0.34f, 1.18f, 0f),new Vector3(0.15f, 0.46f, 0.16f), negro);
-        Box(raiz, "BrazoD",   new Vector3( 0.34f, 1.18f, 0f),new Vector3(0.15f, 0.46f, 0.16f), negro);
-        Sphere(raiz, "ManoI", new Vector3(-0.34f, 0.93f, 0f), 0.09f, piel);
-        Sphere(raiz, "ManoD", new Vector3( 0.34f, 0.93f, 0f), 0.09f, piel);
+        // Mochila
+        Box(raiz, "Mochila", new Vector3(0f, 1.26f, -0.20f), new Vector3(0.32f, 0.40f, 0.18f), verde);
 
-        // ── Cuello y cabeza ─────────────────────────────────────────────────
-        Sphere(raiz, "Cuello", new Vector3(0f, 1.55f, 0f), 0.09f, negro);
-        Sphere(raiz, "Cabeza", new Vector3(0f, 1.68f, 0f), 0.13f, piel);
+        // Brazos (pivote en el hombro, cápsula colgando) + manos
+        _brazoIzq = Extremidad(raiz, "BrazoI", new Vector3(-0.26f, 1.46f, 0f), 0.62f, 0.07f, negro);
+        _brazoDer = Extremidad(raiz, "BrazoD", new Vector3( 0.26f, 1.46f, 0f), 0.62f, 0.07f, negro);
+        Sphere(_brazoIzq.gameObject, "ManoI", new Vector3(0f, -0.60f, 0f), 0.075f, piel);
+        Sphere(_brazoDer.gameObject, "ManoD", new Vector3(0f, -0.60f, 0f), 0.075f, piel);
 
-        // ── Casco ───────────────────────────────────────────────────────────
-        var casco = Sphere(raiz, "Casco",  new Vector3(0f, 1.76f, 0f), 0.17f, verde);
-        casco.transform.localScale = new Vector3(0.36f, 0.30f, 0.36f);  // achatado
+        // Cuello y cabeza
+        Capsula(raiz, "Cuello", new Vector3(0f, 1.58f, 0f), 0.10f, 0.06f, piel);
+        Sphere(raiz, "Cabeza", new Vector3(0f, 1.72f, 0f), 0.125f, piel);
 
-        Box(raiz, "ViseraCasco", new Vector3(0f, 1.71f, 0.14f),
-            new Vector3(0.30f, 0.05f, 0.08f), new Color(0.08f, 0.08f, 0.08f));
+        // Casco (esfera achatada)
+        var casco = Sphere(raiz, "Casco", new Vector3(0f, 1.78f, 0f), 0.17f, verde);
+        casco.transform.localScale = new Vector3(0.36f, 0.30f, 0.36f);
+        Box(raiz, "ViseraCasco", new Vector3(0f, 1.73f, 0.14f),
+            new Vector3(0.28f, 0.05f, 0.08f), new Color(0.08f, 0.08f, 0.08f));
 
-        // ── Rifle (mano derecha, visible al jugar) ───────────────────────────
-        Box(raiz, "RifleCuerpo", new Vector3( 0.35f, 1.12f, 0.25f),
-            new Vector3(0.06f, 0.09f, 0.55f), metal);
-        Box(raiz, "RifleCañon",  new Vector3( 0.35f, 1.14f, 0.60f),
+        // Rifle en la mano derecha (hijo del brazo derecho → se mueve con él)
+        Box(_brazoDer.gameObject, "RifleCuerpo", new Vector3(0.02f, -0.52f, 0.30f),
+            new Vector3(0.05f, 0.08f, 0.50f), metal);
+        Box(_brazoDer.gameObject, "RifleCanon", new Vector3(0.02f, -0.50f, 0.62f),
             new Vector3(0.03f, 0.03f, 0.22f), new Color(0.06f, 0.06f, 0.06f));
-        Box(raiz, "RifleCargador",new Vector3(0.35f, 1.04f, 0.28f),
-            new Vector3(0.04f, 0.12f, 0.06f), metal);
+    }
+
+    // ── Animación procedural de caminar (solo cuerpo de cápsulas, sin Animator) ──
+    private void ActualizarAnimacionProcedural()
+    {
+        if (animPersonaje != null || _piernaIzq == null) return;
+
+        float speed   = velHoriz.magnitude;
+        float velNorm = Mathf.Clamp01(speed / Mathf.Max(0.1f, velocidadAndar));
+        float ampDeg  = (estaEnSuelo && !estaAgachado)
+                      ? Mathf.Lerp(0f, estaCorriendo ? 48f : 32f, velNorm) : 0f;
+
+        // El paso avanza con la velocidad; cadencia mayor al correr.
+        if (ampDeg > 0.5f)
+            _walkPhase += Time.deltaTime * (estaCorriendo ? 9f : 6.5f) * Mathf.Max(0.4f, velNorm);
+
+        float swing = Mathf.Sin(_walkPhase) * ampDeg;
+        // Brazos en contrafase a las piernas, amplitud reducida.
+        OscilarExtremidad(_piernaIzq,  swing);
+        OscilarExtremidad(_piernaDer, -swing);
+        OscilarExtremidad(_brazoIzq,  -swing * 0.6f);
+        OscilarExtremidad(_brazoDer,   swing * 0.6f);
+    }
+
+    // Lerp suave de la rotación local de la extremidad hacia el ángulo de balanceo (eje X).
+    private static void OscilarExtremidad(Transform t, float anguloX)
+    {
+        if (t == null) return;
+        var objetivo = Quaternion.Euler(anguloX, 0f, 0f);
+        t.localRotation = Quaternion.Slerp(t.localRotation, objetivo, 12f * Time.deltaTime);
     }
 
     // Crea un Material compatible con URP (evita el magenta por shader incorrecto)
@@ -511,6 +584,123 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         r.receiveShadows        = true;
         { var c2 = go.GetComponent<Collider>(); if (c2 != null) { if (Application.isPlaying) Object.Destroy(c2); else Object.DestroyImmediate(c2); } }
         return go;
+    }
+
+    // Cápsula (limbo/torso humanoide). Unity Capsule mide 2 de alto → se escala a 'largo'.
+    private GameObject Capsula(GameObject padre, string n, Vector3 lp, float largo, float radio, Color c)
+        => Capsula(padre, n, lp, largo, radio, c, Vector3.zero);
+
+    private GameObject Capsula(GameObject padre, string n, Vector3 lp, float largo, float radio, Color c, Vector3 euler)
+    {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        go.name = n;
+        go.transform.SetParent(padre.transform, false);
+        go.transform.localPosition    = lp;
+        go.transform.localEulerAngles = euler;
+        go.transform.localScale       = new Vector3(radio * 2f, Mathf.Max(radio, largo * 0.5f), radio * 2f);
+        var r = go.GetComponent<Renderer>();
+        r.material          = MatURP(c);
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        r.receiveShadows    = true;
+        { var c2 = go.GetComponent<Collider>(); if (c2 != null) { if (Application.isPlaying) Object.Destroy(c2); else Object.DestroyImmediate(c2); } }
+        return go;
+    }
+
+    // Extremidad pivotada: un GameObject vacío en la articulación con la cápsula
+    // colgando hacia abajo. Rotar el pivote en X balancea la extremidad (caminar).
+    private Transform Extremidad(GameObject raiz, string nombre, Vector3 jointPos, float largo, float radio, Color c)
+    {
+        var pivot = new GameObject(nombre);
+        pivot.transform.SetParent(raiz.transform, false);
+        pivot.transform.localPosition = jointPos;
+        Capsula(pivot, nombre + "_mesh", new Vector3(0f, -largo * 0.5f, 0f), largo, radio, c);
+        return pivot.transform;
+    }
+
+    // ── Camera bob ─────────────────────────────────────────────────────────
+
+    void ActualizarCameraBob()
+    {
+        // FIX COMPILACIÓN: no existía el campo 'estaEnVehiculo'. Mientras el jugador
+        // está en un vehículo, ControladorJugador.enabled = false (ver EntraJugador),
+        // por lo que Update() —y este método— ni siquiera se ejecutan. El guard de
+        // cámara nula es suficiente.
+        if (camaraTP == null) return;
+
+        _bobTimer += Time.deltaTime;
+
+        // Respiración: oscilación suave siempre presente
+        float breathY = Mathf.Sin(_bobTimer * bobFreqBreath * Mathf.PI * 2f) * bobAmpBreath;
+
+        // Paso: solo cuando el jugador se mueve en suelo
+        float walkAmp = 0f;
+        if (estaEnSuelo && !estaAgachado)
+        {
+            // FIX COMPILACIÓN: el campo del CharacterController es 'cc', no '_cc'.
+            float speed = new Vector3(cc.velocity.x, 0, cc.velocity.z).magnitude;
+            walkAmp = Mathf.InverseLerp(0.5f, velocidadAndar, speed) * bobAmpWalk;
+        }
+        float walkY = Mathf.Sin(_bobTimer * bobFreqWalk * Mathf.PI * 2f) * walkAmp;
+        float walkX = Mathf.Sin(_bobTimer * bobFreqWalk * Mathf.PI) * walkAmp * 0.35f;
+
+        // Aplicar como offset LOCAL al pivot de cámara (no al transform del jugador)
+        _camBobOffset = Vector3.Lerp(_camBobOffset,
+            new Vector3(walkX, breathY + walkY, 0f), Time.deltaTime * 8f);
+
+        if (pivotCam != null)
+            pivotCam.localPosition = new Vector3(0f, alturaHombro, 0f) + _camBobOffset;
+    }
+
+    // ── Blob shadow ────────────────────────────────────────────────────────
+
+    void CrearBlobShadow()
+    {
+        _blobShadow = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        _blobShadow.name = "BlobShadow";
+        _blobShadow.transform.SetParent(transform, false);
+        Destroy(_blobShadow.GetComponent<Collider>());
+
+        var sh  = Shader.Find("HDRP/Lit") ?? Shader.Find("Standard");
+        var mat = new Material(sh) { name = "Mat_BlobShadow" };
+        // Color negro semitransparente — simulación de sombra difusa
+        var col = new Color(0f, 0f, 0f, 0.35f);
+        if (mat.HasProperty(ID_BlobAlpha))  mat.SetColor(ID_BlobAlpha, col);
+        else mat.color = col;
+        mat.SetFloat("_SurfaceType", 1f);   // Transparent en HDRP
+        mat.SetInt("_ZWrite", 0);
+        mat.renderQueue = 3000;
+
+        _blobShadow.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        _blobShadow.GetComponent<MeshRenderer>().shadowCastingMode =
+            UnityEngine.Rendering.ShadowCastingMode.Off;
+
+        // FIX FUGA: rastrear el material de la sombra para destruirlo en OnDestroy()
+        // (antes solo se liberaban los materiales del cuerpo procedural).
+        _matsCreados.Add(mat);
+    }
+
+    void ActualizarBlobShadow()
+    {
+        if (_blobShadow == null) return;
+
+        // Proyectar al suelo
+        if (Physics.Raycast(transform.position + Vector3.up * 0.1f,
+                            Vector3.down, out var hit, 4f,
+                            ~LayerMask.GetMask("Player", "Ignore Raycast")))
+        {
+            _blobShadow.SetActive(true);
+            _blobShadow.transform.position = hit.point + hit.normal * 0.015f;
+            _blobShadow.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal)
+                                           * Quaternion.Euler(90f, 0f, 0f);
+            // Escalar con la altura: más pequeño cuando más alto
+            float altura = hit.distance;
+            float s = Mathf.Lerp(0.9f, 0.35f, altura / 3f);
+            _blobShadow.transform.localScale = new Vector3(s * 0.7f, s, 1f);
+        }
+        else
+        {
+            _blobShadow.SetActive(false);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -780,7 +970,23 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     {
         if (pivotCam == null) return;
 
-        float dist = modoApuntar ? distanciaApuntar : distanciaBrazo;
+        // Sensación de sprint: activa solo corriendo en suelo, sin apuntar, y con
+        // velocidad real (no basta con pulsar Shift parado). Suavizada con MoveTowards.
+        float sprintObjetivo = (estaCorriendo && !modoApuntar && estaEnSuelo
+                                && velHoriz.magnitude > velocidadAndar * 1.05f) ? 1f : 0f;
+        _sprintFeel = Mathf.MoveTowards(_sprintFeel, sprintObjetivo,
+            Time.deltaTime / Mathf.Max(0.05f, sprintAttack));
+
+        // Anticipación: la mirada se adelanta hacia el movimiento horizontal (clamp 0.8 m).
+        // Se anula al apuntar para no descentrar la puntería.
+        Vector3 velPlano = new Vector3(velHoriz.x, 0f, velHoriz.z);
+        Vector3 leadObjetivo = modoApuntar
+            ? Vector3.zero
+            : Vector3.ClampMagnitude(velPlano * lookAheadFactor, 0.8f);
+        _lookAhead = Vector3.Lerp(_lookAhead, leadObjetivo, 4f * Time.deltaTime);
+
+        float dist = (modoApuntar ? distanciaApuntar : distanciaBrazo)
+                   + _sprintFeel * sprintPullback;
 
         // Desplazamiento lateral (al apuntar, cámara ligeramente a la derecha)
         Vector3 offsetLateral = modoApuntar
@@ -803,11 +1009,12 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         camaraTP.transform.position = Vector3.Lerp(
             camaraTP.transform.position, posFinal, suavidadCamara * Time.deltaTime);
 
-        // ── Orientación: la cámara mira hacia el pivot (cabeza del jugador) ──
-        camaraTP.transform.LookAt(pivotPos + Vector3.up * 0.10f);
+        // ── Orientación: la cámara mira hacia el pivot (cabeza del jugador) + anticipación ──
+        camaraTP.transform.LookAt(pivotPos + Vector3.up * 0.10f + _lookAhead);
 
-        // ── FOV dinámico: zoom suave al apuntar ──────────────────────────────
-        float fovObj = modoApuntar ? fovApuntando : fovNormal;
+        // ── FOV dinámico: zoom al apuntar + kick de velocidad al esprintar ───
+        float fovObj = (modoApuntar ? fovApuntando : fovNormal)
+                     + _sprintFeel * sprintFovKick;
         camaraTP.fieldOfView = Mathf.Lerp(camaraTP.fieldOfView, fovObj, 10f * Time.deltaTime);
     }
 

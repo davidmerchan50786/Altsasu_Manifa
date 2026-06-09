@@ -109,6 +109,8 @@ public class SistemaClima : MonoBehaviour
         if (_transicionando) return;
         climaActual = nuevo;
         StartCoroutine(TransicionClima(CONFIGS[(int)nuevo]));
+        // Notificar al sistema de post-proceso para ajustar color grading según el clima
+        SistemaPostProcesoAAA.SetClimaGrading(nuevo);
     }
 
     public void SetSol()        => CambiarClima(EstadoClima.Sol);
@@ -323,11 +325,4 @@ public class SistemaClima : MonoBehaviour
         }
 
         // Etiqueta Ctrl+W
-        Debug.Log("[Clima] Panel clima creado. Ctrl+W para abrir/cerrar.");
-    }
-
-    void TogglePanel()
-    {
-        if (panelClima != null) panelClima.SetActive(_panelVisible = !_panelVisible);
-    }
-}
+        Debug.Log("[Clima] Panel clima creado. Ctrl+W para ab

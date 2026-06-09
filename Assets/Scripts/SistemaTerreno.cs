@@ -57,6 +57,14 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
     [Tooltip("Bioma 7 — Suelo bosque: bark_brown_02 (masas_forestales)")]
     public TerrainLayer capaSueloBosque;
 
+    // ── Wet mud layer (activada en tiempo de lluvia) ───────────────────
+    [Header("Lluvia — Barro")]
+    [Tooltip("TerrainLayer de barro que aparece cuando llueve (puede ser capaTierraRibera).")]
+    public TerrainLayer capaFango;   // asignar = capaTierraRibera en Inspector
+    [Tooltip("Umbral de humedad (0-1) a partir del cual empieza a aparecer barro.")]
+[Range(0f,1f)] public float umbralBarro = 0.35f;
+
+
     // ── Umbrales ───────────────────────────────────────────────────────────
     [Header("Umbrales bioclimáticos")]
     [Tooltip("Altitud real (m) límite entre hierba húmeda y prado alpino")]
@@ -85,6 +93,15 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
     TerrainData _td;
     Terrain     _terrain;
     int         _resAlpha;
+
+    // Wet mud: índice del canal fango dentro del splatmap
+    int   _idxFango  = -1;   // -1 = no disponible
+    float _lastWetness = -1f;
+    Coroutine _crWetMud;
+
+    // Micro-detail: prototipos creados en runtime
+    bool _microDetailCreado;
+
 
     // ── Constante Z_min para altitud real — fuente única: GeoDataAlsasua ──
     const float Z_MIN = GeoDataAlsasua.Z_MIN;
@@ -160,6 +177,9 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         ConfigurarCalidadVisual();
 
         Listo = true;
+        InicializarWetMud();
+        StartCoroutine(CicloWetMud());
+        StartCoroutine(AplicarMicroDetail());
         AlsasuaLogger.Info("Terreno",
             $"✅ SistemaTerreno 8 biomas — {_cauces.Count} cauces, {_bosques.Count} bosques");
     }
@@ -1397,4 +1417,190 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             AlsasuaLogger.Warn("Terreno", $"Error guardando preview PNG: {ex.Message}");
         }
     }
+    // ════════════════════════════════════════════════════════════════════════
+    //  LLUVIA → SPLATMAP BARRO
+    // ════════════════════════════════════════════════════════════════════════
+    // Cuando la humedad global sube (SistemaCharcos._humedad), el terreno
+    // muestra barro progresivamente en zonas planas de bioma hierba/prado.
+    // El efecto se revierte al secarse (secado más lento que el mojado).
+
+    void InicializarWetMud()
+    {
+        if (_td == null || capaFango == null) return;
+        var capas = _td.terrainLayers;
+        for (int i = 0; i < capas.Length; i++)
+        {
+            if (capas[i] == capaFango || capas[i] == capaTierraRibera)
+            { _idxFango = i; break; }
+        }
+        if (_idxFango < 0)
+            AlsasuaLogger.Warn("Terreno", "capaFango no encontrada en terrainLayers — wet mud desactivado");
+    }
+
+    IEnumerator CicloWetMud()
+    {
+        // Esperar a que el terreno y el alphamap estén listos
+        while (!Listo) yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(5f);
+
+        while (true)
+        {
+            yield return new WaitForSeconds(20f); // revisa cada 20 s
+
+            if (_idxFango < 0 || _td == null) continue;
+
+            float wetness = SistemaCharcos.Instance != null
+                          ? SistemaCharcos.Instance.Humedad : 0f;
+
+            // Solo procesar si cambió significativamente
+            if (Mathf.Abs(wetness - _lastWetness) < 0.08f) continue;
+            _lastWetness = wetness;
+
+            if (_crWetMud != null) StopCoroutine(_crWetMud);
+            _crWetMud = StartCoroutine(AplicarBarroCoroutine(wetness));
+        }
+    }
+
+    IEnumerator AplicarBarroCoroutine(float wetness)
+    {
+        if (_td == null || _idxFango < 0) yield break;
+
+        int res      = _td.alphamapResolution;
+        int numCapas = _td.terrainLayers.Length;
+        var mapa     = _td.GetAlphamaps(0, 0, res, res);
+
+        // Factor de barro: 0 a wetness bajo umbral, crece hasta wetness=1
+        float factorBarro = Mathf.SmoothStep(0f, 0.45f,
+            Mathf.InverseLerp(umbralBarro, 1f, wetness));
+
+        int procesadosPorFrame = 0;
+        for (int ay = 0; ay < res; ay++)
+        {
+            for (int ax = 0; ax < res; ax++)
+            {
+                // Solo aplicar en bioma hierba (0) o prado (1)
+                float pesoHierba = mapa[ay, ax, 0];
+                float pesoPrado  = numCapas > 1 ? mapa[ay, ax, 1] : 0f;
+                float pesoBase   = pesoHierba + pesoPrado;
+                if (pesoBase < 0.25f) continue;
+
+                // Pendiente: en zonas inclinadas el agua escurre → menos barro
+                float nx = ax / (float)(res - 1);
+                float nz = ay / (float)(res - 1);
+                Vector3 normal = _td.GetInterpolatedNormal(nx, nz);
+                float pendiente = 1f - normal.y; // 0=plano, 1=vertical
+                if (pendiente > 0.35f) continue; // en pendiente fuerte no se acumula barro
+
+                // Cantidad de barro proporcional a pesoBase y factor
+                float cantBarro = pesoBase * factorBarro * (1f - pendiente * 2f);
+                cantBarro = Mathf.Clamp(cantBarro, 0f, pesoBase * 0.7f);
+
+                // Redistribuir: reducir hierba/prado y añadir fango
+                float ratio = cantBarro / pesoBase;
+                mapa[ay, ax, 0]       -= pesoHierba * ratio;
+                if (numCapas > 1) mapa[ay, ax, 1] -= pesoPrado * ratio;
+                mapa[ay, ax, _idxFango] = Mathf.Clamp01(mapa[ay, ax, _idxFango] + cantBarro);
+            }
+
+            procesadosPorFrame++;
+            if (procesadosPorFrame % 16 == 0) yield return null; // 16 filas/frame
+        }
+
+        // Aplicar en lotes para no bloquear el render thread
+        int lote = Mathf.Max(1, res / 16);
+        for (int y = 0; y < res; y += lote)
+        {
+            int h = Mathf.Min(lote, res - y);
+            _td.SetAlphamaps(0, y, res, h, Extraer(mapa, 0, y, res, h, numCapas));
+            yield return null;
+        }
+
+        AlsasuaLogger.Info("Terreno", $"Wet mud aplicado (humedad={wetness:F2}, barro={factorBarro:F2})");
+    }
+
+    // Helper: extrae un subarray del alphamap para SetAlphamaps parcial
+    static float[,,] Extraer(float[,,] src, int x0, int y0, int w, int h, int c)
+    {
+        var dst = new float[h, w, c];
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        for (int k = 0; k < c; k++)
+            dst[y, x, k] = src[y + y0, x + x0, k];
+        return dst;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  MICRO-DETAIL — calidad de suelo a corta distancia
+    // ════════════════════════════════════════════════════════════════════════
+    // Configura el sistema de detalle del Terrain Unity para calidad máxima:
+    //   · detailObjectDistance = 40m (Unity default 80, pero instanciado bien)
+    //   · detailObjectDensity  = 0.8  (80% de densidad máxima)
+    //   · wavingGrass ajustado por bioma dominante
+    //
+    // Los DetailPrototypes (pebbles, sticks, flores) se configuran en el
+    // Inspector del TerrainData — aquí solo se aplica el mapa de densidad
+    // si ya existen capas configuradas, ponderando por bioma del alphamap.
+    //
+    // Nota: SistemaDetalleTerreno.cs gestiona el ground cover GPU instanced
+    // (piedrecitas, champiñones) que no depende del sistema de detail.
+
+    IEnumerator AplicarMicroDetail()
+    {
+        while (!Listo || _td == null) yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(10f);
+
+        if (_microDetailCreado) yield break;
+        _microDetailCreado = true;
+
+        // Calidad de renderizado de detalle
+        if (_terrain != null)
+        {
+            _terrain.detailObjectDistance = 40f;
+            _terrain.detailObjectDensity  = 0.8f;
+        }
+
+        // Si no hay DetailPrototypes configurados, no hay nada que distribuir
+        if (_td.detailPrototypes == null || _td.detailPrototypes.Length == 0)
+        {
+            AlsasuaLogger.Info("Terreno", "Sin DetailPrototypes — micro-detail se configura en Inspector");
+            yield break;
+        }
+
+        int res      = _td.detailResolution;
+        int alphaRes = _td.alphamapResolution;
+        if (res <= 0 || alphaRes <= 0) yield break;
+
+        var alpha = _td.GetAlphamaps(0, 0, alphaRes, alphaRes);
+        int numCapas = _td.terrainLayers.Length;
+
+        // Para cada DetailPrototype existente, distribuir densidad según bioma
+        for (int protoIdx = 0; protoIdx < _td.detailPrototypes.Length; protoIdx++)
+        {
+            var densidad = new int[res, res];
+            for (int ay = 0; ay < res; ay++)
+            {
+                for (int ax = 0; ax < res; ax++)
+                {
+                    int aay = Mathf.Clamp(ay * alphaRes / res, 0, alphaRes - 1);
+                    int aax = Mathf.Clamp(ax * alphaRes / res, 0, alphaRes - 1);
+
+                    // Peso: hierba (0) + bosque (7 si existe)
+                    float w = alpha[aay, aax, 0];
+                    if (numCapas > 7) w += alpha[aay, aax, 7] * 0.5f;
+                    w = Mathf.Clamp01(w);
+
+                    // Ruido Perlin para distribución orgánica (no uniforme)
+                    float ruido = Mathf.PerlinNoise(ax * 0.08f + protoIdx * 13f,
+                                                    ay * 0.08f + protoIdx * 7f);
+                    densidad[ay, ax] = w > 0.25f ? Mathf.RoundToInt(w * ruido * 6f) : 0;
+                }
+                if (ay % 64 == 0) yield return null;
+            }
+            _td.SetDetailLayer(0, 0, protoIdx, densidad);
+        }
+
+        AlsasuaLogger.Info("Terreno", $"Micro-detail aplicado a {_td.detailPrototypes.Length} capas");
+    }
+
+
 }

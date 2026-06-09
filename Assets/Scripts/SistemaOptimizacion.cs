@@ -38,6 +38,16 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     float   _fpsActual = 60f;
     int     _nivelCalidad; // 0=ultra, 1=alto, 2=medio, 3=bajo
 
+    // ── Tier de calidad dinámico (AAA+++) ──────────────────────────────────
+    // Señal global 0..3 derivada de la carga real, publicada como _GlobalQualityTier
+    // para que el resto del pipeline (partículas, decals, features pesadas de render)
+    // module su coste sin acoplarse a este sistema. 0 = Ultra … 3 = Performance.
+    int _tierCalidad;
+    static readonly int ID_QualityTier = Shader.PropertyToID("_GlobalQualityTier");
+
+    /// <summary>Tier de calidad actual: 0 = Ultra, 1 = Alto, 2 = Medio, 3 = Performance.</summary>
+    public static int TierCalidad => Instance?._tierCalidad ?? 0;
+
     // ── Estado ────────────────────────────────────────────────────────────
     float _shadowDistOrig;
     float _lodBiasOrig;
@@ -60,6 +70,8 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     {
         Application.targetFrameRate = fpsMeta;
         QualitySettings.vSyncCount  = 0; // vsync off — controlamos nosotros
+        _tierCalidad = 0;
+        Shader.SetGlobalFloat(ID_QualityTier, 0f); // arrancar en Ultra; sube si la carga lo exige
         StartCoroutine(BucleMedicion());
         AlsasuaLogger.Info("Optimizacion", $"Sistema activo — objetivo {fpsMeta}fps");
     }
@@ -107,14 +119,29 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         // Reducir distancia de niebla
         if (RenderSettings.fogDensity < 0.005f) RenderSettings.fogDensity += 0.0005f;
 
+        // Subir el tier (peor calidad) y difundirlo al pipeline.
+        FijarTier(_tierCalidad + 1);
+
         AlsasuaLogger.Info("Optimizacion",
-            $"FPS bajo ({_fpsActual:F0}) → shadow={QualitySettings.shadowDistance:F0}m LOD={QualitySettings.lodBias:F2}");
+            $"FPS bajo ({_fpsActual:F0}) → tier={_tierCalidad} shadow={QualitySettings.shadowDistance:F0}m LOD={QualitySettings.lodBias:F2}");
     }
 
     void BajarNivelCalidad() // calidad más alta = mejor visual
     {
         QualitySettings.shadowDistance = Mathf.Min(_shadowDistOrig, QualitySettings.shadowDistance + 25f);
         QualitySettings.lodBias        = Mathf.Min(_lodBiasOrig,    QualitySettings.lodBias + 0.1f);
+
+        // Bajar el tier (mejor calidad) y difundirlo.
+        FijarTier(_tierCalidad - 1);
+    }
+
+    // Fija el tier 0..3 y lo publica como global de shader solo si cambió (evita writes redundantes).
+    void FijarTier(int nuevo)
+    {
+        nuevo = Mathf.Clamp(nuevo, 0, 3);
+        if (nuevo == _tierCalidad) return;
+        _tierCalidad = nuevo;
+        Shader.SetGlobalFloat(ID_QualityTier, _tierCalidad);
     }
 
     // ════════════════════════════════════════════════════════════════════════

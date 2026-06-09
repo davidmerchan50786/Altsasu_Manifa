@@ -438,6 +438,8 @@ public class SistemaDisparo : MonoBehaviour
     {
         CrearBurst(origen + direccion * 0.5f, new Color(1f, 0.8f, 0.3f), 0.05f, 8, 0.08f);
         AudioManager.Play(AudioManager.Clip.Disparo, origen);
+        // Flash de post-proceso en cada disparo — destello de cañón en pantalla
+        SistemaPostProcesoAAA.FlashDisparo();
     }
 
     private void EfectoImpactoSuelo(Vector3 punto, Vector3 normal)
@@ -507,8 +509,4 @@ public class SistemaDisparo : MonoBehaviour
         s.go.transform.position = pos;
         s.go.SetActive(true);
         s.enUso        = true;
-        s.timerRetorno = duracion;
-    }
-
-    // OnGUI() eliminado — HUDJugador.cs gestiona la UI de munición vía Canvas uGUI.
-}
+  
