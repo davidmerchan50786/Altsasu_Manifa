@@ -1511,7 +1511,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         for (int y = 0; y < res; y += lote)
         {
             int h = Mathf.Min(lote, res - y);
-            _td.SetAlphamaps(0, y, res, h, Extraer(mapa, 0, y, res, h, numCapas));
+            _td.SetAlphamaps(0, y, Extraer(mapa, 0, y, res, h, numCapas)); // (x,y,mapa): el tamaño va implicito en el array
             yield return null;
         }
 

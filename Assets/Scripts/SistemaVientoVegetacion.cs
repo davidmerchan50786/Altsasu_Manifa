@@ -236,8 +236,8 @@ public class SistemaVientoVegetacion : MonoBehaviour
         _psVel.x = _dirActual.x * speed;
         _psVel.z = _dirActual.z * speed;
         _psVel.y = -0.15f; // caída suave
-        // Reasignar el struct de vuelta al ParticleSystem (requerido por Unity API)
-        _psHojas.velocityOverLifetime = _psVel;
+        // (El modulo es un handle vivo: asignar _psVel.x/y/z ya aplica al sistema;
+        //  la propiedad velocityOverLifetime es de solo lectura.)
 
         // Activar/desactivar emisión por umbral
         bool debeEmitir = _fuerzaActual >= UMBRAL_HOJAS;

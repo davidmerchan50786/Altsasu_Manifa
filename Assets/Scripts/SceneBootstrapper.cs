@@ -546,13 +546,14 @@ public class SceneBootstrapper : MonoBehaviour
             if (volMask != null)
                 volMask.SetValue(hdComp, ~0);   // todas las capas
 
-            // antialiasing en modo FXAA (sin artefactos, barato)
+            // antialiasing en modo TAA (sustituye al VolumeComponent TAA que
+            // no existe en HDRP 17; mejor calidad que FXAA en mundo abierto)
             var aaMode = hdType.GetProperty("antialiasing");
             if (aaMode != null)
             {
                 var enumType = aaMode.PropertyType;
-                if (System.Enum.IsDefined(enumType, 1))   // FXAA=1
-                    aaMode.SetValue(hdComp, System.Enum.ToObject(enumType, 1));
+                if (System.Enum.IsDefined(enumType, 2))   // TemporalAntialiasing=2
+                    aaMode.SetValue(hdComp, System.Enum.ToObject(enumType, 2));
             }
         }
         catch { /* reflexión sin garantías — silenciar */ }

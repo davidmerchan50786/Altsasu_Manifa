@@ -158,6 +158,10 @@ public class SistemaDetalleTerreno : MonoBehaviour
         var rng = new System.Random(
             Mathf.RoundToInt(centro.x * 13.7f) ^ Mathf.RoundToInt(centro.z * 31.3f));
 
+        // Ancho de región a poblar: el doble del radio de detalle mayor
+        float regionW = Mathf.Max(Mathf.Max(radioPiedrecitas, radioChampinones),
+                                  Mathf.Max(radioRamillas, radioMusgo)) * 2f;
+
         // Muestreo regular con jitter
         float paso = 1.2f / Mathf.Max(0.1f, densidad);
 
@@ -176,8 +180,8 @@ public class SistemaDetalleTerreno : MonoBehaviour
             // Coordenadas en alphamap local
             float fnx = Mathf.Clamp01((px - terP.x) / terW);
             float fnz = Mathf.Clamp01((pz - terP.z) / terL);
-            int   aax = Mathf.Clamp((int)(fnx * aw) - xStart, 0, w - 1);
-            int   aaz = Mathf.Clamp((int)(fnz * ah) - zStart, 0, h - 1);
+            int   aax = Mathf.Clamp((int)(fnx * aw), 0, aw - 1);
+            int   aaz = Mathf.Clamp((int)(fnz * ah), 0, ah - 1);
 
             float wHierba  = numCapas > 0 ? alpha[aaz, aax, 0] : 0f;
             float wBosque  = numCapas > 7 ? alpha[aaz, aax, 7] : 0f;
@@ -251,9 +255,9 @@ public class SistemaDetalleTerreno : MonoBehaviour
     {
         const float t = 1.618f;
         var verts = new Vector3[] {
-            new(-1,t,0).normalized, new(1,t,0).normalized,  new(-1,-t,0).normalized, new(1,-t,0).normalized,
-            new(0,-1,t).normalized, new(0,1,t).normalized,  new(0,-1,-t).normalized, new(0,1,-t).normalized,
-            new(t,0,-1).normalized, new(t,0,1).normalized,  new(-t,0,-1).normalized, new(-t,0,1).normalized,
+            new Vector3(-1,t,0).normalized, new Vector3(1,t,0).normalized,  new Vector3(-1,-t,0).normalized, new Vector3(1,-t,0).normalized,
+            new Vector3(0,-1,t).normalized, new Vector3(0,1,t).normalized,  new Vector3(0,-1,-t).normalized, new Vector3(0,1,-t).normalized,
+            new Vector3(t,0,-1).normalized, new Vector3(t,0,1).normalized,  new Vector3(-t,0,-1).normalized, new Vector3(-t,0,1).normalized,
         };
         var tris = new int[] {
             0,11,5, 0,5,1, 0,1,7, 0,7,10, 0,10,11,

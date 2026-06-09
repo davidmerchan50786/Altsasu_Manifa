@@ -303,11 +303,8 @@ public class SistemaVolumenHDRP : MonoBehaviour
         var tm = p.Add<Tonemapping>(true);
         tm.mode.Override(TonemappingMode.ACES);
 
-        // ── TAA (Temporal Anti-Aliasing) — elimina aliasing en bordes ─────
-        // HDRP usa TemporalAntialiasing como VolumeComponent para el perfil global.
-        var taa = p.Add<TemporalAntialiasing>(true);
-        taa.jitterSpread.Override(0.75f);
-        taa.sharpness.Override(0.5f);
+        // TAA: en HDRP el anti-aliasing es por camara (HDAdditionalCameraData),
+        // no un VolumeComponent. Se activa en SceneBootstrapper.AnadirHDRPCameraData.
 
         // ── Nubes volumétricas — cielo AAA con sombras de nube sobre el valle ──
         var nubes = p.Add<VolumetricClouds>(true);
@@ -699,6 +696,29 @@ public class SistemaVolumenHDRP : MonoBehaviour
     /// Llamado por SistemaPolish.ActualizarAutoFocus() cada 0.2 s con
     /// el resultado del raycast al centro de pantalla.
     /// </summary>
+    // ── Bloom flash de explosiones ──────────────────────────────────────
+    Coroutine _coBloomFlash;
+
+    /// <summary>Subida puntual de bloom (explosiones). Decae sola en ~400ms.</summary>
+    public static void BloomFlash(float pico)
+    {
+        if (Instance == null || Instance._bloomDia == null) return;
+        if (Instance._coBloomFlash != null) Instance.StopCoroutine(Instance._coBloomFlash);
+        Instance._coBloomFlash = Instance.StartCoroutine(Instance.CoBloomFlash(pico));
+    }
+
+    IEnumerator CoBloomFlash(float pico)
+    {
+        const float dur = 0.4f, baseInt = 0.85f;
+        for (float t = 0f; t < dur; t += Time.deltaTime)
+        {
+            _bloomDia.intensity.Override(Mathf.Lerp(pico, baseInt, t / dur));
+            yield return null;
+        }
+        _bloomDia.intensity.Override(baseInt);
+        _coBloomFlash = null;
+    }
+
     public static void SetFocusDistance(float distancia)
     {
         if (Instance?._dofDia == null) return;

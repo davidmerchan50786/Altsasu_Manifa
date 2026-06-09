@@ -147,7 +147,7 @@ public class SistemaPostProcesoAAA : MonoBehaviour
         // DoF: empieza desactivado — se activa cuando el autofocus encuentra diferencia real
         _dof = _perfil.Add<DepthOfField>(true);
         _dof.focusMode.Override(DepthOfFieldMode.UsePhysicalCamera);
-        _dof.enabled.Override(false);  // el volumen HDRP ya tiene DoF; este solo lo afina
+        _dof.active = false;  // el volumen HDRP ya tiene DoF; este solo lo afina
 
         _gradingOrigen  = GRADING[(int)EstadoGrading.Normal];
         _gradingDestino = GRADING[(int)EstadoGrading.Normal];

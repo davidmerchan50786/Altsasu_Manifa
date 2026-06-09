@@ -45,6 +45,10 @@ public class SistemaFauna : MonoBehaviour
     [SerializeField] float radioUrbanoDogs  = 250f;
     [SerializeField] float radioMontana     = 600f;
 
+    [Header("Prefabs reales (opcionales — los asigna IntegradorAssets)")]
+    public GameObject prefabLobo;
+    public GameObject prefabPerro;
+
     // ── Estado ────────────────────────────────────────────────────────────
     readonly List<AnimalProxy> _animales = new();
     bool _modoRedada;
