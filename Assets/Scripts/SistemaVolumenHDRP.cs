@@ -872,4 +872,32 @@ public class SistemaVolumenHDRP : MonoBehaviour
         var vig = p.Add<Vignette>(true);
         vig.intensity.Override(0.32f);
         vig.smoothness.Override(0.5f);
-        vig.color.Override(new Color(0.15f, 0.06
+        vig.color.Override(new Color(0.15f, 0.06f, 0.02f));
+    }
+
+    void ActualizarTransicion()
+    {
+        if (_volTransicion == null) return;
+        // Pico en 7.5h (amanecer) y en 19h (atardecer)
+        float peso = 0f;
+        if (_horaActual >= 6f && _horaActual < 9f)
+            peso = 1f - Mathf.Abs((_horaActual - 7.5f) / 1.5f);
+        else if (_horaActual >= 17f && _horaActual < 21f)
+            peso = 1f - Mathf.Abs((_horaActual - 19f) / 2f);
+        peso = Mathf.Clamp01(peso);
+        _blendTransicion = Mathf.MoveTowards(_blendTransicion, peso, Time.deltaTime * 0.05f);
+        _volTransicion.weight = _blendTransicion;
+    }
+
+    void ActualizarShaderGlobals()
+    {
+        // _GlobalNightLevel (0=día, 1=noche): edificios lo leen para iluminar ventanas
+        Shader.SetGlobalFloat(ID_NightLevel, _blendNoche);
+        // _GlobalFocusDist: escrito por SetFocusDistance() desde SistemaPolish
+        // Aquí solo refrescamos el valor actual del DoF por si acaso.
+        if (_dofDia != null)
+            Shader.SetGlobalFloat(ID_FocusDist, _dofDia.farFocusStart.value);
+    }
+
+
+}
