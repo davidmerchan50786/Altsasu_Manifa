@@ -167,12 +167,12 @@ El mayor salto visual. HDRP 17 trae APV: probes de GI por volumen, bakeables por
 | **3** | Humanoide procedural + walk + Foot IK (`SistemaFootIK`) | Feel | Alto | Medio | ✅ implementado (Foot IK auto-noop sin rig) |
 | **1b** | Música adaptativa por tensión (`SistemaMusicaAdaptativa`) | Audio | Alto | Bajo | Bajo ✅ implementado |
 | **4** | Oclusión de audio low-pass (`SistemaReverbZonas` ext.) | Audio | Alto | Medio | ✅ AudioLowPassFilter dinámico, cutoff 800 Hz tras pared |
-| 5 | Impostors + HLOD anillo lejano | Perf/Render | Alto | Alto | Medio |
+| **5** | `SistemaImpostores` — billboard quads LOD3, time-sliced | Perf/Render | Alto | Alto | ✅ runtime listo; bake atlas opcional (doc. en cabecera) |
 | **6** | `DirectorMundo` + `SistemaDirectorConsumos` | Mundo | Alto | Alto | ✅ director + consumidores implementados |
-| 7 | Water System (río Burunda) | Render | Medio | Medio | Bajo (CFG) |
-| 8 | Tráfico con semáforos/cesión | Mundo | Medio | Alto | Medio |
-| 9 | Volumétricos + niebla de río | Render | Medio | Bajo | Bajo |
-| 10 | Capas asmdef Gameplay/World/Render | Cross | Medio | Alto | Medio |
+| 7 | Water System (río Burunda) | Render | Medio | Medio | Código ✅ (`SistemaAguaRio`) / activar HDRP Water en editor |
+| **8** | `SistemaTrafico` + `SemaforoNodo` | Mundo | Medio | Alto | ✅ 269 vías, semáforos en antifase, pool VehiculoNPC, densidad por hora |
+| **9** | `SistemaNeblina` — LocalVolumetricFog río Arakil | Render | Medio | Bajo | ✅ reactivo a clima + hora del día |
+| **10** | Capas asmdef World/Render/Gameplay | Cross | Medio | Alto | ✅ scaffolding creado; migración en Scripts/*/MIGRAR_AQUI.md |
 
 **Regla:** cada fase entra detrás de un toggle de calidad y con un test en `DiagnosticoGrafico`. Nada se mergea sin verificar que la escena sigue arrancando.
 

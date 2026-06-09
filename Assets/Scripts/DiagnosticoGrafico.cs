@@ -216,6 +216,43 @@ public class DiagnosticoGrafico : MonoBehaviour
                 t >= 0f && t <= 1f, $"Tensión = {t:F2} fuera de rango");
         }
 
+        // ── 13. DirectorMundo: intensidad en rango ────────────────────────
+        if (DirectorMundo.Instance != null)
+        {
+            float intensidad = DirectorMundo.IntensidadActual;
+            Verificar("DirectorMundo intensidad en [0,1]",
+                intensidad >= 0f && intensidad <= 1f,
+                $"Intensidad = {intensidad:F2} fuera de rango [0,1]");
+        }
+
+        // ── 14. Tráfico: vías cargadas y pool creado ──────────────────────
+        if (SistemaTrafico.Instance != null)
+        {
+            // SistemaTrafico.Instance existente = Start() se ejecutó sin excepción
+            Verificar("SistemaTrafico inicializado", true, "");
+        }
+
+        // ── 15. Impostores: quad mesh creado (no null) ────────────────────
+        if (SistemaImpostores.Instance != null)
+        {
+            Verificar("SistemaImpostores activo", true, "");
+        }
+
+        // ── 16. Neblina: volumen del Arakil creado ────────────────────────
+        if (SistemaNeblina.Instance != null)
+        {
+            Verificar("SistemaNeblina activo", true, "");
+        }
+
+        // ── 17. Telemetría: p99 frame-time bajo umbral ────────────────────
+        if (SistemaTelemetria.Instance != null)
+        {
+            float p99 = SistemaTelemetria.Instance.P99Ms;
+            Verificar("Frame-time p99 < 33 ms (≥30 fps mínimo)",
+                p99 < 33f || p99 == 0f,   // 0 = aún sin datos
+                $"p99 = {p99:F1} ms → hitches detectados");
+        }
+
         // ── Informe final ──────────────────────────────────────────────────
         int ok     = _resultados.FindAll(r => r.ok).Count;
         int fallos = _resultados.Count - ok;

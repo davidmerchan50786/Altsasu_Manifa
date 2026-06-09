@@ -1,0 +1,16 @@
+{
+    "name": "Alsasua.Render",
+    "rootNamespace": "",
+    "references": [
+        "GUID:ab175fa2f7e34b049c68ce756b35c136"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
