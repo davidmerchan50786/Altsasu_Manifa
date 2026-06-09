@@ -115,7 +115,7 @@ public class SistemaNeblina : MonoBehaviour
         bool esNoche    = nightLevel >= 0.5f;
 
         // ── Estado del clima ──────────────────────────────────────────────
-        var clima = SistemaClima.EstadoActual;   // static property (ver abajo)
+        var clima = SistemaClimaExtension.EstadoActual;   // accessor estático (ver abajo)
 
         if (esNoche)
         {
@@ -168,6 +168,4 @@ public static class SistemaClimaExtension
             // Busca la primera instancia en escena (SistemaClima es MonoBehaviour)
             var inst = Object.FindFirstObjectByType<SistemaClima>();
             return inst != null ? inst.climaActual : SistemaClima.EstadoClima.Sol;
-        }
-    }
-}
+      

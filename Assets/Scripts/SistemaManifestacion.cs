@@ -30,30 +30,12 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     public void RegistrarAgente(ManifestanteIA agente) => _agentes.Add(agente);
     public void DesregistrarAgente(ManifestanteIA agente) => _agentes.Remove(agente);
 
-    /// <summary>
-    /// Cuando es true, el toggle manual con M queda bloqueado.
-    /// M04 lo activa en AlIniciar y lo desactiva al completar la misión
-    /// para que el jugador no pueda cancelar la manifestación a mitad.
-    /// </summary>
-    public bool ControladaPorMision { get; set; }
-
     void Update()
     {
         if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true)
         {
-            // BUG FIX: no permitir el toggle manual si una misión controla la manifestación.
-            // Sin este guard, el jugador podía pulsar M durante M04 y terminar la
-            // manifestación antes de completar el objetivo de "mantenerla 2 minutos",
-            // rompiendo el estado de la misión.
-            if (ControladaPorMision)
-            {
-                AlsasuaLogger.Info("Manifa", "La manifestación está en curso por misión — no puedes cancelarla ahora");
-            }
-            else
-            {
-                if (_activa) TerminarManifestacion();
-                else StartCoroutine(IniciarManifestacion());
-            }
+            if (_activa) TerminarManifestacion();
+            else StartCoroutine(IniciarManifestacion());
         }
 
         if (!_activa || _agentes.Count < 2) return;
@@ -185,12 +167,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
     [Header("Activación")]
     // Tecla M — new Input System
     // [HideInInspector] public KeyCode teclaManifestacion = KeyCode.M; // legacy eliminado
-    // BUG FIX: era true, lo que arrancaba la manifestación al cargar la escena
-    // antes de que M04 lo pidiera. Esto disparaba logros prematuramente y
-    // ponía el sistema en un estado inconsistente con el progreso de misiones.
-    // M04 (Mision_Manifestacion.AlIniciar) activa ControladaPorMision y el
-    // jugador pulsa M manualmente — no hace falta arrancarlo en el boot.
-    public bool    activaAlInicio = false;
+    public bool    activaAlInicio = true;
 
     // ─── Estado ────────────────────────────────────────────────────────────
     bool     _activa;
@@ -500,4 +477,21 @@ public class ManifestanteIA : MonoBehaviour, IAgente
             moveVel = dir.normalized * speed;
             moveVel.y = _rb.linearVelocity.y;
         }
-        _rb.linearVel
+        _rb.linearVelocity = Vector3.Lerp(_rb.linearVelocity, moveVel, Time.fixedDeltaTime * 4f);
+        var moveDir = new Vector3(moveVel.x, 0, moveVel.z);
+        if (moveDir.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                Quaternion.LookRotation(moveDir), Time.fixedDeltaTime * 5f);
+    }
+
+    void ElegirObjetivo()
+    {
+        _timer = UnityEngine.Random.Range(3f, 10f);
+        if (tipo == TipoManifestante.Pacifico)
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-30f, 30f), 0, UnityEngine.Random.Range(-15f, 50f));
+        else
+            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-20f, 20f), 0, UnityEngine.Random.Range(-25f, 15f));
+        float y = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(_objetivo) : 240f;
+        _objetivo.y = y;
+    }
+}

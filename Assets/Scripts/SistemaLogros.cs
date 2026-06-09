@@ -22,35 +22,10 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         {
             if (Desbloqueado) return;
             PlayerPrefs.SetInt("logro_" + Id, 1);
-            // BUG FIX: NO llamar PlayerPrefs.Save() aquí.
-            // Save() es una escritura síncrona a disco. Si varios logros se
-            // desbloquean en el mismo frame (ej. al completar M12 se disparan
-            // 12_misiones + victoria + manifa_grande) se generan N escrituras
-            // seguidas. SistemaLogros.Instance encola los saves y los ejecuta
-            // de uno en uno al final del frame via coroutine.
-            SistemaLogros.Instance?.ProgramarSave();
+            PlayerPrefs.Save();
             OnLogroDesbloqueado?.Invoke(this);
             AlsasuaLogger.Info("Logros", $"🏆 {Nombre}");
         }
-    }
-
-    // ── Batch save ────────────────────────────────────────────────────────
-    bool _savePendiente;
-
-    /// <summary>Marca que hay datos sin guardar. El save real ocurre al final del frame.</summary>
-    public void ProgramarSave()
-    {
-        if (_savePendiente) return;   // ya hay uno programado este frame
-        _savePendiente = true;
-        StartCoroutine(SaveAlFinalDelFrame());
-    }
-
-    private System.Collections.IEnumerator SaveAlFinalDelFrame()
-    {
-        yield return new WaitForEndOfFrame();
-        PlayerPrefs.Save();
-        _savePendiente = false;
-        AlsasuaLogger.Info("Logros", "PlayerPrefs guardados (batch)");
     }
 
     // ── Catálogo ──────────────────────────────────────────────────────────
@@ -86,14 +61,6 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         new Logro { Id="kilometros",      Nombre="Bidaiari",           Icono="🚶", Descripcion="Recorre 10 km a pie" },
         new Logro { Id="fauna",           Nombre="Basoa",              Icono="🌿", Descripcion="Avista 3 especies de fauna" },
         new Logro { Id="amanecer",        Nombre="Eguzki",             Icono="🌅", Descripcion="Contempla un amanecer desde el monte" },
-        // ── Nuevos logros AAA+ ────────────────────────────────────────────
-        new Logro { Id="fauna_lobo",      Nombre="Otso",               Icono="🐺", Descripcion="Avista un lobo en la sierra" },
-        new Logro { Id="redada_superv",   Nombre="Bizirik",            Icono="🚨", Descripcion="Sobrevive una redada policial" },
-        new Logro { Id="tormenta_valle",  Nombre="Eurite Handia",      Icono="⛈",  Descripcion="Sobrevive una tormenta en el valle" },
-        new Logro { Id="molotov_coche",   Nombre="Sutean",             Icono="🔥", Descripcion="Incendia un vehículo con Molotov" },
-        new Logro { Id="nieve_manifa",    Nombre="Elurra",             Icono="❄",  Descripcion="Organiza una manifestación en plena nevada" },
-        new Logro { Id="barricada_tren",  Nombre="Trena Gelditu",      Icono="🚆", Descripcion="Interrumpe el servicio ferroviario" },
-        new Logro { Id="plaza_noche",     Nombre="Herriko Plaza",      Icono="🌃", Descripcion="Pasa una noche entera en Herriko Plaza" },
     };
 
     // ── Estado ────────────────────────────────────────────────────────────
@@ -116,12 +83,6 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
     void OnEntroVehiculo(ControladorVehiculoJugador _) => Todos.Find(l=>l.Id=="primer_coche")?.Desbloquear();
     void OnVehiculoDestruido(VehiculoNPC _)            => Todos.Find(l=>l.Id=="coche_destruido")?.Desbloquear();
 
-    // ── Tracking nuevos logros ────────────────────────────────────────────
-    bool _redadaSobrevivida;
-    bool _loboAvistado;
-    float _timerPlaza;
-    bool _enPlaza;
-
     void SuscribirEventos()
     {
         SistemaGrafitis.OnPintadaRealizada    += OnGraffiti;
@@ -131,23 +92,6 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
         ControladorVehiculoJugador.OnJugadorEntro += OnEntroVehiculo;
         VehiculoNPC.OnVehiculoDestruido           += OnVehiculoDestruido;
         OnLogroDesbloqueado                       += MostrarNotificacion;
-        DirectorMundo.OnEvento                    += OnDirectorEvento;
-    }
-
-    void OnDirectorEvento(DirectorMundo.EventoMundo ev)
-    {
-        if (ev == DirectorMundo.EventoMundo.Redada)
-        {
-            _redadaSobrevivida = true;   // se marca aquí; se verifica en Update tras 60s
-            StartCoroutine(VerificarRedada());
-        }
-    }
-
-    System.Collections.IEnumerator VerificarRedada()
-    {
-        yield return new UnityEngine.WaitForSeconds(60f);
-        if (_redadaSobrevivida && AltsasuCore.Jugador != null)
-            Todos.Find(l => l.Id == "redada_superv")?.Desbloquear();
     }
 
     void Update()
@@ -209,37 +153,6 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
             if (rb != null && rb.linearVelocity.magnitude * 3.6f > 160f)
                 Todos.Find(l=>l.Id=="velocidad")?.Desbloquear();
         }
-
-        // Tormenta en el valle
-        if (SistemaClimaExtension.EstadoActual == SistemaClima.EstadoClima.Tormenta && j != null)
-            Todos.Find(l=>l.Id=="tormenta_valle")?.Desbloquear();
-
-        // Nieve + manifestación activa
-        if (SistemaClimaExtension.EstadoActual == SistemaClima.EstadoClima.NieveLigera
-            && SistemaManifestacion.Instance != null && SistemaManifestacion.Instance.EnCurso)
-            Todos.Find(l=>l.Id=="nieve_manifa")?.Desbloquear();
-
-        // Lobo avistado — hay algún animal llamado "wolf" o "Lobo" cerca
-        if (!_loboAvistado && j != null)
-        {
-            var lobos = FindObjectsByType<UnityEngine.AI.NavMeshAgent>(FindObjectsSortMode.None);
-            foreach (var a in lobos)
-                if ((a.name.ToLower().Contains("lobo") || a.name.ToLower().Contains("wolf"))
-                    && Vector3.Distance(a.transform.position, j.position) < 50f)
-                { _loboAvistado = true; Todos.Find(l=>l.Id=="fauna_lobo")?.Desbloquear(); break; }
-        }
-
-        // Noche entera en Herriko Plaza (5 min cerca del centro)
-        if (j != null && Vector3.Distance(j.position, GeoDataAlsasua.HerrikoPlaza) < 60f)
-        {
-            _timerPlaza += 2f;   // se llama cada 2s
-            if (_timerPlaza >= 300f) Todos.Find(l=>l.Id=="plaza_noche")?.Desbloquear();
-        }
-        else _timerPlaza = 0f;
-
-        // Tren interrumpido → lo detecta si el tren está disabled por Director
-        if (SistemaTren.Instance != null && !SistemaTren.Instance.enabled)
-            Todos.Find(l=>l.Id=="barricada_tren")?.Desbloquear();
     }
 
     // ── Callbacks ─────────────────────────────────────────────────────────
@@ -291,4 +204,30 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
             _estiloNotif = new GUIStyle(GUI.skin.box)
             {
                 fontSize = 14, richText = true,
-                alignment = Te
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = Color.white,
+                           background = MenuPausa.MakeTex2x2(new Color(0.1f,0.35f,0.1f,0.9f)) },
+                padding = new RectOffset(14, 14, 10, 10)
+            };
+
+        float alpha = Mathf.Clamp01(_timerNotif);
+        GUI.color = new Color(1,1,1, alpha);
+        float w = 320f, h = 54f;
+        float x = Screen.width - w - 16f, y = Screen.height * 0.35f;
+        GUI.Box(new Rect(x, y, w, h),
+            $"{_logroMostrado.Icono}  <b>{_logroMostrado.Nombre}</b>\n<size=11><color=#AAFFAA>{_logroMostrado.Descripcion}</color></size>",
+            _estiloNotif);
+        GUI.color = Color.white;
+    }
+
+    protected override void OnDestroyed()
+    {
+        SistemaGrafitis.OnPintadaRealizada        -= OnGraffiti;
+        SistemaMisiones.OnMisionCompletada        -= OnMisionCompletada;
+        SistemaMisiones.OnMisionIniciada          -= OnMisionIniciada;
+        GameManagerAltsasua.OnEstrellasCambia     -= OnWanted;
+        ControladorVehiculoJugador.OnJugadorEntro -= OnEntroVehiculo;
+        VehiculoNPC.OnVehiculoDestruido           -= OnVehiculoDestruido;
+        OnLogroDesbloqueado                       -= MostrarNotificacion;
+    }
+}

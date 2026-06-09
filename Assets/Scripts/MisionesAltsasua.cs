@@ -129,11 +129,6 @@ public class Mision_PintadaPlaza : Mision
                 bool enTiempo = _timerEscape < TIEMPO_MAX;
                 int dinero = enTiempo ? 400 : 100;
                 MisionHelper.GanarDinero(dinero);
-                // Honor: solo se gana si escapaste limpio; huir tarde manda el mensaje equivocado
-                if (enTiempo)
-                    SistemaApoyoPopular.Instance?.SumarHonor(15f, "Pintada y escape sin violencia");
-                else
-                    SistemaApoyoPopular.Instance?.RestarHonor(5f, "Capturado en la pintada");
                 string msg = enTiempo ? "Escape limpio — +400€" : "Llegaron tarde pero te pillaron — +100€";
                 AlsasuaLogger.Info("M03", msg);
             }
@@ -160,9 +155,6 @@ public class Mision_Manifestacion : Mision
     {
         _timerManifa    = 0f;
         _manifaIniciada = false;
-        // Bloquear el toggle manual mientras M04 controla la manifestación
-        var manifa = AltsasuCore.I?.manifestacionSystem;
-        if (manifa != null) manifa.ControladaPorMision = true;
         AlsasuaLogger.Info("M04", "Llega a Herriko Plaza sin wanted y pulsa M para manifestarte");
     };
 
@@ -214,14 +206,10 @@ public class Mision_Manifestacion : Mision
             {
                 MisionHelper.GanarDinero(800);
                 SistemaApoyoPopular.Instance?.SumarApoyo(200f, "Manifestación sostenida 2 minutos");
-                SistemaApoyoPopular.Instance?.SumarHonor(25f, "Organización pacífica exitosa");
                 // La manifestación reduce el nivel de búsqueda si el apoyo es alto
                 var apoyo = SistemaApoyoPopular.Instance;
                 if (apoyo != null && apoyo.apoyo > 60f)
                     MisionHelper.AumentarBusqueda(-1);
-                // Liberar el control de la manifestación — el jugador puede gestionarla libremente
-                var manifa = AltsasuCore.I?.manifestacionSystem;
-                if (manifa != null) manifa.ControladaPorMision = false;
             }
         }
     };
@@ -304,7 +292,6 @@ public class Mision_CorteN1 : Mision
             {
                 MisionHelper.GanarDinero(300);
                 MisionHelper.AumentarBusqueda(-1);
-                SistemaApoyoPopular.Instance?.SumarHonor(20f, "Acción directa no violenta completada");
             }
         }
     };
@@ -640,7 +627,6 @@ public class Mision_LaRepresalia : Mision
             {
                 MisionHelper.GanarDinero(2000);
                 SistemaApoyoPopular.Instance?.SumarApoyo(400f, "Sobreviviste a la represalia");
-                SistemaApoyoPopular.Instance?.SumarHonor(30f, "Resistencia bajo represión");
                 AlsasuaLogger.Info("M10", "Supervivencia demostrada — la resistencia no cede");
             }
         }
@@ -700,7 +686,6 @@ public class Mision_Amnistia : Mision
             {
                 MisionHelper.GanarDinero(3000);
                 SistemaApoyoPopular.Instance?.SumarApoyo(500f, "Victoria política — Amnistia");
-                SistemaApoyoPopular.Instance?.SumarHonor(40f, "Victoria política sin violencia");
                 AlsasuaLogger.Info("M11", "¡AMNISTIA! El pueblo ha ganado. Una última batalla...");
             }
         }
@@ -781,4 +766,29 @@ public class Mision_ManifaFinal : Mision
         },
         new Objetivo
         {
- 
+            Descripcion = $"Sostén la plaza durante {DURACION}s — ¡no cedas!",
+            Condicion   = () =>
+            {
+                var manifa = AltsasuCore.I?.manifestacionSystem;
+                bool enPlaza = PuntosAlsasua.Dist2D(
+                    PuntosAlsasua.JugadorPos(), PuntosAlsasua.HerrikoPlaza) < 200f;
+                bool manifaViva = manifa != null && manifa.EnCurso;
+                if (enPlaza && manifaViva) _timerFinal += Time.deltaTime;
+                return _timerFinal >= DURACION;
+            },
+            AlCompletar = () =>
+            {
+                MisionHelper.GanarDinero(9999);
+                SistemaApoyoPopular.Instance?.SumarApoyo(999f, "VICTORIA — Manifa Final completada");
+                MisionHelper.AumentarBusqueda(-99); // wanted = 0
+                AlsasuaLogger.Info("M12",
+                    "★★★★★ ASKATASUNA ★★★★★ — El pueblo de Alsasua ha resistido. FIN.");
+                // Mostrar pantalla de victoria
+                HUDCanvas.MostrarVictoria();
+            }
+        }
+    };
+
+    // Sin siguiente misión — fin del juego
+    public override Mision SiguienteMision => null;
+}

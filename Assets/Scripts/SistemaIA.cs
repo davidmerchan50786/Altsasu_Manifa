@@ -5,12 +5,6 @@
 //   SistemaIA.Registrar(this);     // en Start() de cada agente
 //   SistemaIA.Desregistrar(this);  // en OnDestroy() de cada agente
 //   SistemaIA.AlertarCercanos(pos, radio); // alerta a todos los agentes en rango
-//
-// NOTA sobre EnRango:
-//   Devuelve un IReadOnlyList tomado de un pool interno.
-//   Cada llamada obtiene una lista distinta — seguro si dos sistemas
-//   llaman EnRango en el mismo frame. Devolver la lista con DevolverBuffer()
-//   es opcional pero recomendable para reducir presión del GC a largo plazo.
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,29 +12,8 @@ using UnityEngine;
 public class SistemaIA : SingletonMono<SistemaIA>
 {
     private readonly List<IAgente> _agentes = new List<IAgente>(128);
-
-    // ── Pool de buffers para EnRango ──────────────────────────────────────
-    // BUG FIX: el buffer único anterior (_enRangoBuffer) era sobrescrito si dos
-    // sistemas llamaban EnRango() en el mismo frame — el resultado de la primera
-    // llamada quedaba corrupto. Ahora se usa un pool de listas: cada llamada
-    // reserva una lista propia y puede usarla de forma independiente.
-    private readonly Stack<List<IAgente>> _pool = new Stack<List<IAgente>>(4);
-
-    private List<IAgente> TomarBuffer()
-    {
-        return _pool.Count > 0 ? _pool.Pop() : new List<IAgente>(32);
-    }
-
-    /// <summary>
-    /// Devuelve un buffer al pool. Llamar tras consumir el resultado de EnRango
-    /// si quieres evitar que el GC cree listas nuevas a largo plazo.
-    /// </summary>
-    public static void DevolverBuffer(IReadOnlyList<IAgente> lista)
-    {
-        if (Instance == null || lista is not List<IAgente> l) return;
-        l.Clear();
-        Instance._pool.Push(l);
-    }
+    // Buffer reutilizable para EnRango — evita allocations en el hotpath
+    private readonly List<IAgente> _enRangoBuffer = new List<IAgente>(32);
 
     // ── API pública ───────────────────────────────────────────────────────
 
@@ -57,6 +30,45 @@ public class SistemaIA : SingletonMono<SistemaIA>
 
     /// <summary>
     /// Devuelve todos los agentes activos dentro de radio.
-    /// Cada llamada devuelve una lista independiente tomada del pool —
-    /// es seguro llamar EnRango varias veces en el mismo frame.
-    /// Opcionalmente llama DevolverBuffer(result
+    /// IMPORTANTE: la lista devuelta es un buffer interno reutilizable.
+    /// Consumirla en el mismo frame; NO almacenar la referencia entre frames.
+    /// </summary>
+    public static List<IAgente> EnRango(Vector3 centro, float radio)
+    {
+        var resultado = Instance?._enRangoBuffer ?? new List<IAgente>();
+        resultado.Clear();
+        if (Instance == null) return resultado;
+        float r2 = radio * radio;
+        foreach (var a in Instance._agentes)
+            if (a.EstaActivo && (a.Posicion - centro).sqrMagnitude <= r2)
+                resultado.Add(a);
+        return resultado;
+    }
+
+    /// <summary>Alerta a todos los agentes activos dentro de radio.</summary>
+    public static void AlertarCercanos(Vector3 origen, float radio)
+    {
+        if (Instance == null) return;
+        float r2 = radio * radio;
+        foreach (var a in Instance._agentes)
+            if (a.EstaActivo && (a.Posicion - origen).sqrMagnitude <= r2)
+                a.Alertar(origen);
+    }
+
+    /// <summary>Número de agentes activos registrados (para debug/diagnóstico).</summary>
+    public static int TotalActivos
+    {
+        get
+        {
+            if (Instance == null) return 0;
+            int n = 0;
+            foreach (var a in Instance._agentes) if (a.EstaActivo) n++;
+            return n;
+        }
+    }
+
+    protected override void OnDestroyed()
+    {
+        _agentes.Clear();
+    }
+}
