@@ -1,0 +1,2 @@
+* -filter -diff -merge -text
+*.meta text=auto filter=
