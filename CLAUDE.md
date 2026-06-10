@@ -150,4 +150,8 @@ Todas las deudas anteriores están corregidas:
 - `GeoDataAlsasua` expone `JugadorPos()`, `CarreteraN1Norte/Sur`, `HerrikoPlaza` con `OX/OZ` como origen
 
 ## Geografía de referencia
-- Alsasua es una cuenca fluvial a ~530m de altitud
+- Alsasua es una cuenca fluvial a ~530m de altitud
+- Sierra de Aralar al sur: ~1.400m
+- Altzania/Urbasa al norte: ~1.000m
+- Río Arakil cruza el valle de este a oeste
+- Arquitectura vasca tradicional: arenisca rojiza, balcones de forja, teja árabe terracota/pizarra
