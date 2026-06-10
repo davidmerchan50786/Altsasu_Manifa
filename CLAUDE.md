@@ -4,7 +4,7 @@
 Juego Unity HDRP de mundo abierto ambientado en Alsasua/Altsasu (Navarra, España). Ciudad procedural generada desde datos reales del IGN, IDENA, LIDAR, OSM y Catastro. 119 scripts C#, ~37.000 líneas.
 
 ## Rama de trabajo
-Siempre trabajar en `claude/friendly-dijkstra-LzSzs`. Nunca en `main`.
+Trabajar en `main` (única rama; historia limpia sin LFS). Las ramas antiguas están archivadas como tags `archivo/main`, `archivo/cool-planck` y `archivo/misiones`. Scripts huérfanos recuperados de la historia vieja: `Assets/Scripts/_RecuperadosMain~/` (Unity no compila carpetas con `~`).
 
 ## Sistema de coordenadas — CRÍTICO
 - Origen = Herriko Plaza (centro de Alsasua)
@@ -150,8 +150,4 @@ Todas las deudas anteriores están corregidas:
 - `GeoDataAlsasua` expone `JugadorPos()`, `CarreteraN1Norte/Sur`, `HerrikoPlaza` con `OX/OZ` como origen
 
 ## Geografía de referencia
-- Alsasua es una cuenca fluvial a ~530m de altitud
-- Sierra de Aralar al sur: ~1.400m
-- Altzania/Urbasa al norte: ~1.000m
-- Río Arakil cruza el valle de este a oeste
-- Arquitectura vasca tradicional: arenisca rojiza, balcones de forja, teja árabe terracota/pizarra
+- Alsasua es una cuenca fluvial a ~530m de altitud
