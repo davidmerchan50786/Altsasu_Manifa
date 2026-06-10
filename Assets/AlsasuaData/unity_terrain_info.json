@@ -1,0 +1,37 @@
+{
+  "area": {
+    "xmin_utm": 566000,
+    "ymin_utm": 4741000,
+    "xmax_utm": 571000,
+    "ymax_utm": 4759000,
+    "width_m": 5000,
+    "length_m": 18000,
+    "height_m": 900.0
+  },
+  "dem": {
+    "z_min": 305.0,
+    "z_max": 1205.0,
+    "z_range": 900.0,
+    "resolution_5m": {
+      "nx": 1000,
+      "ny": 3600
+    },
+    "raw_1025": "dem_unity_1025.raw",
+    "raw_2049": "dem_unity_2049.raw"
+  },
+  "unity_terrain": {
+    "heightmapResolution": 1025,
+    "terrainWidth": 5000,
+    "terrainLength": 18000,
+    "terrainHeight": 900.0,
+    "baseHeight": 305.0,
+    "rawFile": "dem_unity_1025.raw",
+    "byteOrder": "Windows (Little-Endian)"
+  },
+  "coordinate_origin": {
+    "epsg": "25830",
+    "x_utm": 566000,
+    "y_utm": 4741000,
+    "note": "Unity X = UTM_X - 566000, Unity Z = UTM_Y - 4741000"
+  }
+}
