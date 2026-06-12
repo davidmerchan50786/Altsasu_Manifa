@@ -69,7 +69,7 @@ public static class AutoPlayCesium
             }
             else
             {
-                AsegurarCameraController();
+                QuitarCameraController();
             }
         }
         else
@@ -129,16 +129,22 @@ public static class AutoPlayCesium
         Debug.Log("[AutoPlay] ✅ Escena lista para Play.");
     }
 
-    // ── Cesium CameraController en la cámara principal ────────────────────
-    static void AsegurarCameraController()
+    // ── Cesium CameraController: QUITARLO de las cámaras ──────────────────
+    // Es un controlador de cámara libre (vuelo WASD) que pelea con la cámara
+    // en tercera persona de ControladorJugador (causaba que la cámara acabase
+    // dentro de la malla de los tiles).
+    static void QuitarCameraController()
     {
         var tipo = System.Type.GetType("CesiumForUnity.CesiumCameraController, CesiumForUnity");
         if (tipo == null) return;
-        var cam = Camera.main;
-        if (cam != null && cam.GetComponent(tipo) == null)
+        foreach (var cam in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
         {
-            cam.gameObject.AddComponent(tipo);
-            Debug.Log("[AutoPlay] CesiumCameraController añadido a Main Camera.");
+            var ctrl = cam.GetComponent(tipo);
+            if (ctrl != null)
+            {
+                Object.DestroyImmediate(ctrl);
+                Debug.Log("[AutoPlay] CesiumCameraController eliminado de la cámara (conflicto con cámara TP).");
+            }
         }
     }
 
@@ -165,10 +171,12 @@ public static class AutoPlayCesium
 
         try
         {
-            // Exposición fija EV 12 (exterior día soleado en HDRP)
+            // Exposición automática con límites (EV 11-15). Fija a EV12 con un
+            // sol de 80.000 lux quedaba ~3 pasos sobreexpuesta (imagen lavada).
             var expo = perfil.Add<UnityEngine.Rendering.HighDefinition.Exposure>(true);
-            expo.mode.Override(UnityEngine.Rendering.HighDefinition.ExposureMode.Fixed);
-            expo.fixedExposure.Override(12f);
+            expo.mode.Override(UnityEngine.Rendering.HighDefinition.ExposureMode.Automatic);
+            expo.limitMin.Override(11f);
+            expo.limitMax.Override(15f);
 
             // Tonemapping neutro
             var tm = perfil.Add<UnityEngine.Rendering.HighDefinition.Tonemapping>(true);

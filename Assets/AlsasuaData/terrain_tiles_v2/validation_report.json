@@ -1,0 +1,144 @@
+{
+ "fecha": "2026-06-12T01:36:23",
+ "verde": true,
+ "checks": {
+  "sha256": {
+   "ok": true,
+   "detalle": "48 tiles verificados",
+   "bloqueante": true
+  },
+  "seams": {
+   "ok": true,
+   "aristasIntra": 64,
+   "aristasCross": 32,
+   "detalle": "todas exactas",
+   "bloqueante": true
+  },
+  "rmseLidar": {
+   "ok": true,
+   "anillo0": {
+    "puntos": 60000,
+    "medianaAbs": 0.05,
+    "p95": 0.272,
+    "rmseInformativo": 1.521,
+    "umbralMediana": 0.1,
+    "umbralP95": 0.5,
+    "histograma": {
+     "-5.0..-2.0": 88,
+     "-2.0..-1.0": 84,
+     "-1.0..-0.5": 99,
+     "-0.5..-0.25": 100,
+     "-0.25..-0.1": 219,
+     "-0.1..0.1": 43646,
+     "0.1..0.25": 12634,
+     "0.25..0.5": 2529,
+     "0.5..1.0": 365,
+     "1.0..2.0": 31,
+     "2.0..5.0": 23
+    }
+   },
+   "anillo1": {
+    "puntos": 0,
+    "detalle": "sin puntos LIDAR en el anillo"
+   },
+   "puntosDescartadosSinDatoReal": 77861,
+   "detalle": "dentro de umbral",
+   "bloqueante": true
+  },
+  "ferrocarril": {
+   "ok": false,
+   "segmentos": 545,
+   "segmentosPuenteExcluidos": 117,
+   "segmentosRelieveRealExcluidos": 167,
+   "peorPendiente": 0.1769,
+   "umbral": 0.025,
+   "peorSitio": "(873,8685)",
+   "detalle": "pendiente 17.69 % en (873,8685)",
+   "bloqueante": false
+  },
+  "rioArakil": {
+   "ok": true,
+   "tramos": 43,
+   "puntos": 698,
+   "subidaMax": 1.84,
+   "estructurasRealesExcluidas": 5,
+   "umbralCostura": 0.5,
+   "umbralLejos": 2.0,
+   "peorSitio": "(6098,8175)",
+   "detalle": "monótono por tramos (tolerancia ok)",
+   "bloqueante": true
+  },
+  "cotasExternas": {
+   "ok": true,
+   "plaza": {
+    "cota": 531.97,
+    "esperada": 531.94,
+    "tol": 1.0
+   },
+   "estacion": {
+    "cota": 530.66,
+    "nota": "informativo"
+   },
+   "rango": {
+    "hMin": 270.439,
+    "hMax": 1181.033
+   },
+   "Maiza": {
+    "cotaMosaico": 1180.9,
+    "cotaOficial": 1182.5
+   },
+   "Bargagain": {
+    "cotaMosaico": 1152.0,
+    "cotaOficial": 1153.0
+   },
+   "Aingibel": {
+    "cotaMosaico": 1148.5,
+    "cotaOficial": 1153.0
+   },
+   "Iruaitzeta": {
+    "cotaMosaico": 1143.3,
+    "cotaOficial": 1144.0
+   },
+   "Ixuripunta": {
+    "cotaMosaico": 1132.5,
+    "cotaOficial": 1133.0
+   },
+   "Hiruaitz": {
+    "cotaMosaico": 1126.6,
+    "cotaOficial": 1130.0
+   },
+   "Legunbe": {
+    "cotaMosaico": 1124.1,
+    "cotaOficial": 1128.0
+   },
+   "Bigate": {
+    "cotaMosaico": 1119.1,
+    "cotaOficial": 1125.0
+   },
+   "Legunbeko Haitza": {
+    "cotaMosaico": 1123.5,
+    "cotaOficial": 1125.0
+   },
+   "Arbarain": {
+    "cotaMosaico": 1117.1,
+    "cotaOficial": 1118.0
+   },
+   "Balankaleku": {
+    "cotaMosaico": 1113.5,
+    "cotaOficial": 1106.0
+   },
+   "Lubierri": {
+    "cotaMosaico": 1093.0,
+    "cotaOficial": 1096.0
+   },
+   "detalle": "ok",
+   "bloqueante": true
+  },
+  "cobertura": {
+   "ok": true,
+   "tiles": 48,
+   "detalle": "ok",
+   "bloqueante": true
+  }
+ }
+}

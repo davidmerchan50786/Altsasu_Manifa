@@ -120,3 +120,8 @@ Assets/AlsasuaData/FacadeTextures/Processed/*_minimap.png
 Assets/AlsasuaData/FacadeTextures/StreetView/*.png
 Assets/AlsasuaData/FacadeTextures/StreetView/*.jpg
 Assets/AlsasuaData/FacadeTextures/StreetView/*.jpeg
+
+# Fuentes GIS maestras del mosaico V2 (167 MB, regenerables con Tools/DescargarMDT_Mosaico.py)
+DatosGIS/
+# Temporales de pruebas GIS
+Temp/gis/

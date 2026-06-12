@@ -72,7 +72,7 @@ public static class CreadorEscenaPrincipal
         var terrenoGO  = HijoNuevo("Terreno",       mundoGO);
         var terreno    = terrenoGO.AddComponent<SistemaTerreno>();
         terrenoGO.AddComponent<SistemaSueloAAA>();
-        terrenoGO.AddComponent<OptimizadorTerreno>();
+        terrenoGO.AddComponent<OptimizadorMallaOBJ>();
         terrenoGO.AddComponent<AplicadorOrtofoto>();              // ortofoto PNOA 25cm/px
         terrenoGO.AddComponent<GeneradorTerrenoUltraPreciso>();   // DTM 2m IDENA / LIDAR 0.5m
         var gestorMat  = terrenoGO.AddComponent<GestorMaterialesAlsasua>();

@@ -1,0 +1,31 @@
+FOTOGRAMETRÍA — anclas foto-reales de Alsasua
+=============================================
+
+Aquí van los edificios reconstruidos por fotogrametría (Meshroom) para
+sustituir, uno a uno, los edificios procedurales por sus gemelos foto-reales.
+
+CÓMO AÑADIR UN EDIFICIO REAL
+----------------------------
+1. Haz fotos del edificio real (muchas, desde todos los ángulos).
+2. Procésalo en Meshroom → exporta la malla texturizada (.obj / .fbx / .glb).
+3. Importa esa malla en Unity y déjala (o un prefab suyo) en:
+       Assets/Resources/Fotogrametria/<nombre>
+   Ejemplo: Assets/Resources/Fotogrametria/estacion.fbx
+4. En la escena, en el objeto con el componente "SistemaEdificiosFotogrametria",
+   añade una entrada a la lista "Edificios":
+       - recurso  = <nombre>   (sin extensión, p.ej. "estacion")
+       - latitud  = lat real del edificio (grados WGS84)
+       - longitud = lon real del edificio (grados WGS84)
+       - rotacionY = gira la malla para alinearla con la calle
+       - escala    = 1 normalmente (ajusta si el modelo viene en otra unidad)
+       - offsetY   = ajuste fino vertical
+5. Dale a Play. El sistema convierte lat/lon → coords Unity de Alsasua y coloca
+   el modelo en su sitio real, apoyado sobre el terreno.
+
+Ya viene pre-cargada una entrada de ejemplo: "estacion" (≈ estación de tren).
+Deja una malla llamada "estacion" aquí y aparecerá automáticamente.
+
+CÓMO SACAR LAS COORDENADAS GPS
+------------------------------
+Google Maps → clic derecho sobre el edificio → "¿Qué hay aquí?" → copia lat, lon.
+Centro de referencia (Herriko Plaza): lat 42.9003, lon -2.1665.

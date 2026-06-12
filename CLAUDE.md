@@ -1,7 +1,13 @@
 # Altsasu Manifa — Contexto del Proyecto
 
 ## Qué es este proyecto
-Juego Unity HDRP de mundo abierto ambientado en Alsasua/Altsasu (Navarra, España). Ciudad procedural generada desde datos reales del IGN, IDENA, LIDAR, OSM y Catastro. 119 scripts C#, ~37.000 líneas.
+Juego Unity HDRP de mundo abierto ambientado en Alsasua/Altsasu (Navarra, España). Ciudad procedural generada desde datos reales del IGN, IDENA, LIDAR, OSM y Catastro. 210 scripts C#, ~65.000 líneas.
+
+Documentación de arquitectura: `Docs/grafo_dependencias.html` (grafo interactivo de clases y dependencias) y `Docs/informe_auditoria.md` (auditoría 2026-06). Código deprecado en `Assets/Scripts/_Deprecated~/` (Unity no lo compila): `EventManager`, `SistemaWater` (dup de `SistemaAguaRio`), `SistemaMobiliarioUrbano` (fusionado en `MobiliarioUrbano`), `DiagnosticoArranque` (fusionado en `SistemaDiagnostico`), `SistemaAPV` (dup de `SistemaAPVScenarios`), `CatalogoVivo` y `FaccionDefinition` (SO sin consumidores). Las clases `*Legacy` fueron eliminadas de `SistemasSimulacion.cs`. `OptimizadorTerreno` → renombrado `OptimizadorMallaOBJ`.
+
+Asambleas (asmdef): `Core` ← `Runtime`/`Modules` ← `Systems` ← `Editor`. Runtime NO puede referenciar Systems/Modules — usar detección por nombre o eventos si hace falta cruzar.
+
+Misiones: cadena M00→M12. M00 `Mision_Inicial` (tutorial "Esnatu, Altsasu", en `Runtime/MisionInicial.cs`) la lanza `SistemaMisiones` al arrancar (flag `saltarIntro`). Escena dedicada: menú `Tools/Alsasua/Escena/🎬 Crear Escena Misión Inicial`.
 
 ## Rama de trabajo
 Trabajar en `main` (única rama; historia limpia sin LFS). Las ramas antiguas están archivadas como tags `archivo/main`, `archivo/cool-planck` y `archivo/misiones`. Scripts huérfanos recuperados de la historia vieja: `Assets/Scripts/_RecuperadosMain~/` (Unity no compila carpetas con `~`).
@@ -10,18 +16,39 @@ Trabajar en `main` (única rama; historia limpia sin LFS). Las ramas antiguas es
 - Origen = Herriko Plaza (centro de Alsasua)
 - UTM 30N ETRS89: E=567951, N=4749902
 - Unity offset: OX=1918, OZ=8570
-- Conversión UTM→Unity: `UnityX = (E - 567951) + 1918; UnityZ = (N - 4749902) + 8570`
-- Escala: 1 unidad Unity = 1 metro real
+- Conversión UTM→Unity: `UnityX = (E - 567951) × 0.93687 + 1918; UnityZ = (N - 4749902) + 8570`
+  — **el mundo lleva escala X = 76400/81548 ≈ 0.93687** (herencia del importador OSM;
+  verificada empíricamente 2026-06 contra el MDT05 del IGN, mediana 0.19 m).
+  Usar SIEMPRE `GeoDataAlsasua.UTMaUnity()/UnityAUTM()`; la identidad desplaza ~25 m a 400 m del centro.
+- Escala: 1 unidad Unity = 1 metro real (en Z; en X comprimido 6.3%)
 - Altura Unity = altitud_real - Z_min (511.33m)
+- Cota real de Herriko Plaza: **531.94 m** (`GeoDataAlsasua.COTA_PLAZA`, validada con LIDAR+IDENA+MDT05+MDT25)
+- Alturas en runtime: `TerrenoGlobal.AlturaMundo(pos)` o `GeoDataAlsasua.AlturaTerreno()` (tile-aware);
+  NO usar `Terrain.activeTerrain.SampleHeight` (con el mosaico devuelve un tile arbitrario)
+
+## Terreno — MOSAICO V2 (14.4×14.4 km, 48 tiles)
+Mosaico multi-resolución estilo GTA en `Assets/AlsasuaData/terrain_tiles_v2/` (manifest_v2.json):
+- Anillo 0 (urbano, plaza±1200m): 4 tiles 1200m @2049 = 0.59 m/px (LIDAR 0.5m)
+- Anillo 1 (valle, ±3600m): 32 tiles 1200m @1025 = 1.17 m/px (IDENA MDT 2m 2024)
+- Anillo 2 (sierras, ±7200m): 12 tiles 3600m @1025 = 3.5 m/px (IGN MDT05) — cumbres reales (Maiza 1182m, Bargagain 1153m…)
+- Codificación "lattice 1/64": RAW uint16, cuanto 1/64 m, `alturaMundo = y_tile + q/64`,
+  size.y = 1023.984375 en TODOS los tiles → costuras bit-exactas (igualdad de enteros)
+- Pipeline: `Tools/DescargarMDT_Mosaico.py` (WCS IGN/IDENA + LAZ E:\567) → `Tools/GenerarMosaicoTerrenoV2.py`
+  → `Tools/ValidarMosaicoV2.py` (GATE; no tocar Unity sin verde). Fuentes en `DatosGIS/` (regenerable).
+- Unity: bake con `Tools/Alsasua/Mundo/🧩 Construir Mosaico V2` (TerrainData en Assets/Terrenos_V2/),
+  auditoría con `🔍 Auditor Terreno Mosaico`; runtime fallback `CargadorMosaicoTerreno` (ServicioTerreno).
+- Escritores del terrain: SIEMPRE vía `MultiTileTerrainEdit` (coords mundo, kernels idempotentes min()).
+- Datos v1 obsoletos archivados en `Assets/AlsasuaData/_archivo_v1~/` (unity_terrain_info.json,
+  dtm/dsm_alsasua_5m.asc, terrain_tiles/ v1 — NO usar).
 
 ## Datos de terreno disponibles (de mayor a menor resolución)
 | Archivo | Resolución | Descripción |
 |---------|-----------|-------------|
-| `Assets/AlsasuaData/lidar_dtm_05m.raw` | 0.5m/px | LIDAR PNOA 3ª cobertura, suelo desnudo, 2049×2049, uint16 LE |
-| `Assets/AlsasuaData/lidar_ground.xyz` | puntos XYZ | 587.339 puntos reales de suelo |
-| `Assets/AlsasuaData/dtm_alsasua_5m.asc` | 5m/px | DTM IGN para montañas |
-| `Assets/AlsasuaData/dsm_alsasua_5m.asc` | 5m/px | DSM IGN (incluye edificios y vegetación) |
-| `Assets/AlsasuaData/dem_unity_1025.raw` | ~1m/px | Heightmap preprocesado 1025×1025 |
+| `Assets/AlsasuaData/terrain_tiles_v2/` | 0.59–3.5m/px | **MOSAICO V2 (fuente actual del terreno)** |
+| `Assets/AlsasuaData/lidar_dtm_05m.raw` | 0.5m/px | LIDAR PNOA 3ª cobertura, suelo desnudo, 2049×2049, uint16 LE (legacy 1 km²) |
+| `Assets/AlsasuaData/lidar_ground.xyz` | puntos XYZ | 587.339 puntos reales de suelo — columnas (x_unity, cota_real, z_unity) |
+| `DatosGIS/*.npz` | 0.5–25m/px | Fuentes maestras descargadas (LIDAR ampliado, IDENA 2m, MDT05/25) |
+| `Assets/AlsasuaData/dem_unity_1025.raw` | ~5.9m/px | Heightmap fallback legacy 1025×1025 (terreno DEM 6 km) |
 
 Meta LIDAR (`lidar_dtm_meta.json`):
 - heightmapResolution: 2049
@@ -55,7 +82,7 @@ Meta LIDAR (`lidar_dtm_meta.json`):
 - `Assets/Scripts/AplicadorOrtofoto.cs` — proyección 72 tiles
 - `Assets/Scripts/AlsasuaTreeStreamer.cs` — streaming árboles LIDAR
 - `Assets/Scripts/GeneradorRiosYPuentes.cs` — excavación ríos + shader agua + puentes
-- `Assets/Scripts/OptimizadorTerreno.cs` — LOD y chunking
+- `Assets/Scripts/OptimizadorMallaOBJ.cs` — LOD y chunking de la malla OBJ CloudCompare
 - `Assets/Scripts/GeoDataAlsasua.cs` — constantes y coordenadas centralizadas
 
 ## Scripts principales de edificios
@@ -148,6 +175,12 @@ Todas las deudas anteriores están corregidas:
 - `SistemaChunks.ComprobarChunks()` usa posición del vehículo raíz cuando `ISpawnService.JugadorEnVehiculo == true`
 - `AlsasuaTreeStreamer.InicializarAsync()` espera hasta 30s a que `Terrain.activeTerrain != null` antes de clasificar especies
 - `GeoDataAlsasua` expone `JugadorPos()`, `CarreteraN1Norte/Sur`, `HerrikoPlaza` con `OX/OZ` como origen
+
+## Cesium — modo híbrido (fondo lejano)
+Cesium (Google Photorealistic 3D Tiles, ion ID 2275207) es SOLO fondo lejano; el suelo jugable es siempre el Terrain LIDAR local.
+- `Assets/Scripts/Systems/CesiumFondoLejano.cs` — auto-arranca en Play: ancla el `CesiumGeoreference` en (OX, alturaTerreno, OZ)=Herriko Plaza (antes quedaba en 0,0,0 → tiles a 8,8 km del jugador), calibra la altura elipsoidal con `SampleHeightMostDetailed`, pone `createPhysicsMeshes=false` y SSE=32, y añade `ExcluidorTilesCercanos` (agujero de 2,8 km sin tiles alrededor de la plaza).
+- La cámara TP NO debe colgar del georeference ni llevar `CesiumGlobeAnchor`/`CesiumCameraController` (pelean con `ControladorJugador`).
+- `CesiumSunSky` desactivado — iluminación vía `SistemaVolumenHDRP`. Exposición: Automatic EV 11–15 (nunca fija baja con sol en lux).
 
 ## Geografía de referencia
 - Alsasua es una cuenca fluvial a ~530m de altitud

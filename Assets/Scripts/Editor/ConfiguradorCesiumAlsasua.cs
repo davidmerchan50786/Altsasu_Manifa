@@ -20,7 +20,7 @@ public static class ConfiguradorCesiumAlsasua
     // Herriko Plaza, Alsasua/Altsasua — coordenadas GPS reales
     const double LAT_PLAZA  = 42.89873;
     const double LON_PLAZA  = -2.16770;
-    const double ALT_PLAZA  = 523.0;   // altitud media (metros sobre el mar)
+    const double ALT_PLAZA  = GeoDataAlsasua.COTA_PLAZA; // cota real de la plaza (m s.n.m.)
 
     // Unity coords de Herriko Plaza (referencia del DEM)
     const float UX_PLAZA = GeoDataAlsasua.OX;
@@ -81,6 +81,14 @@ public static class ConfiguradorCesiumAlsasua
         SetProp(georef, "longitude", LON_PLAZA);
         SetProp(georef, "height",    ALT_PLAZA);
 
+        // CRÍTICO: anclar el georeference en las coordenadas UNITY de la plaza,
+        // no en (0,0,0). El jugador hace spawn en (OX, y, OZ) = (1918, y, 8570);
+        // si el georef queda en el origen, los tiles de la plaza aparecen a
+        // 8,8 km del jugador (ladera de Urbasa en LOD mínimo bajo sus pies).
+        // La Y exacta la calibra CesiumFondoLejano en Play con el Terrain local.
+        georefGO.transform.position = new Vector3(
+            UX_PLAZA, (float)ALT_PLAZA - GeoDataAlsasua.Z_MIN, UZ_PLAZA);
+
         // ── Google Photorealistic 3D Tiles ────────────────────────────────
         var tilesetType = System.Type.GetType("CesiumForUnity.Cesium3DTileset, CesiumForUnity");
         if (tilesetType != null)
@@ -90,27 +98,37 @@ public static class ConfiguradorCesiumAlsasua
             var tileset = googleGO.GetComponent(tilesetType);
             // Ion Asset ID 2275207 = Google Photorealistic 3D Tiles
             SetProp(tileset, "ionAssetID",  2275207L);
-            SetProp(tileset, "maximumScreenSpaceError", 8f);
+            // Modo híbrido: Cesium es solo FONDO lejano (montañas). SSE 32 =
+            // mitad de carga que el 16 por defecto; el detalle cercano lo dan
+            // el Terrain LIDAR + SistemaEdificiosAAA locales.
+            SetProp(tileset, "maximumScreenSpaceError", 32f);
             SetProp(tileset, "preloadAncestors", true);
+            // El suelo jugable es el Terrain LIDAR — los physics meshes de los
+            // tiles low-LOD (triángulos >500 u) hacían el suelo no-sólido.
+            SetProp(tileset, "createPhysicsMeshes", false);
         }
 
-        // ── CesiumSunSky (luz solar georreferenciada) ─────────────────────
+        // ── CesiumSunSky: NO crear (doble sol con Sun_Bootstrap → imagen
+        //    quemada). La iluminación día/noche la lleva SistemaVolumenHDRP.
+        //    Si existe de una configuración anterior, desactivarlo.
         var sunSkyType = System.Type.GetType("CesiumForUnity.CesiumSunSky, CesiumForUnity");
         if (sunSkyType != null)
         {
-            var sunGO = FindOrCreateGO("CesiumSunSky");
-            if (sunGO.GetComponent(sunSkyType) == null) sunGO.AddComponent(sunSkyType);
-            var sunSky = sunGO.GetComponent(sunSkyType);
-            SetProp(sunSky, "timeZone", 2); // Europa/Madrid UTC+2
+            var sunGO = GameObject.Find("CesiumSunSky");
+            if (sunGO != null) sunGO.SetActive(false);
         }
 
-        // ── CesiumCameraController ligado al jugador ──────────────────────
+        // ── CesiumCameraController: QUITAR de las cámaras. Es un controlador
+        //    de cámara libre (vuelo WASD) que pelea con la cámara en tercera
+        //    persona de ControladorJugador.
         var camCtrlType = System.Type.GetType("CesiumForUnity.CesiumCameraController, CesiumForUnity");
         if (camCtrlType != null)
         {
-            var cam = Camera.main;
-            if (cam != null && cam.GetComponent(camCtrlType) == null)
-                cam.gameObject.AddComponent(camCtrlType);
+            foreach (var cam in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            {
+                var ctrl = cam.GetComponent(camCtrlType);
+                if (ctrl != null) Object.DestroyImmediate(ctrl);
+            }
         }
 
         Debug.Log("[Cesium] ✅ CesiumGeoreference + Google Tiles + SunSky configurados");
