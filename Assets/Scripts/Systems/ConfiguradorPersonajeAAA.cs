@@ -111,6 +111,13 @@ public class ConfiguradorPersonajeAAA : MonoBehaviour
             }
         }
 
+        // Asignar el controller del proyecto (JugadorAnimator: clips GC_* humanoides
+        // + parámetros VelocidadMovimiento/EstaAgachado/… que ControladorJugador
+        // setea). Sin esto, con PlayerArmature se conservaría el controller de
+        // StarterAssets (params Speed/Grounded) que ControladorJugador no maneja
+        // → el personaje no caminaría animado. Solo si el campo está vacío.
+        AsignarControllerSiFalta(controlador);
+
         // If we have a prefab (assigned or auto-detected), upgrade its materials
         if (prefab != null)
         {
@@ -172,33 +179,76 @@ public class ConfiguradorPersonajeAAA : MonoBehaviour
     //  AUTO-DETECCIÓN DE PERSONAJE FBX
     // ═══════════════════════════════════════════════════════════════════════
 
+    // Asigna JugadorAnimator a ControladorJugador.controladorAnimaciones si está
+    // vacío. En Resources/ → carga en build; en editor cae a AssetDatabase.
+    private void AsignarControllerSiFalta(ControladorJugador controlador)
+    {
+        var f = typeof(ControladorJugador).GetField("controladorAnimaciones",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (f == null || f.GetValue(controlador) != null) return; // ya asignado
+
+        var ctrl = Resources.Load<RuntimeAnimatorController>("Animators/JugadorAnimator");
+#if UNITY_EDITOR
+        if (ctrl == null)
+            ctrl = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Animators/JugadorAnimator.controller");
+#endif
+        if (ctrl != null)
+        {
+            f.SetValue(controlador, ctrl);
+            AlsasuaLogger.Info("ConfiguradorAAA", "Controller JugadorAnimator asignado (clips GC_* humanoides).");
+        }
+    }
+
     private GameObject AutoDetectarPersonajeFBX()
     {
-        // Try known paths via Resources.Load (requires files in Resources/ folder)
-        // Since character FBX are NOT in Resources/, we try direct asset loading
-        // which only works in Editor. In builds, prefab must be assigned in Inspector.
+        // PRIORIDAD ABSOLUTA: PlayerArmature (Survivalist/StarterAssets) — es un
+        // PREFAB completo (materiales HDRP + Avatar humanoide + AnimatorController
+        // que SÍ reproduce idle/walk), no un FBX desnudo. Está en Resources/, así
+        // que carga en editor Y build. Resuelve el bug histórico de "jugador negro
+        // en T-pose": el bucle de .fbx de abajo nunca encontraba PlayerArmature
+        // (lo buscaba como .fbx siendo .prefab) y caía a Ch20_nonPBR — un FBX
+        // Mixamo SIN materiales (→negro) y SIN controller en runtime (→T-pose).
+        var armature = Resources.Load<GameObject>("Prefabs/Personajes/PlayerArmature");
+        if (armature != null)
+        {
+            AlsasuaLogger.Info("ConfiguradorAAA",
+                "Personaje: PlayerArmature (HDRP rigged, prefab completo).");
+            return armature;
+        }
 
 #if UNITY_EDITOR
+        // PlayerArmature como asset directo si no estuviera en Resources
+        foreach (var p in new[] {
+            "Assets/Resources/Prefabs/Personajes/PlayerArmature.prefab",
+            "Assets/Survivalist/Prefab/PlayerArmature.prefab" })
+        {
+            var pa = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(p);
+            if (pa != null)
+            {
+                AlsasuaLogger.Info("ConfiguradorAAA", $"Personaje: {p}");
+                return pa;
+            }
+        }
+
+        // FBX texturizados (Civil_*). Ch20_nonPBR queda EXCLUInido aquí: es nonPBR
+        // (negro) y solo debe usarse como último recurso explícito más abajo.
         for (int i = 0; i < KnownCharacterPaths.Length; i++)
         {
+            if (KnownCharacterPaths[i].Contains("Ch20")) continue;          // no nonPBR
             string assetPath = "Assets/" + KnownCharacterPaths[i] + ".fbx";
             var obj = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
             if (obj != null)
             {
-                AlsasuaLogger.Info("ConfiguradorAAA",
-                    $"Encontrado personaje FBX: {assetPath}");
+                AlsasuaLogger.Info("ConfiguradorAAA", $"Personaje FBX texturizado: {assetPath}");
                 return obj;
             }
         }
 
-        // Fallback: search for any FBX with "Ch20" or "Civil_" in name
-        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Model Ch20");
-        if (guids.Length == 0)
-            guids = UnityEditor.AssetDatabase.FindAssets("t:Model Civil_");
-
-        for (int i = 0; i < guids.Length; i++)
+        // Fallback: cualquier FBX Civil_ texturizado
+        foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:Model Civil_"))
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
             if (path.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase))
             {
                 var obj = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -207,7 +257,7 @@ public class ConfiguradorPersonajeAAA : MonoBehaviour
         }
 #endif
 
-        // In builds — try Resources.Load as last resort
+        // Build: Resources.Load de los paths conocidos (Ch20 el último de la lista)
         for (int i = 0; i < KnownCharacterPaths.Length; i++)
         {
             var obj = Resources.Load<GameObject>(KnownCharacterPaths[i]);
@@ -215,7 +265,7 @@ public class ConfiguradorPersonajeAAA : MonoBehaviour
         }
 
         AlsasuaLogger.Warn("ConfiguradorAAA",
-            "No se encontró ningún personaje FBX. Asigna prefabPersonaje en el Inspector.");
+            "No se encontró personaje. Asigna prefabPersonaje en el Inspector.");
         return null;
     }
 

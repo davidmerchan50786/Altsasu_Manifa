@@ -406,6 +406,13 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
 
 public enum TipoManifestante { Pacifico, Disturbios }
 
+// RequireComponent: Unity AÑADE el Rigidbody automáticamente al añadir este
+// componente y NO permite quitarlo → imposible el MissingComponentException
+// que spameaba en FixedUpdate (decenas de NPCs × cada frame físico) y dejaba
+// el FPS en 0, ahogando las corrutinas de arranque (mundo atascado en la
+// pantalla de carga). El fix por re-adquisición no bastaba (otro sistema
+// destruía el Rigidbody, o el orden de ejecución lo pillaba antes de Start).
+[RequireComponent(typeof(Rigidbody))]
 public class ManifestanteIA : MonoBehaviour, IAgente
 {
     // IAgente

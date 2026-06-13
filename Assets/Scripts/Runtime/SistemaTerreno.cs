@@ -515,19 +515,32 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         float[,] heights = _td.GetHeights(0, 0, _td.heightmapResolution, _td.heightmapResolution);
         int hRes = _td.heightmapResolution - 1;
 
-        // Precalcular lookup de cauces (máscara booleana a resolución alpha)
-        // Para evitar llamadas costosas por píxel, creamos arrays de distancia
+        // Máscaras de río/cauce/bosque/carretera. PrecomputarMascaras es
+        // O(texels × geometría): en el casco urbano (cientos de calles dentro
+        // del tile) congelaba el arranque incluso con el filtro por bbox. En el
+        // MOSAICO se OMITEN — la ortofoto real (25 cm) ya muestra calles y ríos
+        // por encima del splatmap, así que la diferencia es imperceptible, y el
+        // bioma se pinta por altura/pendiente (hierba/roca/montaña).
         var maskRio    = new byte[_resAlpha * _resAlpha];
         var maskCauce  = new byte[_resAlpha * _resAlpha];
         var maskBosque = new byte[_resAlpha * _resAlpha];
         var maskRoad   = new byte[_resAlpha * _resAlpha];
 
-        yield return StartCoroutine(PrecomputarMascaras(
-            maskRio, maskCauce, maskBosque, maskRoad,
-            terPos, terW, terH_z));
+        // PrecomputarMascaras es O(texels × geometría) → con la geometría densa
+        // del valle (1000+ cauces, 400 vías) congela el hilo SIEMPRE, sea mosaico
+        // o no. Se omite salvo terreno único con MUY poca geometría. La ortofoto
+        // real (25 cm) ya aporta calles/ríos por encima del splatmap.
+        int densidadGeo = (_cauces?.Count ?? 0) + (_carreteras?.Count ?? 0);
+        if (!_esMosaico && densidadGeo <= 60)
+            yield return StartCoroutine(PrecomputarMascaras(
+                maskRio, maskCauce, maskBosque, maskRoad,
+                terPos, terW, terH_z));
 
         float[,,] mapa  = new float[_resAlpha, _resAlpha, numCapas];
-        int lote = 0;
+
+        // Presupuesto de tiempo por frame (no nº de filas fijo): garantiza que
+        // el hilo CEDE cada ~8 ms pase lo que pase → imposible que se congele.
+        float t0 = Time.realtimeSinceStartup;
 
         for (int ay = 0; ay < _resAlpha; ay++)
         {
@@ -552,7 +565,8 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
                     esRio, esCauce, esBosque, esRoad, terPos.y);
             }
 
-            if (++lote >= 32) { lote = 0; yield return null; }
+            if ((Time.realtimeSinceStartup - t0) * 1000f > 8f)
+            { yield return null; t0 = Time.realtimeSinceStartup; }
         }
 
         _td.SetAlphamaps(0, 0, mapa);
@@ -563,8 +577,19 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         byte[] maskRio, byte[] maskCauce, byte[] maskBosque, byte[] maskRoad,
         Vector3 terPos, float terW, float terH_z)
     {
-        float r2 = bufferRioM * bufferRioM;
-        float r2Cauce = (bufferRioM * 0.4f) * (bufferRioM * 0.4f);
+        // CRÍTICO (multi-tile): pre-filtrar la geometría al BBOX del tile. Sin
+        // esto, cada texel recorría TODA la geometría del mundo (14 km de
+        // cauces/bosques/carreteras) → con 48 tiles el arranque se congelaba
+        // pintando biomas. Ahora cada tile solo evalúa lo que lo cruza.
+        float minX = terPos.x, maxX = terPos.x + terW;
+        float minZ = terPos.z, maxZ = terPos.z + terH_z;
+        var cauces = FiltrarPorBbox(_cauces,     minX, maxX, minZ, maxZ, bufferRioM + 2f);
+        var bosques = FiltrarPorBbox(_bosques,   minX, maxX, minZ, maxZ, 1f);
+        var roads  = FiltrarPorBbox(_carreteras, minX, maxX, minZ, maxZ, 8f);
+
+        // Sin geometría local → nada que precomputar (tiles de sierra lejana)
+        if (cauces.Count == 0 && bosques.Count == 0 && roads.Count == 0)
+            yield break;
 
         int lote = 0;
         for (int ay = 0; ay < _resAlpha; ay++)
@@ -576,28 +601,50 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
                 int pIdx = ay * _resAlpha + ax;
 
                 // Rio / cauce
-                float minDistRio = float.MaxValue;
-                foreach (var seg in _cauces)
-                    if (seg.Length > 0)
-                        minDistRio = Mathf.Min(minDistRio, DistAPolilinea(wx, wz, seg));
-
-                if (minDistRio <= bufferRioM)     maskRio[pIdx]   = 1;
-                if (minDistRio <= bufferRioM * 0.4f) maskCauce[pIdx] = 1;
+                if (cauces.Count > 0)
+                {
+                    float minDistRio = float.MaxValue;
+                    foreach (var seg in cauces)
+                        if (seg.Length > 0)
+                            minDistRio = Mathf.Min(minDistRio, DistAPolilinea(wx, wz, seg));
+                    if (minDistRio <= bufferRioM)        maskRio[pIdx]   = 1;
+                    if (minDistRio <= bufferRioM * 0.4f) maskCauce[pIdx] = 1;
+                }
 
                 // Bosque
-                foreach (var poly in _bosques)
+                foreach (var poly in bosques)
                     if (poly.Length > 2 && PuntoEnPoligono(wx, wz, poly))
                     { maskBosque[pIdx] = 1; break; }
 
                 // Carreteras
-                foreach (var seg in _carreteras)
-                {
-                    float d = DistAPolilinea(wx, wz, seg);
-                    if (d < 6f) { maskRoad[pIdx] = 1; break; }
-                }
+                foreach (var seg in roads)
+                    if (DistAPolilinea(wx, wz, seg) < 6f) { maskRoad[pIdx] = 1; break; }
             }
             if (++lote >= 32) { lote = 0; yield return null; }
         }
+    }
+
+    // Filtra polilíneas/polígonos a los que solapan el bbox del tile (+margen).
+    List<Vector2[]> FiltrarPorBbox(List<Vector2[]> origen,
+        float minX, float maxX, float minZ, float maxZ, float margen)
+    {
+        var outl = new List<Vector2[]>();
+        float lo_x = minX - margen, hi_x = maxX + margen;
+        float lo_z = minZ - margen, hi_z = maxZ + margen;
+        foreach (var pts in origen)
+        {
+            if (pts == null || pts.Length == 0) continue;
+            float pMinX = float.MaxValue, pMaxX = float.MinValue;
+            float pMinZ = float.MaxValue, pMaxZ = float.MinValue;
+            foreach (var p in pts)
+            {
+                if (p.x < pMinX) pMinX = p.x; if (p.x > pMaxX) pMaxX = p.x;
+                if (p.y < pMinZ) pMinZ = p.y; if (p.y > pMaxZ) pMaxZ = p.y;
+            }
+            if (pMaxX >= lo_x && pMinX <= hi_x && pMaxZ >= lo_z && pMinZ <= hi_z)
+                outl.Add(pts);
+        }
+        return outl;
     }
 
     // baseY explícito (no campo): RepintarZona puede correr corrutinas de varios

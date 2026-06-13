@@ -392,6 +392,27 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             foreach (var col in go.GetComponentsInChildren<Collider>(true))
                 col.enabled = false;
 
+            // OCULTAR la malla heredada del prefab fuente (Jugador_Altsasua es
+            // variante del FBX del Guardia Civil → arrastra una SkinnedMesh sin
+            // textura = el "jugador negro" histórico). Solo desactivamos las
+            // mallas que NO cuelgan del modelo recién instanciado.
+            foreach (var smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (!smr.transform.IsChildOf(go.transform))
+                    smr.enabled = false;
+
+            // Si el modelo es PlayerArmature (StarterAssets), desactivar SUS
+            // scripts de control: pelearían con ControladorJugador por input y
+            // movimiento, y darían NullRef al tener el CharacterController
+            // desactivado. Por nombre de tipo (sin dependencia de assembly).
+            foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (mb == null) continue;
+                string tn = mb.GetType().Name;
+                if (tn == "ThirdPersonController" || tn == "StarterAssetsInputs" ||
+                    tn == "PlayerInput" || tn == "BasicRigidBodyPush")
+                    mb.enabled = false;
+            }
+
             // Buscar Animator en el prefab (puede estar en la raíz o en un hijo)
             animPersonaje = go.GetComponent<Animator>()
                          ?? go.GetComponentInChildren<Animator>();

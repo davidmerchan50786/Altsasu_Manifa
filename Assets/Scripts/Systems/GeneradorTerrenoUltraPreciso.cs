@@ -120,9 +120,14 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
         var svc = ServiceLocator.Get<ITerrainService>();
         if (svc != null && svc.EsMosaico)
         {
+            // Mosaico V2: heightmap bakeado + YA validado por el gate Python
+            // (Tools/ValidarMosaicoV2.py, RMSE vs 587k pts). Re-validar en runtime
+            // (cargar+muestrear 587.339 puntos) SATURABA el arranque y competía
+            // con el pintado de biomas → el mundo se quedaba "cargando". Omitida.
+            // Validación manual disponible vía ValidarTerreno() (menú/Inspector).
             AlsasuaLogger.Info("TerrenoAAA",
-                "Fuente = Mosaico V2: heightmap intacto; solo validación RMSE.");
-            yield return StartCoroutine(ValidarTerrenoCoroutine());
+                "Fuente = Mosaico V2: heightmap intacto y validado en Python — "
+                + "sin validación RMSE en runtime (era el cuello del arranque).");
             yield break;
         }
 

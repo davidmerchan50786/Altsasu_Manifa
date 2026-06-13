@@ -245,16 +245,28 @@ public class SceneBootstrapper : MonoBehaviour
 
         if (!crearJugadorSiNoHay) yield break;
 
-        // Esperar hasta que el TerrainCollider esté en física (máx 3s)
-        yield return new WaitForFixedUpdate();
+        // Esperar a que el SUELO esté listo (mosaico V2 o terreno único). Sin
+        // esto el jugador spawneaba con el terreno aún generándose, en el aire
+        // (Y viejo 242) y caía atravesando hasta el vacío (Y≈-2144 en playtest).
+        float tEsp = 0f;
+        while (tEsp < 20f)
+        {
+            var svcT = ServiceLocator.Get<ITerrainService>();
+            if (svcT != null && svcT.EstaListo) break;
+            if (svcT == null && Terrain.activeTerrain != null) break; // escena legacy
+            tEsp += 0.1f;
+            yield return new WaitForSeconds(0.1f);
+        }
+        // Margen para que los TerrainCollider del anillo 0 entren en física
         yield return new WaitForFixedUpdate();
         yield return new WaitForFixedUpdate();
 
-        // Buscar la altura del TERRAIN exclusivamente (no edificios) usando SampleHeight.
-        // Esto evita que el jugador spawnee sobre un tejado si hay un edificio en Herriko Plaza.
-        float alturaTerreno = 240f;
-        if (Terrain.activeTerrain != null)
-            alturaTerreno = Terrain.activeTerrain.SampleHeight(new Vector3(centroX, 0, centroZ));
+        // Altura del suelo TILE-AWARE: Terrain.activeTerrain.SampleHeight no vale
+        // con 48 tiles (devuelve uno arbitrario). Fallback: cota real de la plaza
+        // en el datum local (≈20.6), nunca el 240 del esquema viejo.
+        float alturaTerreno = GeoDataAlsasua.COTA_PLAZA - GeoDataAlsasua.Z_MIN;
+        float yMundo = TerrenoGlobal.AlturaMundo(centroX, centroZ);
+        if (yMundo > -500f) alturaTerreno = yMundo;
 
         // Verificar que el punto de spawn no esté dentro de un collider (ej: dentro de un edificio).
         // Si lo está, buscar la cota más alta sobre la columna (raycast desde 1500m hacia abajo
@@ -294,7 +306,7 @@ public class SceneBootstrapper : MonoBehaviour
 
         jugador.name = "Jugador";
         jugador.tag  = "Player";
-        Debug.Log($"[Bootstrap] ✓ Jugador spawneado en {pos} ({305 + alturaTerreno - 240:+0;-0}m snm approx).");
+        Debug.Log($"[Bootstrap] ✓ Jugador spawneado en {pos} (cota real {alturaTerreno + GeoDataAlsasua.Z_MIN:0}m snm).");
     }
 
     GameObject CrearJugadorMinimo(Vector3 pos)
