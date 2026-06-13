@@ -549,7 +549,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
                 Clasificar8Biomas(mapa, ay, ax, numCapas,
                     altNorm, pendiente, wx, wz, terY,
-                    esRio, esCauce, esBosque, esRoad);
+                    esRio, esCauce, esBosque, esRoad, terPos.y);
             }
 
             if (++lote >= 32) { lote = 0; yield return null; }
@@ -600,15 +600,17 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
         }
     }
 
+    // baseY explícito (no campo): RepintarZona puede correr corrutinas de varios
+    // tiles a la vez y cada una necesita la posY de SU tile
     void Clasificar8Biomas(float[,,] mapa, int ay, int ax, int numCapas,
         float altNorm, float pendiente, float wx, float wz, float terY,
-        bool esRio, bool esCauce, bool esBosque, bool esRoad)
+        bool esRio, bool esCauce, bool esBosque, bool esRoad, float baseY)
     {
         for (int c = 0; c < numCapas; c++) mapa[ay, ax, c] = 0f;
 
-        // cota REAL: con mosaico cada tile tiene posY propia (_baseY = y64/64);
+        // cota REAL: con mosaico cada tile tiene posY propia (baseY = y64/64);
         // el datum único hace los umbrales bioclimáticos uniformes entre tiles
-        float altReal = altNorm * terY + _baseY + Z_MIN;
+        float altReal = altNorm * terY + baseY + Z_MIN;
 
         // Prioridad: carretera > cauce > ribera > bosque > altura/pendiente
         if (esRoad)
@@ -823,6 +825,21 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
     public void RepintarZona(Vector3 centro, float radio)
     {
         if (_terrain == null || _td == null) return;
+        if (_esMosaico)
+        {
+            // repintar cada tile intersectado por el círculo (la zona puede
+            // cruzar costuras); RepintarZonaCoroutine opera sobre _terrain/_td
+            foreach (var tile in _tilesObjetivo)
+            {
+                if (tile == null || tile.terrainData == null) continue;
+                Vector3 p = tile.transform.position; Vector3 s = tile.terrainData.size;
+                if (centro.x + radio < p.x || centro.x - radio > p.x + s.x ||
+                    centro.z + radio < p.z || centro.z - radio > p.z + s.z) continue;
+                SeleccionarTile(tile);
+                StartCoroutine(RepintarZonaCoroutine(centro, radio));
+            }
+            return;
+        }
         StartCoroutine(RepintarZonaCoroutine(centro, radio));
     }
 
@@ -867,7 +884,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
                 Clasificar8Biomas(sub, ay, ax, numCapas,
                     altNorm, pend, wx, wz, terY,
-                    esRio, esCauce, esBos, esRoad);
+                    esRio, esCauce, esBos, esRoad, terPos.y);
             }
             yield return null;
         }
@@ -883,14 +900,17 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
     public float AlturaEn(float x, float z)
     {
-        if (_terrain == null) return 240f;
-        return _terrain.SampleHeight(new Vector3(x,0,z)) + _terrain.transform.position.y;
+        // tile-aware: con mosaico _terrain es solo el tile en curso
+        return TerrenoGlobal.AlturaMundo(x, z);
     }
 
     // ── Nieve estacional ───────────────────────────────────────────────────
     void Update()
     {
         if (!Listo || _terrain == null) return;
+        // Mosaico: repintar 48 tiles por el vaivén día/noche de la cota de roca
+        // es inviable (y el efecto es invisible a esa escala). Solo legacy.
+        if (_esMosaico) return;
         var atm = AltsasuCore.I?.atmosferaSystem;
         if (atm == null) return;
         float horaNoche = Mathf.Abs(Mathf.Sin(atm.HoraDelDia * Mathf.PI / 12f));
@@ -1086,7 +1106,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
             Clasificar8Biomas(mapa, ay, ax, numCapas,
                 altNorm, pendiente, wx, wz, terY,
-                esRio, esCauce, esBosque, esRoad);
+                esRio, esCauce, esBosque, esRoad, terPos.y);
 
             // Refinamiento por ortofoto
             if (_ortoUnity != null)
@@ -1188,7 +1208,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
                 Clasificar8Biomas(mapa, ay, ax, numCapas,
                     altNorm, pendiente, wx, wz, terY,
-                    esRio, esCauce, esBosque, esRoad);
+                    esRio, esCauce, esBosque, esRoad, terPos.y);
 
                 if (_ortoUnity != null)
                     RefinarConOrtofoto(mapa, ay, ax, numCapas, wx, wz, terW, terH_z, terPos);

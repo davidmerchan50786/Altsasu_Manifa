@@ -1,5 +1,5 @@
 {
- "fecha": "2026-06-12T01:36:23",
+ "fecha": "2026-06-12T04:18:38",
  "verde": true,
  "checks": {
   "sha256": {
@@ -65,7 +65,7 @@
    "umbralCostura": 0.5,
    "umbralLejos": 2.0,
    "peorSitio": "(6098,8175)",
-   "detalle": "monótono por tramos (tolerancia ok)",
+   "detalle": "monÃ³tono por tramos (tolerancia ok)",
    "bloqueante": true
   },
   "cotasExternas": {

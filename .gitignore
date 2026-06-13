@@ -125,3 +125,12 @@ Assets/AlsasuaData/FacadeTextures/StreetView/*.jpeg
 DatosGIS/
 # Temporales de pruebas GIS
 Temp/gis/
+
+# Backups locales de reproyección de edificios (respaldo, no va al repo)
+Assets/AlsasuaData/_backup_pre_reproyeccion~/
+# Bytecode Python
+Tools/__pycache__/
+__pycache__/
+
+# Dumps de diagnóstico de runtime
+Screenshots/diagnostico_mundo.txt
