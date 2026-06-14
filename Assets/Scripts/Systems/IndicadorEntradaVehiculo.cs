@@ -35,6 +35,10 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
     // Estilo GUI pre-construido para evitar allocations en cada frame
     private GUIStyle _estilo;
 
+    // PERF: Camera.main hace FindGameObjectWithTag por acceso. Cacheado con refresh-if-null.
+    private Camera _cam;
+    private Camera CamaraActiva() { if (_cam == null) _cam = Camera.main; return _cam; }
+
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
     private void Awake()
@@ -65,11 +69,12 @@ public class IndicadorEntradaVehiculo : MonoBehaviour
     private void OnGUI()
     {
         if (!_mostrar) return;
-        if (Camera.main == null) return;
+        var cam = CamaraActiva();
+        if (cam == null) return;
 
         // Punto worldspace donde aparecerá el texto (sobre el techo del coche)
         Vector3 posicionMundo = transform.position + Vector3.up * alturaOffset;
-        Vector3 posicionPantalla = Camera.main.WorldToScreenPoint(posicionMundo);
+        Vector3 posicionPantalla = cam.WorldToScreenPoint(posicionMundo);
 
         // Si el punto está detrás de la cámara, no dibujar
         if (posicionPantalla.z <= 0f) return;

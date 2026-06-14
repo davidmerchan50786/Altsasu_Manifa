@@ -76,9 +76,10 @@ public class GeneradorMundoOSM : MonoBehaviour
             IndexarCalles(), "calles", _ => { }));
         yield return null;
 
-        // ── FASE 3: Árboles ───────────────────────────────────────────────
-        yield return StartCoroutine(EjecutarFaseSegura(
-            GenerarArboles(), "árboles", _ => { }));
+        // ── FASE 3: Árboles — DESACTIVADA ─────────────────────────────────
+        // AlsasuaTreeStreamer ya hace streaming de los 3311 árboles LIDAR reales.
+        // Generarlos también aquí (trees_unity.json) duplicaba ~3000 instancias
+        // y saturaba el arranque (FPS a 0). El streamer es la fuente única.
 
         // Marcar listo aunque alguna fase haya fallado parcialmente
         SistemaZonas.Instance?.MarcarIndexadoListo();

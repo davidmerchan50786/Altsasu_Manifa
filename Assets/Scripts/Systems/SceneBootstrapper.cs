@@ -537,6 +537,12 @@ public class SceneBootstrapper : MonoBehaviour
         if (FindFirstObjectByType<AudioManager>() == null)
             gmGO.AddComponent<AudioManager>();
 
+        // GestorStreamingTexturas — presupuesto de Mipmap Streaming (acota VRAM) +
+        // anti-hitch al paneo rápido + caché CPU de SVT. Sin instanciar, el script
+        // no corre: este es su punto de arranque (capa Systems → permitido).
+        if (FindFirstObjectByType<GestorStreamingTexturas>() == null)
+            gmGO.AddComponent<GestorStreamingTexturas>();
+
         // SistemaManifestacion — mecánica CENTRAL. JuegoManifestacion espera a su
         // Instance (timeout 10s) pero NO lo crea: debe existir antes que él.
         if (FindFirstObjectByType<SistemaManifestacion>() == null)

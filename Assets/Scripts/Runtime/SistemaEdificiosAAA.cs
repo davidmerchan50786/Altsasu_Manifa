@@ -665,7 +665,10 @@ public class SistemaEdificiosAAA : MonoBehaviour
         var vidrio = PrimitivoHijo("Vidrio", root.transform,
             new Vector3(0, 0, -0.02f),
             new Vector3(ancho - 0.04f, alto - 0.04f, 0.02f), _matVidrio);
-        _ventanasNocturnas.Add(vidrio.GetComponent<MeshRenderer>());
+        var rendVidrio = vidrio.GetComponent<MeshRenderer>();
+        _ventanasNocturnas.Add(rendVidrio);
+        // Proxy de Interior: registra el cristal para el parallax vista+presupuesto (registro Core).
+        ProxyInteriorRegistro.Registrar(rendVidrio, pos, rot * Vector3.forward, esPlantaBaja);
 
         // División central
         if (!esPlantaBaja)
@@ -1422,6 +1425,9 @@ public class SistemaEdificiosAAA : MonoBehaviour
         {
             var r = _ventanasNocturnas[i];
             if (r == null) continue;
+            // El Proxy de Interior gobierna la emisión nocturna de las ventanas en parallax
+            // (vía su propio MPB con _EmissionNight); no las pisamos para evitar parpadeo.
+            if (ProxyInteriorRegistro.EsParallaxActivo(r)) continue;
 
             // Patrón de encendido: no todas las ventanas lit al mismo tiempo.
             // Combina módulos y la semilla del índice para apariencia realista.

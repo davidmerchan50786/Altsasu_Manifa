@@ -26,6 +26,10 @@ public class SistemaImpactos : MonoBehaviour
     const int POOL_SIZE = 40;
     readonly Queue<ParticleSystem> _pool = new();
 
+    // PERF: retornos diferidos por timer (sin StartCoroutine/WaitForSeconds por impacto).
+    struct RetornoPS { public ParticleSystem ps; public float t; }
+    readonly List<RetornoPS> _retornos = new();
+
     [Header("Prefabs bullet holes (auto desde ConfiguradorAssetsAAA)")]
     public GameObject prefabImpactoHormigon;
     public GameObject prefabImpactoMetal;
@@ -91,6 +95,26 @@ public class SistemaImpactos : MonoBehaviour
             _pool.Enqueue(CrearSistemaParticula());
     }
 
+    // PERF: un solo Update centraliza los retornos al pool — antes cada impacto lanzaba
+    // una corrutina con su WaitForSeconds (ambos asignan en el heap).
+    void Update()
+    {
+        if (_retornos.Count == 0) return;
+        float dt = Time.deltaTime;
+        for (int i = _retornos.Count - 1; i >= 0; i--)
+        {
+            var r = _retornos[i];
+            r.t -= dt;
+            if (r.t <= 0f) { DevolverInmediato(r.ps); _retornos.RemoveAt(i); }
+            else _retornos[i] = r;
+        }
+    }
+
+    void ProgramarRetorno(ParticleSystem ps, float delay)
+    {
+        if (ps != null) _retornos.Add(new RetornoPS { ps = ps, t = delay });
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     //  API PÚBLICA
     // ════════════════════════════════════════════════════════════════════════
@@ -130,22 +154,32 @@ public class SistemaImpactos : MonoBehaviour
     //  DETECCIÓN DE MATERIAL
     // ════════════════════════════════════════════════════════════════════════
 
+    // PERF: tablas de términos pre-asignadas (static readonly). Antes cada impacto pasaba
+    // los términos como params string[] → un array nuevo por llamada (~6/impacto), más dos
+    // string.ToLower(). Ahora: cero asignaciones; la comparación es IndexOf ordinal-ignore-case.
+    static readonly string[] N_METAL    = { "metal","coche","car","vehiculo","hierro","fence","reja" };
+    static readonly string[] N_HORMIGON = { "hormigon","concrete","muro","wall","edificio","building","asfalto","road","carretera","suelo" };
+    static readonly string[] N_MADERA   = { "madera","wood","puerta","door","ventana","window" };
+    static readonly string[] N_CRISTAL  = { "cristal","glass","vidrio" };
+    static readonly string[] N_TIERRA   = { "tierra","dirt","terrain","terreno","grass","hierba" };
+    static readonly string[] N_CARNE    = { "guardia","policia","civil","npc","enemigo","persona" };
+    static readonly string[] N_ASFALTO  = { "asfalto","road" };
+    static readonly string[] M_METAL    = { "metal","steel","iron" };
+    static readonly string[] M_HORMIGON = { "concrete","stone","brick" };
+    static readonly string[] M_MADERA   = { "wood","plank" };
+    static readonly string[] M_CRISTAL  = { "glass" };
+    static readonly string[] M_TIERRA   = { "ground","dirt","grass" };
+
     TipoMaterial DetectarMaterial(GameObject go, Vector3 punto)
     {
-        // Por nombre del objeto
-        string nombre = go.name.ToLower();
-        if (ContainsAny(nombre, "metal","coche","car","vehiculo","hierro","fence","reja"))
-            return TipoMaterial.Metal;
-        if (ContainsAny(nombre, "hormigon","concrete","muro","wall","edificio","building","asfalto","road","carretera","suelo"))
-            return nombre.Contains("asfalto") || nombre.Contains("road") ? TipoMaterial.Asfalto : TipoMaterial.Hormigon;
-        if (ContainsAny(nombre, "madera","wood","puerta","door","ventana","window"))
-            return TipoMaterial.Madera;
-        if (ContainsAny(nombre, "cristal","glass","vidrio"))
-            return TipoMaterial.Cristal;
-        if (ContainsAny(nombre, "tierra","dirt","terrain","terreno","grass","hierba"))
-            return TipoMaterial.Tierra;
-        if (ContainsAny(nombre, "guardia","policia","civil","npc","enemigo","persona"))
-            return TipoMaterial.Carne;
+        // Por nombre del objeto (sin ToLower: ContainsAny es case-insensitive)
+        string nombre = go.name;
+        if (ContainsAny(nombre, N_METAL))    return TipoMaterial.Metal;
+        if (ContainsAny(nombre, N_HORMIGON)) return ContainsAny(nombre, N_ASFALTO) ? TipoMaterial.Asfalto : TipoMaterial.Hormigon;
+        if (ContainsAny(nombre, N_MADERA))   return TipoMaterial.Madera;
+        if (ContainsAny(nombre, N_CRISTAL))  return TipoMaterial.Cristal;
+        if (ContainsAny(nombre, N_TIERRA))   return TipoMaterial.Tierra;
+        if (ContainsAny(nombre, N_CARNE))    return TipoMaterial.Carne;
 
         // Por capa
         int layer = go.layer;
@@ -158,20 +192,22 @@ public class SistemaImpactos : MonoBehaviour
         var r = go.GetComponentInChildren<Renderer>();
         if (r != null && r.sharedMaterial != null)
         {
-            string mat = r.sharedMaterial.name.ToLower();
-            if (ContainsAny(mat, "metal","steel","iron")) return TipoMaterial.Metal;
-            if (ContainsAny(mat, "concrete","stone","brick")) return TipoMaterial.Hormigon;
-            if (ContainsAny(mat, "wood","plank")) return TipoMaterial.Madera;
-            if (ContainsAny(mat, "glass")) return TipoMaterial.Cristal;
-            if (ContainsAny(mat, "ground","dirt","grass")) return TipoMaterial.Tierra;
+            string mat = r.sharedMaterial.name;
+            if (ContainsAny(mat, M_METAL))    return TipoMaterial.Metal;
+            if (ContainsAny(mat, M_HORMIGON)) return TipoMaterial.Hormigon;
+            if (ContainsAny(mat, M_MADERA))   return TipoMaterial.Madera;
+            if (ContainsAny(mat, M_CRISTAL))  return TipoMaterial.Cristal;
+            if (ContainsAny(mat, M_TIERRA))   return TipoMaterial.Tierra;
         }
 
         return TipoMaterial.Generico;
     }
 
-    static bool ContainsAny(string s, params string[] terms)
+    // Sin params (evita asignar un array por llamada) y sin ToLower (IndexOf ordinal-ignore-case).
+    static bool ContainsAny(string s, string[] terms)
     {
-        foreach (var t in terms) if (s.Contains(t)) return true;
+        foreach (var t in terms)
+            if (s.IndexOf(t, System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
         return false;
     }
 
@@ -204,8 +240,8 @@ public class SistemaImpactos : MonoBehaviour
         ps.gameObject.SetActive(true);
         ps.Play();
 
-        // Devolver al pool tras la duración
-        StartCoroutine(DevolverAlPool(ps, cfg.duracion + 0.2f));
+        // Devolver al pool tras la duración (timer, sin corrutina)
+        ProgramarRetorno(ps, cfg.duracion + 0.2f);
 
         // Chispas adicionales para metal/cristal
         if (cfg.chispas && fuerzaMult > 0.5f) SpawnChispas(pos, normal, cfg);
@@ -239,7 +275,7 @@ public class SistemaImpactos : MonoBehaviour
 
         ps.gameObject.SetActive(true);
         ps.Play();
-        StartCoroutine(DevolverAlPool(ps, 0.6f));
+        ProgramarRetorno(ps, 0.6f);
     }
 
     void SpawnDecal(Vector3 pos, Vector3 normal, TipoMaterial tipo, Transform padre)
@@ -296,10 +332,9 @@ public class SistemaImpactos : MonoBehaviour
         return CrearSistemaParticula(); // overflow
     }
 
-    System.Collections.IEnumerator DevolverAlPool(ParticleSystem ps, float delay)
+    void DevolverInmediato(ParticleSystem ps)
     {
-        yield return new WaitForSeconds(delay);
-        if (ps == null) yield break;
+        if (ps == null) return;
         ps.Stop();
         ps.Clear();
         ps.gameObject.SetActive(false);

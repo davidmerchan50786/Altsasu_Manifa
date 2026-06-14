@@ -29,8 +29,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SistemaChunks : MonoBehaviour
+public class SistemaChunks : MonoBehaviour, ITickable
 {
+    // ── Director de Simulación (capa Core) ──────────────────────────────────────
+    // Cuando el orquestador global existe, ÉL nos llama a 5 Hz vía Tick() y jubilamos
+    // el timer propio del Update(). Si NO existe, conservamos el Update() con su timer
+    // (modo standalone). _orquestado distingue ambos caminos para evitar doble ejecución.
+    Frecuencia ITickable.Frecuencia => Frecuencia.Hz5;
+    private bool _orquestado;
     // ── Datos de cada chunk ────────────────────────────────────────────────────
     [System.Serializable]
     public class Chunk
@@ -113,11 +119,25 @@ public class SistemaChunks : MonoBehaviour
         BuscarJugador();
         InicializarChunks();
         ComprobarChunks(); // primera comprobación inmediata sin esperar el timer
+
+        // Si el Director de Simulación existe, que nos paceé él a 5 Hz; jubila el timer propio.
+        var orq = ServiceLocator.Get<IGlobalSimulationOrchestrator>();
+        if (orq != null)
+        {
+            orq.Registrar((ITickable)this);
+            _orquestado = true;
+        }
     }
 
     private void OnDestroy()
     {
         AltsasuCore.OnJugadorSpawned -= OnJugadorSpawned;
+
+        if (_orquestado)
+        {
+            ServiceLocator.Get<IGlobalSimulationOrchestrator>()?.Desregistrar((ITickable)this);
+            _orquestado = false;
+        }
     }
 
     private void OnJugadorSpawned(Transform t)
@@ -127,11 +147,25 @@ public class SistemaChunks : MonoBehaviour
 
     private void Update()
     {
+        // Cuando el Director nos orquesta, él llama a Tick() a 5 Hz → no duplicar aquí.
+        if (_orquestado) return;
+
         _timerCheck -= Time.deltaTime;
         if (_timerCheck > 0f) return;
         _timerCheck = intervaloCheck;
 
         // Fallback: si el evento no llegó (spawn anterior al Start), buscar una vez
+        if (jugador == null) BuscarJugador();
+        ComprobarChunks();
+    }
+
+    /// <summary>
+    /// Lo invoca el Director de Simulación (IGlobalSimulationOrchestrator) a 5 Hz.
+    /// Equivalente al cuerpo del Update() tras pasar el timer. dt no se usa aquí
+    /// (la lógica de chunks es por distancia, no integra tiempo).
+    /// </summary>
+    void ITickable.Tick(float dtAcumulado)
+    {
         if (jugador == null) BuscarJugador();
         ComprobarChunks();
     }

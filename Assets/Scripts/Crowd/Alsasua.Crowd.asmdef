@@ -1,0 +1,19 @@
+{
+    "name": "Alsasua.Crowd",
+    "rootNamespace": "Alsasua.Crowd",
+    "references": [
+        "Alsasua.Core",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

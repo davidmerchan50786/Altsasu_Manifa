@@ -416,6 +416,10 @@ public class AudioManager : MonoBehaviour
     //  API PÚBLICA
     // ════════════════════════════════════════════════════════════════════════
 
+    /// <summary>Devuelve el AudioClip (sintético o de Resources/Audio) de un Clip, o null.
+    /// Lo usa SistemaAudioMultitud para alimentar sus fuentes 3D por cluster.</summary>
+    public AudioClip GetClip(Clip c) => _clips.TryGetValue(c, out var a) ? a : null;
+
     /// <summary>Reproduce un clip en 3D o 2D según configuración.</summary>
     public static void Play(Clip c, Vector3 pos = default)
     {

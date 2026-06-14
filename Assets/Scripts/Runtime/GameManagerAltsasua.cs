@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -51,7 +52,28 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     private List<GameObject> _policiasActivos = new List<GameObject>();
     [Tooltip("Máximo de coches policía activos simultáneamente")]
     public int maxCochesPolicia = 3;
-    private GameObject _helicopteroActivo;
+    [Tooltip("Máximo de helicópteros simultáneos (escala con el nivel de búsqueda).")]
+    public int maxHelicopteros = 2;
+    private readonly List<GameObject> _helicopterosActivos = new List<GameObject>();
+    private float _timerHeli;
+
+    // ─── Refuerzos por oleadas (escaladas por nivel de búsqueda) ──────────────
+    [Header("Refuerzos (oleadas)")]
+    [Tooltip("Tamaño de oleada = nivel de búsqueda, hasta este máximo de coches.")]
+    public int   maxCochesPorOleada       = 5;
+    [Tooltip("Segundos entre cada coche de una misma oleada (llegada escalonada, evita el pico de Instantiate).")]
+    public float intervaloLlegadaOleada   = 1.5f;
+    [Tooltip("Cooldown global entre oleadas (s). Anti-spam: aunque varios policías pidan a la vez, solo sale una.")]
+    public float cooldownOleada           = 12f;
+    [Tooltip("Coches simultáneos extra permitidos por nivel de búsqueda, sobre maxCochesPolicia.")]
+    public int   cochesExtraPorNivel      = 1;
+    [Tooltip("Radio (m) del anillo de aparición alrededor del jugador cuando NO hay puntos de spawn definidos.")]
+    public float radioAnilloRefuerzo      = 35f;
+
+    private float      _timerCooldownOleada;
+    private Coroutine  _oleadaEnCurso;
+    // De-dup de puntos de spawn dentro de una oleada (para rodear desde sitios distintos).
+    private readonly HashSet<Transform> _puntosUsadosOleada = new HashSet<Transform>();
 
     // ─── Enemigos (Soldados/Manifestantes) ───────────────────────────────────
     [Header("Enemigos NPC")]
@@ -122,6 +144,7 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     bool ISpawnService.JugadorEnVehiculo             => JugadorEnVehiculo;
     void ISpawnService.EnemigoEliminado(UnityEngine.GameObject e) => EnemigoEliminado(e);
     void ISpawnService.SetJugadorEnVehiculo(bool v)  => SetJugadorEnVehiculo(v);
+    int  ISpawnService.SolicitarRefuerzosPolicia(Vector3 pos, int n) => SolicitarRefuerzosPolicia(pos, n);
 
     // ── IWantedSystem ─────────────────────────────────────────────────────────
     int IWantedSystem.NivelBusqueda => nivelBusqueda;
@@ -309,13 +332,7 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
             nivelBusqueda = Mathf.Max(0, nivelBusqueda - 1);
             if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
             _timerBajarNivel = tiempoBajarNivel;
-
-            // Desactivar helicóptero si baja del umbral
-            if (nivelBusqueda < nivelHelicoptero && _helicopteroActivo != null)
-            {
-                Destroy(_helicopteroActivo);
-                _helicopteroActivo = null;
-            }
+            // La flota de helicópteros la gestiona GestionarHelicopteros() (escala y retira solo).
         }
     }
 
@@ -325,6 +342,12 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
 
     void GestionarSpawnPolicia()
     {
+        if (_timerCooldownOleada > 0f) _timerCooldownOleada -= Time.deltaTime;   // cooldown de oleadas (siempre corre)
+
+        // Flota de helicópteros ~1 Hz, independiente del nivel (así también se RETIRAN al bajar a 0).
+        _timerHeli -= Time.deltaTime;
+        if (_timerHeli <= 0f) { _timerHeli = 1f; GestionarHelicopteros(); }
+
         if (nivelBusqueda <= 0 || jugadorActivo == null) return;
 
         _timerSpawnPolicia -= Time.deltaTime;
@@ -335,19 +358,46 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         LimpiarPoliciasDestruidosDeListaActivos();
         if (_policiasActivos.Count < maxCochesPolicia && prefabCochePolicia != null)
         {
-            Transform puntoSpawn = ElegirPuntoSpawnPolicia();
-            if (puntoSpawn != null)
+            if (ElegirPoseSpawnPolicia(out Vector3 pos, out Quaternion rot))
             {
-                var coche = Instantiate(prefabCochePolicia, puntoSpawn.position, puntoSpawn.rotation);
+                var coche = Instantiate(prefabCochePolicia, pos, rot);
                 _policiasActivos.Add(coche);
             }
         }
 
-        // Helicóptero en nivel alto
-        if (nivelBusqueda >= nivelHelicoptero && _helicopteroActivo == null && prefabHelicoptero != null)
+        // (los helicópteros los gestiona GestionarHelicopteros() arriba)
+    }
+
+    // Flota de helicópteros escalada por nivel de búsqueda: 1 al alcanzar
+    // 'nivelHelicoptero', +1 cada 2 niveles, hasta 'maxHelicopteros'. Spawnea los
+    // que falten repartidos en ángulo sobre el jugador y RETIRA los sobrantes
+    // cuando el nivel baja (incluido a 0).
+    void GestionarHelicopteros()
+    {
+        for (int i = _helicopterosActivos.Count - 1; i >= 0; i--)
+            if (_helicopterosActivos[i] == null) _helicopterosActivos.RemoveAt(i);
+
+        if (prefabHelicoptero == null || jugadorActivo == null) return;
+
+        int objetivo = nivelBusqueda >= nivelHelicoptero
+            ? Mathf.Clamp(1 + (nivelBusqueda - nivelHelicoptero) / 2, 0, maxHelicopteros)
+            : 0;
+
+        // Spawnear los que falten (cada uno en un sector angular distinto sobre el jugador).
+        while (_helicopterosActivos.Count < objetivo)
         {
-            Vector3 posHeli = jugadorActivo.transform.position + new Vector3(20f, 50f, 20f);
-            _helicopteroActivo = Instantiate(prefabHelicoptero, posHeli, Quaternion.identity);
+            int i = _helicopterosActivos.Count;
+            float ang = Mathf.PI * 2f * i / Mathf.Max(1, objetivo);
+            Vector3 off = new Vector3(Mathf.Cos(ang) * 22f, 50f, Mathf.Sin(ang) * 22f);
+            var heli = Instantiate(prefabHelicoptero, jugadorActivo.transform.position + off, Quaternion.identity);
+            _helicopterosActivos.Add(heli);
+        }
+        // Retirar excedentes si el nivel ha bajado.
+        while (_helicopterosActivos.Count > objetivo)
+        {
+            int ult = _helicopterosActivos.Count - 1;
+            if (_helicopterosActivos[ult] != null) Destroy(_helicopterosActivos[ult]);
+            _helicopterosActivos.RemoveAt(ult);
         }
     }
 
@@ -357,23 +407,130 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         return Mathf.Max(5f, intervalSpawnPoliciaCohe - nivelBusqueda * 2f);
     }
 
-    Transform ElegirPuntoSpawnPolicia()
+    // Pose de aparición de un coche de policía de ambiente. Si hay puntos autorizados,
+    // usa uno al azar tal cual (ya están sobre carretera → sin snap). Si no, cae detrás
+    // del jugador con snap a NavMesh (la pos cruda puede caer dentro de un edificio o
+    // fuera de carretera → coche sin navegar). Devuelve false si no hay dónde spawnear.
+    bool ElegirPoseSpawnPolicia(out Vector3 pos, out Quaternion rot)
     {
-        if (puntosSpawnPolicia == null || puntosSpawnPolicia.Length == 0)
+        if (puntosSpawnPolicia != null && puntosSpawnPolicia.Length > 0)
         {
-            // Spawn detrás del jugador si no hay puntos definidos
-            if (jugadorActivo == null) return null;
-            var go = new GameObject("SpawnPoliciaTemporal");
-            go.transform.position = jugadorActivo.transform.position - jugadorActivo.transform.forward * 40f;
-            Destroy(go, 0.1f);
-            return go.transform;
+            Transform punto = puntosSpawnPolicia[Random.Range(0, puntosSpawnPolicia.Length)];
+            pos = punto.position;
+            rot = punto.rotation;
+            return true;
         }
-        return puntosSpawnPolicia[Random.Range(0, puntosSpawnPolicia.Length)];
+
+        // Sin puntos definidos → detrás del jugador, sobre superficie navegable.
+        if (jugadorActivo == null) { pos = default; rot = default; return false; }
+        Vector3 cruda = jugadorActivo.transform.position - jugadorActivo.transform.forward * 40f;
+        if (NavMesh.SamplePosition(cruda, out NavMeshHit hit, 40f, NavMesh.AllAreas))
+            pos = hit.position;
+        else
+            pos = cruda;
+        rot = jugadorActivo.transform.rotation;
+        return true;
     }
 
     void LimpiarPoliciasDestruidosDeListaActivos()
     {
         _policiasActivos.RemoveAll(p => p == null);
+    }
+
+    // Refuerzos a demanda (GOAP de PoliciaForalIA vía ISpawnService). Lanza una
+    // OLEADA escalada por nivel de búsqueda, escalonada en el tiempo y con cooldown
+    // global anti-spam. Devuelve el tamaño de oleada planificado (0 si en cooldown,
+    // ya hay una en curso, o no hay prefab). 'cantidadBase' = mínimo garantizado.
+    public int SolicitarRefuerzosPolicia(Vector3 posicion, int cantidadBase)
+    {
+        if (prefabCochePolicia == null)   return 0;
+        if (_timerCooldownOleada > 0f)    return 0;   // dispatch ocupado (otro policía ya pidió)
+        if (_oleadaEnCurso != null)       return 0;   // oleada anterior aún llegando
+
+        int nivel = Mathf.Max(nivelBusqueda, 1);
+        int tam   = Mathf.Clamp(Mathf.Max(cantidadBase, nivel), 1, maxCochesPorOleada);
+
+        _timerCooldownOleada = cooldownOleada;
+        _oleadaEnCurso = StartCoroutine(DesplegarOleada(posicion, tam));
+        // (los helicópteros de apoyo los gestiona GestionarHelicopteros(), escalados aparte)
+
+        AlsasuaLogger.Info("GameManager", $"Oleada de refuerzos: {tam} coches (nivel {nivelBusqueda}).");
+        return tam;
+    }
+
+    // Despliega la oleada UN coche cada 'intervaloLlegadaOleada' s: reparte el coste
+    // de Instantiate y se siente como refuerzos que van llegando, no un pop masivo.
+    // El tope simultáneo escala con el nivel de búsqueda (cochesExtraPorNivel) y cada
+    // coche entra por un SECTOR distinto alrededor del jugador → te rodean.
+    IEnumerator DesplegarOleada(Vector3 posicion, int cantidad)
+    {
+        var espera = new WaitForSeconds(intervaloLlegadaOleada);
+        _puntosUsadosOleada.Clear();   // de-dup de puntos para repartir la oleada
+        for (int i = 0; i < cantidad; i++)
+        {
+            LimpiarPoliciasDestruidosDeListaActivos();
+            int cap = maxCochesPolicia + nivelBusqueda * cochesExtraPorNivel;
+            if (_policiasActivos.Count < cap)
+            {
+                // Rodear AL JUGADOR (el objetivo), no al policía que pidió ayuda.
+                Vector3 centro = jugadorActivo != null ? jugadorActivo.transform.position : posicion;
+                PoseSpawnOleada(centro, i, cantidad, out Vector3 pos, out Quaternion rot);
+
+                var coche = Instantiate(prefabCochePolicia, pos, rot);
+                _policiasActivos.Add(coche);
+            }
+            yield return espera;
+        }
+        _oleadaEnCurso = null;
+    }
+
+    // Pose de aparición del coche 'i' de una oleada de 'total': reparte la oleada en
+    // SECTORES angulares alrededor del jugador. Si hay puntos de spawn definidos, usa
+    // el más alineado con el sector (sin repetir dentro de la oleada → cercan desde
+    // sitios distintos). Si no hay, cae a un anillo alrededor del jugador.
+    void PoseSpawnOleada(Vector3 centro, int i, int total, out Vector3 pos, out Quaternion rot)
+    {
+        float   ang = Mathf.PI * 2f * i / Mathf.Max(1, total);
+        Vector3 dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
+
+        Transform punto = PuntoMasAlineadoNoUsado(centro, dir);
+        if (punto != null)
+        {
+            _puntosUsadosOleada.Add(punto);
+            pos = punto.position;
+            rot = punto.rotation;
+            return;
+        }
+        // Sin puntos (o ya todos usados) → anillo alrededor del jugador, mirando hacia él.
+        // Snap a NavMesh: una posición de anillo cruda puede caer dentro de un edificio
+        // o en una ladera → el coche quedaría sin poder navegar. Buscamos la superficie
+        // navegable más cercana; si no hay NavMesh a tiro, se usa la cruda como último recurso.
+        Vector3 cruda = centro + dir * radioAnilloRefuerzo;
+        if (NavMesh.SamplePosition(cruda, out NavMeshHit hit, radioAnilloRefuerzo, NavMesh.AllAreas))
+            pos = hit.position;
+        else
+            pos = cruda;
+        rot = Quaternion.LookRotation(-dir, Vector3.up);
+    }
+
+    // Punto de spawn cuyo rumbo desde 'centro' mejor casa con 'dir', excluyendo los ya
+    // usados en esta oleada. Null si no hay puntos válidos disponibles.
+    Transform PuntoMasAlineadoNoUsado(Vector3 centro, Vector3 dir)
+    {
+        if (puntosSpawnPolicia == null) return null;
+
+        Transform mejor = null;
+        float mejorDot = -2f;
+        for (int i = 0; i < puntosSpawnPolicia.Length; i++)
+        {
+            var p = puntosSpawnPolicia[i];
+            if (p == null || _puntosUsadosOleada.Contains(p)) continue;
+            Vector3 d = p.position - centro; d.y = 0f;
+            if (d.sqrMagnitude < 1e-3f) continue;
+            float dot = Vector3.Dot(d.normalized, dir);
+            if (dot > mejorDot) { mejorDot = dot; mejor = p; }
+        }
+        return mejor;
     }
 
     // =========================================================================
@@ -460,7 +617,7 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     {
         _policiasActivos.RemoveAll(p => p == null);
         _enemigosActivos.RemoveAll(e => e == null);
-        if (_helicopteroActivo == null) _helicopteroActivo = null; // referencia colgante
+        _helicopterosActivos.RemoveAll(h => h == null);
     }
 
     // =========================================================================

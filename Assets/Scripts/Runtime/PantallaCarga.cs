@@ -16,7 +16,7 @@ using UnityEngine;
 
 public class PantallaCarga : MonoBehaviour
 {
-    const float TIMEOUT      = 90f;  // nunca bloquear más de esto
+    const float TIMEOUT      = 35f;  // tope DURO: entra al juego pase lo que pase
     const float MIN_VISIBLE  = 2f;   // mínimo en pantalla (evita parpadeo)
     const float FADE_DUR     = 1.2f; // fundido de salida
 
@@ -31,6 +31,19 @@ public class PantallaCarga : MonoBehaviour
     readonly List<Paso> _pasos = new();
     float _t0, _progVisual, _alpha = 1f;
     bool  _completo;
+
+    // Instrumentación de arranque: cuándo (s desde el boot) quedó listo cada paso.
+    // Convierte el "tope de 35 s" en datos accionables: ves QUÉ paso tarda.
+    float[] _tListo;
+    bool    _logTotal;
+
+    // PERF FIX: OnGUI corre 2×/frame (Layout+Repaint). Cachear strings para no
+    // asignar basura cada pasada: el % solo se reconstruye al cambiar el entero,
+    // y el texto del paso actual cuando cambia el paso no-listo.
+    string _txtPct = "0%";
+    int    _pctCache = -1;
+    string _txtPaso = "";
+    int    _pasoCache = -1;
     Texture2D _fondo; // cartel: Assets/Resources/UI/pantalla_carga.png (opcional)
     Texture2D _texNegro, _texBarra, _texBarraFondo;
     GUIStyle  _stTitulo, _stPaso, _stPct;
@@ -62,6 +75,12 @@ public class PantallaCarga : MonoBehaviour
             () => GameObject.FindGameObjectWithTag("Player") != null, 0.10f));
         _pasos.Add(new Paso("Últimos retoques",
             () => AltsasuCore.I != null, 0.10f));
+        // Zona de spawn (streaming). Si no hay gestor de streaming, no aplica → listo al instante.
+        _pasos.Add(new Paso("Preparando el entorno",
+            () => ArranqueMundo.ZonaInicialListaONoAplica, 0.05f));
+
+        _tListo = new float[_pasos.Count];
+        for (int i = 0; i < _tListo.Length; i++) _tListo[i] = -1f;
 
         _texNegro      = Tex(new Color(0.04f, 0.05f, 0.06f));
         _texBarraFondo = Tex(new Color(0.15f, 0.16f, 0.18f));
@@ -82,6 +101,14 @@ public class PantallaCarga : MonoBehaviour
     {
         float trans = Time.realtimeSinceStartup - _t0;
 
+        // Instrumentación: registrar y loguear el instante en que cada paso queda listo.
+        for (int i = 0; i < _pasos.Count; i++)
+            if (_tListo[i] < 0f && _pasos[i].listo())
+            {
+                _tListo[i] = trans;
+                AlsasuaLogger.Info("Boot", $"[{trans:0.0}s] ✓ {_pasos[i].nombre}");
+            }
+
         // Progreso real por pesos + objetivo
         float objetivo = 0f; bool todo = true;
         foreach (var p in _pasos)
@@ -95,14 +122,44 @@ public class PantallaCarga : MonoBehaviour
         _progVisual = Mathf.Max(_progVisual,
             Mathf.Lerp(_progVisual, objetivo, Time.unscaledDeltaTime * 2.5f));
 
-        bool terminar = (todo && trans > MIN_VISIBLE) || trans > TIMEOUT;
+        // Robusto: con terreno (_pasos[0]) + jugador (_pasos[4]) ya es jugable;
+        // biomas, edificios, NavMesh y árboles se siguen poblando EN SEGUNDO
+        // PLANO tras quitar esta pantalla. Y tope DURO por si algo tarda — así
+        // el arranque NUNCA se queda clavado esperando a un sistema lento.
+        // Jugable = terreno + jugador + zona de spawn lista (esta última es no-op si
+        // no hay streaming → no regresa el comportamiento actual sin Addressables).
+        bool jugable = _pasos[0].listo() && _pasos[4].listo() && ArranqueMundo.ZonaInicialListaONoAplica;
+        bool terminar = ((todo || jugable) && trans > MIN_VISIBLE) || trans > TIMEOUT;
         if (terminar) _completo = true;
+
+        if (terminar && !_logTotal)
+        {
+            _logTotal = true;
+            bool porTimeout = trans >= TIMEOUT && !(todo || jugable);
+            AlsasuaLogger.Info("Boot",
+                porTimeout
+                    ? $"⚠ Pantalla de carga fuera por TIMEOUT a los {trans:0.0}s (terreno/jugador aún no listos)."
+                    : $"Pantalla de carga fuera en {trans:0.0}s (terreno+jugador listos).");
+        }
 
         if (_completo)
         {
             _progVisual = Mathf.Lerp(_progVisual, 1f, Time.unscaledDeltaTime * 6f);
             _alpha -= Time.unscaledDeltaTime / FADE_DUR;
             if (_alpha <= 0f) Destroy(gameObject);
+        }
+
+        // PERF FIX: precalcular las strings aquí (1×/frame) en vez de en OnGUI (2×/frame).
+        int pct = Mathf.RoundToInt(_progVisual * 100f);
+        if (pct != _pctCache) { _pctCache = pct; _txtPct = pct + "%"; }
+
+        int pasoIdx = -1;  // primer paso no listo
+        for (int i = 0; i < _pasos.Count; i++)
+            if (!_pasos[i].listo()) { pasoIdx = i; break; }
+        if (pasoIdx != _pasoCache)
+        {
+            _pasoCache = pasoIdx;
+            _txtPaso = pasoIdx < 0 ? "Listo" : _pasos[pasoIdx].nombre + "…";
         }
     }
 
@@ -137,11 +194,8 @@ public class PantallaCarga : MonoBehaviour
         float yPaso  = _fondo != null ? h * 0.875f : h * 0.46f;
         float yBarra = _fondo != null ? h * 0.93f  : h * 0.52f;
 
-        // Paso actual (el primero no listo)
-        string paso = "Listo";
-        foreach (var p in _pasos)
-            if (!p.listo()) { paso = p.nombre + "…"; break; }
-        GUI.Label(new Rect(0, yPaso, w, 30), paso, _stPaso);
+        // Paso actual (string cacheada en Update — sin concat por frame)
+        GUI.Label(new Rect(0, yPaso, w, 30), _txtPaso, _stPaso);
 
         // Barra
         float bw = Mathf.Min(560f, w * 0.6f), bh = 14f;
@@ -149,8 +203,8 @@ public class PantallaCarga : MonoBehaviour
         GUI.DrawTexture(new Rect(bx, by, bw, bh), _texBarraFondo);
         GUI.DrawTexture(new Rect(bx, by, bw * _progVisual, bh), _texBarra);
 
-        // Porcentaje
-        GUI.Label(new Rect(0, by + 18, w, 24), $"{_progVisual * 100f:F0}%", _stPct);
+        // Porcentaje (string cacheada en Update — sin interpolación/boxing por frame)
+        GUI.Label(new Rect(0, by + 18, w, 24), _txtPct, _stPct);
 
         GUI.color = prev;
     }

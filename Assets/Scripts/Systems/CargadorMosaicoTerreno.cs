@@ -34,6 +34,12 @@ public class CargadorMosaicoTerreno : MonoBehaviour
     const int CAPA_TERRENO = 8;
     const int GROUPING_ID = 8570;
     const float PRESUPUESTO_MS = 8f;
+    // Tiles parseados en paralelo por lote. El anillo 1 tiene 32 tiles; lanzarlos
+    // todos a la vez reservaba ~134 MB de float[,] simultáneos → bajo presión de
+    // memoria una Task se quedaba sin completar y el mosaico se clavaba en 5 tiles.
+    const int LOTE_PARSEO = 4;
+    // Un tile que no parsea en este tiempo se salta (no cuelga el mosaico entero).
+    const float TIMEOUT_TILE_S = 20f;
 
     static readonly Dictionary<int, float> PIXEL_ERROR = new() { { 0, 3f }, { 1, 6f }, { 2, 12f } };
     const float PIXEL_ERROR_FRONTERA = 4f; // tiles que tocan una frontera cross-ring
@@ -99,27 +105,61 @@ public class CargadorMosaicoTerreno : MonoBehaviour
         _capasCompartidas = CrearCapasCompartidas();
         string dirAbs = Path.Combine(Application.dataPath, DIR_TILES_REL);
 
-        // por anillos: parsear el anillo en Tasks, instanciar, pasar al siguiente
+        // por anillos: parsear cada anillo EN LOTES (no todos a la vez) e instanciar.
+        // Antes lanzaba los 32 tiles del anillo 1 como Tasks simultáneas → pico de RAM
+        // que congelaba una Task y dejaba el mundo en 5 tiles. Ahora ≤ LOTE_PARSEO en
+        // vuelo a la vez, con timeout por tile y log de progreso para ver dónde falla.
         foreach (var grupo in Manifest.tiles.GroupBy(t => t.anillo).OrderBy(g => g.Key))
         {
-            var defs = grupo.ToList();
-            var tareas = defs.Select(d => System.Threading.Tasks.Task.Run(
-                () => ParsearRaw(Path.Combine(dirAbs, d.file), d.res))).ToArray();
+            var defs   = grupo.ToList();
+            int anillo = grupo.Key;
+            AlsasuaLogger.Info("Mosaico",
+                $"Anillo {anillo}: {defs.Count} tiles (lotes de {LOTE_PARSEO})…");
 
-            for (int k = 0; k < defs.Count; k++)
+            for (int baseIdx = 0; baseIdx < defs.Count; baseIdx += LOTE_PARSEO)
             {
-                while (!tareas[k].IsCompleted) yield return null;
-                if (!tareas[k].IsCompletedSuccessfully)
+                int n = Mathf.Min(LOTE_PARSEO, defs.Count - baseIdx);
+                var tareas = new System.Threading.Tasks.Task<float[,]>[n];
+                for (int j = 0; j < n; j++)
                 {
-                    AlsasuaLogger.Warn("Mosaico",
-                        $"Tile {defs[k].file} ilegible: {tareas[k].Exception?.GetBaseException().Message}");
-                    continue;
+                    var d = defs[baseIdx + j];   // local fresco por iteración (closure correcta)
+                    tareas[j] = System.Threading.Tasks.Task.Run(
+                        () => ParsearRaw(Path.Combine(dirAbs, d.file), d.res));
                 }
-                yield return InstanciarTile(defs[k], tareas[k].Result);
-                tareas[k] = null; // liberar el float[,] cuanto antes
+
+                for (int j = 0; j < n; j++)
+                {
+                    var d = defs[baseIdx + j];
+
+                    // Espera con timeout: un tile que nunca completa ya NO cuelga el mosaico.
+                    float tEspera = Time.realtimeSinceStartup;
+                    while (!tareas[j].IsCompleted)
+                    {
+                        if (Time.realtimeSinceStartup - tEspera > TIMEOUT_TILE_S)
+                        {
+                            AlsasuaLogger.Error("Mosaico",
+                                $"Tile {d.file} (anillo {anillo}) no parseó en {TIMEOUT_TILE_S:F0}s — SE SALTA. " +
+                                "Probable RAW corrupto/bloqueado o falta de memoria.");
+                            break;
+                        }
+                        yield return null;
+                    }
+                    if (!tareas[j].IsCompleted) continue;              // saltado por timeout
+                    if (!tareas[j].IsCompletedSuccessfully)
+                    {
+                        AlsasuaLogger.Warn("Mosaico",
+                            $"Tile {d.file} ilegible: {tareas[j].Exception?.GetBaseException().Message}");
+                        continue;
+                    }
+                    yield return InstanciarTile(d, tareas[j].Result);
+                    tareas[j] = null; // liberar el float[,] cuanto antes
+                }
+
+                AlsasuaLogger.Info("Mosaico",
+                    $"Anillo {anillo}: {Mathf.Min(baseIdx + n, defs.Count)}/{defs.Count} parseados · {_tiles.Count} instanciados.");
             }
 
-            if (grupo.Key == 0)
+            if (anillo == 0)
             {
                 ConectarVecinosIntraAnillo(0);
                 Anillo0Listo = true;
@@ -161,9 +201,14 @@ public class CargadorMosaicoTerreno : MonoBehaviour
         var td = new TerrainData { heightmapResolution = def.res };
         td.size = new Vector3(def.ancho, Manifest.altoGlobal, def.ancho);
 
-        // SetHeightsDelayLOD por bandas con presupuesto por frame
+        // SetHeightsDelayLOD por bandas con presupuesto por frame.
+        // Medimos SOLO el tiempo SÍNCRONO de SetHeights+Sync (sin contar los yields)
+        // y lo empujamos a Telemetria → VisualizadorHeatmap (editor) pinta las costuras
+        // más caras del lattice. El Stopwatch acumula únicamente el coste real de coser.
         int res = def.res;
         int filasPorLote = Mathf.Max(32, res / 16);
+        float msCosido = 0f;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         float t0 = Time.realtimeSinceStartup;
         for (int j0 = 0; j0 < res; j0 += filasPorLote)
         {
@@ -172,14 +217,18 @@ public class CargadorMosaicoTerreno : MonoBehaviour
             for (int j = 0; j < h; j++)
                 for (int i = 0; i < res; i++)
                     banda[j, i] = alturas[j0 + j, i];
+            sw.Restart();
             td.SetHeightsDelayLOD(0, j0, banda);
+            msCosido += (float)sw.Elapsed.TotalMilliseconds;
             if ((Time.realtimeSinceStartup - t0) * 1000f > PRESUPUESTO_MS)
             {
                 yield return null;
                 t0 = Time.realtimeSinceStartup;
             }
         }
+        sw.Restart();
         td.SyncHeightmap();
+        msCosido += (float)sw.Elapsed.TotalMilliseconds;
         td.terrainLayers = _capasCompartidas;
 
         var go = Terrain.CreateTerrainGameObject(td);
@@ -207,6 +256,11 @@ public class CargadorMosaicoTerreno : MonoBehaviour
 
         _tiles.Add(terr);
         _porIndice[(def.anillo, fila, colIdx)] = terr;
+
+        // Telemetría de cosido (centro mundo del tile, lado, ms síncronos).
+        Telemetria.RegistrarCostura(
+            new Vector3(def.x + def.ancho * 0.5f, def.y, def.z + def.ancho * 0.5f),
+            def.ancho, msCosido);
 
         var ch = Manifest.convencionHorizontal;
         if (def.x <= ch.OX && ch.OX <= def.x + def.ancho &&

@@ -238,6 +238,12 @@ public class HUDCanvas : MonoBehaviour
     //  UPDATE
     // ════════════════════════════════════════════════════════════════════════
 
+    // PERF: Camera.main hace FindGameObjectWithTag("MainCamera") en CADA acceso. El HUD lo
+    // tocaba 2×/frame (brújula + marcadores). Cacheado con refresh-if-null (la cámara TP se
+    // recrea al respawnear → no se puede cachear solo en Start).
+    Camera _camHUD;
+    Camera CamaraHUD() { if (_camHUD == null) _camHUD = Camera.main; return _camHUD; }
+
     void Update()
     {
         ActualizarVida();
@@ -308,7 +314,7 @@ public class HUDCanvas : MonoBehaviour
     void ActualizarBrujula()
     {
         if (_txtBrujula == null) return;
-        var cam = Camera.main;
+        var cam = CamaraHUD();
         if (cam == null) return;
         float yaw = cam.transform.eulerAngles.y;
         string[] dirs = { "N","NE","E","SE","S","SO","O","NO","N" };
@@ -365,7 +371,7 @@ public class HUDCanvas : MonoBehaviour
 
     void ActualizarMarcadores()
     {
-        var cam = Camera.main;
+        var cam = CamaraHUD();
         if (cam == null) return;
         foreach (var m in _marcadores)
         {

@@ -66,6 +66,11 @@ public class SistemaZonas : MonoBehaviour
     readonly HashSet<Vector2Int>  _deseadasBuffer  = new(25);
     readonly List<Vector2Int>     _aEliminarBuffer = new(16);
 
+    // Buffers del command buffer de restauración de deltas (CargarZona). Reutilizables → cero GC.
+    readonly List<PersistentChange>          _cmdRestaurar     = new(64);
+    readonly List<IPersistente>              _persistentesZona = new(64);
+    readonly Dictionary<long, IPersistente>  _idxPersistentes  = new(64);
+
     Vector2Int _zonaJugadorAnterior = new(int.MinValue, int.MinValue);
     Transform  _jugador;
     bool       _indexadoListo;
@@ -327,6 +332,33 @@ public class SistemaZonas : MonoBehaviour
                 var pts = System.Array.ConvertAll(c.points,
                     p => new Vector3(p.x + GeoDataAlsasua.OX, 0, p.z + GeoDataAlsasua.OZ));
                 SistemaTerreno.Instance?.PintarCarretera(pts, Mathf.Max(3f, c.width));
+            }
+        }
+
+        // ── COMMAND BUFFER: restaurar deltas persistidos del chunk ───────────
+        // Aplica los cambios guardados (vallas rotas, contenedores volcados…) a los
+        // IPersistente que cuelgan del root de la zona, ANTES de marcarla cargada.
+        // O(m + k): index por Id + un AplicarCambio por delta. No-op si no hay deltas.
+        // NOTA: solo cubre props parentados a info.root en esta corrutina. Los props
+        // que otros sistemas spawnean al recibir ChunkLoadedEvent (más abajo) aún no
+        // existen aquí → ésos deben llamar Persistencia.Restaurar(this) al nacer.
+        if (info.root != null)
+        {
+            var persistencia = ServiceLocator.Get<IPersistenceService>();
+            if (persistencia != null && persistencia.TieneCambios(key))
+            {
+                info.root.GetComponentsInChildren(true, _persistentesZona); // incluye inactivos
+                if (_persistentesZona.Count > 0)
+                {
+                    _idxPersistentes.Clear();
+                    for (int j = 0; j < _persistentesZona.Count; j++)
+                        _idxPersistentes[_persistentesZona[j].IdPersistente] = _persistentesZona[j];
+
+                    int n = persistencia.ObtenerCambios(key, _cmdRestaurar);
+                    for (int i = 0; i < n; i++)
+                        if (_idxPersistentes.TryGetValue(_cmdRestaurar[i].id, out var obj))
+                            obj.AplicarCambio(_cmdRestaurar[i]);
+                }
             }
         }
 

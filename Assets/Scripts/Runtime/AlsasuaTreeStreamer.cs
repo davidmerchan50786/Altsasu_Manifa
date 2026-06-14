@@ -107,6 +107,15 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     Coroutine _crInicializar;
     Coroutine _crBucleSteaming;
 
+    // ── Auto-pausa por sobrecarga de frame (Director de Simulación) ──────────
+    // Cuando el FactorCarga del orquestador baja del umbral de pausa, este productor
+    // OPCIONAL frena su ritmo de instanciación (más intervalo, menos árboles/ciclo)
+    // para devolver presupuesto al hilo principal. Histéresis para no parpadear.
+    // Si el orquestador no existe (null), _degradado nunca se activa → ritmo normal.
+    IGlobalSimulationOrchestrator _orquestador;
+    System.Action<float>          _onFactorCarga;
+    bool                          _degradado;
+
     // ── Constantes coordenadas — fuente única: GeoDataAlsasua ─────────────
     const float E_ORIG   = (float)GeoDataAlsasua.UTM_E_ORIGIN;
     const float N_ORIG   = (float)GeoDataAlsasua.UTM_N_ORIGIN;
@@ -150,7 +159,30 @@ public class AlsasuaTreeStreamer : MonoBehaviour
 
     void Start()
     {
+        SuscribirDegrade();
         _crInicializar = StartCoroutine(InicializarAsync());
+    }
+
+    // ── Hookup con el Director de Simulación ────────────────────────────────
+    void SuscribirDegrade()
+    {
+        _orquestador = ServiceLocator.Get<IGlobalSimulationOrchestrator>();
+        if (_orquestador == null) return;   // sin director → ritmo normal de siempre
+
+        var cfg = GlobalSimulationOrchestrator.Instancia?.Config;
+        float pausa   = cfg?.productoresPausaFactor   ?? 0.85f;
+        float reanuda = cfg?.productoresReanudaFactor ?? 0.95f;
+
+        _onFactorCarga = factor =>
+        {
+            // Histéresis: solo entra en degradado por debajo de 'pausa' y solo
+            // sale por encima de 'reanuda'; entre ambos mantiene el estado actual.
+            if (!_degradado && factor < pausa)        _degradado = true;
+            else if (_degradado && factor > reanuda)  _degradado = false;
+        };
+        _orquestador.OnFactorCargaCambia += _onFactorCarga;
+        // Estado inicial coherente con el factor actual (por si arranca ya cargado).
+        _onFactorCarga(_orquestador.FactorCarga);
     }
 
     IEnumerator InicializarAsync()
@@ -601,6 +633,12 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         if (_crBucleSteaming != null) StopCoroutine(_crBucleSteaming);
         if (_crInicializar   != null) StopCoroutine(_crInicializar);
 
+        // Desuscribir del Director de Simulación (evita callback sobre objeto muerto).
+        if (_orquestador != null && _onFactorCarga != null)
+            _orquestador.OnFactorCargaCambia -= _onFactorCarga;
+        _orquestador   = null;
+        _onFactorCarga = null;
+
         if (_nativeInit)
         {
             if (_posicionesNative.IsCreated)  _posicionesNative.Dispose();
@@ -665,6 +703,11 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                     if (dx * dx + dz * dz < 150f * 150f) { intervalo = 0.5f; break; }
                 }
             }
+            // Frame sobrecargado: cuadruplica el intervalo entre ciclos de streaming
+            // para no instanciar nada nuevo mientras el motor recupera presupuesto.
+            // Lo de DESTRUIR (FASE 1) sí sigue, porque alivia, no carga.
+            if (_degradado) intervalo *= 4f;
+
             yield return new WaitForSeconds(intervalo);
 
             if (!_cargado || treePrefabs == null || treePrefabs.Length == 0) continue;
@@ -755,10 +798,15 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             jobOcup.Schedule(nCand, 32).Complete();
 
             // ── FASE 4: Instanciar en hilo principal (required by Unity) ──
+            // Degradado: tope de 1 árbol nuevo por ciclo (el ciclo además es 4× más
+            // espaciado) → la carga procedural casi se pausa sin congelarse del todo.
+            int presupuestoInst = _degradado ? 1 : int.MaxValue;
+            int instanciados = 0;
             var terrain = Terrain.activeTerrain;
             for (int i = 0; i < nCand; i++)
             {
                 if (_instancias.Count >= maxArboles) break;
+                if (instanciados >= presupuestoInst) break;
                 if (_naOcupado[i] == 1) continue;
 
                 int posIdx = candidatos[i];
@@ -777,6 +825,7 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                     Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
                 go.isStatic = false;
                 _instancias.Add(go);
+                instanciados++;
 
                 yield return null;
             }

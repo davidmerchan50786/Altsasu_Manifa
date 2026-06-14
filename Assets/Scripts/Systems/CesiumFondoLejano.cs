@@ -63,6 +63,13 @@ public class CesiumFondoLejano : MonoBehaviour
              "en la Sakana (solo ortofoto drapeada, edificios planos).")]
     public bool crearOsmBuildings = true;
 
+    [Tooltip("ARQUITECTURA NUEVA (rediseño 2026): el fondo lejano es un MESH ESTÁTICO del\n" +
+             "MDT (SistemaMontesFondo), no Cesium. Con true este componente DESACTIVA\n" +
+             "Cesium por completo — era lo más pesado de la escena y generaba la 'capa\n" +
+             "flotante' en el cielo cuando el terreno local no llegaba a tocarlo.\n" +
+             "Pon false solo si quieres volver al fondo fotorrealista de Google.")]
+    public bool deshabilitarCesium = true;
+
     // ── Auto-arranque en Play ──────────────────────────────────────────────
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -77,6 +84,30 @@ public class CesiumFondoLejano : MonoBehaviour
 #if CESIUM_FOR_UNITY
     IEnumerator Start()
     {
+        // ── 0. MODO MESH ESTÁTICO: matar Cesium del todo ─────────────────────
+        // Rediseño 2026: el fondo lejano lo da un mesh del MDT (SistemaMontesFondo),
+        // no Cesium. Cesium era lo más caro de la escena (streaming de fotogrametría,
+        // miles de draw calls) y, cuando el terreno local no llegaba a su anillo,
+        // quedaba flotando como una capa en el cielo. Lo neutralizamos por completo:
+        // desactivamos el georeference (apaga todos sus tilesets hijos), barremos los
+        // tilesets sueltos que otros sistemas crean tarde, y quitamos el SunSky.
+        if (deshabilitarCesium)
+        {
+            for (int pase = 0; pase < 10; pase++)
+            {
+                var gref = FindFirstObjectByType<CesiumGeoreference>(FindObjectsInactive.Include);
+                if (gref != null && gref.gameObject.activeSelf) gref.gameObject.SetActive(false);
+                foreach (var ts in FindObjectsByType<Cesium3DTileset>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (ts.gameObject.activeSelf) ts.gameObject.SetActive(false);
+                DesactivarSunSky();
+                yield return new WaitForSeconds(0.5f);
+            }
+            AlsasuaLogger.Info("CesiumFondo",
+                "Cesium DESACTIVADO — fondo lejano = mesh MDT estático (SistemaMontesFondo).");
+            yield break;
+        }
+
         // ── 1. Esperar al CesiumGeoreference (lo crea el configurador/escena) ─
         CesiumGeoreference georef = null;
         float t = 0f;

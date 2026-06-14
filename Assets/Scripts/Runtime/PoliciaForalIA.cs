@@ -18,6 +18,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 using System.Collections;
+using Alsasua.GOAP;
+using Alsasua.IA;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -25,6 +27,9 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CapsuleCollider))]
 public class PoliciaForalIA : NPCBase, IDamageable
 {
+    // Tipo espacial para el Omni-Grid cuando es Ghost (la base NPCBase es Manifestante).
+    protected override TipoEspacial TipoEspacialSim => TipoEspacial.Policia;
+
     // ── Estado ────────────────────────────────────────────────────────────────
     public enum EstadoPolicia
     {
@@ -83,6 +88,20 @@ public class PoliciaForalIA : NPCBase, IDamageable
     [Tooltip("Dispersión del disparo (0 = puntería perfecta, 0.08 = normal).")]
     [SerializeField] private float dispersion        = 0.05f;
 
+    // ── GOAP (decisión táctica tras confirmar al jugador) ──────────────────────
+    [Header("═══ GOAP ═══")]
+    [Tooltip("Si está activo, una vez confirmado el jugador la POSTURA (arrestar / " +
+             "llamar refuerzos / replegarse) la decide el planificador GOAP según el " +
+             "apoyo popular y la distancia, en vez de la persecución fija. La detección " +
+             "por LOS y el combate siguen siendo del FSM. Desactívalo para volver a la FSM clásica.")]
+    [SerializeField] private bool      usarGOAP        = true;
+    [Tooltip("Punto de cobertura alcanzable. Si es null, la policía nunca se repliega (captura siempre).")]
+    [SerializeField] private Transform coberturaCercana;
+    [Tooltip("Segundos entre replanificaciones GOAP durante la persecución.")]
+    [SerializeField] private float     replanGOAP      = 0.5f;
+    [Tooltip("Radio (m) al que se considera al jugador 'en rango de arresto'.")]
+    [SerializeField] private float     radioArresto    = 2.2f;
+
     // ── Estado interno ────────────────────────────────────────────────────────
     private EstadoPolicia  estado      = EstadoPolicia.Patrullando;
     // ARCH: usa IWantedSystem en lugar de GameManagerAltsasua — elimina dependencia
@@ -100,8 +119,36 @@ public class PoliciaForalIA : NPCBase, IDamageable
     private float timerAtaque   = 0f;
     private Vector3 ultimaPosJugador;
 
+    // PERF: cada SetDestination encola un recálculo de path asíncrono. En persecución se
+    // llamaba cada frame (60Hz × N policías → satura la cola del NavMesh). Solo re-pathear
+    // cuando el destino se mueve > 0.5 m respecto al último. Se resetea en cada transición.
+    private static readonly Vector3 SIN_DESTINO = new Vector3(float.PositiveInfinity, 0f, 0f);
+    private Vector3 _ultimoDestinoNav = SIN_DESTINO;
+
+    private void RepathSiNecesario(Vector3 destino)
+    {
+        if ((destino - _ultimoDestinoNav).sqrMagnitude < 0.25f) return;  // umbral 0.5 m
+        _ultimoDestinoNav = destino;
+        agente.SetDestination(destino);
+    }
+
     private int              maskObstaculo;
     private SistemaAtmosfera _atmosfera;
+
+    // ── GOAP: planificador + contexto + sets (todo alocado UNA vez en OnStart) ──
+    private enum PosturaGOAP { Arrestar, LlamarRefuerzos, Replegarse }
+    private PlanificadorGOAP _goap;
+    private ContextoPolicia  _ctxGoap;
+    private ISpawnService    _spawnService;       // para spawnear refuerzos reales
+    private IAction[]        _accionesGoap;
+    private IGoal[]          _metasGoap;
+    private IAction          _accRefuerzos;       // referencia para identificar la acción en el plan
+    private readonly IAction[] _planGoap = new IAction[16];
+    private int              _planLenGoap;
+    private float            _timerGoap;
+    private PosturaGOAP      _postura = PosturaGOAP.Arrestar;
+    private IGoal            _metaActualGoap;
+    private bool             _refuerzosPedidos;
 
     // ── Detección batch (SistemaDeteccionIA) ──────────────────────────────────
     private int   _slotDeteccion  = -1;    // slot en SistemaDeteccionIA (-1 = no registrado)
@@ -159,6 +206,29 @@ public class PoliciaForalIA : NPCBase, IDamageable
         _wantedSystem  = ServiceLocator.Get<IWantedSystem>();
         _slotDeteccion = SistemaDeteccionIA.Registrar();
         if (linterna != null) linterna.enabled = false;
+
+        if (usarGOAP) InicializarGOAP();
+    }
+
+    private void InicializarGOAP()
+    {
+        _goap         = new PlanificadorGOAP(64);
+        _spawnService = ServiceLocator.Get<ISpawnService>();
+        _ctxGoap = new ContextoPolicia { nav = _agente, wanted = _wantedSystem, radioArresto = radioArresto };
+
+        _accRefuerzos = new LlamarRefuerzosAction();
+        _accionesGoap = new IAction[]
+        {
+            new PerseguirAction(),
+            new ArrestarJugadorAction(),
+            _accRefuerzos,
+            new MoverACoberturaAction(),
+        };
+        _metasGoap = new IGoal[]
+        {
+            new MetaCapturarJugador(),
+            new MetaReplegarse(),
+        };
     }
 
     // BUG FIX (auditoría): liberar el slot de detección al destruirse para que se
@@ -183,11 +253,19 @@ public class PoliciaForalIA : NPCBase, IDamageable
 
         ActualizarLinterna();
 
+        // INFLUENCIA SOCIAL: mientras es agresiva, la policía se reporta como
+        // antagonista → los manifestantes radicalizados (opinión alta) se interponen.
+        if (estado == EstadoPolicia.Persiguiendo || estado == EstadoPolicia.Atacando)
+            InfluenciaSocial.ReportarAntagonista(GetInstanceID(), transform.position);
+
         switch (estado)
         {
             case EstadoPolicia.Patrullando:  TickPatrulla();    break;
             case EstadoPolicia.Sospechoso:   TickSospecha();    break;
-            case EstadoPolicia.Persiguiendo: TickPersecucion(); break;
+            case EstadoPolicia.Persiguiendo:
+                if (usarGOAP && _goap != null) TickPersecucionGOAP();
+                else                           TickPersecucion();
+                break;
             case EstadoPolicia.Atacando:     TickAtaque();      break;
         }
     }
@@ -289,14 +367,14 @@ public class PoliciaForalIA : NPCBase, IDamageable
         if (jugador != null)
         {
             ultimaPosJugador = jugador.position;
-            agente.SetDestination(ultimaPosJugador);
+            RepathSiNecesario(ultimaPosJugador);
             float dist = Vector3.Distance(transform.position, jugador.position);
             if (dist <= radioAtaque) { CambiarEstado(EstadoPolicia.Atacando); return; }
         }
         else
         {
             // Sin referencia al jugador → ir a última posición conocida
-            agente.SetDestination(ultimaPosJugador);
+            RepathSiNecesario(ultimaPosJugador);
             if (!agente.pathPending && agente.remainingDistance <= agente.stoppingDistance)
                 CambiarEstado(EstadoPolicia.Patrullando);
         }
@@ -308,6 +386,141 @@ public class PoliciaForalIA : NPCBase, IDamageable
             if (timerSospecha < -6f) CambiarEstado(EstadoPolicia.Patrullando);
         }
         else timerSospecha = 0f;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  PERSECUCIÓN GOAP — el FSM ya confirmó al jugador (LOS real). Aquí el
+    //  planificador decide la POSTURA según apoyo popular/distancia y el FSM la
+    //  ejecuta con sus primitivas probadas (NavMesh + combate). GOAP planifica;
+    //  PoliciaForalIA actúa → un único dueño del NavMeshAgent, sin conflictos.
+    // ─────────────────────────────────────────────────────────────────────────
+    private void TickPersecucionGOAP()
+    {
+        agente.speed = velPerseguir;
+
+        SensarGOAP();
+        _timerGoap += Time.deltaTime;
+        if (_timerGoap >= replanGOAP) { _timerGoap = 0f; PlanificarGOAP(); }
+
+        if (jugador != null) ultimaPosJugador = jugador.position;
+
+        switch (_postura)
+        {
+            case PosturaGOAP.Replegarse:
+                agente.isStopped = false;
+                RepathSiNecesario(_ctxGoap.posCobertura);
+                break;
+
+            case PosturaGOAP.LlamarRefuerzos:
+                if (!_refuerzosPedidos) LlamarRefuerzos();
+                PerseguirYAtacarGOAP();
+                break;
+
+            default: // Arrestar → perseguir y, en rango de tiro, combatir (FSM)
+                PerseguirYAtacarGOAP();
+                break;
+        }
+
+        // Pérdida de visión y escucha → mismo timeout de 6 s que el FSM clásico.
+        if (!JugadorEnVision() && !JugadorEnEscucha())
+        {
+            timerSospecha -= Time.deltaTime;
+            if (timerSospecha < -6f) { ReiniciarGOAP(); CambiarEstado(EstadoPolicia.Patrullando); }
+        }
+        else timerSospecha = 0f;
+    }
+
+    private void PerseguirYAtacarGOAP()
+    {
+        if (jugador == null)
+        {
+            RepathSiNecesario(ultimaPosJugador);
+            if (!agente.pathPending && agente.remainingDistance <= agente.stoppingDistance)
+            { ReiniciarGOAP(); CambiarEstado(EstadoPolicia.Patrullando); }
+            return;
+        }
+        RepathSiNecesario(ultimaPosJugador);
+        if (Vector3.Distance(transform.position, jugador.position) <= radioAtaque)
+            CambiarEstado(EstadoPolicia.Atacando);   // el combate sigue siendo del FSM
+    }
+
+    // Refresca el contexto con sensores REALES; tieneLOS = el raycast multipunto.
+    private void SensarGOAP()
+    {
+        _ctxGoap.posAgente     = transform.position;
+        if (jugador != null) _ctxGoap.posJugador = jugador.position;
+        _ctxGoap.hayCobertura  = coberturaCercana != null;
+        _ctxGoap.posCobertura  = _ctxGoap.hayCobertura ? coberturaCercana.position : _ctxGoap.posAgente;
+        _ctxGoap.nivelBusqueda = _wantedSystem != null ? _wantedSystem.NivelBusqueda : 0;
+        var sap = SistemaApoyoPopular.Instance;
+        _ctxGoap.apoyo01       = sap != null ? Mathf.Clamp01(sap.apoyo / 100f) : 0.5f;
+        _ctxGoap.tieneLOS      = JugadorEnVision();
+    }
+
+    private void PlanificarGOAP()
+    {
+        // 1. Meta relevante de mayor prioridad.
+        IGoal mejor = null;
+        float mejorP = float.NegativeInfinity;
+        for (int i = 0; i < _metasGoap.Length; i++)
+        {
+            var m = _metasGoap[i];
+            if (!m.EsRelevante(_ctxGoap)) continue;
+            float p = m.Prioridad(_ctxGoap);
+            if (p > mejorP) { mejorP = p; mejor = m; }
+        }
+        _metaActualGoap = mejor;
+        if (mejor == null) { _postura = PosturaGOAP.Arrestar; _planLenGoap = 0; return; }
+
+        // 2. Planificar (zero-alloc) hacia esa meta.
+        EstadoMundo inicial = LeerEstadoGOAP();
+        _planLenGoap = _goap.Planificar(inicial, mejor.Objetivo, _accionesGoap, _ctxGoap, _planGoap);
+
+        // 3. Traducir meta + plan a una POSTURA que el FSM sabe ejecutar.
+        if (mejor is MetaReplegarse)       _postura = PosturaGOAP.Replegarse;
+        else if (PlanContiene(_accRefuerzos)) _postura = PosturaGOAP.LlamarRefuerzos;
+        else                               _postura = PosturaGOAP.Arrestar;
+    }
+
+    private bool PlanContiene(IAction accion)
+    {
+        for (int i = 0; i < _planLenGoap; i++)
+            if (ReferenceEquals(_planGoap[i], accion)) return true;
+        return false;
+    }
+
+    private EstadoMundo LeerEstadoGOAP()
+    {
+        bool enRango = jugador != null &&
+                       Vector3.Distance(transform.position, jugador.position) <= radioArresto;
+        EstadoMundo e = default;
+        e.Set((int)HechoPol.VeAlJugador,         _ctxGoap.tieneLOS);
+        e.Set((int)HechoPol.JugadorEnRango,      enRango);
+        e.Set((int)HechoPol.EnCobertura,         false);
+        e.Set((int)HechoPol.RefuerzosPedidos,    _refuerzosPedidos);
+        e.Set((int)HechoPol.JugadorNeutralizado, false);
+        return e;
+    }
+
+    private void LlamarRefuerzos()
+    {
+        _refuerzosPedidos = true;   // un intento por enfrentamiento; el cooldown global hace el anti-spam
+
+        // Oleada de refuerzos escalada por nivel de búsqueda (GameManagerAltsasua).
+        _spawnService ??= ServiceLocator.Get<ISpawnService>();
+        int llegan = _spawnService?.SolicitarRefuerzosPolicia(transform.position, 1) ?? 0;
+        if (llegan > 0)
+        {
+            _wantedSystem?.AumentarBusqueda(1);   // solo sube el calor si la oleada sale de verdad
+            AlsasuaLogger.Info("PoliciaForal", $"{name}: oleada de refuerzos → {llegan} en camino.");
+        }
+    }
+
+    private void ReiniciarGOAP()
+    {
+        _refuerzosPedidos = false;
+        _postura = PosturaGOAP.Arrestar;
+        _planLenGoap = 0;
     }
 
     private void TickAtaque()
@@ -332,8 +545,18 @@ public class PoliciaForalIA : NPCBase, IDamageable
 
     private void CambiarEstado(EstadoPolicia nuevo)
     {
+        var anterior = estado;
         estado = nuevo;
         agente.isStopped = (nuevo == EstadoPolicia.Atacando);
+
+        // INFLUENCIA SOCIAL: la carga policial (entrar en estado agresivo desde uno
+        // que no lo era) radicaliza a la multitud → pozo de gravedad social positivo.
+        bool eraAgresivo = anterior == EstadoPolicia.Persiguiendo || anterior == EstadoPolicia.Atacando;
+        bool esAgresivo  = nuevo    == EstadoPolicia.Persiguiendo || nuevo    == EstadoPolicia.Atacando;
+        if (esAgresivo && !eraAgresivo)
+            InfluenciaSocial.Emitir(transform.position, 0.6f, 22f);
+        // PERF: forzar re-path en la próxima llamada — la transición invalida el destino previo.
+        _ultimoDestinoNav = SIN_DESTINO;
 
         // Resetear timer según estado — evita semántica dual no determinista
         if (nuevo == EstadoPolicia.Sospechoso)   timerSospecha = 2.8f;

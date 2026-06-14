@@ -55,6 +55,24 @@ public class SistemaApoyoPopular : SingletonMono<SistemaApoyoPopular>
     public void SumarHonor(float cantidad) =>
         honor = Mathf.Clamp(honor + cantidad, 0f, 100f);
 
+    /// <summary>Apoyo global normalizado [0,1] — lo lee la multitud (Alsasua.Crowd)
+    /// como baseline hacia el que relaja la opinión de cada agente.</summary>
+    public float Apoyo01 => apoyo / 100f;
+
+    /// <summary>
+    /// La capa MICRO (multitud DOTS) reporta su media de opinión [0,1]; la macro
+    /// se deja arrastrar SUAVEMENTE hacia ella (no la sobrescribe — el decay y los
+    /// SumarApoyo de misiones siguen mandando). Llamado a baja frecuencia (~1 Hz).
+    /// </summary>
+    public void ReportarApoyoMultitud(float media01)
+    {
+        float objetivo = Mathf.Clamp01(media01) * 100f;
+        float nuevo = Mathf.Lerp(apoyo, objetivo, 0.25f);
+        if (Mathf.Abs(nuevo - apoyo) < 0.5f) return;   // edge-trigger: no spamear el HUD
+        apoyo = nuevo;
+        OnApoyoCambia?.Invoke(apoyo);
+    }
+
     public void ActualizarSegunNivel(int nivelWanted)
     {
         if (nivelWanted >= 3) SumarParanoia(nivelWanted * 2f);

@@ -331,6 +331,10 @@ public class SistemaDisparo : MonoBehaviour
 
         EfectoDisparo(posArma, direccion);
 
+        // INFLUENCIA SOCIAL (ejemplo "jugador pega → −"): un disparo es violencia
+        // visible → enfría la opinión de los testigos cercanos (gravedad social negativa).
+        InfluenciaSocial.Emitir(posArma, -0.25f, 12f);
+
         // Raycast definitivo desde el arma
         if (Physics.Raycast(posArma, direccion, out RaycastHit hit, alcanceDisparo, capasImpacto))
             ProcesarImpacto(hit);

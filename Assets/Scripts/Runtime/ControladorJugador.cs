@@ -141,6 +141,9 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     public bool  EstaApuntandoP  => modoApuntar;
     /// <summary>Velocidad horizontal real del CharacterController (m/s).</summary>
     public float VelocidadHoriz  => velHoriz.magnitude;
+    /// <summary>Vector de velocidad horizontal en espacio mundo (m/s) — dirección
+    /// + módulo, ya suavizado. Para predicción de trayectoria (streaming de tiles).</summary>
+    public Vector3 VelocidadHorizontal => velHoriz;
 
     // Propiedades para HUDJugador (Canvas UI)
     public int   VidaMax     => vidaMax;
@@ -187,6 +190,10 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
     // Pasos de audio
     private float _timerPaso = 0f;
+    // PERF: AudioSource reutilizable para los pasos. AudioSource.PlayClipAtPoint creaba
+    // y destruía un GameObject+AudioSource temporal en cada paso → churn de objetos + GC
+    // justo al caminar/correr. PlayOneShot sobre esta fuente no asigna nada.
+    private AudioSource _srcPasos;
 
     // ── Animator Mixamo ──────────────────────────────────────────────────
     // Referencia al Animator del personaje instanciado (null si se usa cuerpo procedural)
@@ -281,6 +288,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         CrearBlobShadow();
         // PERF: LayerMask para OverlapSphere de interacción — sólo capas con objetos interactuables
         _maskInteractable = ~LayerMask.GetMask("Player", "Ignore Raycast", "Terrain", "Water");
+
+        // PERF: AudioSource reutilizable para pasos (evita PlayClipAtPoint → GameObject temporal).
+        _srcPasos = gameObject.AddComponent<AudioSource>();
+        _srcPasos.playOnAwake   = false;
+        _srcPasos.spatialBlend  = 1f;   // 3D, como salía de PlayClipAtPoint
     }
 
     private void Start()
@@ -303,6 +315,7 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     private void Update()
     {
         if (EstaMuerto) return;
+        RecuperarSiCaeAlVacio();
         LeerInput();
         ActualizarCameraBob();
         ActualizarBlobShadow();
@@ -705,9 +718,12 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         if (_blobShadow == null) return;
 
         // Proyectar al suelo
+        // PERF FIX: usar la máscara ya cacheada en Awake (_maskSpringArm) en vez de
+        // LayerMask.GetMask() — éste es params string[], asignaba un array nuevo CADA
+        // frame (~60 allocs/seg) haciendo además string lookups. Misma máscara exacta.
         if (Physics.Raycast(transform.position + Vector3.up * 0.1f,
                             Vector3.down, out var hit, 4f,
-                            ~LayerMask.GetMask("Player", "Ignore Raycast")))
+                            _maskSpringArm))
         {
             _blobShadow.SetActive(true);
             _blobShadow.transform.position = hit.point + hit.normal * 0.015f;
@@ -874,6 +890,34 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     //  MOVIMIENTO DEL JUGADOR
     // ═══════════════════════════════════════════════════════════════════════
 
+    // Anti-caída al vacío: si el jugador queda por debajo del suelo (atravesó el
+    // terreno porque el TerrainCollider del tile aún no estaba en física al
+    // spawnear, o por un hueco entre tiles), recolocarlo sobre el suelo. Sin
+    // esto el personaje caía a Y≈-2144 y la cámara mostraba el vacío negro.
+    private float _timerAntiVacio;
+
+    private void RecuperarSiCaeAlVacio()
+    {
+        if (cc == null) return;
+        // PERF: AlturaMundo() es un lookup tile-aware del mosaico (no trivial) y aquí solo
+        // sirve de red de seguridad para el caso raro de atravesar el suelo. Comprobarlo
+        // ~10×/s en vez de 60×/s: en 0.1 s el jugador no cae más de ~0.5 m (margen 4 m).
+        _timerAntiVacio -= Time.deltaTime;
+        if (_timerAntiVacio > 0f) return;
+        _timerAntiVacio = 0.1f;
+
+        float ySuelo = TerrenoGlobal.AlturaMundo(transform.position);
+        if (ySuelo > -1000f && transform.position.y < ySuelo - 4f)
+        {
+            cc.enabled = false;
+            var p = transform.position;
+            p.y = ySuelo + 1.0f;
+            transform.position = p;
+            cc.enabled = true;
+            velVert.y = 0f;
+        }
+    }
+
     private void MoverJugador()
     {
         // Dirección relativa a la cámara (horizontal)
@@ -972,7 +1016,8 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             var clip = cfg.pasosHierba[Random.Range(0, cfg.pasosHierba.Length)];
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, transform.position, 0.5f);
+                // PERF: PlayOneShot sobre la fuente reutilizable — 0 allocs, 0 GameObjects.
+                _srcPasos.PlayOneShot(clip, 0.5f);
                 _timerPaso = intervalo;
                 return;
             }
@@ -1056,6 +1101,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         vida      = Mathf.Max(0, vida - cantidad);
         timerDano = 0.35f;
         OnDanoRecibido?.Invoke(cantidad);
+
+        // INFLUENCIA SOCIAL: ver al manifestante (jugador) recibir golpes radicaliza
+        // a la multitud cercana → evento de carga positiva (gravedad social).
+        InfluenciaSocial.Emitir(transform.position, 0.5f, 18f);
+
         if (vida <= 0) Morir();
     }
 

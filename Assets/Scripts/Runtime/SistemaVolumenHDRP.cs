@@ -44,6 +44,7 @@ public class SistemaVolumenHDRP : MonoBehaviour
     Fog               _fogDia;   // HDRP: VolumetricFog era internal; el público es Fog
     HDRISky           _skyDia;
     PhysicallyBasedSky _pbskyDia;
+    ProbeVolumesOptions _apvOpcionesDia; // APV: calidad/fugas GI (de facto global, ver CrearVolumenDia)
 
     // ── Efectos volumen noche ──────────────────────────────────────────────
     Bloom             _bloomNoche;
@@ -344,6 +345,19 @@ public class SistemaVolumenHDRP : MonoBehaviour
         _lensDirtTex = GenerarLensDirt();
         _bloomDia.dirtTexture.Override(_lensDirtTex);
         _bloomDia.dirtIntensity.Override(0f); // 0 en reposo; se sube desde SetLensDirt()
+
+        // ── Adaptive Probe Volumes — ajuste GLOBAL de calidad/fugas de la GI ──
+        // Va solo en el profile de día: el de noche no incluye este componente, así
+        // que esta config sigue activa con cualquier weight de noche (es de facto
+        // global). Con bricks gruesos en las sierras (ver ConstructorAPV), el ruido
+        // de muestreo rompe el banding y los bias reducen el light-leaking sin subir
+        // densidad de probes — que es lo que encarece VRAM/bake en un mundo de 14 km.
+        _apvOpcionesDia = p.Add<ProbeVolumesOptions>(true);
+        _apvOpcionesDia.leakReductionMode.Override(APVLeakReductionMode.Quality);
+        _apvOpcionesDia.normalBias.Override(0.2f);
+        _apvOpcionesDia.viewBias.Override(0.2f);
+        _apvOpcionesDia.samplingNoise.Override(0.15f);
+        _apvOpcionesDia.minValidDotProductValue.Override(0.1f);
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -20,12 +20,178 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
-public abstract class NPCBase : MonoBehaviour, IAgente
+public abstract class NPCBase : MonoBehaviour, IAgente, ISimulable, ITickable
 {
-    // IAgente
+    // IAgente (Posicion también satisface ISimulable)
     public Vector3 Posicion   => transform.position;
     public bool    EstaActivo => _agente != null && _agente.enabled && gameObject.activeInHierarchy;
     public virtual void Alertar(Vector3 origen) { }   // subclases sobreescriben si reaccionan
+
+    // ── Sim-LOD / orquestador ────────────────────────────────────────────────
+    protected NivelSim _nivelSim = NivelSim.Actor;
+    bool _orquestado;
+
+    public NivelSim Nivel => _nivelSim;
+
+    /// <summary>Tipo de esta entidad para el Omni-Grid mientras es Ghost.
+    /// La base es Manifestante; las subclases lo afinan (la policía → Policia).</summary>
+    protected virtual TipoEspacial TipoEspacialSim => TipoEspacial.Manifestante;
+
+    // El orquestador lee esto cada frame → la frecuencia baja sola con el nivel.
+    public Frecuencia Frecuencia => _nivelSim switch
+    {
+        NivelSim.Actor => Frecuencia.Hz30,
+        NivelSim.Proxy => Frecuencia.Hz5,
+        _              => Frecuencia.Hz1
+    };
+
+    /// <summary>Lo llama el orquestador (NO un Update propio): solo la IA pesada.</summary>
+    public void Tick(float dtAcumulado)
+    {
+        if (_agente == null || !_agente.enabled) return;
+        ActualizarComportamiento();
+    }
+
+    // ── Pool por desactivación (Ghost) ──────────────────────────────────────
+    // Renderers cacheados la primera vez que ghosteamos (no en Awake: muchos NPC
+    // nunca llegan a Ghost y no queremos pagar el GetComponentsInChildren de balde).
+    Renderer[] _renderers;
+    bool       _renderersCacheados;
+    bool       _aparcado;          // true mientras el GO está bajo el contenedor inactivo del pool
+    int        _slotGhost = -1;    // slot en PoolGhosts (capa de datos) mientras es Ghost; -1 = sin slot
+
+    // ── Omni-Grid ────────────────────────────────────────────────────────────
+    IUnifiedSpatialGrid _grid;     // publicamos nuestra posición cada frame mientras Actor/Proxy
+    int _idGrid;                   // id opaco (instanceID) para el grid
+
+    public virtual void AplicarNivel(NivelSim n)
+    {
+        if (_nivelSim == n) return;
+
+        bool entraGhost = n == NivelSim.Ghost && _nivelSim != NivelSim.Ghost;
+        bool saleGhost  = n != NivelSim.Ghost && _nivelSim == NivelSim.Ghost;
+
+        _nivelSim = n;
+
+        // Ghost con GameObject = pool por DESACTIVACIÓN (no Destroy → sin GC/picos).
+        // Apagamos los componentes pesados y aparcamos el GO bajo un contenedor
+        // inactivo; al promocionar lo reactivamos y reenganchamos el NavMeshAgent.
+        // (El Ghost SIN GameObject — fila en el NativeArray de la multitud BRG
+        //  calculada por un Job — es trabajo futuro; ver PoolNPCSimulacion.)
+        if (entraGhost)      EntrarGhost();
+        else if (saleGhost)  SalirGhost();
+        else
+        {
+            // Transición Actor↔Proxy: comportamiento visual de siempre.
+            // (El animador a ½ rate en Proxy lo decide Update(); aquí solo
+            //  garantizamos que esté encendido fuera de Ghost.)
+            if (_animator != null) _animator.enabled = true;
+        }
+
+        OnNivelSimCambiado(n);
+    }
+
+    /// <summary>Pasa a Ghost: apaga componentes pesados y aparca el GO en el pool inactivo.</summary>
+    void EntrarGhost()
+    {
+        // 0) Capturar el destino actual ANTES de apagar el agente → el ghost
+        //    "seguirá caminando" hacia allí en el NativeArray mientras esté aparcado.
+        Vector3 destinoGhost = transform.position;
+        if (_agente != null && _agente.enabled && _agente.hasPath)
+            destinoGhost = _agente.destination;
+
+        // 1) Apagar IA/navegación ANTES de aparcar (Warp futuro necesita un agente
+        //    que activamos al volver; aquí lo dejamos deshabilitado y limpio).
+        if (_agente != null && _agente.enabled)
+        {
+            if (_agente.isOnNavMesh) _agente.ResetPath();
+            _agente.enabled = false;
+        }
+
+        // 2) Apagar animador y renderers (invisible + sin coste de skinning).
+        if (_animator != null) _animator.enabled = false;
+        CachearRenderers();
+        if (_renderers != null)
+            for (int i = 0; i < _renderers.Length; i++)
+                if (_renderers[i] != null) _renderers[i].enabled = false;
+
+        // 3) Aparcar el GO bajo el contenedor inactivo del pool. Esto desactiva
+        //    toda la jerarquía (sin tocar activeSelf) → cero Update/físicas.
+        PoolNPCSimulacion.ObtenerOCrear().Aparcar(this);
+        _aparcado = true;
+
+        // 4) Registrar en la capa de datos: un Job Burst hará derivar su posición
+        //    @1 Hz mientras el GO está congelado (Pilar 2 — Ghost como dato puro).
+        //    Si el servicio no existe, _slotGhost queda -1 y el comportamiento es el de antes.
+        var poolDatos = ServiceLocator.Get<IPoolGhosts>();
+        if (poolDatos != null)
+            _slotGhost = poolDatos.Registrar(transform.position, destinoGhost,
+                                             Mathf.Max(0.3f, velocidadBase), TipoEspacialSim);
+    }
+
+    /// <summary>Promociona desde Ghost: reactiva el GO, re-enciende componentes y reengancha el agente.</summary>
+    void SalirGhost()
+    {
+        // 0) Recuperar la posición que el ghost SIMULÓ mientras estuvo aparcado y
+        //    teletransportar el GO ahí (la Y la re-fija el SamplePosition/Warp de
+        //    abajo). Así reaparece "donde habría caminado", no donde se durmió.
+        var poolDatos = ServiceLocator.Get<IPoolGhosts>();
+        if (poolDatos != null && _slotGhost >= 0)
+        {
+            if (poolDatos.LeerPos(_slotGhost, out Vector3 posSim))
+                transform.position = new Vector3(posSim.x, transform.position.y, posSim.z);
+            poolDatos.Liberar(_slotGhost);
+            _slotGhost = -1;
+        }
+
+        // 1) Sacar del pool → el GO vuelve a estar activo en jerarquía.
+        if (_aparcado)
+        {
+            var pool = PoolNPCSimulacion.Instance;
+            if (pool != null) pool.Reactivar(this);
+            else              transform.SetParent(null, true); // pool desaparecido: degradación segura
+            _aparcado = false;
+        }
+
+        // 2) Re-encender renderers y animador.
+        if (_renderers != null)
+            for (int i = 0; i < _renderers.Length; i++)
+                if (_renderers[i] != null) _renderers[i].enabled = true;
+        if (_animator != null) _animator.enabled = true;
+
+        // 3) Reenganchar el NavMeshAgent. Warp recoloca el agente en el NavMesh sin
+        //    arrastrar el path viejo (que apunta a donde estaba al ghostearse).
+        //    RIESGO: si el punto actual NO está sobre NavMesh, Warp falla y el agente
+        //    queda flotando; por eso muestreamos primero el NavMesh más cercano.
+        if (_agente != null)
+        {
+            if (!SistemaNavMesh.EstaListo)
+            {
+                // NavMesh aún no horneado: que ActivarAgente lo retome cuando esté.
+                SistemaNavMesh.OnNavMeshListo -= ActivarAgente;
+                SistemaNavMesh.OnNavMeshListo += ActivarAgente;
+                return;
+            }
+
+            Vector3 destino = transform.position;
+            if (NavMesh.SamplePosition(destino, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+                destino = hit.position;
+
+            _agente.enabled = true;
+            if (_agente.isOnNavMesh) _agente.Warp(destino);
+            else                     _agente.Warp(transform.position);
+        }
+    }
+
+    void CachearRenderers()
+    {
+        if (_renderersCacheados) return;
+        _renderers = GetComponentsInChildren<Renderer>(true);
+        _renderersCacheados = true;
+    }
+
+    /// <summary>Hook para subclases (p.ej. la policía apaga la linterna en Ghost).</summary>
+    protected virtual void OnNivelSimCambiado(NivelSim n) { }
 
     [Header("Modelo")]
     [Tooltip("Prefab visual del NPC. Si null se llama a CrearCuerpoFallback().")]
@@ -62,6 +228,20 @@ public abstract class NPCBase : MonoBehaviour, IAgente
     protected virtual void Start()
     {
         SistemaIA.Registrar(this);
+
+        // Omni-Grid: cacheamos el servicio y un id opaco para publicarnos cada frame.
+        _grid   = ServiceLocator.Get<IUnifiedSpatialGrid>();
+        _idGrid = gameObject.GetInstanceID();
+
+        // Inversión de control: si el Director está activo, NO nos auto-actualizamos
+        // en Update — nos suscribimos y él decide cuándo y a qué frecuencia (Sim-LOD).
+        var orq = GlobalSimulationOrchestrator.Instancia;
+        if (orq != null && orq.Config.orquestarNPCs)
+        {
+            orq.Registrar((ITickable)this);
+            orq.Registrar((ISimulable)this);
+            _orquestado = true;
+        }
 
         // Prioridad: AltsasuCore.Jugador (O(1)) antes que FindGameObjectWithTag
         var jugadorT = AltsasuCore.Jugador;
@@ -101,14 +281,36 @@ public abstract class NPCBase : MonoBehaviour, IAgente
         SistemaNavMesh.OnNavMeshListo      -= ActivarAgente;
         AltsasuCore.OnJugadorSpawned       -= CacharJugadorDesdeEvento;
         SistemaIA.Desregistrar(this);
+
+        if (_orquestado)
+        {
+            var orq = GlobalSimulationOrchestrator.Instancia;
+            if (orq != null) { orq.Desregistrar((ITickable)this); orq.Desregistrar((ISimulable)this); }
+        }
+
+        // Liberar el slot de ghost si se destruye estando aparcado (evita fugas).
+        if (_slotGhost >= 0)
+        {
+            ServiceLocator.Get<IPoolGhosts>()?.Liberar(_slotGhost);
+            _slotGhost = -1;
+        }
     }
 
     protected virtual void Update()
     {
         if (!_agente.enabled) return;
+        if (_nivelSim == NivelSim.Ghost) return;                 // sin representación: nada visual
+
+        // Publicar al Omni-Grid (immediate-mode): IA/jugador/otros nos "ven" en O(1).
+        // Los Ghost NO pasan por aquí (van por la vía retenida de PoolGhosts).
+        _grid?.Submit(new SpatialData { pos = transform.position, id = _idGrid, tipo = TipoEspacialSim, radio = 0.4f });
+
         ActualizarRotacion();
-        ActualizarAnimador();
-        ActualizarComportamiento();
+        // En Proxy, animador a mitad de framerate (lejos no se nota).
+        if (_nivelSim != NivelSim.Proxy || (Time.frameCount & 1) == 0) ActualizarAnimador();
+
+        // La IA pesada solo aquí si NO hay Director; con Director la conduce Tick().
+        if (!_orquestado) ActualizarComportamiento();
     }
 
     // ════════════════════════════════════════════════════════════════════════

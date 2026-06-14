@@ -32,6 +32,30 @@ public class OptimizadorVisualHDRP : MonoBehaviour
     int _lodsAnadidos;
     int _matsOptimizados;
 
+    // ── Forzar nivel de calidad HDRP "Balanced" al arrancar ──────────────────
+    // El diagnóstico mostraba "Quality level: 0 (High Fidelity)" = el nivel MÁS caro
+    // de HDRP. El proyecto usa el perfil "HDRP Balanced" (CLAUDE.md). Lo forzamos por
+    // NOMBRE (el índice puede variar entre máquinas) lo antes posible tras cargar escena.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void ForzarCalidadBalanced()
+    {
+        var nombres = QualitySettings.names;
+        int actual  = QualitySettings.GetQualityLevel();
+        for (int i = 0; i < nombres.Length; i++)
+        {
+            if (nombres[i].IndexOf("Balanc", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            if (actual != i)
+            {
+                AlsasuaLogger.Info("OptimizadorVisual",
+                    $"Calidad HDRP forzada: '{nombres[actual]}' (nivel {actual}) → '{nombres[i]}' (nivel {i}).");
+                QualitySettings.SetQualityLevel(i, true);
+            }
+            return;
+        }
+        AlsasuaLogger.Warn("OptimizadorVisual",
+            "No hay nivel de calidad con 'Balanced' en Project Settings > Quality — no se cambió.");
+    }
+
     void Start()
     {
         StartCoroutine(OptimizarTodo());
@@ -48,6 +72,9 @@ public class OptimizadorVisualHDRP : MonoBehaviour
         yield return StartCoroutine(ConfigurarLODsProps());
         yield return null;
         ActivarOcclusionCulling();
+        // Reactivado: las sombras de point/spot son la ganancia de FPS y NO causan el
+        // problema visual (ése es Cesium, subsistema aparte). Sol direccional conserva sombras.
+        OptimizarLucesYSombras();
         ConfigurarSombrasOptimas();
         AuditarPerfilHDRPBalanced();
 
@@ -227,6 +254,39 @@ public class OptimizadorVisualHDRP : MonoBehaviour
     }
 
     // ════════════════════════════════════════════════════════════════════════
+    //  C2. LUCES Y SOMBRAS REALTIME  (lo más caro de HDRP)
+    // ════════════════════════════════════════════════════════════════════════
+    //  En HDRP cada luz que castea sombra = un render pass extra al shadow atlas.
+    //  Decenas de farolas + linternas de policía con sombras realtime hunden el
+    //  framerate de noche. Quitamos las sombras a TODAS las luces salvo el sol
+    //  (directional): la farola sigue iluminando, solo deja de proyectar sombra.
+    //  Nota: este pase es único; las luces que nacen después (p.ej. linternas de
+    //  policías que spawnean más tarde) se desactivan en su propia fuente
+    //  (PoliciaForalIA.OnStart → linterna.shadows = None).
+
+    void OptimizarLucesYSombras()
+    {
+        var luces = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+        int quitadas = 0, conservadas = 0;
+        foreach (var l in luces)
+        {
+            if (l == null) continue;
+
+            // El sol/luna (directional) conserva sombras: es la luz clave de la escena.
+            if (l.type == LightType.Directional) { conservadas++; continue; }
+
+            // Farolas, linternas, point/spot decorativas → sin sombras realtime.
+            if (l.shadows != LightShadows.None)
+            {
+                l.shadows = LightShadows.None;
+                quitadas++;
+            }
+        }
+        AlsasuaLogger.Info("OptimizadorVisual",
+            $"Sombras realtime desactivadas en {quitadas} luces (point/spot); {conservadas} direccionales conservadas.");
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
     //  D. OCCLUSION CULLING EN CÁMARA
     // ════════════════════════════════════════════════════════════════════════
 
@@ -235,15 +295,24 @@ public class OptimizadorVisualHDRP : MonoBehaviour
         var cam = Camera.main;
         if (cam == null) return;
 
+        // NOTA: useOcclusionCulling solo surte efecto con datos de occlusion BAKEADOS.
+        // En un mundo generado en runtime no hay bake → la oclusión real la hacen los
+        // LODGroups con banda de culling (veg, props y ahora edificios) por distancia.
         cam.useOcclusionCulling = true;
 
-        // HDRP: configurar culling mask para excluir capas innecesarias del culling
-        // (layer 0 = Default, queremos culling en todo excepto UI)
-        cam.cullingMask = ~(1 << LayerMask.NameToLayer("UI"));
+        // Culling mask: excluir UI del culling de cámara. Guardado contra capa inexistente
+        // (NameToLayer devuelve -1 → 1<<-1 corrompería la máscara).
+        int capaUI = LayerMask.NameToLayer("UI");
+        if (capaUI >= 0) cam.cullingMask = ~(1 << capaUI);
 
-        // Frustum culling extra: reducir near/far para evitar overdraw
         cam.nearClipPlane = Mathf.Max(cam.nearClipPlane, 0.3f);
-        cam.farClipPlane  = Mathf.Min(cam.farClipPlane, 3000f);
+        // REVERTIDO: re-instaurado el clamp del far plane a 3000 m. Quitarlo reveló el
+        // fondo lejano (tiles Cesium / montes) que se veía como "una capa por encima"
+        // solapando el terreno LIDAR jugable (suelo verde pintado, jugador medio enterrado,
+        // assets tapados). El clamp original ocultaba ese fondo a propósito. Si en el futuro
+        // se quieren las montañas a 50 km hay que resolver primero el anclaje/exclusión del
+        // fondo Cesium — NO simplemente subir el far plane.
+        cam.farClipPlane = Mathf.Min(cam.farClipPlane, 3000f);
 
         AlsasuaLogger.Info("OptimizadorVisual", "Occlusion Culling activado en Camera.main");
     }
