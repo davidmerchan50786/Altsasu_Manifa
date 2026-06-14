@@ -68,13 +68,21 @@ public sealed class ImportadorTexturasVT : AssetPostprocessor
     {
         if (!EsTexturaVT(assetPath)) return;
 
+        // CRÍTICO (fix OOM en bucle): los ajustes de VT —maxTextureSize 8192 +
+        // mipmap streaming OFF (todos los mips residentes)— SOLO son seguros y
+        // útiles cuando SVT está REALMENTE activado. Con SVT desactivado (estado
+        // por defecto), forzar eso sobre la ortofoto completa (30 MB → varios GB al
+        // descomprimir) revienta el importador en CADA refresh → crash loop del editor.
+        // Sin SVT: no-op (la textura se importa con sus ajustes normales del .meta).
+        if (!PlayerSettings.GetVirtualTexturingSupportEnabled()) return;
+
         var ti = (TextureImporter)assetImporter;
         ti.mipmapEnabled      = true;
-        ti.streamingMipmaps   = false;                                  // ← clave: SVT, no mipmap streaming
+        ti.streamingMipmaps   = false;                                  // ← SVT gestiona el streaming
         ti.isReadable         = false;
         ti.wrapMode           = TextureWrapMode.Clamp;
         ti.textureCompression = TextureImporterCompression.CompressedHQ;
-        ti.maxTextureSize     = 8192;
+        ti.maxTextureSize     = 4096;                                   // 8192 de la ortofoto completa es excesivo
         // sRGB para color (albedo/ortofoto). Para normales/mask habría que poner
         // sRGBTexture=false y el tipo adecuado; aquí tratamos color.
         ti.sRGBTexture        = true;
