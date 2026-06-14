@@ -134,7 +134,7 @@ namespace Alsasua.Crowd
 
         RenderizadorMultitudBRG _render;
         ITerrainService _terreno;
-        IUnifiedSpatialGrid _grid;          // conciencia cruzada (policías) si usarGridParaPolicias
+        IUnifiedSpatialGrid _gridUni;       // Omni-Grid: conciencia cruzada (policías) si usarGridParaPolicias
         NativeList<float3> _antagGridBuf;   // buffer de posiciones de policías leídas del grid
 
         Mesh     _meshPropio;     // creado por código → destruir
@@ -159,7 +159,7 @@ namespace Alsasua.Crowd
         {
             _n = Mathf.Clamp(cantidadAgentes, 1, 20000);
             _terreno = ServiceLocator.Get<ITerrainService>();
-            _grid    = ServiceLocator.Get<IUnifiedSpatialGrid>();
+            _gridUni = ServiceLocator.Get<IUnifiedSpatialGrid>();
 
             float cellSize = Mathf.Max(radioSeparacion, radioCohesion, radioAlineacion);
             _invCell = 1f / cellSize;
@@ -348,12 +348,12 @@ namespace Alsasua.Crowd
                 }
                 _nEventos = ne;
 
-                if (usarGridParaPolicias && _grid != null && _grid.Listo)
+                if (usarGridParaPolicias && _gridUni != null && _gridUni.Listo)
                 {
                     // Conciencia cruzada vía Omni-Grid: los policías están en el grid
                     // (NPCBase se publica solo) → no hace falta el push manual.
-                    _grid.QueryRadioPos((float3)transform.position, radioGridPolicias,
-                                        TipoEspacial.Policia, _antagGridBuf);
+                    _gridUni.QueryRadioPos((float3)transform.position, radioGridPolicias,
+                                           TipoEspacial.Policia, _antagGridBuf);
                     int m = math.min(_antagGridBuf.Length, MAX_ANTAGONIST);
                     for (int k = 0; k < m; k++) _antagonistas[k] = _antagGridBuf[k];
                     _nAntagonistas = m;
