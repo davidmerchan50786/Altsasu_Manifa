@@ -42,10 +42,16 @@ public class SistemaFootIK : MonoBehaviour
     Animator _anim;
     bool _humanoide;
 
+    // Consumidor de la Locomoción (si el GO la tiene): atenúa el Foot IK al correr y
+    // lo anula en el aire. ILocomocionAvanzada es contrato Core → layer-safe (GetComponent).
+    ILocomocionAvanzada _loco;
+    float _mulFase = 1f;
+
     void Awake()
     {
         _anim = GetComponent<Animator>();
         _humanoide = _anim != null && _anim.isHuman;
+        _loco = GetComponent<ILocomocionAvanzada>();   // null en NPCs sin locomoción → peso pleno
         if (!_humanoide)
         {
             AlsasuaLogger.Info("FootIK", "Animator no humanoide — Foot IK desactivado (auto-no-op).");
@@ -57,8 +63,23 @@ public class SistemaFootIK : MonoBehaviour
     void OnAnimatorIK(int layer)
     {
         if (!_humanoide) return;
+        _mulFase = MultiplicadorFase();   // atenúa el plantado según la fase de locomoción
         ResolverPie(AvatarIKGoal.LeftFoot,  HumanBodyBones.LeftFoot);
         ResolverPie(AvatarIKGoal.RightFoot, HumanBodyBones.RightFoot);
+    }
+
+    // Peso del Foot IK según la fase: pleno andando/quieto, atenuado al correr, nulo en
+    // el aire (el pie no debe pegarse al suelo durante un salto/caída).
+    float MultiplicadorFase()
+    {
+        if (_loco == null) return 1f;
+        switch (_loco.Fase)
+        {
+            case FaseLocomocion.EnAire:
+            case FaseLocomocion.Saltando:  return 0f;
+            case FaseLocomocion.Corriendo: return 0.5f;
+            default:                       return 1f;
+        }
     }
 
     void ResolverPie(AvatarIKGoal goal, HumanBodyBones hueso)
@@ -96,11 +117,11 @@ public class SistemaFootIK : MonoBehaviour
             return;
         }
 
-        _anim.SetIKPositionWeight(goal, pesoPosicion);
+        _anim.SetIKPositionWeight(goal, pesoPosicion * _mulFase);
         _anim.SetIKPosition(goal, new Vector3(ppie.x, ySuelo + offsetSuelo, ppie.z));
 
         Quaternion rot = Quaternion.FromToRotation(Vector3.up, nSuelo) * _anim.GetIKRotation(goal);
-        _anim.SetIKRotationWeight(goal, pesoRotacion);
+        _anim.SetIKRotationWeight(goal, pesoRotacion * _mulFase);
         _anim.SetIKRotation(goal, rot);
     }
 

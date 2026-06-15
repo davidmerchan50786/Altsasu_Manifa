@@ -118,7 +118,11 @@ public class SistemaAmbientParticulas : MonoBehaviour
 
         // Consumidor del tier de calidad: en modo Performance (tier 3) las
         // partículas ambiente (puro eye-candy) se apagan para recuperar frame.
-        bool permitidoPorCalidad = SistemaOptimizacion.TierCalidad < 3;
+        // + Degrade DINÁMICO: respeta el FactorCarga del orquestador → si el frame se
+        //   va de presupuesto (caída de 60 fps), se pausan antes de que se note el tirón.
+        var orq = GlobalSimulationOrchestrator.Instancia;
+        bool hayHolgura = orq == null || orq.FactorCarga >= orq.Config.productoresPausaFactor;
+        bool permitidoPorCalidad = SistemaOptimizacion.TierCalidad < 3 && hayHolgura;
 
         for (int i = 0; i < _zonas.Count; i++)
         {
