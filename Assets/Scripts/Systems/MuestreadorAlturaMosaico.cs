@@ -101,13 +101,30 @@ public sealed class MuestreadorAlturaMosaico : MonoBehaviour, IMuestreadorAltura
             if ((Time.realtimeSinceStartup - t0) * 1000f > 8f) { yield return null; t0 = Time.realtimeSinceStartup; }
         }
 
+        // ── GATE de auto-validación ("no registrar sin verde", como el gate Python) ──
+        // Como esto va a ser la fuente de altura de TODO el juego, comprobamos la cota
+        // de Herriko Plaza contra la verdad validada del proyecto. Si el decode/lookup
+        // estuviera mal, la cota se iría decenas de metros → NO registramos y el juego
+        // sigue con ITerrainService/TerrenoGlobal (fallback seguro, cero regresión).
+        float yPlaza   = MuestrearInterno(GeoDataAlsasua.OX, GeoDataAlsasua.OZ);
+        float cotaReal = yPlaza + _man.datumYBase;
+        float error    = Mathf.Abs(cotaReal - GeoDataAlsasua.COTA_PLAZA);
+        if (error > 3f)
+        {
+            AlsasuaLogger.Error("MuestreadorAltura",
+                $"Auto-validación FALLÓ: cota plaza={cotaReal:F2} m vs esperada " +
+                $"{GeoDataAlsasua.COTA_PLAZA:F2} m (error {error:F1} m > 3 m). NO se registra; " +
+                "el juego sigue con ITerrainService/TerrenoGlobal (fallback seguro).");
+            yield break;
+        }
+
         Listo = true;
         ServiceLocator.Registrar<IMuestreadorAlturaPrecisa>(this);
 
         if (logarCarga)
             AlsasuaLogger.Info("MuestreadorAltura",
-                $"Muestreador listo: {_man.tiles.Count} tiles, " +
-                $"{bytesTotales / (1024f * 1024f):F1} MB en RAM.");
+                $"Muestreador listo: {_man.tiles.Count} tiles, {bytesTotales / (1024f * 1024f):F1} MB; " +
+                $"cota plaza {cotaReal:F2} m (✓ vs {GeoDataAlsasua.COTA_PLAZA:F2} m).");
     }
 
     void OnDestroy()
@@ -149,6 +166,14 @@ public sealed class MuestreadorAlturaMosaico : MonoBehaviour, IMuestreadorAltura
     public float AlturaMundo(float x, float z)
     {
         if (!Listo || _man == null) return 0f;
+        return MuestrearInterno(x, z);
+    }
+
+    // Igual que AlturaMundo pero SIN exigir Listo → lo usa la auto-validación antes
+    // de registrar el servicio (cuando Listo aún es false pero los RAW ya están en RAM).
+    float MuestrearInterno(float x, float z)
+    {
+        if (_man == null) return 0f;
 
         if (!TileEn(x, z, out int idxTile, out var def))
             return _man.datumYBase;       // fuera del mosaico

@@ -20,11 +20,11 @@ using UnityEngine;
 
 public sealed class BootstrapMuestreadorAltura : MonoBehaviour
 {
-    [Tooltip("Activa el muestreador bit-exacto del Mosaico V3 Fase 0 (~126 MB RAM, " +
-             "carga en background). OFF por defecto: el juego sigue usando " +
-             "ITerrainService/TerrenoGlobal (Terrain.SampleHeight) sin cambios.")]
-    // TEMPORAL (2026-06-15): activado a true para la primera prueba en Play de
-    // esta sesión. Revertir a 'false' tras validar (ver Docs/arquitectura_mosaico_v3.md §8).
+    [Tooltip("Activa el muestreador de altura bit-exacto (Mosaico V3 Fase 0): carga el RAW " +
+             "lattice 1/64 en RAM (~126 MB en background) y, si AUTO-VALIDA contra la cota " +
+             "de Herriko Plaza, pasa a ser la fuente de altura de TODO el juego (más preciso " +
+             "y determinista que Terrain.SampleHeight). Si la validación falla, se " +
+             "auto-desactiva y el juego sigue con ITerrainService (fallback seguro).")]
     [SerializeField] bool activar = true;
 
     void Start()

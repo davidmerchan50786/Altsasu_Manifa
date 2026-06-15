@@ -85,8 +85,17 @@ public class ServicioTerreno : MonoBehaviour, ITerrainService
         return Terreno; // terreno único o null (plano)
     }
 
+    IMuestreadorAlturaPrecisa _muestreadorPrecis;
+
     public float AlturaMundo(Vector3 pos)
     {
+        // Preferir el muestreo bit-exacto (Mosaico V3 Fase 0) si está activo y validado.
+        // Cachea la primera referencia no-nula (el servicio se registra async tras cargar
+        // los RAW); mientras no exista, sigue el camino Terrain.SampleHeight de siempre.
+        _muestreadorPrecis ??= ServiceLocator.Get<IMuestreadorAlturaPrecisa>();
+        if (_muestreadorPrecis != null && _muestreadorPrecis.Listo)
+            return _muestreadorPrecis.AlturaMundo(pos);
+
         var t = TerrainEn(pos) ?? Terreno;
         if (t != null)
             return t.SampleHeight(pos) + t.transform.position.y;

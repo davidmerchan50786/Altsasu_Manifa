@@ -25,6 +25,13 @@ public static class TerrenoGlobal
     /// 0 solo si no hay ni servicio ni Terrain activo.</summary>
     public static float AlturaMundo(Vector3 posicionMundo)
     {
+        // Preferir el muestreo matemático bit-exacto (Mosaico V3 Fase 0) si está activo
+        // y AUTO-VALIDADO: Terrain.SampleHeight con el mosaico devuelve un tile arbitrario
+        // (ver CLAUDE.md); el muestreador lee el RAW lattice 1/64 → correcto y determinista.
+        var precis = ServiceLocator.Get<IMuestreadorAlturaPrecisa>();
+        if (precis != null && precis.Listo)
+            return precis.AlturaMundo(posicionMundo);
+
         var svc = ServiceLocator.Get<ITerrainService>();
         if (svc != null)
             return svc.AlturaMundo(posicionMundo);
