@@ -48,14 +48,23 @@ public sealed class DiagnosticoRendimiento : MonoBehaviour
         sb.AppendLine($"[DIAG] GPU: {SystemInfo.graphicsDeviceName} | {SystemInfo.graphicsMemorySize} MB VRAM | API {SystemInfo.graphicsDeviceType}");
         sb.AppendLine($"[DIAG] CPU: {SystemInfo.processorType} x{SystemInfo.processorCount} | RAM {SystemInfo.systemMemorySize} MB");
 
-        var rends = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+        var rends = FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         int mesh = 0, skinned = 0, otros = 0;
+        // Desglose de renderers DIBUJANDO por raíz de escena → revela dónde está la masa.
+        var porRaiz = new System.Collections.Generic.Dictionary<string, int>(128);
         for (int i = 0; i < rends.Length; i++)
         {
-            if (!rends[i].enabled) continue;
-            if (rends[i] is MeshRenderer)             mesh++;
-            else if (rends[i] is SkinnedMeshRenderer) skinned++;
-            else                                      otros++;
+            var r = rends[i];
+            // "Dibujando" = el cull del streamer usa forceRenderingOff (deja enabled=true).
+            if (!r.enabled || r.forceRenderingOff || !r.gameObject.activeInHierarchy) continue;
+            if (r is MeshRenderer)             mesh++;
+            else if (r is SkinnedMeshRenderer) skinned++;
+            else                               otros++;
+
+            var t = r.transform;
+            while (t.parent != null) t = t.parent;   // raíz de escena
+            porRaiz.TryGetValue(t.name, out int c);
+            porRaiz[t.name] = c + 1;
         }
 
         int lucesSombra = 0, lucesTotal = 0;
@@ -73,7 +82,16 @@ public sealed class DiagnosticoRendimiento : MonoBehaviour
 
         int multitud = ServiceLocator.Get<ICrowdDensity>()?.TotalAgentes ?? -1;
 
-        sb.AppendLine($"[DIAG] Renderers ACTIVOS: {mesh + skinned + otros}  (Mesh {mesh}, Skinned {skinned}, otros {otros})");
+        sb.AppendLine($"[DIAG] Renderers DIBUJANDO: {mesh + skinned + otros}  (Mesh {mesh}, Skinned {skinned}, otros {otros})");
+
+        // Top contenedores por renderers dibujando: aquí se ve si la masa (los ~77k)
+        // está en raíces que el streamer NO gestiona (denylist mal puesta) o si ya las coge.
+        var topRaices = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(porRaiz);
+        topRaices.Sort((a, b) => b.Value.CompareTo(a.Value));
+        sb.Append("[DIAG] Top raíces (renderers dibujando):");
+        for (int i = 0; i < topRaices.Count && i < 12; i++)
+            sb.Append($" {topRaices[i].Key}={topRaices[i].Value};");
+        sb.AppendLine();
         sb.AppendLine($"[DIAG] Luces activas: {lucesTotal}  ·  CON SOMBRA: {lucesSombra}");
         sb.AppendLine($"[DIAG] Terrains activos: {terrains}  ·  ParticleSystems: {pss.Length} (emitiendo {psEmitiendo})");
         sb.AppendLine($"[DIAG] Multitud (ICrowdDensity): {(multitud >= 0 ? multitud.ToString() : "no registrada")}");
@@ -87,7 +105,7 @@ public sealed class DiagnosticoRendimiento : MonoBehaviour
             : "[DIAG] Render gob: NO registrado");
         var streamer = FindFirstObjectByType<StreamerMundoEstatico>();
         sb.AppendLine(streamer != null
-            ? $"[DIAG] Streamer mundo: {streamer.Gestionados} gestionados (Activo {streamer.CuentaEstado(0)}, Impostor {streamer.CuentaEstado(1)}, Oculto {streamer.CuentaEstado(2)})"
+            ? $"[DIAG] Streamer mundo: {streamer.Gestionados} gestionados (Activo {streamer.CuentaEstado(0)}, Impostor {streamer.CuentaEstado(1)}, Oculto {streamer.CuentaEstado(2)}) · pendientes {streamer.Pendientes}"
             : "[DIAG] Streamer mundo: NO presente");
 
         sb.AppendLine($"[DIAG] FPS aprox: {(Time.unscaledDeltaTime > 0f ? 1f / Time.unscaledDeltaTime : 0f):F1}  (frame {Time.unscaledDeltaTime * 1000f:F0} ms)");

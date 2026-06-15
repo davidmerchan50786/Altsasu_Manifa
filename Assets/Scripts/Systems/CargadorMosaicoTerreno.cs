@@ -226,12 +226,23 @@ public class CargadorMosaicoTerreno : MonoBehaviour
                 t0 = Time.realtimeSinceStartup;
             }
         }
+        // Las DOS llamadas síncronas pesadas que quedan (SyncHeightmap y
+        // CreateTerrainGameObject) NO se pueden trocear, pero sí AISLAR en frames
+        // propios: encadenadas tras un frame ya caro (render del mundo) sumaban frames
+        // de varios segundos → Windows marcaba "No responde". Un yield antes de cada una
+        // garantiza ≤1 construcción de Terrain por frame y le da al frame anterior su
+        // oportunidad de presentarse (mantiene vivo el message pump del SO).
+        yield return null;
         sw.Restart();
         td.SyncHeightmap();
-        msCosido += (float)sw.Elapsed.TotalMilliseconds;
+        float msSync = (float)sw.Elapsed.TotalMilliseconds;
+        msCosido += msSync;
         td.terrainLayers = _capasCompartidas;
 
+        yield return null;
+        sw.Restart();
         var go = Terrain.CreateTerrainGameObject(td);
+        float msCreate = (float)sw.Elapsed.TotalMilliseconds;
         go.name = $"Tile_{Path.GetFileNameWithoutExtension(def.file)}";
         go.transform.position = new Vector3(def.x, def.y, def.z);
         go.layer = CAPA_TERRENO;
@@ -266,6 +277,16 @@ public class CargadorMosaicoTerreno : MonoBehaviour
         if (def.x <= ch.OX && ch.OX <= def.x + def.ancho &&
             def.z <= ch.OZ && ch.OZ <= def.z + def.ancho && TileAncla == null)
             TileAncla = terr;
+
+        // Instrumentación: si un tile costó caro en el hilo principal, lo decimos para
+        // saber qué fase domina el "No responde" (Sync vs Create vs cosido de SetHeights).
+        if (msSync + msCreate > 40f)
+            AlsasuaLogger.Info("Mosaico",
+                $"Tile {go.name} (anillo {def.anillo}, res {res}) caro: " +
+                $"Create {msCreate:F0} ms · Sync {msSync:F0} ms · SetHeights {(msCosido - msSync):F0} ms");
+
+        // Frame limpio antes del siguiente tile: aísla su construcción síncrona.
+        yield return null;
     }
 
     void DescomponerIndice(MosaicoManifest.TileDef def, out int fila, out int col)
