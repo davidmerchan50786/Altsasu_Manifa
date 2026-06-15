@@ -47,18 +47,26 @@ public static class HorneadorCiudad
     const float LOD0_HASTA = 0.30f;   // por encima de 30% de pantalla → HD
     const float LOD1_HASTA = 0.045f;  // entre 30% y 4.5% → HLOD; por debajo → cull
 
+    // DENYLIST por OBJETO/contenido dinámico — NO por nombre de manager/contenedor.
+    // (Lección del [DIAG]: los ~90k renderers cuelgan de "GameManager"; filtrar por
+    //  "manager" en la cadena de padres saltaba TODA la ciudad. Ahora solo excluimos
+    //  lo que de verdad NO es geometría estática de mundo.)
     static readonly string[] DENY = {
+        // Terreno / naturaleza / agua → otros sistemas (terreno = caída libre si se oculta)
         "terrain", "terreno", "mosaico",
         "arbol", "arboles", "árbol", "vegetacion", "vegetación", "tree", "grass", "hierba",
-        "agua", "water", "river", "rio", "río", "charco",
-        "player", "jugador", "camera", "cámara", "camara", "cam",
-        "light", "luz", "sun", "sol",
-        "canvas", "hud", "ui", "eventsystem", "audio",
+        "agua", "water", "river", "río", "charco",      // ("rio" suelto evitado: choca con "barrio")
+        // Dinámicos: jugador, NPCs, multitud, vehículos
+        "player", "jugador", "npc", "civil", "peaton", "peatón",
+        "manifestante", "multitud", "crowd",
+        "vehiculo", "vehículo", "coche",                // ("car" suelto evitado: choca con "carretera")
+        // Cámara / luces / efectos / UI / Cesium
+        "camera", "cámara", "light", "luz", "sun", "sol",
+        "particle", "particula", "partícula", "vfx",
+        "canvas", "eventsystem", "hud",
         "cesium", "georeference",
-        "navmesh", "streamer", "sistema", "manager", "director", "diagnostic", "diagnóstico",
-        "vehiculo", "vehículo", "coche", "car", "npc", "civil", "peaton", "peatón",
-        "multitud", "crowd", "manifest", "particle", "particula", "partícula", "fx", "vfx",
-        "ciudadhorneada", "_zonas_",
+        // La propia salida del horneado (no re-hornear)
+        "ciudadhorneada",
     };
 
     [System.Serializable] struct CeldaManifest { public int cx, cz; public float centroX, centroZ; public string prefab; public int materiales; }
