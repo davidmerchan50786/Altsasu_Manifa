@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/SceneBootstrapper.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  SCENE BOOTSTRAPPER — Hace el juego jugable en Play aunque falten prefabs
@@ -650,6 +651,7 @@ public class SceneBootstrapper : MonoBehaviour
         Add<SistemaAPVScenarios>();            // GI día/noche (APV) — se desactiva si no hay APV
         Add<AplicadorTexturasReales>();        // fachadas PBR desde fotos reales (no-op sin reporte)
         Add<HUDSistemas>();                    // F3: overlay de debug + toasts del director
+        Add<BootstrapMuestreadorAltura>();     // Mosaico V3 Fase 0 (opt-in, OFF por defecto)
         // FIX (jun 2026): SistemaChunks vive en Alsasua.Systems y AltsasuCore
         // (Runtime) no puede crearlo — solo lo creaba el menú de editor, así que
         // el check F1 "SistemaChunks" fallaba siempre en escenas auto-generadas.

@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/PosicionadorPrecisionUrbana.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  POSICIONADOR DE PRECISIÓN URBANA

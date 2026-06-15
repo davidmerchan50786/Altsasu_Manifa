@@ -1,3 +1,4 @@
+#pragma warning disable CS0618, CS0414 // CS0618: API HDRP obsoleta; CS0414: _aaaDir [SerializeField] reservado sin consumir
 using System;
 using System.Collections;
 using System.Collections.Generic;

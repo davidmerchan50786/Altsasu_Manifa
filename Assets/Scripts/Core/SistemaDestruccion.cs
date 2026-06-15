@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // SistemaDestruccion.cs
 // Fuego, cristales rotos, coches volando y calcinados.
 // Cóctel molotov, bomba lapa, coche bomba.

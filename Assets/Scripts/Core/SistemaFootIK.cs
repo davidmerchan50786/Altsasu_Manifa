@@ -68,10 +68,14 @@ public class SistemaFootIK : MonoBehaviour
 
         Vector3 ppie = pie.position;
 
-        // ── Suelo BASE: matemático (TerrenoGlobal, capa Core). Siempre disponible y
-        //    tile-aware; funciona aunque NO exista TerrainCollider (Mosaico V3 GPU). ──
-        float   ySuelo = TerrenoGlobal.AlturaMundo(ppie.x, ppie.z);
-        Vector3 nSuelo = NormalTerreno(ppie.x, ppie.z);
+        // ── Suelo BASE: matemático. Si el Mosaico V3 (IMuestreadorAlturaPrecisa) está
+        //    activo, usa su muestreo bit-exacto del RAW lattice (más preciso, sin
+        //    Terrain); si no, TerrenoGlobal (Terrain.SampleHeight, tile-aware). Ambos
+        //    funcionan aunque NO exista TerrainCollider (Mosaico V3 GPU). ──
+        var     muestreador = ServiceLocator.Get<IMuestreadorAlturaPrecisa>();
+        bool    bitExacto   = muestreador != null && muestreador.Listo;
+        float   ySuelo = bitExacto ? muestreador.AlturaMundo(ppie.x, ppie.z) : TerrenoGlobal.AlturaMundo(ppie.x, ppie.z);
+        Vector3 nSuelo = bitExacto ? muestreador.NormalMundo(ppie.x, ppie.z) : NormalTerreno(ppie.x, ppie.z);
 
         // ── Detalle FINO: props, bordillos, escalones, parches JIT — por raycast.
         //    Ya no necesita golpear el terreno; solo refina si hay algo por encima. ──

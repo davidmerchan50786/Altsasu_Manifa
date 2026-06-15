@@ -1,3 +1,4 @@
+#pragma warning disable CS0414 // s_testsCompletados: se asigna desde RunFromCommandLine
 // Assets/Scripts/SmokeTestRunner.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  SMOKE TEST RUNNER — prueba de arranque automática (CI-compatible)

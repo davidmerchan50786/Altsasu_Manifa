@@ -1,3 +1,4 @@
+#pragma warning disable CS0414 // radioMontana: campo [SerializeField] reservado, aun sin consumir
 // Assets/Scripts/SistemaFauna.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  SISTEMA DE FAUNA — animales urbanos y silvestres en Alsasua

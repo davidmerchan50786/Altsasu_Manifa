@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/SistemaPolish.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  POLISH & FEEL — efectos de cámara y feedback visual AAA

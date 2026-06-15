@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/SistemaExplosion.cs
 // Utilidad estática para detonar explosiones con física, daño en área y VFX.
 // Usada por VehiculoNPC, SistemaDestruccion y SistemaBombas.

@@ -112,7 +112,6 @@ public class HUDSistemas : MonoBehaviour
         // ── Tráfico ───────────────────────────────────────────────────────
         if (SistemaTrafico.Instance != null)
         {
-            int activos = 0;
             // Contar vehículos activos (SistemaTrafico no expone el count directamente;
             // aproximamos con DirectorMundo intensidad y el pool size)
             _sb.AppendLine($"Tráfico: activo");

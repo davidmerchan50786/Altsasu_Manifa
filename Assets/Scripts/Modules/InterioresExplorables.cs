@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/InterioresExplorables.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  INTERIORES EXPLORABLES — habitaciones 3D reales y caminables

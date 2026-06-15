@@ -1,3 +1,4 @@
+#pragma warning disable CS0414 // _inicializado: flag asignado, lectura pendiente
 // ============================================================================
 //  MobiliarioUrbano.cs — Mobiliario urbano UNIFICADO (fusión 2026-06 con
 //  SistemaMobiliarioUrbano, ahora deprecado).

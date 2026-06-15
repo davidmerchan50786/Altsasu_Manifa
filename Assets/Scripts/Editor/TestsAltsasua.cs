@@ -1,3 +1,4 @@
+#pragma warning disable CS0219 // locales de test asignados y no leidos (asserts pendientes)
 // Assets/Scripts/Editor/TestsAltsasua.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  SUITE DE TESTS — Alsasua Simulator

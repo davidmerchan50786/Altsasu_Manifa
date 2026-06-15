@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // Assets/Scripts/GeneradorInterioresSimples.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  GENERADOR DE INTERIORES SIMPLES — LOD0 visibles a <28m del jugador

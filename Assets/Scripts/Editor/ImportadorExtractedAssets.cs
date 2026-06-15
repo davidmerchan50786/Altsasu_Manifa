@@ -19,7 +19,6 @@ using System.Collections.Generic;
 public class ImportadorExtractedAssets : EditorWindow
 {
     private static readonly string EXTRACTED = "Assets/_ExtractedAssets";
-    private static readonly string DESTINO   = "Assets/Downloads_Converted";
 
     private Vector2 _scroll;
     private List<AssetInfo> _assets = new();

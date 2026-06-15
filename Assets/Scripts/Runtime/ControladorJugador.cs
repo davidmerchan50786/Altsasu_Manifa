@@ -144,6 +144,16 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     /// <summary>Vector de velocidad horizontal en espacio mundo (m/s) — dirección
     /// + módulo, ya suavizado. Para predicción de trayectoria (streaming de tiles).</summary>
     public Vector3 VelocidadHorizontal => velHoriz;
+    /// <summary>Dirección de movimiento deseada en espacio mundo (XZ), magnitud ∈[0,1]
+    /// (ya relativa a la cámara). Para IProveedorTrayectoria (Locomoción avanzada).</summary>
+    public Vector3 DireccionMovimientoDeseada => _moveDirMundo;
+    /// <summary>Velocidad objetivo (m/s) según el estado actual (agachado/andar/correr),
+    /// ANTES del suavizado de inercia. Para IProveedorTrayectoria (Locomoción avanzada).</summary>
+    public float VelocidadObjetivo => estaAgachado ? velocidadAgachar : estaCorriendo ? velocidadCorrer : velocidadAndar;
+    /// <summary>Fase/velocidad de locomoción derivadas de la trayectoria deseada
+    /// (ver Docs/arquitectura_locomocion.md §7, Fase 1). Consumidores futuros
+    /// (Foot IK spine bending, HUD, audio de pasos) leen aquí sin recalcular nada.</summary>
+    public ILocomocionAvanzada Locomocion => _locomocion;
 
     // Propiedades para HUDJugador (Canvas UI)
     public int   VidaMax     => vidaMax;
@@ -165,6 +175,7 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     private CharacterController cc;
     private SistemaDisparo      sistemaDisparo;
     private SistemaBombas       sistemaBombas;
+    private LocomocionAnimatorFallback _locomocion;
 
     // Cámara
     private Camera    camaraTP;
@@ -178,6 +189,10 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     private Vector3 velHoriz;
     private Vector3 velVert;
     private float   yawJugador = 0f;
+    // Dirección de movimiento deseada en espacio mundo (XZ), magnitud ∈[0,1] —
+    // calculada en MoverJugador(), expuesta vía DireccionMovimientoDeseada para
+    // IProveedorTrayectoria (Locomoción avanzada).
+    private Vector3 _moveDirMundo;
 
     // Estados
     private bool estaEnSuelo;
@@ -272,6 +287,15 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         sistemaBombas  = GetComponent<SistemaBombas>()   ?? gameObject.AddComponent<SistemaBombas>();
         if (GetComponent<SistemaArmasExtendido>() == null) gameObject.AddComponent<SistemaArmasExtendido>();
         if (GetComponent<SistemaBarricadas>()     == null) gameObject.AddComponent<SistemaBarricadas>();
+
+        // Locomoción Fase 1 (Docs/arquitectura_locomocion.md §7): proveedor de
+        // trayectoria + fallback de fase/velocidad, listos para que Foot IK/HUD
+        // los consuman vía Locomocion. No toca Animator ni CharacterController.
+        var proveedorTrayectoria = GetComponent<ProveedorTrayectoriaInput>()
+                                 ?? gameObject.AddComponent<ProveedorTrayectoriaInput>();
+        _locomocion = GetComponent<LocomocionAnimatorFallback>()
+                   ?? gameObject.AddComponent<LocomocionAnimatorFallback>();
+        _locomocion.Conectar(proveedorTrayectoria);
 
         cc.height = 1.8f;
         cc.center = new Vector3(0f, 0.9f, 0f);
@@ -925,6 +949,7 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         Vector3 right   = Quaternion.Euler(0f, anguloH, 0f) * Vector3.right;
         Vector3 moveDir = (forward * inputMovimiento.y + right * inputMovimiento.x);
         moveDir = Vector3.ClampMagnitude(moveDir, 1f);
+        _moveDirMundo = moveDir;
 
         float vel = estaAgachado ? velocidadAgachar
                   : estaCorriendo ? velocidadCorrer

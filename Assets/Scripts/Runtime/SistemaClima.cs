@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // API HDRP/Unity obsoleta (p.ej. Light intensity); migracion pendiente, sigue funcional
 // SistemaClima.cs — Sistema de clima seleccionable en tiempo real
 // Sol, nubes, lluvia, tormenta, niebla, viento.
 // UI con botones de clima + transiciones suaves.
