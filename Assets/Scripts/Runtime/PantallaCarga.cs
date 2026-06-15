@@ -122,15 +122,24 @@ public class PantallaCarga : MonoBehaviour
         _progVisual = Mathf.Max(_progVisual,
             Mathf.Lerp(_progVisual, objetivo, Time.unscaledDeltaTime * 2.5f));
 
-        // Robusto: con terreno (_pasos[0]) + jugador (_pasos[4]) ya es jugable;
-        // biomas, edificios, NavMesh y árboles se siguen poblando EN SEGUNDO
-        // PLANO tras quitar esta pantalla. Y tope DURO por si algo tarda — así
-        // el arranque NUNCA se queda clavado esperando a un sistema lento.
-        // Jugable = terreno + jugador + zona de spawn lista (esta última es no-op si
-        // no hay streaming → no regresa el comportamiento actual sin Addressables).
-        bool jugable = _pasos[0].listo() && _pasos[4].listo() && ArranqueMundo.ZonaInicialListaONoAplica;
+        // GATE REAL: el director (SceneBootstrapper) marca BaselineListo cuando el
+        // mínimo jugable (terreno+jugador+cámara+Core) está en pie y ANTES de poblar
+        // el mundo pesado, que streamea en segundo plano. La pantalla NO se quita
+        // hasta esa señal — fuente de verdad única, compartida con ControladorJugador.
+        // Fallback para escenas que no usen el director: terreno (_pasos[0]) +
+        // jugador (_pasos[4]). Y tope DURO por si algo tarda → nunca se queda clavada.
+        bool baseline = ArranqueMundo.BaselineListo
+                     || (_pasos[0].listo() && _pasos[4].listo());
+        bool jugable = baseline && ArranqueMundo.ZonaInicialListaONoAplica;
         bool terminar = ((todo || jugable) && trans > MIN_VISIBLE) || trans > TIMEOUT;
-        if (terminar) _completo = true;
+        if (terminar)
+        {
+            _completo = true;
+            // BACKSTOP: garantiza que el jugador se descongela cuando esta pantalla
+            // se quita, incluso en escenas sin SceneBootstrapper (que normalmente lo
+            // marca antes) o si se sale por TIMEOUT. Idempotente.
+            ArranqueMundo.MarcarBaselineListo();
+        }
 
         if (terminar && !_logTotal)
         {

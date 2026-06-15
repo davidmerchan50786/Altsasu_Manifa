@@ -23,6 +23,28 @@ using UnityEngine;
 
 public static class ArranqueMundo
 {
+    // ── BASELINE JUGABLE ────────────────────────────────────────────────────
+    //  "Baseline" = mínimo jugable a 60 fps: terreno + jugador + cámara + Core.
+    //  El director de arranque (SceneBootstrapper) lo marca cuando ese mínimo
+    //  está en pie; ANTES de poblar el mundo pesado (edificios/árboles/NPCs),
+    //  que streamea después en segundo plano con presupuesto por frame.
+    //  Consumidores: PantallaCarga (no se quita el gate hasta esto) y
+    //  ControladorJugador (no acepta input/gravedad hasta esto).
+
+    /// <summary>True cuando el mínimo jugable (terreno+jugador+cámara+Core) está listo.</summary>
+    public static bool BaselineListo { get; private set; }
+
+    /// <summary>Se dispara UNA vez al quedar el baseline jugable listo (push para suscriptores).</summary>
+    public static event Action OnBaselineListo;
+
+    /// <summary>El director declara el baseline jugable listo (idempotente).</summary>
+    public static void MarcarBaselineListo()
+    {
+        if (BaselineListo) return;
+        BaselineListo = true;
+        OnBaselineListo?.Invoke();
+    }
+
     /// <summary>True si algún gestor se ha comprometido a reportar la zona inicial.</summary>
     public static bool ZonaInicialRequerida { get; private set; }
 
@@ -54,5 +76,7 @@ public static class ArranqueMundo
         ZonaInicialRequerida = false;
         ZonaInicialLista     = false;
         OnZonaInicialLista   = null;
+        BaselineListo        = false;
+        OnBaselineListo      = null;
     }
 }

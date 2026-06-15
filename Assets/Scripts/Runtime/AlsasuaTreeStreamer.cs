@@ -358,13 +358,26 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         var rng      = new System.Random(1337);
         // Calcular bbox de cada polígono y sembrar puntos
         int añadidos = 0;
+        long celdas  = 0;   // celdas de grid evaluadas (diagnóstico del coste)
         float areaPorArbol = 10000f / densidadPorHa; // m²/árbol
 
         // Densidad en px de muestreo aleatorio: sqrt(area) ≈ spacing
         float spacing = Mathf.Sqrt(areaPorArbol);
 
+        // FIX CUELGUE (2026-06-15): el doble bucle nx×nz solo hacía yield ENTRE polígonos.
+        // Una masa forestal grande (sierras, bbox de km²) a spacing ~11 m son cientos de
+        // miles/millones de PuntoEnPoligono en UN frame → hilo principal pegado minutos
+        // (era el "No responde" tras cargar los árboles LIDAR). Ahora: presupuesto de
+        // tiempo DENTRO del bucle (yield cada ~2 ms) + tope total → reparte sin congelar.
+        const int   MAX_RELLENO   = 30000;  // candidatos de relleno; el streamer ya samplea por distancia
+        const float MS_PRESUPUESTO = 2f;    // ms/frame de trabajo síncrono
+        float t0 = Time.realtimeSinceStartup;
+        int   desdeChequeo = 0;
+
         foreach (var poly in _bosquesPoligonos)
         {
+            if (añadidos >= MAX_RELLENO) break;
+
             // Bounding box del polígono
             float minX = float.MaxValue, maxX = float.MinValue;
             float minZ = float.MaxValue, maxZ = float.MinValue;
@@ -381,9 +394,22 @@ public class AlsasuaTreeStreamer : MonoBehaviour
             int nx = Mathf.Max(1, Mathf.CeilToInt(w / spacing));
             int nz = Mathf.Max(1, Mathf.CeilToInt(h / spacing));
 
-            for (int iz = 0; iz < nz; iz++)
+            for (int iz = 0; iz < nz && añadidos < MAX_RELLENO; iz++)
             for (int ix = 0; ix < nx; ix++)
             {
+                // Presupuesto por frame: no más de ~2 ms síncronos seguidos (chequeo cada
+                // 256 celdas para que el propio Time.realtimeSinceStartup no domine).
+                if (++desdeChequeo >= 256)
+                {
+                    desdeChequeo = 0;
+                    if ((Time.realtimeSinceStartup - t0) * 1000f >= MS_PRESUPUESTO)
+                    {
+                        yield return null;
+                        t0 = Time.realtimeSinceStartup;
+                    }
+                }
+                celdas++;
+
                 float ux = minX + (ix + (float)rng.NextDouble()) * spacing;
                 float uz = minZ + (iz + (float)rng.NextDouble()) * spacing;
 
@@ -402,12 +428,11 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                 _especies.Add(ClasificarEspecie(ux, uz, terrain));
                 añadidos++;
             }
-
-            yield return null;
         }
 
         AlsasuaLogger.Info("TreeStreamer",
-            $"Relleno procedural: +{añadidos} árboles en {_bosquesPoligonos.Count} masas forestales");
+            $"Relleno procedural: +{añadidos} árboles en {_bosquesPoligonos.Count} masas forestales " +
+            $"({celdas} celdas evaluadas{(añadidos >= MAX_RELLENO ? ", TOPE alcanzado" : "")})");
     }
 
     // ── Clasificar especie por bioma ───────────────────────────────────────
