@@ -70,6 +70,8 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     {
         Application.targetFrameRate = fpsMeta;
         QualitySettings.vSyncCount  = 0; // vsync off — controlamos nosotros
+        // Reacción más ágil: medir al menos 1×/s (un 0 FPS no puede esperar 2 s/escalón).
+        intervaloMedicion = Mathf.Min(intervaloMedicion, 1f);
         _tierCalidad = 0;
         Shader.SetGlobalFloat(ID_QualityTier, 0f); // arrancar en Ultra; sube si la carga lo exige
         StartCoroutine(BucleMedicion());
@@ -106,8 +108,22 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
 
     void AjustarCalidad(float fps)
     {
-        if (fps < fpsMinimo * 0.75f)       SubirNivelCalidad();   // muy bajo → bajar calidad
+        // Catastrófico (pico de arranque o escena sobre-presupuesto): saltar DIRECTO
+        // al tier de rendimiento en vez de bajar de uno en uno cada medición.
+        if (fps < fpsMinimo * 0.5f)        DegradarAlMaximo();
+        else if (fps < fpsMinimo * 0.75f)  SubirNivelCalidad();   // muy bajo → bajar calidad
         else if (fps > fpsMeta * 0.95f)    BajarNivelCalidad();   // excelente → subir calidad
+    }
+
+    // Degrade inmediato al suelo (no escalonado): para FPS crítico, recuperar control YA.
+    void DegradarAlMaximo()
+    {
+        QualitySettings.shadowDistance = 40f;
+        QualitySettings.lodBias        = 0.4f;
+        if (RenderSettings.fogDensity < 0.006f) RenderSettings.fogDensity = 0.006f; // niebla acorta draw distance
+        FijarTier(3);
+        AlsasuaLogger.Warn("Optimizacion",
+            $"FPS CRÍTICO ({_fpsActual:F0}) → degrade máximo inmediato (tier 3, sombras 40 m, LOD 0.4).");
     }
 
     void SubirNivelCalidad() // calidad más baja = mejor rendimiento
