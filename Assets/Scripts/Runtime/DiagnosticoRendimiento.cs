@@ -19,6 +19,9 @@
 using System.Collections;
 using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;   // UnityStats: draw calls / batches / SetPass reales (solo en editor)
+#endif
 
 public sealed class DiagnosticoRendimiento : MonoBehaviour
 {
@@ -83,6 +86,16 @@ public sealed class DiagnosticoRendimiento : MonoBehaviour
         int multitud = ServiceLocator.Get<ICrowdDensity>()?.TotalAgentes ?? -1;
 
         sb.AppendLine($"[DIAG] Renderers DIBUJANDO: {mesh + skinned + otros}  (Mesh {mesh}, Skinned {skinned}, otros {otros})");
+
+        // MÉTRICA OFICIAL del plan AAA (Fase 0): draw calls / batches / SetPass / triángulos
+        // REALES de la GPU. Solo disponible en el editor (UnityStats) — en build cae al
+        // recuento de renderers de arriba. El objetivo del bake es bajar drawCalls de ~77k a <2.5k.
+#if UNITY_EDITOR
+        sb.AppendLine($"[DIAG] GPU draw: {UnityStats.drawCalls} draw calls · {UnityStats.batches} batches · " +
+                      $"{UnityStats.setPassCalls} SetPass · {UnityStats.triangles / 1000}k tris · {UnityStats.vertices / 1000}k verts");
+#else
+        sb.AppendLine("[DIAG] GPU draw: (draw calls reales solo en editor; usa 'Renderers DIBUJANDO' como proxy)");
+#endif
 
         // Top contenedores por renderers dibujando: aquí se ve si la masa (los ~77k)
         // está en raíces que el streamer NO gestiona (denylist mal puesta) o si ya las coge.
