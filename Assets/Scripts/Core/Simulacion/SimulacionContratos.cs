@@ -55,6 +55,7 @@ public interface ISimulable
 public interface ITelemetryService
 {
     float FrameMsSuavizado { get; }    // EMA del CPU frame time (ms)
+    float GpuMsSuavizado   { get; }    // EMA del GPU frame time (ms); 0 si el backend no lo reporta
     float PresupuestoMs    { get; }    // objetivo (p.ej. 15.5 ms con headroom)
 }
 
@@ -69,6 +70,51 @@ public interface IGlobalSimulationOrchestrator
     /// (escombros, streaming) para auto-pausarse. Encoge radios LOD y caps.</summary>
     float FactorCarga { get; }
     event System.Action<float> OnFactorCargaCambia;
+}
+
+/// <summary>
+/// Gobernador de RENDER (GPU). Hermano del orquestador (que gobierna CPU/IA): vigila el
+/// coste de GPU (y CPU como respaldo) y produce un RADIO DE ACTIVACIÓN DEL MUNDO dinámico.
+/// El streaming estático (edificios/árboles/props) usa ese radio como su único mando: bajo
+/// presión de GPU el radio se encoge → menos draw calls/triángulos en vuelo → "degrada el
+/// baseline antes de añadir detalle". Capa CORE: nadie de arriba lo conoce por tipo concreto.
+/// </summary>
+public interface IRenderBudgetGovernor
+{
+    /// <summary>Metros: dentro de este radio el mundo se renderiza a detalle completo.</summary>
+    float RadioActivacion { get; }
+    /// <summary>Metros: entre RadioActivacion y este, impostor/LOD bajo; más allá, apagado.</summary>
+    float RadioImpostor { get; }
+    /// <summary>0..1 — 1 = alcance máximo; &lt;1 = recortado por presión de render.</summary>
+    float FactorRender { get; }
+    /// <summary>True si AHORA mismo vamos por encima del presupuesto de render.</summary>
+    bool Saturado { get; }
+    /// <summary>GPU ms suavizado que el gobernador está viendo (0 si el backend no lo da).</summary>
+    float GpuMs { get; }
+    /// <summary>Se dispara cuando FactorRender cambia (para reescalar consumidores caros).</summary>
+    event System.Action<float> OnFactorRenderCambia;
+}
+
+/// <summary>
+/// Parámetros del gobernador de render. Metros (1 u = 1 m). Mutable para tunear en vivo.
+/// Defaults pensados para Alsasua: a tope se ve ~260 m a detalle + ~300 m de impostores
+/// (cubre la cuenca jugable); bajo máxima presión cae a 90 m (una manzana alrededor).
+/// </summary>
+public sealed class ConfiguracionRender
+{
+    // ── Radios (m) ──
+    public float radioActivacionMax = 260f;  // alcance a detalle completo cuando hay holgura
+    public float radioActivacionMin = 90f;   // suelo bajo máxima presión de GPU
+    public float radioImpostorExtra = 300f;  // ancho del anillo impostor sobre el de activación
+    public float histeresisM        = 12f;   // margen pegajoso para evitar parpadeo en el borde
+
+    // ── Presupuesto / degrade (ms) ──
+    public float presupuestoGpuMs = 13.5f;   // objetivo GPU con headroom (bajo 16.6 de 60 fps)
+    public float degradeMul       = 1.05f;   // coste > presupuesto·1.05 → encoger radio
+    public float recoverMul       = 0.80f;   // coste < presupuesto·0.80 → ampliar radio
+    public float pasoDegrade      = 0.06f;   // rápido (un pico de GPU no puede esperar)
+    public float pasoRecover      = 0.012f;  // lento (anti-oscilación, ~5× más suave)
+    public float factorMin        = 0.0f;    // permite llegar al radio mínimo si hace falta
 }
 
 /// <summary>

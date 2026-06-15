@@ -164,11 +164,31 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     //  OCLUSIÓN MANUAL POR DISTANCIA
     // ════════════════════════════════════════════════════════════════════════
 
+    // Cuando existe el StreamerMundoEstatico, ÉL es el dueño de la activación por
+    // distancia (radio gobernado por GPU + anillo impostor). Cedemos nuestro cull
+    // todo-o-nada para no pelearnos por el SetActive de los mismos edificios. El
+    // gobernador de calidad por FPS (sombras/LOD bias en Update) sigue activo: es un
+    // mando complementario, no el mismo.
+    StreamerMundoEstatico _streamer;
+    bool _cedidoAlStreamer;
+
     IEnumerator BucleMedicion()
     {
         while (true)
         {
             yield return new WaitForSeconds(0.5f);
+
+            if (!_cedidoAlStreamer)
+            {
+                if (_streamer == null) _streamer = FindFirstObjectByType<StreamerMundoEstatico>();
+                if (_streamer != null)
+                {
+                    _cedidoAlStreamer = true;
+                    AlsasuaLogger.Info("Optimizacion",
+                        "StreamerMundoEstatico presente → cedo el cull de edificios (radio gobernado por GPU).");
+                }
+            }
+            if (_cedidoAlStreamer) continue;   // el streamer manda la activación por distancia
 
             var jugador = AltsasuCore.Jugador;
             if (jugador == null) continue;

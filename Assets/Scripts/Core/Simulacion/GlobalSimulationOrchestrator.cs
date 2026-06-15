@@ -37,6 +37,7 @@ public sealed class GlobalSimulationOrchestrator : IGlobalSimulationOrchestrator
     int _nActores, _nProxies, _nGhosts;
     float _factor = 1f;
     ServicioTelemetriaFrames _tele;
+    GobernadorRender _render;        // gobernador de GPU: produce el radio de mundo dinámico
     Camera _cam;
     int _frameCam = -999;
 
@@ -64,6 +65,9 @@ public sealed class GlobalSimulationOrchestrator : IGlobalSimulationOrchestrator
 
         ServiceLocator.Registrar<IGlobalSimulationOrchestrator>(Instancia);
         ServiceLocator.Registrar<ITelemetryService>(Instancia._tele);
+
+        // Hermano de GPU: misma autoridad de frame, misma telemetría (ya muestreada aquí).
+        Instancia._render = GobernadorRender.CrearYRegistrar();
 
         Instalar(Instancia.TickFrame);
         Application.quitting += Desinstalar;
@@ -95,6 +99,8 @@ public sealed class GlobalSimulationOrchestrator : IGlobalSimulationOrchestrator
         _frame++;
         _tele.Muestrear();
         AjustarFactor();
+        // Gobernador de GPU: con la telemetría ya muestreada, recalcula el radio de mundo.
+        _render?.Actualizar(_tele.FrameMsSuavizado, _tele.GpuMsSuavizado);
         DespacharTicks();
         EvaluarLOD();
     }

@@ -43,6 +43,50 @@ public struct JobCalcularNivelesLOD : IJobParallelFor
 }
 
 /// <summary>
+/// Clasifica N objetos estáticos en 3 bandas según su distancia XZ al jugador, con
+/// HISTÉRESIS DIRECCIONAL (el estado actual aguanta un margen extra antes de cambiar →
+/// sin parpadeo en el borde). Lo usa StreamerMundoEstatico con el radio dinámico del
+/// gobernador de render. Bandas: 0 = Activo (detalle completo), 1 = Impostor (LOD bajo +
+/// sin sombras), 2 = Oculto (SetActive false).
+/// </summary>
+[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+public struct JobBandasMundo : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<float3> posiciones;
+    [ReadOnly] public NativeArray<byte>   estadoActual; // 0=Activo 1=Impostor 2=Oculto
+    [ReadOnly] public float3              posJugador;
+    [ReadOnly] public float               radioActivar;  // < esto = Activo
+    [ReadOnly] public float               radioImpostor; // < esto = Impostor; >= = Oculto
+    [ReadOnly] public float               histeresis;    // margen pegajoso (m)
+
+    [WriteOnly] public NativeArray<byte>  estadoNuevo;
+
+    public void Execute(int i)
+    {
+        float3 dlt = posiciones[i] - posJugador;
+        dlt.y = 0f;
+        float d = math.sqrt(math.dot(dlt, dlt));
+
+        float rA = radioActivar;
+        float rI = radioImpostor;
+        float h  = histeresis;
+        byte cur = estadoActual[i];
+
+        // Para SUBIR de detalle hay que cruzar el umbral menos el margen; para BAJAR,
+        // el umbral más el margen. Así un objeto en el borde no oscila de estado.
+        byte nuevo;
+        if (cur == 0)                                   // Activo: aguanta hasta rA+h
+            nuevo = (d <= rA + h) ? (byte)0 : (d <= rI + h) ? (byte)1 : (byte)2;
+        else if (cur == 1)                              // Impostor
+            nuevo = (d <= rA - h) ? (byte)0 : (d <= rI + h) ? (byte)1 : (byte)2;
+        else                                            // Oculto
+            nuevo = (d <= rA - h) ? (byte)0 : (d <= rI - h) ? (byte)1 : (byte)2;
+
+        estadoNuevo[i] = nuevo;
+    }
+}
+
+/// <summary>
 /// Filtra N posiciones por frustum (campo de visión de la cámara).
 /// Devuelve 1 si el objeto es visible, 0 si está fuera del frustum.
 /// </summary>

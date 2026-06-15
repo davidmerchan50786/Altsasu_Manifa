@@ -134,6 +134,28 @@ Meta LIDAR (`lidar_dtm_meta.json`):
 - Jobs Burst para operaciones masivas en arrays
 - GPU Instancing activado en todos los materiales (`enableInstancing = true`)
 
+## Rendimiento y arranque — DOS DIRECTORES + STREAMING
+El arranque y el render se gobiernan con presupuesto, no "modo demo todo-a-la-vez".
+- **Director de arranque** (`Systems/SceneBootstrapper.cs`, exec -200): secuencia terreno→mundo
+  cercano→habilita jugador; marca `ArranqueMundo.BaselineListo` al tener el mínimo jugable y
+  puebla el resto **por fases con presupuesto** (~4 ms/frame, `EjecutarPorFases`) → sin estampida.
+  El gate es `Runtime/PantallaCarga.cs` (no se quita hasta baseline) y `Runtime/ControladorJugador.cs`
+  congela input/gravedad hasta `BaselineListo`.
+- **Director de CPU** = `Core/Simulacion/GlobalSimulationOrchestrator.cs` (PlayerLoop): ticks por
+  frecuencia + Sim-LOD + `FactorCarga` (degrade por CPU frame-time).
+- **Director de GPU** = `Core/Simulacion/GobernadorRender.cs` (`IRenderBudgetGovernor`): vigila
+  `max(GPU,CPU)` ms (telemetría con `gpuFrameTime`) y produce un **radio de mundo dinámico**
+  (`RadioActivacion`/`RadioImpostor`); lo arranca y tickea el orquestador. Encoge el radio bajo
+  presión de GPU → menos draw calls ("degrada el baseline antes que el detalle").
+- **Streaming del mundo estático** = `Runtime/StreamerMundoEstatico.cs` (auto-boot): registra
+  edificios (`Edificios_OSM/Precisos/AAA`) y props (`Props_*`, `MobiliarioUrbano`) y los clasifica
+  por el radio del gobernador en 3 bandas (job Burst `JobBandasMundo` con histéresis): Activo /
+  Impostor-lite (LOD mínimo + sombras OFF) / Oculto. **No** toca árboles (los lleva
+  `AlsasuaTreeStreamer`) ni multitud (BRG, 1 draw call). `SistemaOptimizacion` cede su cull
+  todo-o-nada cuando el streamer existe; su gobernador de calidad por FPS (sombras/LOD bias) sigue.
+- Pendiente AAA real: impostores con atlas de billboard (hoy "impostor-lite") y el Mosaico V3
+  (clipmap GPU, 1–2 draw calls) que sustituye los 48 Terrain.
+
 ## Arquitectura de capas
 
 Regla estricta: ninguna capa puede referenciar directamente a la capa superior.
