@@ -78,6 +78,18 @@ public sealed class DiagnosticoRendimiento : MonoBehaviour
         sb.AppendLine($"[DIAG] Terrains activos: {terrains}  ·  ParticleSystems: {pss.Length} (emitiendo {psEmitiendo})");
         sb.AppendLine($"[DIAG] Multitud (ICrowdDensity): {(multitud >= 0 ? multitud.ToString() : "no registrada")}");
         sb.AppendLine($"[DIAG] Quality: nivel {QualitySettings.GetQualityLevel()} | shadowDist {QualitySettings.shadowDistance:F0} m | lodBias {QualitySettings.lodBias:F2}");
+
+        // Gobernador de render (GPU) + streaming del mundo estático: si el fix #3/#4
+        // está activo, aquí se ve el radio dinámico y cuántos edificios están ocultos.
+        var gob = ServiceLocator.Get<IRenderBudgetGovernor>();
+        sb.AppendLine(gob != null
+            ? $"[DIAG] Render gob: factor {gob.FactorRender:F2} | radio {gob.RadioActivacion:F0} m (impostor {gob.RadioImpostor:F0} m) | GPU {gob.GpuMs:F1} ms {(gob.Saturado ? "SATURADO" : "ok")}"
+            : "[DIAG] Render gob: NO registrado");
+        var streamer = FindFirstObjectByType<StreamerMundoEstatico>();
+        sb.AppendLine(streamer != null
+            ? $"[DIAG] Streamer mundo: {streamer.Gestionados} gestionados (Activo {streamer.CuentaEstado(0)}, Impostor {streamer.CuentaEstado(1)}, Oculto {streamer.CuentaEstado(2)})"
+            : "[DIAG] Streamer mundo: NO presente");
+
         sb.AppendLine($"[DIAG] FPS aprox: {(Time.unscaledDeltaTime > 0f ? 1f / Time.unscaledDeltaTime : 0f):F1}  (frame {Time.unscaledDeltaTime * 1000f:F0} ms)");
         sb.Append("══════════════════════════════════════════");
 
