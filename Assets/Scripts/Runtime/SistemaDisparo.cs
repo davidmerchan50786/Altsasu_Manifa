@@ -244,6 +244,7 @@ public class SistemaDisparo : MonoBehaviour
 
     private void TickPool()
     {
+        if (_poolBursts == null || _poolDecals == null) return;   // pools aún no creados → no NullRef/frame
         float dt = Time.deltaTime;
         for (int i = 0; i < POOL_BURSTS; i++)
         {

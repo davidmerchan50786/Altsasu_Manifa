@@ -47,9 +47,8 @@ public class SistemaVientoVegetacion : MonoBehaviour
     // BUG FIX #4: cachear el módulo de velocidad para evitar new MinMaxCurve cada frame.
     // ParticleSystem.VelocityOverLifetimeModule es un struct — cachear la referencia
     // no elimina el boxing, pero evitar new MinMaxCurve() sí elimina la heap alloc.
-    ParticleSystem.EmissionModule           _psEmission;
-    ParticleSystem.VelocityOverLifetimeModule _psVel;
-    bool _psModulesCached;
+    // (Eliminado el caché de módulos de PS: cachear los structs invalidaba su handle
+    //  nativo y lanzaba miles de excepciones/frame. Se obtienen frescos en ActualizarHojas.)
 
     void Awake()
     {
@@ -210,10 +209,6 @@ public class SistemaVientoVegetacion : MonoBehaviour
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-        // BUG FIX #4: cachear módulos del ParticleSystem
-        _psEmission = _psHojas.emission;
-        _psVel      = _psHojas.velocityOverLifetime;
-        _psModulesCached = true;
         AlsasuaLogger.Info("Viento", "Sistema de partículas de hojas creado.");
     }
 
@@ -226,18 +221,16 @@ public class SistemaVientoVegetacion : MonoBehaviour
         if (jugador != null)
             _psHojas.transform.position = jugador.position + Vector3.up * 3f;
 
-        // BUG FIX #4: asignar constante al módulo cacheado en lugar de new MinMaxCurve.
-        // ParticleSystem.VelocityOverLifetimeModule.x/y/z aceptan un float como constante
-        // directamente → zero heap allocation.
-        if (!_psModulesCached) { _psVel = _psHojas.velocityOverLifetime; _psModulesCached = true; }
+        // FIX (jun 2026): obtener el módulo FRESCO del PS cada frame. Cachear el struct
+        // VelocityOverLifetimeModule en un campo invalidaba su handle nativo → lanzaba
+        // "Do not create your own module instances" CADA frame (miles de excepciones que
+        // por sí solas hundían el FPS). Obtenerlo fresco solo envuelve el puntero del PS:
+        // trivial y siempre válido. (float → MinMaxCurve constante, sin heap alloc.)
+        var vel = _psHojas.velocityOverLifetime;
         float speed = _fuerzaActual * 0.8f;
-        // La asignación de un float a MinMaxCurve usa el constructor implícito constante
-        // (ParticleSystem.MinMaxCurve(float)) que no hace heap alloc en Mono/IL2CPP.
-        _psVel.x = _dirActual.x * speed;
-        _psVel.z = _dirActual.z * speed;
-        _psVel.y = -0.15f; // caída suave
-        // (El modulo es un handle vivo: asignar _psVel.x/y/z ya aplica al sistema;
-        //  la propiedad velocityOverLifetime es de solo lectura.)
+        vel.x = _dirActual.x * speed;
+        vel.z = _dirActual.z * speed;
+        vel.y = -0.15f; // caída suave
 
         // Activar/desactivar emisión por umbral
         bool debeEmitir = _fuerzaActual >= UMBRAL_HOJAS;
@@ -253,14 +246,13 @@ public class SistemaVientoVegetacion : MonoBehaviour
         else if (!debeEmitir && _hojasActivas && _fuerzaActual < UMBRAL_STOP)
         {
             _hojasActivas = false;
-            // Dejar de emitir pero que las existentes terminen su ciclo
-            _psEmission.rateOverTime = 0f;
+            var em = _psHojas.emission;   // módulo fresco (ver FIX arriba)
+            em.rateOverTime = 0f;          // dejar de emitir; las existentes terminan su ciclo
         }
         else if (_hojasActivas)
         {
-            // Ajustar tasa de emisión dinámicamente
-            _psEmission.rateOverTime = Mathf.Lerp(5f, 40f,
-                Mathf.InverseLerp(UMBRAL_HOJAS, 9f, _fuerzaActual));
+            var em = _psHojas.emission;   // módulo fresco
+            em.rateOverTime = Mathf.Lerp(5f, 40f, Mathf.InverseLerp(UMBRAL_HOJAS, 9f, _fuerzaActual));
         }
     }
 

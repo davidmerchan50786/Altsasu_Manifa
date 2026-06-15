@@ -326,6 +326,10 @@ public sealed class SistemaMultitud : MonoBehaviour
 
     private void ActualizarGridSpatial()
     {
+        // Guard (jun 2026): no ejecutar antes de que los agentes existan. Sin esto,
+        // _agentes null con _numAgentes>0 lanzaba NullRef CADA frame (miles de excepciones).
+        if (_agentes == null || _numAgentes <= 0) return;
+
         // Centroide de la multitud → origen del grid (sigue a la masa)
         Vector3 centroide = Vector3.zero;
         for (int i = 0; i < _numAgentes; i++) centroide += _agentes[i].posicion;
