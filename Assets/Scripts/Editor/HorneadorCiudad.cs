@@ -74,7 +74,12 @@ public static class HorneadorCiudad
 
     // ════════════════════════════════════════════════════════════════════════
     [MenuItem("Tools/Alsasua/Mundo/🏗️ Hornear Ciudad (LOD pyramid estilo RAGE)", priority = 6)]
-    static void Hornear()
+    static void Hornear() => HornearNucleo(true);
+
+    /// <summary>Bake SIN diálogos (lo invoca AutoHornearEnPlay desde código, sin tocar la UI).</summary>
+    internal static void HornearAuto() => HornearNucleo(false);
+
+    static void HornearNucleo(bool interactivo)
     {
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid()) { EditorUtility.DisplayDialog("Hornear Ciudad", "No hay escena activa.", "Vale"); return; }
@@ -95,12 +100,14 @@ public static class HorneadorCiudad
 
         if (fusionables.Count < MIN_MALLAS)
         {
-            EditorUtility.DisplayDialog("Hornear Ciudad",
+            Debug.LogWarning($"[Horneador] Solo {fusionables.Count} mallas fusionables " +
+                $"(saltadas: {deny} denylist, {noLegible} NO legibles -Read/Write off-, {sinMF} sin malla). Genera la ciudad primero.");
+            if (interactivo) EditorUtility.DisplayDialog("Hornear Ciudad",
                 $"Solo {fusionables.Count} mallas fusionables (saltadas: {deny} denylist, {noLegible} no legibles, {sinMF} sin malla).\n\n" +
-                "Genera primero la ciudad en el editor (Tools/Alsasua → 🌍 Director de Mundo o flujo completo) y reejecuta.", "Vale");
+                "Genera primero la ciudad (Play o editor) y reejecuta.", "Vale");
             return;
         }
-        if (!EditorUtility.DisplayDialog("Hornear Ciudad (estilo RAGE)",
+        if (interactivo && !EditorUtility.DisplayDialog("Hornear Ciudad (estilo RAGE)",
             $"Voy a hornear {fusionables.Count} mallas en una pirámide LOD por celda de {CELDA:F0} m.\n\n" +
             "Por celda: LOD0 (HD por material) + LOD1 (HLOD 1 malla) + LODGroup + GPU instancing.\n" +
             "Crea Assets/CiudadHorneada/ (mallas+prefabs+manifest), marca static y DESACTIVA los originales (reversible).\n\n¿Continuar?",
@@ -224,7 +231,7 @@ public static class HorneadorCiudad
         Debug.Log($"[Horneador] ✅ Ciudad horneada (pirámide LOD). {originales.Count} renderers → " +
                   $"{manifest.totalCeldas} celdas · ~{drawCallsHD} draw calls en LOD0 (cerca), 1/celda en LOD1 (lejos). " +
                   $"GPU instancing ON en {instanciados.Count} materiales. Manifest: {MANIFEST}. Originales DESACTIVADOS.");
-        EditorUtility.DisplayDialog("Hornear Ciudad",
+        if (interactivo) EditorUtility.DisplayDialog("Hornear Ciudad",
             $"✅ {originales.Count} renderers → {manifest.totalCeldas} celdas con LODGroup.\n" +
             $"LOD0 ≈ {drawCallsHD} draw calls de cerca; LOD1 = 1/celda de lejos; cull al fondo.\n" +
             $"Instancing ON en {instanciados.Count} materiales. Prefabs+manifest en {DIR_RAIZ}/.\n\n" +
