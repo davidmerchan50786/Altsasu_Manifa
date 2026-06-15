@@ -341,9 +341,39 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             "Inicio en Herriko Plaza (Alsasua) Y=10 — gravedad bajará al jugador al nivel de calle.");
     }
 
+    // Backstop del gate de arranque: instante (unscaled) en que empezamos a esperar
+    // el baseline. Si nadie lo marca (escena sin PantallaCarga/SceneBootstrapper, o el
+    // marcador se perdió), no dejamos al jugador congelado eternamente.
+    private float _tEsperaBaseline = -1f;
+    private const float MAX_ESPERA_BASELINE = 6f;
+
     private void Update()
     {
         if (EstaMuerto) return;
+
+        // GATE DE ARRANQUE: hasta que se marque el baseline jugable —terreno+jugador+
+        // cámara+Core en pie—, el jugador queda CONGELADO bajo la pantalla de carga:
+        // sin input, sin movimiento y sin gravedad, para no caerse al vacío ni actuar
+        // mientras el mundo aún se puebla. Solo refrescamos animaciones (idle, sin
+        // T-pose al fundir). Fuente de verdad compartida con PantallaCarga.
+        //
+        // BACKSTOP (jun 2026): el marcado del baseline depende de PantallaCarga (el de
+        // SceneBootstrapper se perdió). Si tras MAX_ESPERA_BASELINE s nadie lo ha marcado,
+        // lo marcamos NOSOTROS y arrancamos igual → nunca "cámara se mueve pero el
+        // personaje no". RecuperarSiCaeAlVacio() cubre cualquier caída temprana.
+        if (!ArranqueMundo.BaselineListo)
+        {
+            if (_tEsperaBaseline < 0f) _tEsperaBaseline = Time.unscaledTime;
+            if (Time.unscaledTime - _tEsperaBaseline < MAX_ESPERA_BASELINE)
+            {
+                ActualizarAnimaciones();
+                return;
+            }
+            ArranqueMundo.MarcarBaselineListo();   // backstop: desbloquea jugador + SistemaOptimizacion + gate
+            AlsasuaLogger.Warn("Jugador",
+                $"Baseline no marcado en {MAX_ESPERA_BASELINE:F0}s — arranco igual (backstop anti-congelación).");
+        }
+
         RecuperarSiCaeAlVacio();
         LeerInput();
         ActualizarCameraBob();
@@ -428,6 +458,26 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             go.transform.localPosition = offsetModelo;
             go.transform.localRotation = Quaternion.identity;
             go.transform.localScale    = Vector3.one * escalaModelo;
+
+            // AUTO-ASENTADO DE LA MALLA (fix "medio cuerpo enterrado", 2026-06-15):
+            // algunos rigs tienen el pivot en la cadera, no en los pies, así que con
+            // offsetModelo=0 la mitad inferior quedaba bajo el suelo. Alineamos el FONDO
+            // de los bounds de la malla a la base del CharacterController (sus "pies"),
+            // sea cual sea el pivot del prefab. Es un offset RELATIVO → válido esté donde
+            // esté el jugador en el mundo.
+            {
+                var rs = go.GetComponentsInChildren<Renderer>(true);
+                float minY = float.MaxValue;
+                for (int i = 0; i < rs.Length; i++)
+                    if (rs[i] != null) minY = Mathf.Min(minY, rs[i].bounds.min.y);
+                if (minY < float.MaxValue)
+                {
+                    float pies   = transform.position.y + cc.center.y - cc.height * 0.5f;
+                    float deltaY = pies - minY;
+                    if (Mathf.Abs(deltaY) > 0.02f)
+                        go.transform.localPosition += new Vector3(0f, deltaY, 0f);
+                }
+            }
 
             // Desactivar colisionadores del modelo — CharacterController gestiona las colisiones.
             // Sin esto el personaje puede teletransportarse o bloquearse en la geometría.
@@ -936,11 +986,20 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         _timerAntiVacio = 0.1f;
 
         float ySuelo = TerrenoGlobal.AlturaMundo(transform.position);
-        if (ySuelo > -1000f && transform.position.y < ySuelo - 4f)
+        if (ySuelo <= -1000f) return;   // sin dato de suelo válido aquí
+
+        // Y del transform para que los PIES del capsule queden sobre el suelo:
+        //   fondo_capsule = transform.y + cc.center.y - cc.height/2  → debe = ySuelo
+        // Antes se ponía "ySuelo + 1.0f" fijo (asumía center=0, height≈2) → con otro
+        // CharacterController el personaje quedaba MEDIO ENTERRADO. Ahora se calcula real.
+        float offsetPie  = cc.height * 0.5f - cc.center.y + cc.skinWidth;
+        float yObjetivo  = ySuelo + offsetPie;
+        // Corrige tanto la caída al vacío como el hundimiento leve (umbral 0.4 m).
+        if (transform.position.y < yObjetivo - 0.4f)
         {
             cc.enabled = false;
             var p = transform.position;
-            p.y = ySuelo + 1.0f;
+            p.y = yObjetivo + 0.05f;
             transform.position = p;
             cc.enabled = true;
             velVert.y = 0f;
