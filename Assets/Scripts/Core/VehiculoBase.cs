@@ -42,6 +42,13 @@ public abstract class VehiculoBase : MonoBehaviour, IDamageable
     {
         _rb   = GetComponent<Rigidbody>();
         _vida = vidaMaxima;
+
+        // Publica el vehículo en el Omni-Grid → consultas de proximidad (atropellos,
+        // IA de tráfico, "vehículos cerca del jugador") en O(1). Aditivo: si no hay
+        // grid, PublicadorGrid es no-op.
+        if (GetComponent<PublicadorGrid>() == null)
+            gameObject.AddComponent<PublicadorGrid>().Configurar(TipoEspacial.Vehiculo, 2f);
+
         OnAwakeVehiculo();
     }
 

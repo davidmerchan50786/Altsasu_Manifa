@@ -23,6 +23,14 @@ public sealed class PublicadorGrid : MonoBehaviour
     IUnifiedSpatialGrid _grid;
     int _id;
 
+    /// <summary>Fija tipo y radio en runtime (para cuando se añade vía AddComponent
+    /// desde código, p.ej. ControladorJugador/VehiculoBase). Llamar tras AddComponent.</summary>
+    public void Configurar(TipoEspacial nuevoTipo, float nuevoRadio)
+    {
+        tipo  = nuevoTipo;
+        radio = nuevoRadio;
+    }
+
     void Start()
     {
         _grid = ServiceLocator.Get<IUnifiedSpatialGrid>();

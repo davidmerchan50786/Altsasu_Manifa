@@ -297,6 +297,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
                    ?? gameObject.AddComponent<LocomocionAnimatorFallback>();
         _locomocion.Conectar(proveedorTrayectoria);
 
+        // Publica al jugador en el Omni-Grid (TipoEspacial.Jugador por defecto) → IA,
+        // streaming y crowd pueden consultar "qué hay cerca del jugador" en O(1) sin
+        // OverlapSphere. Aditivo: si no hay grid, PublicadorGrid es no-op.
+        if (GetComponent<PublicadorGrid>() == null) gameObject.AddComponent<PublicadorGrid>();
+
         cc.height = 1.8f;
         cc.center = new Vector3(0f, 0.9f, 0f);
 
