@@ -374,6 +374,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
                 $"Baseline no marcado en {MAX_ESPERA_BASELINE:F0}s — arranco igual (backstop anti-congelación).");
         }
 
+        // Re-asentado inicial (una vez): al desbloquearse el jugador, colócalo CLARAMENTE
+        // sobre el suelo. Si spawneó incrustado en el terreno, el CharacterController no
+        // podía moverse ("medio enterrado + no se mueve") — esto lo saca de la geometría.
+        if (!_asentadoInicial) { _asentadoInicial = true; AsentarEnSueloInicial(); }
+
         RecuperarSiCaeAlVacio();
         LeerInput();
         ActualizarCameraBob();
@@ -974,6 +979,23 @@ public class ControladorJugador : MonoBehaviour, IDamageable
     // spawnear, o por un hueco entre tiles), recolocarlo sobre el suelo. Sin
     // esto el personaje caía a Y≈-2144 y la cámara mostraba el vacío negro.
     private float _timerAntiVacio;
+    private bool  _asentadoInicial;   // ¿ya hicimos el re-asentado inicial sobre el suelo?
+
+    // Coloca al jugador claramente sobre el suelo una sola vez (anti-incrustado al spawn).
+    private void AsentarEnSueloInicial()
+    {
+        if (cc == null) return;
+        float ySuelo = TerrenoGlobal.AlturaMundo(transform.position);
+        if (ySuelo <= -1000f) { _asentadoInicial = false; return; }   // sin dato aún: reintentar
+        float offsetPie = cc.height * 0.5f - cc.center.y + cc.skinWidth;
+        cc.enabled = false;
+        var p = transform.position;
+        p.y = ySuelo + offsetPie + 0.3f;   // margen sobre el suelo → CC libre, no incrustado
+        transform.position = p;
+        cc.enabled = true;
+        velVert.y = 0f;
+        AlsasuaLogger.Info("Jugador", $"Re-asentado inicial sobre el suelo en Y={p.y:F1} (suelo {ySuelo:F1}).");
+    }
 
     private void RecuperarSiCaeAlVacio()
     {

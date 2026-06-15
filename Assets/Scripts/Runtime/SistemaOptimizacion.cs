@@ -51,6 +51,8 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     // ── Estado ────────────────────────────────────────────────────────────
     float _shadowDistOrig;
     float _lodBiasOrig;
+    float _fogDensityOrig;
+    bool  _baselineRestaurado;   // ¿ya restauramos la calidad tras la carga?
 
     // OPT: cachear el Transform padre de edificios — GameObject.Find es O(n) escena completa.
     // BucleMedicion corre cada 0.5s pero hay pilas de SetActive de celdas intermedias.
@@ -82,6 +84,7 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
     {
         _shadowDistOrig = QualitySettings.shadowDistance;
         _lodBiasOrig    = QualitySettings.lodBias;
+        _fogDensityOrig = RenderSettings.fogDensity;
         _nivelCalidad   = QualitySettings.GetQualityLevel();
     }
 
@@ -91,6 +94,25 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
 
     void Update()
     {
+        // CLAVE (2026-06-15): NO medir ni degradar mientras el mundo carga. Durante la
+        // generación el FPS es ínfimo por naturaleza y el degrade de emergencia
+        // (DegradarAlMaximo: tier 3 + LOD 0.4 + niebla + sombras 40 m) se quedaba LATCHED
+        // para siempre → el mundo se veía plano/lavado/"de dibujos animados" tras cargar.
+        // Mientras carga: congelar medición. Al estar listo: RESTAURAR calidad original y,
+        // solo a partir de ahí, dejar que el ajuste dinámico actúe sobre FPS reales.
+        if (!ArranqueMundo.BaselineListo)
+        {
+            _fpsAcum = 0f; _frameCount = 0; _timerMedicion = 0f;
+            return;
+        }
+        if (!_baselineRestaurado)
+        {
+            _baselineRestaurado = true;
+            RestaurarCalidadOriginal();
+            _fpsAcum = 0f; _frameCount = 0; _timerMedicion = 0f;
+            return;   // empezar a medir desde el siguiente frame, ya con calidad buena
+        }
+
         _fpsAcum    += 1f / Time.unscaledDeltaTime;
         _frameCount++;
         _timerMedicion += Time.unscaledDeltaTime;
@@ -108,32 +130,51 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
 
     void AjustarCalidad(float fps)
     {
-        // Catastrófico (pico de arranque o escena sobre-presupuesto): saltar DIRECTO
-        // al tier de rendimiento en vez de bajar de uno en uno cada medición.
-        if (fps < fpsMinimo * 0.5f)        DegradarAlMaximo();
-        else if (fps < fpsMinimo * 0.75f)  SubirNivelCalidad();   // muy bajo → bajar calidad
-        else if (fps > fpsMeta * 0.95f)    BajarNivelCalidad();   // excelente → subir calidad
+        // PRIORIDAD VISUAL: el usuario quiere el mejor aspecto, así que la red de
+        // seguridad solo actúa si el FPS es CATASTRÓFICO (<12), y de forma suave.
+        // Por encima de eso mantenemos la calidad alta aunque el FPS no sea ideal.
+        if (fps < 12f)       DegradarAlMaximo();
+        else if (fps < 20f)  SubirNivelCalidad();   // bajo → recortar un poco
+        else if (fps > 45f)  BajarNivelCalidad();    // holgado → volver a subir calidad
+    }
+
+    // Restaura la calidad capturada al arranque (la "buena"): deshace cualquier degrade
+    // de emergencia disparado durante la carga. Se llama UNA vez al estar listo el baseline.
+    void RestaurarCalidadOriginal()
+    {
+        // PRIORIDAD VISUAL: forzar el nivel de calidad MÁXIMO (High Fidelity = índice 0)
+        // y un LOD bias generoso. El usuario quiere el mejor aspecto posible; el degrade
+        // dinámico solo actúa ya como red de seguridad suave (ver AjustarCalidad).
+        if (QualitySettings.GetQualityLevel() != 0)
+            QualitySettings.SetQualityLevel(0, true);   // 0 = High Fidelity (mejor)
+        QualitySettings.shadowDistance = Mathf.Max(_shadowDistOrig, 300f);
+        QualitySettings.lodBias        = Mathf.Max(_lodBiasOrig, 2f);   // detalle lejano (edificios no se "acajonan")
+        RenderSettings.fogDensity      = _fogDensityOrig;                // quita la niebla de emergencia
+        FijarTier(0);
+        AlsasuaLogger.Info("Optimizacion",
+            $"Baseline listo → calidad MÁXIMA (High Fidelity, sombras {QualitySettings.shadowDistance:F0} m, LOD {QualitySettings.lodBias:F2}, tier 0).");
     }
 
     // Degrade inmediato al suelo (no escalonado): para FPS crítico, recuperar control YA.
     void DegradarAlMaximo()
     {
-        QualitySettings.shadowDistance = 40f;
-        QualitySettings.lodBias        = 0.4f;
-        if (RenderSettings.fogDensity < 0.006f) RenderSettings.fogDensity = 0.006f; // niebla acorta draw distance
-        FijarTier(3);
+        // PRIORIDAD VISUAL: incluso en degrade catastrófico evitamos lo que se ve "como
+        // dibujos animados": NO inyectamos niebla (lavaba la imagen) y mantenemos un LOD
+        // bias decente (los edificios no se vuelven cajas). Solo recortamos sombras.
+        QualitySettings.shadowDistance = 120f;
+        QualitySettings.lodBias        = Mathf.Max(1f, QualitySettings.lodBias - 0.5f);
+        FijarTier(2);
         AlsasuaLogger.Warn("Optimizacion",
-            $"FPS CRÍTICO ({_fpsActual:F0}) → degrade máximo inmediato (tier 3, sombras 40 m, LOD 0.4).");
+            $"FPS CRÍTICO ({_fpsActual:F0}) → degrade SUAVE (tier 2, sombras 120 m, LOD {QualitySettings.lodBias:F2}; sin niebla).");
     }
 
     void SubirNivelCalidad() // calidad más baja = mejor rendimiento
     {
-        // Sombras
-        QualitySettings.shadowDistance = Mathf.Max(50f, QualitySettings.shadowDistance - 50f);
-        // LOD más agresivo
-        QualitySettings.lodBias = Mathf.Max(0.5f, QualitySettings.lodBias - 0.25f);
-        // Reducir distancia de niebla
-        if (RenderSettings.fogDensity < 0.005f) RenderSettings.fogDensity += 0.0005f;
+        // Sombras (suelo 120 m, no 50 — evita el corte feo de sombras cercano)
+        QualitySettings.shadowDistance = Mathf.Max(120f, QualitySettings.shadowDistance - 40f);
+        // LOD: suelo 1.2 (los edificios mantienen geometría, no se "acajonan")
+        QualitySettings.lodBias = Mathf.Max(1.2f, QualitySettings.lodBias - 0.2f);
+        // (sin inyección de niebla — lavaba la imagen)
 
         // Subir el tier (peor calidad) y difundirlo al pipeline.
         FijarTier(_tierCalidad + 1);

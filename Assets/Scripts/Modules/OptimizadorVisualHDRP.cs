@@ -32,28 +32,31 @@ public class OptimizadorVisualHDRP : MonoBehaviour
     int _lodsAnadidos;
     int _matsOptimizados;
 
-    // ── Forzar nivel de calidad HDRP "Balanced" al arrancar ──────────────────
-    // El diagnóstico mostraba "Quality level: 0 (High Fidelity)" = el nivel MÁS caro
-    // de HDRP. El proyecto usa el perfil "HDRP Balanced" (CLAUDE.md). Lo forzamos por
-    // NOMBRE (el índice puede variar entre máquinas) lo antes posible tras cargar escena.
+    // ── Forzar nivel de calidad HDRP MÁXIMO ("High Fidelity") al arrancar ─────
+    // CAMBIO (2026-06-15): el usuario prioriza el ASPECTO sobre el FPS. Antes se forzaba
+    // 'Balanced' por rendimiento, lo que recortaba texturas/sombras/LOD y dejaba el mundo
+    // con pinta "lavada/de dibujos". Ahora forzamos el nivel más alto disponible (High
+    // Fidelity, o el de índice mayor si no existe por nombre). El control de FPS lo lleva
+    // SistemaOptimizacion de forma suave, sin volver a tocar el nivel de calidad.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void ForzarCalidadBalanced()
+    static void ForzarCalidadMaxima()
     {
         var nombres = QualitySettings.names;
         int actual  = QualitySettings.GetQualityLevel();
+        // Buscar por nombre "Fidel"/"High"/"Ultra"; si no, usar el nivel de índice 0
+        // (en este proyecto 0 = High Fidelity, según el diagnóstico de arranque).
+        int objetivo = 0;
         for (int i = 0; i < nombres.Length; i++)
+            if (nombres[i].IndexOf("Fidel", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                nombres[i].IndexOf("Ultra", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            { objetivo = i; break; }
+
+        if (actual != objetivo)
         {
-            if (nombres[i].IndexOf("Balanc", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
-            if (actual != i)
-            {
-                AlsasuaLogger.Info("OptimizadorVisual",
-                    $"Calidad HDRP forzada: '{nombres[actual]}' (nivel {actual}) → '{nombres[i]}' (nivel {i}).");
-                QualitySettings.SetQualityLevel(i, true);
-            }
-            return;
+            AlsasuaLogger.Info("OptimizadorVisual",
+                $"Calidad HDRP forzada a MÁXIMA: '{nombres[actual]}' ({actual}) → '{nombres[objetivo]}' ({objetivo}).");
+            QualitySettings.SetQualityLevel(objetivo, true);
         }
-        AlsasuaLogger.Warn("OptimizadorVisual",
-            "No hay nivel de calidad con 'Balanced' en Project Settings > Quality — no se cambió.");
     }
 
     void Start()
