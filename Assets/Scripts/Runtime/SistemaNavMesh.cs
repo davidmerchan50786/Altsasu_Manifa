@@ -76,6 +76,7 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
     private Vector3        _centroActual;
     private bool           _horneando = false;
     private float          _timerCheck = 0f;
+    private NavMeshDataInstance _instLegacy;   // horneado legacy activo (se reemplaza sin acumular)
 #pragma warning disable CS0414
     private bool           _usaLegacy  = false;   // fallback sin paquete AI Navigation
 #pragma warning restore CS0414
@@ -175,8 +176,17 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
         _surface.size   = new Vector3(radio * 2f, alturaVolumen, radio * 2f);
         _surface.center = Vector3.zero;
 
-        if (_surface.navMeshData == null) { _surface.BuildNavMesh(); yield return null; }
-        else { AsyncOperation op = _surface.UpdateNavMesh(_surface.navMeshData); yield return op; }
+        // ASÍNCRONO también en el PRIMER bake: BuildNavMesh() es síncrono y congela el
+        // hilo principal varios minutos sobre un volumen de 350 m con todos los colliders.
+        // El patrón async = crear NavMeshData vacío + UpdateNavMesh (hornea en worker).
+        if (_surface.navMeshData == null)
+        {
+            _surface.navMeshData = new NavMeshData(_surface.agentTypeID);
+            _surface.AddData();
+        }
+        AlsasuaLogger.Info("NavMesh", $"⏳ Bake ASÍNCRONO (surface) zona {radio}m…");
+        AsyncOperation op = _surface.UpdateNavMesh(_surface.navMeshData);
+        while (!op.isDone) yield return null;
 
         float duracion = Time.realtimeSinceStartup - t0;
         bool  exito    = _surface.navMeshData != null;
@@ -187,29 +197,35 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
         var sources = new List<NavMeshBuildSource>();
         var bounds  = new Bounds(centro, new Vector3(radio*2f, alturaVolumen, radio*2f));
 
-        // Recopilar todo desde la escena (Terrain + colliders)
+        // Recopilar todo desde la escena (Terrain + colliders). Es síncrono → medimos
+        // su coste por separado: si CollectSources fuese el cuello, el async del bake
+        // no bastaría y habría que filtrar/limitar las fuentes.
+        float tCollect0 = Time.realtimeSinceStartup;
         NavMeshBuilder.CollectSources(
             bounds, LayerMask.GetMask("Default") | (1 << 8),
             NavMeshCollectGeometry.PhysicsColliders, 0,
             new List<NavMeshBuildMarkup>(), sources);
+        float msCollect = (Time.realtimeSinceStartup - tCollect0) * 1000f;
 
         var buildSettings = NavMesh.GetSettingsByID(0);
         buildSettings.agentRadius = radioAgente; buildSettings.agentHeight = alturaAgente;
         buildSettings.agentSlope  = pendienteMax; buildSettings.agentClimb  = escalonMax;
 
-        // FIX (jun 2026): el 3er parámetro son bounds LOCALES respecto a 'position'
-        // (4º parámetro). Antes se pasaban los bounds de mundo centrados en la
-        // plaza + position=plaza → el volumen real quedaba desplazado al doble
-        // (≈ x2 de la plaza) → NavMesh "exitoso" pero con 0 vértices.
-        NavMeshData data = NavMeshBuilder.BuildNavMeshData(
-            buildSettings, sources,
-            new Bounds(Vector3.zero, bounds.size), centro, Quaternion.identity);
+        // CAMBIO (jun 2026): BuildNavMeshData es SÍNCRONO y bloqueaba el hilo principal
+        // varios MINUTOS (350 m × todos los colliders: terreno + OBJ + 1030 edificios) →
+        // era EL cuelgue de arranque. Pasamos a UpdateNavMeshDataAsync (hornea en worker
+        // thread, el juego sigue corriendo). El posicionamiento va por AddNavMeshData(pos),
+        // con bounds LOCALES al origen — equivalente al BuildNavMeshData(localBounds, position)
+        // anterior, así que NO reaparece el bug de los bounds al doble (0 vértices).
+        if (_instLegacy.valid) _instLegacy.Remove();   // quita el horneado anterior (sin acumular por zona)
+        NavMeshData data = new NavMeshData();
+        _instLegacy = NavMesh.AddNavMeshData(data, centro, Quaternion.identity);
 
-        if (data != null)
-        {
-            NavMesh.AddNavMeshData(data);
-            yield return null;
-        }
+        AlsasuaLogger.Info("NavMesh",
+            $"⏳ Bake ASÍNCRONO… (CollectSources {msCollect:F0} ms, {sources.Count} fuentes)");
+        AsyncOperation op = NavMeshBuilder.UpdateNavMeshDataAsync(
+            data, buildSettings, sources, new Bounds(Vector3.zero, bounds.size));
+        while (!op.isDone) yield return null;
 
         float duracion = Time.realtimeSinceStartup - t0;
         bool  exito    = data != null;
