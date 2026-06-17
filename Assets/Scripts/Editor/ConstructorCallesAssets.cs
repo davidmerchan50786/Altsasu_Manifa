@@ -87,8 +87,9 @@ public static class ConstructorCallesAssets
 
                 for (int i = 0; i < s.points.Length - 1; i++)
                 {
-                    Vector2 a = new Vector2(s.points[i].x, s.points[i].z);
-                    Vector2 b = new Vector2(s.points[i + 1].x, s.points[i + 1].z);
+                    // Puntos RELATIVOS al origen → World = + OX/OZ (igual que ConstruirCalle procedural).
+                    Vector2 a = new Vector2(s.points[i].x + GeoDataAlsasua.OX, s.points[i].z + GeoDataAlsasua.OZ);
+                    Vector2 b = new Vector2(s.points[i + 1].x + GeoDataAlsasua.OX, s.points[i + 1].z + GeoDataAlsasua.OZ);
                     Vector2 dir = b - a;
                     float len = dir.magnitude;
                     if (len < 0.05f) continue;

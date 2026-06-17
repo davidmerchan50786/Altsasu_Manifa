@@ -125,10 +125,13 @@ public static class ConstructorCiudadAssets
                 Vector3 size = bounds[prefab];
                 if (size.x < 0.01f || size.y < 0.01f || size.z < 0.01f) size = Vector3.one;
 
-                float y = terrain != null ? terrain.SampleHeight(new Vector3(c.x, 0, c.y)) : 0f;
+                // Los footprints son RELATIVOS al origen (Herriko Plaza). World = + OX/OZ
+                // (igual que ConstruirEdificio procedural: v + GeoDataAlsasua.OX/OZ).
+                float wx = c.x + GeoDataAlsasua.OX, wz = c.y + GeoDataAlsasua.OZ;
+                float y = terrain != null ? terrain.SampleHeight(new Vector3(wx, 0, wz)) : 0f;
 
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, raiz.transform);
-                go.transform.position = new Vector3(c.x, y, c.y);
+                go.transform.position = new Vector3(wx, y, wz);
                 go.transform.rotation = Quaternion.Euler(0f, -ang * Mathf.Rad2Deg, 0f);
                 go.transform.localScale = new Vector3(ancho / size.x, altura / size.y, fondo / size.z);
                 go.isStatic = true;
