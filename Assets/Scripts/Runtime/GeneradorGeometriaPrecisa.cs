@@ -150,6 +150,15 @@ public class GeneradorGeometriaPrecisa : MonoBehaviour
 
     IEnumerator GenerarEdificios()
     {
+        // EDIFICIOS SOLO DE ASSET (jun 2026): si la generación procedural está desactivada,
+        // no construimos ninguna malla de edificio. Los edificios los aportan los prefabs
+        // de "Edificios_Asset" (ConstructorCiudadAssets). El resto del mundo no se toca.
+        if (!MundoConfig.EdificiosProcedurales)
+        {
+            AlsasuaLogger.Info("GeomPrecisa", "Edificios procedurales OFF (MundoConfig) → uso edificios de asset.");
+            yield break;
+        }
+
         // Prioridad de fuente: buildings_final.json (todo fusionado) >
         //   buildings_completo.json (OSM completo) > buildings_unity.json (base)
         var json = CargarJSON("Assets/AlsasuaData/buildings_final.json")

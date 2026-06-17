@@ -214,6 +214,7 @@ public class GeneradorMundoOSM : MonoBehaviour
     /// <summary>Construye el mesh de un edificio y lo añade bajo <paramref name="parent"/>.</summary>
     public void ConstruirEdificio(EdificioData e, Transform parent)
     {
+        if (!MundoConfig.EdificiosProcedurales) return;   // edificios solo de asset (jun 2026)
         if (e.vertices == null || e.vertices.Length < 3) return;
 
         var verts2D = new List<Vector2>();
@@ -266,6 +267,7 @@ public class GeneradorMundoOSM : MonoBehaviour
     /// <summary>Construye el mesh de un tramo de calle y lo añade bajo <paramref name="parent"/>.</summary>
     public void ConstruirCalle(RoadData r, Transform parent)
     {
+        if (!MundoConfig.CallesProcedurales) return;   // calles solo de asset (Calles_Asset) — jun 2026
         float ancho = Mathf.Max(2f, r.width);
         var pts = Array.ConvertAll(r.points, p =>
             new Vector3(p.x + OFFSET_X, 0, p.z + OFFSET_Z));

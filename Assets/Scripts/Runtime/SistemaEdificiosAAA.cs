@@ -129,6 +129,7 @@ public class SistemaEdificiosAAA : MonoBehaviour
     /// Construye un edificio AAA completo con arquetipo correcto.
     public void ConstruirEdificio(EdificioData e, Transform parent)
     {
+        if (!MundoConfig.EdificiosProcedurales) return;   // edificios solo de asset (jun 2026)
         if (e.vertices == null || e.vertices.Length < 3) return;
 
         var verts2D = new List<Vector2>();
