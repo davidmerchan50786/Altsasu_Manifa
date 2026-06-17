@@ -44,6 +44,12 @@ public static class ConstructorCiudadAssets
         "Assets/Prefabs/FBX/Edificios/lisbon_building_2.prefab",
         "Assets/VillagePack/BigHouse/BigHousePrefab.prefab",
     };
+    static readonly string[] RUINAS = {  // post-apocalíptico: estructuras derruidas
+        "Assets/Prefabs/FBX/Edificios/destroyedWalls3.prefab",
+        "Assets/Prefabs/FBX/Edificios/destroyedWalls_UV1.prefab",
+        "Assets/Prefabs/FBX/Edificios/destroyedWalls_UV2.prefab",
+    };
+    const float PORCENTAJE_RUINAS = 0.30f;  // ~30% de footprints en ruinas (mezcla post-apoc)
 
     [System.Serializable] class Vert { public float x, z; }
     [System.Serializable] class Edif { public long id; public string type, name; public int levels; public float height; public Vert[] vertices; }
@@ -57,8 +63,9 @@ public static class ConstructorCiudadAssets
 
         var casas   = Cargar(CASAS);
         var bloques = Cargar(BLOQUES);
-        if (casas.Count == 0 && bloques.Count == 0)
-        { EditorUtility.DisplayDialog("Edificios de Asset", "No se cargó ningún prefab de edificio. Revisa las rutas en CASAS/BLOQUES.", "Vale"); return; }
+        var ruinas  = Cargar(RUINAS);
+        if (casas.Count == 0 && bloques.Count == 0 && ruinas.Count == 0)
+        { EditorUtility.DisplayDialog("Edificios de Asset", "No se cargó ningún prefab de edificio. Revisa las rutas en CASAS/BLOQUES/RUINAS.", "Vale"); return; }
 
         Wrap w;
         try { w = JsonUtility.FromJson<Wrap>("{\"items\":" + File.ReadAllText(ruta) + "}"); }
@@ -67,7 +74,7 @@ public static class ConstructorCiudadAssets
 
         if (!EditorUtility.DisplayDialog("Construir Edificios de Asset",
             $"Voy a colocar {w.items.Length} edificios de asset en los footprints reales " +
-            $"({casas.Count} prefabs casa, {bloques.Count} bloque), escalados a parcela+altura.\n\n" +
+            $"({casas.Count} casa, {bloques.Count} bloque, {ruinas.Count} ruina · ~{PORCENTAJE_RUINAS*100:F0}% post-apocalíptico), escalados a parcela+altura.\n\n" +
             "Crea la raíz 'Edificios_Asset' (static). Reversible (menú Limpiar).\n¿Continuar?", "Construir", "Cancelar"))
             return;
 
@@ -75,6 +82,7 @@ public static class ConstructorCiudadAssets
         var bounds = new Dictionary<GameObject, Vector3>();
         foreach (var p in casas)   bounds[p] = MedirBounds(p);
         foreach (var p in bloques) bounds[p] = MedirBounds(p);
+        foreach (var p in ruinas)  bounds[p] = MedirBounds(p);
 
         var raizAnt = GameObject.Find(RAIZ);
         if (raizAnt != null) Object.DestroyImmediate(raizAnt);
@@ -118,8 +126,17 @@ public static class ConstructorCiudadAssets
                 float altura = Mathf.Max(3f, e.height > 0 ? e.height : e.levels * 3.1f);
 
                 // Elegir prefab: bloque si alto/grande, si no casa.
-                bool esBloque = (altura >= 9f || (ancho * fondo) >= 220f) && bloques.Count > 0;
-                var lista = esBloque ? bloques : (casas.Count > 0 ? casas : bloques);
+                // Mezcla post-apocalíptica: un % de footprints se vuelven RUINAS (muros derruidos).
+                bool esRuina = ruinas.Count > 0 && ((uint)e.id % 100u) < (uint)(PORCENTAJE_RUINAS * 100f);
+                List<GameObject> lista;
+                if (esRuina) lista = ruinas;
+                else
+                {
+                    bool esBloque = (altura >= 9f || (ancho * fondo) >= 220f) && bloques.Count > 0;
+                    lista = esBloque ? bloques : (casas.Count > 0 ? casas : bloques);
+                }
+                if (lista == null || lista.Count == 0)
+                    lista = casas.Count > 0 ? casas : (bloques.Count > 0 ? bloques : ruinas);
                 var prefab = lista[(int)((uint)e.id % (uint)lista.Count)];
 
                 Vector3 size = bounds[prefab];
