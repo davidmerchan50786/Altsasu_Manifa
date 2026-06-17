@@ -87,6 +87,7 @@ public static class ConstructorCiudadAssets
         var raizAnt = GameObject.Find(RAIZ);
         if (raizAnt != null) Object.DestroyImmediate(raizAnt);
         var raiz = new GameObject(RAIZ);
+        var matsInstancia = new HashSet<Material>();   // GPU instancing en materiales repetidos (AAA)
 
         var terrain = Terrain.activeTerrain;
         int colocados = 0, idx = 0;
@@ -152,6 +153,10 @@ public static class ConstructorCiudadAssets
                 go.transform.rotation = Quaternion.Euler(0f, -ang * Mathf.Rad2Deg, 0f);
                 go.transform.localScale = new Vector3(ancho / size.x, altura / size.y, fondo / size.z);
                 go.isStatic = true;
+                // GPU instancing en los materiales (muchos prefabs comparten material → 1 draw call).
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                    foreach (var m in r.sharedMaterials)
+                        if (m != null && !m.enableInstancing && matsInstancia.Add(m)) { m.enableInstancing = true; EditorUtility.SetDirty(m); }
                 colocados++;
             }
         }
