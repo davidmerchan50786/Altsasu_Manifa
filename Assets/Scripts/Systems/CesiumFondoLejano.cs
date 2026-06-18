@@ -74,6 +74,13 @@ public class CesiumFondoLejano : MonoBehaviour
     [Tooltip("SSE máximo (peor calidad, más barato) al que sube Cesium bajo presión de GPU.")]
     public float screenSpaceErrorMax = 96f;
 
+    [Tooltip("Si la escena del juego (Alsasua_Main) NO tiene CesiumGeoreference, créalo en\n" +
+             "runtime con el tileset de Google (ion 2275207). El token sale del proyecto\n" +
+             "(CesiumSettings/ion.cesium.com.asset). Así el fondo lejano funciona sin tocar la escena.")]
+    public bool crearCesiumSiFalta = true;
+
+    const long ID_GOOGLE_3DTILES = 2275207;
+
     // ── Auto-arranque en Play ──────────────────────────────────────────────
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -115,15 +122,21 @@ public class CesiumFondoLejano : MonoBehaviour
         // ── 1. Esperar al CesiumGeoreference (lo crea el configurador/escena) ─
         CesiumGeoreference georef = null;
         float t = 0f;
-        while (georef == null && t < 10f)
+        while (georef == null && t < 3f)   // por si otro sistema lo crea en su Start
         {
             georef = FindFirstObjectByType<CesiumGeoreference>();
             if (georef == null) { t += 0.5f; yield return new WaitForSeconds(0.5f); }
         }
         if (georef == null)
         {
-            AlsasuaLogger.Info("CesiumFondo", "Sin CesiumGeoreference en escena — nada que alinear.");
-            yield break;
+            if (!crearCesiumSiFalta)
+            {
+                AlsasuaLogger.Info("CesiumFondo", "Sin CesiumGeoreference en escena y crearCesiumSiFalta=false — nada que hacer.");
+                yield break;
+            }
+            georef = CrearCesiumGoogle();
+            AlsasuaLogger.Info("CesiumFondo",
+                "Escena sin Cesium → creado en runtime: CesiumGeoreference + tileset Google (ion 2275207).");
         }
 
         // GPS de la plaza como origen del georeference
@@ -352,6 +365,20 @@ public class CesiumFondoLejano : MonoBehaviour
         AlsasuaLogger.Info("CesiumFondo",
             "Cesium OSM Buildings (96188) creado — volumen para los edificios " +
             "del anillo (Google ahí solo da ortofoto plana).");
+    }
+
+    // Crea el fondo de Google en escenas sin Cesium (p. ej. Alsasua_Main). El token
+    // sale del proyecto (CesiumSettings/Resources/CesiumIonServers/ion.cesium.com.asset).
+    // El resto de Start lo ancla en la plaza, le pone física OFF + SSE + anillo y lo throttlea.
+    CesiumGeoreference CrearCesiumGoogle()
+    {
+        var goG  = new GameObject("CesiumGeoreference (runtime)");
+        var gref = goG.AddComponent<CesiumGeoreference>();
+        var goT  = new GameObject("Google Photorealistic 3D Tiles");
+        goT.transform.SetParent(gref.transform, false);
+        var ts = goT.AddComponent<Cesium3DTileset>();
+        ts.ionAssetID = ID_GOOGLE_3DTILES;   // token vacío → usa el default del proyecto
+        return gref;
     }
 
     void DesparentarCamarasDelGeoref(CesiumGeoreference georef)
