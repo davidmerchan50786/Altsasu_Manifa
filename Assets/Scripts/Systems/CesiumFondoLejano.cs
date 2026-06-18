@@ -63,12 +63,16 @@ public class CesiumFondoLejano : MonoBehaviour
              "en la Sakana (solo ortofoto drapeada, edificios planos).")]
     public bool crearOsmBuildings = true;
 
-    [Tooltip("ARQUITECTURA NUEVA (rediseño 2026): el fondo lejano es un MESH ESTÁTICO del\n" +
-             "MDT (SistemaMontesFondo), no Cesium. Con true este componente DESACTIVA\n" +
-             "Cesium por completo — era lo más pesado de la escena y generaba la 'capa\n" +
-             "flotante' en el cielo cuando el terreno local no llegaba a tocarlo.\n" +
-             "Pon false solo si quieres volver al fondo fotorrealista de Google.")]
-    public bool deshabilitarCesium = true;
+    [Tooltip("Con true desactiva Cesium por completo (fondo = mesh MDT estático).\n" +
+             "FALSE (decisión 2026-06-18): Cesium vuelve como fondo SOLO del anillo\n" +
+             "lejano (>medioLadoInterior ≈ 7 km; el suelo jugable lo cubre el terreno\n" +
+             "real con la ortofoto drapeada, DrapeOrtofotoLejana). Para que no repita\n" +
+             "el problema de FPS, el GobernadorRender lo throttlea (sube SSE / lo apaga\n" +
+             "bajo presión de GPU) y se desactiva el SistemaMontesFondo placeholder.")]
+    public bool deshabilitarCesium = false;
+
+    [Tooltip("SSE máximo (peor calidad, más barato) al que sube Cesium bajo presión de GPU.")]
+    public float screenSpaceErrorMax = 96f;
 
     // ── Auto-arranque en Play ──────────────────────────────────────────────
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -220,6 +224,73 @@ public class CesiumFondoLejano : MonoBehaviour
                   ?? ts.gameObject.AddComponent<ExcluidorTilesCercanos>();
             ex.medioLadoInterior = medioLadoInterior;
             ex.medioLadoExterior = medioLadoExterior;
+        }
+
+        // ── 8. Cesium activo: apagar el placeholder de montes y el spam de OriginShift ─
+        DesactivarMontesFondoPlaceholder();
+        MatarOriginShift();   // "CesiumOriginShift is doing nothing…" — georef anclado estático, no se necesita
+
+        // ── 9. Throttle por GPU: el gobernador sube SSE / apaga Cesium bajo presión ──
+        StartCoroutine(ThrottlePorGpu(georef));
+    }
+
+    // Con Cesium de fondo, el mesh MDT decorativo (SistemaMontesFondo) sobra y solaparía.
+    void DesactivarMontesFondoPlaceholder()
+    {
+        var montes = FindFirstObjectByType<SistemaMontesFondo>(FindObjectsInactive.Include);
+        if (montes != null && montes.gameObject.activeSelf)
+        {
+            montes.gameObject.SetActive(false);
+            AlsasuaLogger.Info("CesiumFondo", "SistemaMontesFondo (placeholder) desactivado — el fondo lejano lo da Cesium.");
+        }
+    }
+
+    // CesiumOriginShift solo tiene sentido anidado bajo un georef que sigue a un ancla;
+    // aquí el georef está anclado estático en la plaza → cualquier OriginShift es ruido
+    // ("…doing nothing…" cada frame). Lo eliminamos.
+    void MatarOriginShift()
+    {
+        foreach (var os in FindObjectsByType<CesiumOriginShift>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            Destroy(os);
+    }
+
+    // El GobernadorRender da FactorRender 0..1 (1 = holgura, baja bajo presión de GPU).
+    // Mapeamos: holgura → SSE base (detalle); presión → SSE alto (barato); saturación
+    // fuerte → tilesets OFF. Pocas comprobaciones/seg (el fondo no necesita 60 Hz).
+    IEnumerator ThrottlePorGpu(CesiumGeoreference georef)
+    {
+        var gob = ServiceLocator.Get<IRenderBudgetGovernor>();
+        bool apagado = false;
+        float sseAplicado = -1f;
+        var espera = new WaitForSeconds(0.5f);
+        while (georef != null)
+        {
+            gob ??= ServiceLocator.Get<IRenderBudgetGovernor>();
+            float f = gob?.FactorRender ?? 1f;
+
+            // <0.35 = saturación fuerte → Cesium OFF; histéresis para volver a 0.5.
+            bool quiereApagar = apagado ? f < 0.50f : f < 0.35f;
+            if (quiereApagar != apagado)
+            {
+                apagado = quiereApagar;
+                foreach (var ts in georef.GetComponentsInChildren<Cesium3DTileset>(true))
+                    ts.enabled = !apagado;
+                AlsasuaLogger.Info("CesiumFondo", apagado
+                    ? $"GPU saturada (factor {f:F2}) → Cesium de fondo APAGADO."
+                    : $"GPU recuperada (factor {f:F2}) → Cesium de fondo ON.");
+            }
+
+            if (!apagado)
+            {
+                float sse = Mathf.Lerp(screenSpaceErrorMax, screenSpaceErrorFondo, f); // f=1 → base, f=0 → max
+                if (Mathf.Abs(sse - sseAplicado) > 2f)
+                {
+                    sseAplicado = sse;
+                    foreach (var ts in georef.GetComponentsInChildren<Cesium3DTileset>(true))
+                        ts.maximumScreenSpaceError = sse;
+                }
+            }
+            yield return espera;
         }
     }
 

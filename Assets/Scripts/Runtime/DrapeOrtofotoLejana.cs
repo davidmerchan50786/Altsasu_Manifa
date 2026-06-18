@@ -1,18 +1,19 @@
 // Assets/Scripts/Runtime/DrapeOrtofotoLejana.cs
 // ═══════════════════════════════════════════════════════════════════════════
-//  DRAPE DE ORTOFOTO LEJANA — la foto aérea real "pegada" al relieve a distancia
+//  DRAPE DE ORTOFOTO — la foto aérea real "pegada" al relieve (estilo GTA/MSFS)
 //
-//  Truco AAA (GTA/MSFS): el suelo lejano se ve como la ortofoto real del valle,
-//  no como splatmap de biomas. Es UNA sola malla que se ajusta al terreno
-//  (cuadrícula que muestrea TerrenoGlobal.AlturaMundo) texturizada con el bake
-//  combinado de las 72 teselas PNOA → 1 draw call, unlit, sin sombras, baratísimo.
+//  El suelo lejano se ve como la ortofoto real, no como splatmap de biomas. Son
+//  mallas que se ajustan al terreno (cuadrícula que muestrea TerrenoGlobal),
+//  texturizadas con la foto aérea PNOA → pocas draw calls, unlit, sin sombras.
 //
-//  · NEAR (≤ ~400 m): AplicadorOrtofoto pinta teselas 25 cm/px ENCIMA de este
-//    drape (offsetY mayor) → cerca se ve nítido, lejos este drape (~1.3 m/px).
-//  · Bake: Tools/GenerarOrtofotoDrape.py → Assets/AlsasuaData/ortofoto_drape.png
-//    (norte arriba; v=1 = norte = Z máx). Se lee en runtime (File + LoadImage).
-//  · Cobertura: solo el bbox del valle con datos PNOA (~2.75×2.67 km centrado en
-//    la plaza). Más allá (sierras) → terreno/biomas + Cesium de fondo lejano.
+//  PIRÁMIDE LOD DE IMAGEN AÉREA (de lejos a cerca, cada una ENCIMA de la previa):
+//    1) FONDO  — todo el mundo jugable (±7200 m = mosaico V2), ~3.5 m/px.
+//       Tools/DescargarOrtofotoFondo.py → ortofoto_fondo.jpg (+ _meta.json).
+//    2) VALLE  — casco/valle (~2.75 km), ~1.34 m/px.
+//       Tools/GenerarOrtofotoDrape.py → ortofoto_drape.png.
+//    3) NEAR   — teselas 25 cm/px ≤400 m: las pinta AplicadorOrtofoto con un
+//       offsetY MAYOR (0.30) para quedar por encima de estas capas.
+//  Más allá de ±7200 m → Cesium de fondo lejano (CesiumFondoLejano).
 //
 //  Auto-arranca solo (RuntimeInitializeOnLoad): no hay que tocar la escena.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -23,32 +24,32 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[DefaultExecutionOrder(-54)]   // tras AplicadorOrtofoto (-55), tras terreno
+[DefaultExecutionOrder(-54)]
 [DisallowMultipleComponent]
 public class DrapeOrtofotoLejana : MonoBehaviour
 {
     public static DrapeOrtofotoLejana Instance { get; private set; }
 
-    [Header("Geometría")]
-    [Tooltip("Celdas por lado de la cuadrícula (se ajusta al relieve). 160 → ~17 m/celda.")]
-    public int celdas = 160;
-    [Tooltip("Altura sobre el terreno (m). Menor que el de AplicadorOrtofoto para que las teselas nítidas ganen cerca.")]
-    public float offsetY = 0.10f;
+    // Cada capa: textura + bbox (coords Unity) + altura sobre el terreno + densidad.
+    class Capa
+    {
+        public string nombre, png, metaJson;
+        public float x0, z0, x1, z1;     // bbox Unity (si metaJson != null se lee de ahí)
+        public float offsetY;
+        public int   celdas, renderQueue;
+        public Texture2D tex;
+        public Material  mat;
+    }
 
-    // bbox del valle con datos PNOA — = orto_tiles_meta.json (= GenerarOrtofotoDrape.py)
-    const float X0 = 596.3f, X1 = 3346.7f, Z0 = 7378.9f, Z1 = 10050.6f;
-    const string PNG = "AlsasuaData/ortofoto_drape.png";
+    [System.Serializable] class BBoxMeta { public float ux_min, uz_min, ux_max, uz_max; }
 
-    GameObject _go;
-    Texture2D  _tex;
-    Material   _mat;
+    GameObject _root;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Boot()
     {
         if (Instance != null || FindFirstObjectByType<DrapeOrtofotoLejana>() != null) return;
-        var go = new GameObject("DrapeOrtofotoLejana");
-        go.AddComponent<DrapeOrtofotoLejana>();
+        new GameObject("DrapeOrtofotoLejana").AddComponent<DrapeOrtofotoLejana>();
     }
 
     void Awake()
@@ -69,59 +70,95 @@ public class DrapeOrtofotoLejana : MonoBehaviour
             t += 0.5f; yield return new WaitForSeconds(0.5f);
         }
 
-        // Cargar el bake (hilo de fondo + LoadImage en el principal).
-        string ruta = Path.Combine(Application.dataPath, PNG);
+        _root = new GameObject("OrtofotoDrape_Mallas");
+        _root.transform.SetParent(transform, false);
+
+        // Pirámide: fondo (todo el mundo) primero, valle (nítido) por encima.
+        var capas = new[]
+        {
+            new Capa { nombre = "Fondo", png = "AlsasuaData/ortofoto_fondo.jpg",
+                       metaJson = "AlsasuaData/ortofoto_fondo_meta.json",
+                       offsetY = 0.05f, celdas = 400, renderQueue = (int)RenderQueue.Geometry - 2 },
+            new Capa { nombre = "Valle", png = "AlsasuaData/ortofoto_drape.png",
+                       x0 = 596.3f, z0 = 7378.9f, x1 = 3346.7f, z1 = 10050.6f,
+                       offsetY = 0.12f, celdas = 160, renderQueue = (int)RenderQueue.Geometry - 1 },
+        };
+
+        int ok = 0;
+        foreach (var c in capas)
+            yield return StartCoroutine(ConstruirCapa(c, r => { if (r) ok++; }));
+
+        if (ok == 0) { AlsasuaLogger.Warn("DrapeOrto", "Ninguna capa de ortofoto cargada (faltan PNG)."); enabled = false; }
+        else AlsasuaLogger.Info("DrapeOrto", $"✅ Drape de ortofoto listo: {ok}/{capas.Length} capas (fondo 14.4 km + valle), {ok} draw calls.");
+    }
+
+    IEnumerator ConstruirCapa(Capa c, System.Action<bool> done)
+    {
+        // bbox desde sidecar JSON si lo hay.
+        if (!string.IsNullOrEmpty(c.metaJson))
+        {
+            string mp = Path.Combine(Application.dataPath, c.metaJson);
+            if (File.Exists(mp))
+            {
+                try
+                {
+                    var bb = JsonUtility.FromJson<BBoxMeta>(File.ReadAllText(mp));
+                    c.x0 = bb.ux_min; c.z0 = bb.uz_min; c.x1 = bb.ux_max; c.z1 = bb.uz_max;
+                }
+                catch (System.Exception e) { AlsasuaLogger.Warn("DrapeOrto", $"meta {c.nombre}: {e.Message}"); }
+            }
+        }
+
+        // Cargar textura (lectura en hilo de fondo + LoadImage en el principal).
+        string ruta = Path.Combine(Application.dataPath, c.png);
         if (!File.Exists(ruta))
         {
-            AlsasuaLogger.Warn("DrapeOrto",
-                $"No existe {PNG} → ejecuta Tools/GenerarOrtofotoDrape.py. Drape desactivado.");
-            enabled = false; yield break;
+            AlsasuaLogger.Warn("DrapeOrto", $"Capa '{c.nombre}': no existe {c.png} → omitida.");
+            done(false); yield break;
         }
         byte[] bytes = null;
         var read = Task.Run(() => { try { bytes = File.ReadAllBytes(ruta); } catch { bytes = null; } });
         while (!read.IsCompleted) yield return null;
-        if (bytes == null) { enabled = false; yield break; }
+        if (bytes == null) { done(false); yield break; }
 
-        _tex = new Texture2D(2, 2, TextureFormat.RGB24, mipChain: true)
-        { name = "OrtofotoDrape", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear };
-        if (!_tex.LoadImage(bytes)) { Destroy(_tex); enabled = false; yield break; }
-        _tex.Apply(true, true);   // genera mips + libera copia CPU (no la muestreamos)
-        _tex.anisoLevel = 8;      // se ve en ángulo rasante a distancia
-
+        c.tex = new Texture2D(2, 2, TextureFormat.RGB24, mipChain: true)
+        { name = $"OrtoDrape_{c.nombre}", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear };
+        if (!c.tex.LoadImage(bytes)) { Destroy(c.tex); done(false); yield break; }
+        c.tex.Apply(true, true);
+        c.tex.anisoLevel = 8;
         yield return null;
 
         var sh = Shader.Find("HDRP/Unlit") ?? Shader.Find("Unlit/Texture") ?? Shader.Find("Sprites/Default");
-        _mat = new Material(sh) { name = "Mat_OrtofotoDrape" };
-        if (_mat.HasProperty("_UnlitColorMap")) _mat.SetTexture("_UnlitColorMap", _tex);
-        if (_mat.HasProperty("_BaseColorMap"))  _mat.SetTexture("_BaseColorMap", _tex);
-        if (_mat.HasProperty("_MainTex"))        _mat.SetTexture("_MainTex", _tex);
-        _mat.renderQueue = (int)RenderQueue.Geometry;   // base; las teselas near van por encima
+        c.mat = new Material(sh) { name = $"Mat_OrtoDrape_{c.nombre}" };
+        if (c.mat.HasProperty("_UnlitColorMap")) c.mat.SetTexture("_UnlitColorMap", c.tex);
+        if (c.mat.HasProperty("_BaseColorMap"))  c.mat.SetTexture("_BaseColorMap", c.tex);
+        if (c.mat.HasProperty("_MainTex"))        c.mat.SetTexture("_MainTex", c.tex);
+        c.mat.renderQueue = c.renderQueue;
 
-        yield return StartCoroutine(ConstruirMalla());
-
-        AlsasuaLogger.Info("DrapeOrto",
-            $"✅ Drape de ortofoto lejana listo ({_tex.width}×{_tex.height}, {celdas}×{celdas} celdas, 1 draw call).");
+        yield return StartCoroutine(ConstruirMalla(c));
+        done(true);
     }
 
-    IEnumerator ConstruirMalla()
+    IEnumerator ConstruirMalla(Capa c)
     {
-        int n = Mathf.Clamp(celdas, 8, 254);   // (n+1)² < 65535 → índices 16 bit
+        int n = Mathf.Clamp(c.celdas, 8, 1000);
         int vpl = n + 1;
-        float dx = (X1 - X0) / n, dz = (Z1 - Z0) / n;
+        float dx = (c.x1 - c.x0) / n, dz = (c.z1 - c.z0) / n;
+        float w = c.x1 - c.x0, h = c.z1 - c.z0;
 
         var verts = new Vector3[vpl * vpl];
         var uvs   = new Vector2[vpl * vpl];
         for (int j = 0; j <= n; j++)
         {
-            float z = Z0 + j * dz;
+            float z = c.z0 + j * dz;
             for (int i = 0; i <= n; i++)
             {
-                float x = X0 + i * dx;
+                float x = c.x0 + i * dx;
                 int k = j * vpl + i;
-                verts[k] = new Vector3(x, TerrenoGlobal.AlturaMundo(x, z) + offsetY, z);
-                uvs[k]   = new Vector2((x - X0) / (X1 - X0), (z - Z0) / (Z1 - Z0));
+                verts[k] = new Vector3(x, TerrenoGlobal.AlturaMundo(x, z) + c.offsetY, z);
+                uvs[k]   = new Vector2((x - c.x0) / w, (z - c.z0) / h);
             }
-            if ((j & 15) == 0) yield return null;   // amortizar el muestreo de alturas
+            if ((j & 7) == 0) yield return null;   // amortizar el muestreo de alturas
         }
 
         var tris = new int[n * n * 6];
@@ -134,27 +171,26 @@ public class DrapeOrtofotoLejana : MonoBehaviour
                 tris[o++] = br; tris[o++] = tl; tris[o++] = tr;
             }
 
-        var mesh = new Mesh { name = "OrtofotoDrapeMesh" };
+        var mesh = new Mesh { name = $"OrtoDrapeMesh_{c.nombre}" };
+        if (verts.Length > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.SetVertices(verts);
         mesh.SetUVs(0, uvs);
         mesh.SetTriangles(tris, 0);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
-        _go = new GameObject("OrtofotoDrape_Mesh");
-        _go.transform.SetParent(transform, false);
-        _go.AddComponent<MeshFilter>().sharedMesh = mesh;
-        var mr = _go.AddComponent<MeshRenderer>();
-        mr.sharedMaterial    = _mat;
+        var go = new GameObject($"OrtoDrape_{c.nombre}");
+        go.transform.SetParent(_root.transform, false);
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial    = c.mat;
         mr.shadowCastingMode = ShadowCastingMode.Off;
         mr.receiveShadows    = false;
-        _go.isStatic = true;
+        go.isStatic = true;
     }
 
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (_mat != null) Destroy(_mat);
-        if (_tex != null) Destroy(_tex);
     }
 }
