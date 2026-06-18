@@ -25,8 +25,9 @@ public class AplicadorOrtofoto : MonoBehaviour
     public static AplicadorOrtofoto Instance { get; private set; }
 
     [Header("Configuración")]
-    [Tooltip("Y de los quads sobre el terreno (m)")]
-    public float offsetY = 0.05f;
+    [Tooltip("Y de los quads sobre el terreno (m). Debe ser MAYOR que DrapeOrtofotoLejana.offsetY " +
+             "(0.10) para que estas teselas nítidas (25 cm) ganen sobre el drape lejano (~1.3 m).")]
+    public float offsetY = 0.30f;
 
     [Tooltip("Activar streaming: cargar solo teselas cercanas a la cámara (SIEMPRE activado para controlar memoria)")]
     public bool streaming = true;
@@ -101,6 +102,10 @@ public class AplicadorOrtofoto : MonoBehaviour
 
         _parent = new GameObject("Ortofoto_Tiles").transform;
         _parent.SetParent(transform, false);
+
+        // Las teselas nítidas DEBEN quedar por encima del drape lejano (offsetY 0.10);
+        // fuerza un mínimo aunque una instancia vieja tenga 0.05 serializado.
+        offsetY = Mathf.Max(offsetY, 0.25f);
 
         if (!CargarMeta()) yield break;
 
