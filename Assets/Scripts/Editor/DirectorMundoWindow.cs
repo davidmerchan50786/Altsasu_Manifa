@@ -62,7 +62,7 @@ public sealed class DirectorMundoWindow : EditorWindow
     static readonly Regex RX_PCT  = new Regex(@"(\d{1,3})\s*%", RegexOptions.Compiled);
     static readonly Regex RX_FRAC = new Regex(@"\[(\d+)\s*/\s*(\d+)\]", RegexOptions.Compiled);
 
-    [MenuItem("Tools/Alsasua/🌍 Director de Mundo (GIS)", priority = 0)]
+    [MenuItem("Tools/Alsasua/🌍 Director de Mundo (GIS)", priority = -20)]
     public static void Abrir()
     {
         var w = GetWindow<DirectorMundoWindow>();

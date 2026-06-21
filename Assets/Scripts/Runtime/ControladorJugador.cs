@@ -287,6 +287,9 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         sistemaBombas  = GetComponent<SistemaBombas>()   ?? gameObject.AddComponent<SistemaBombas>();
         if (GetComponent<SistemaArmasExtendido>() == null) gameObject.AddComponent<SistemaArmasExtendido>();
         if (GetComponent<SistemaBarricadas>()     == null) gameObject.AddComponent<SistemaBarricadas>();
+        // Modelo del arma en la mano (cuelga del hueso RightHand de PlayerArmature y
+        // se intercambia al cambiar de arma). Construcción perezosa: espera al modelo.
+        if (GetComponent<VisualArmaMano>()        == null) gameObject.AddComponent<VisualArmaMano>();
 
         // Locomoción Fase 1 (Docs/arquitectura_locomocion.md §7): proveedor de
         // trayectoria + fallback de fase/velocidad, listos para que Foot IK/HUD
@@ -464,25 +467,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             go.transform.localRotation = Quaternion.identity;
             go.transform.localScale    = Vector3.one * escalaModelo;
 
-            // AUTO-ASENTADO DE LA MALLA (fix "medio cuerpo enterrado", 2026-06-15):
-            // algunos rigs tienen el pivot en la cadera, no en los pies, así que con
-            // offsetModelo=0 la mitad inferior quedaba bajo el suelo. Alineamos el FONDO
-            // de los bounds de la malla a la base del CharacterController (sus "pies"),
-            // sea cual sea el pivot del prefab. Es un offset RELATIVO → válido esté donde
-            // esté el jugador en el mundo.
-            {
-                var rs = go.GetComponentsInChildren<Renderer>(true);
-                float minY = float.MaxValue;
-                for (int i = 0; i < rs.Length; i++)
-                    if (rs[i] != null) minY = Mathf.Min(minY, rs[i].bounds.min.y);
-                if (minY < float.MaxValue)
-                {
-                    float pies   = transform.position.y + cc.center.y - cc.height * 0.5f;
-                    float deltaY = pies - minY;
-                    if (Mathf.Abs(deltaY) > 0.02f)
-                        go.transform.localPosition += new Vector3(0f, deltaY, 0f);
-                }
-            }
+            // NOTA: el auto-asentado de la malla ("medio cuerpo enterrado") se hace MÁS
+            // ABAJO, tras configurar y forzar un Update del Animator. Si se midieran los
+            // bounds aquí —recién instanciado, sin que el Animator haya posado el rig—
+            // un SkinnedMeshRenderer devuelve bounds de bind-pose/obsoletos → offset mal
+            // calculado → el modelo quedaba medio enterrado. Ver AsentarMallaEnPies().
 
             // Desactivar colisionadores del modelo — CharacterController gestiona las colisiones.
             // Sin esto el personaje puede teletransportarse o bloquearse en la geometría.
@@ -525,21 +514,46 @@ public class ControladorJugador : MonoBehaviour, IDamageable
                 // curva de animación → conflicto con cc.Move() → deslizamiento o bloqueo.
                 animPersonaje.applyRootMotion = false;
 
-                // Culling Mode: solo animar cuando el personaje es visible en cámara (optimización).
-                animPersonaje.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                // FIX "ESTATUA MOVIÉNDOSE" (jun 2026): CullUpdateTransforms hace que el
+                // Animator DEJE de actualizar los huesos cuando Unity cree que el modelo
+                // está fuera de cámara. PlayerArmature trae los SkinnedMeshRenderer con
+                // updateWhenOffscreen=false → sus bounds son los de bind-pose y, si no
+                // coinciden con el frustum, el rig se CONGELA (el personaje se desliza en
+                // pose rígida = "estatua que se mueve"). AlwaysAnimate garantiza que los
+                // huesos se actualicen cada frame (coste despreciable para 1 personaje).
+                animPersonaje.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+                // Bounds siempre recalculados desde la pose real → ni culling erróneo ni
+                // asentado con bounds obsoletos (medio enterrado).
+                foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    if (smr != null) smr.updateWhenOffscreen = true;
 
                 // AAA+++: Foot IK automático en el personaje humanoide (se auto-desactiva
                 // si el avatar no es Humanoid). Requiere "IK Pass" en la capa del controller.
                 if (animPersonaje.gameObject.GetComponent<SistemaFootIK>() == null)
                     animPersonaje.gameObject.AddComponent<SistemaFootIK>();
 
-                AlsasuaLogger.Info("Jugador", $"✓ Personaje Mixamo '{prefabPersonaje.name}' instanciado con Animator.");
+                // Forzar una evaluación del Animator AHORA para que el rig adopte la pose
+                // del estado por defecto (Idle) antes de medir los bounds para el asentado.
+                animPersonaje.Update(0f);
+
+                AlsasuaLogger.Info("Jugador",
+                    $"✓ Personaje '{prefabPersonaje.name}' instanciado. Animator controller=" +
+                    $"{(animPersonaje.runtimeAnimatorController != null ? animPersonaje.runtimeAnimatorController.name : "NULL")}, " +
+                    $"avatarHumanoide={(animPersonaje.avatar != null && animPersonaje.avatar.isHuman)}.");
             }
             else
             {
                 AlsasuaLogger.Warn("Jugador", "El prefab no tiene Animator. " +
                                   "Añade un Animator Controller al FBX en el Inspector de Import.");
             }
+
+            // AUTO-ASENTADO DE LA MALLA (fix "medio cuerpo enterrado"): alinea el FONDO de
+            // los bounds del modelo a la base del CharacterController ("pies"), sea cual sea
+            // el pivot del prefab (cadera vs pies). Offset RELATIVO → válido en cualquier
+            // punto del mundo. Se hace AQUÍ, ya posado el rig y con updateWhenOffscreen=true,
+            // para que los bounds sean los reales (no los de bind-pose).
+            AsentarMallaEnPies(go);
 
             return; // No crear el cuerpo procedural
         }
@@ -608,6 +622,23 @@ public class ControladorJugador : MonoBehaviour, IDamageable
             new Vector3(0.05f, 0.08f, 0.50f), metal);
         Box(_brazoDer.gameObject, "RifleCanon", new Vector3(0.02f, -0.50f, 0.62f),
             new Vector3(0.03f, 0.03f, 0.22f), new Color(0.06f, 0.06f, 0.06f));
+    }
+
+    // Alinea el fondo de los bounds del modelo a la base del CharacterController.
+    // Offset RELATIVO (localPosition) → no depende de dónde esté el jugador en el mundo.
+    private void AsentarMallaEnPies(GameObject go)
+    {
+        if (go == null || cc == null) return;
+        var rs = go.GetComponentsInChildren<Renderer>(true);
+        float minY = float.MaxValue;
+        for (int i = 0; i < rs.Length; i++)
+            if (rs[i] != null && rs[i].enabled) minY = Mathf.Min(minY, rs[i].bounds.min.y);
+        if (minY >= float.MaxValue) return;
+
+        float pies   = transform.position.y + cc.center.y - cc.height * 0.5f;
+        float deltaY = pies - minY;
+        if (Mathf.Abs(deltaY) > 0.02f)
+            go.transform.localPosition += new Vector3(0f, deltaY, 0f);
     }
 
     // ── Animación procedural de caminar (solo cuerpo de cápsulas, sin Animator) ──
@@ -1016,8 +1047,14 @@ public class ControladorJugador : MonoBehaviour, IDamageable
         // CharacterController el personaje quedaba MEDIO ENTERRADO. Ahora se calcula real.
         float offsetPie  = cc.height * 0.5f - cc.center.y + cc.skinWidth;
         float yObjetivo  = ySuelo + offsetPie;
-        // Corrige tanto la caída al vacío como el hundimiento leve (umbral 0.4 m).
-        if (transform.position.y < yObjetivo - 0.4f)
+        // RESCATE SOLO ANTE CAÍDA REAL AL VACÍO. Antes el umbral era 0.4 m y NO
+        // comprobaba si el jugador estaba apoyado → una diferencia normal de muestreo
+        // (~0.3 m) entre TerrenoGlobal.AlturaMundo y el TerrainCollider disparaba un
+        // snap-up cada 0.1 s = "bote constante" (confirmado: grounded=True, gap 0.34 m).
+        // El collider es la VERDAD de dónde se pisa: si el jugador está en suelo, NUNCA
+        // se le teletransporta. Solo se rescata si NO está apoyado en nada Y ha caído
+        // varios metros por debajo del suelo esperado (atravesó el mundo).
+        if (!estaEnSuelo && transform.position.y < yObjetivo - 2.5f)
         {
             cc.enabled = false;
             var p = transform.position;

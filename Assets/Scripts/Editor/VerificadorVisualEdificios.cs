@@ -51,7 +51,7 @@ namespace AltsasuEditor
         [Serializable] class Summary        { public int ok, revisar, critico; public float ssim_medio; }
 
         // ── Apertura de ventana ───────────────────────────────────────────────
-        [MenuItem("Altsasua/Verificar Edificios Visualmente")]
+        [MenuItem("Tools/Alsasua/Debug/🏠 Verificar Edificios Visualmente", priority = 32)]
         static void Open()
         {
             var w = GetWindow<VerificadorVisualEdificios>("Verificador Visual");

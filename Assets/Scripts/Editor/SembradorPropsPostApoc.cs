@@ -52,7 +52,7 @@ public static class SembradorPropsPostApoc
     [System.Serializable] class Seg { public long id; public float width; public Pt[] points; }
     [System.Serializable] class Wrap { public Seg[] items; }
 
-    [MenuItem("Tools/Alsasua/Mundo/🚗 Sembrar Coches Abandonados + Barreras (post-apoc)", priority = 12)]
+    [MenuItem("Tools/Alsasua/Mundo/🚗 Sembrar Coches Abandonados + Barreras (post-apoc)", priority = 50)]
     static void Sembrar()
     {
         string ruta = Path.GetFullPath(Path.Combine(Application.dataPath, "..", JSON));
@@ -149,7 +149,7 @@ public static class SembradorPropsPostApoc
             "Static + GPU instancing + streaming por distancia (solo se dibujan los cercanos).", "Genial");
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/↩️ Limpiar Props post-apoc", priority = 13)]
+    [MenuItem("Tools/Alsasua/Mundo/↩️ Limpiar Props post-apoc", priority = 51)]
     static void Limpiar()
     {
         var raiz = GameObject.Find(RAIZ);

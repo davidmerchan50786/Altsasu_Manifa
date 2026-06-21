@@ -23,7 +23,7 @@ public static class GeneradorCarreteras
     private const float  RADIO       = 380f;
     private const float  Y_OFFSET    = 0.04f;  // sobre el terreno, evita z-fighting
 
-    [MenuItem("Tools/Alsasua/Mundo/🛣 Generar Carreteras", priority = 13)]
+    [MenuItem("Tools/Alsasua/Legacy/🛣 Generar Carreteras (procedural legacy)")]
     public static void Generar()
     {
         string rutaAbs = Path.GetFullPath(Path.Combine(Application.dataPath, "..", JSON_PATH));

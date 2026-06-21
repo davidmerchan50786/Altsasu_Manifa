@@ -1,11 +1,13 @@
 // Assets/Scripts/VehiculoNPC.cs
 // Vehículo NPC que sigue waypoints, frena ante obstáculos y recibe daño
 
+using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody))]
-public class VehiculoNPC : VehiculoBase
+public class VehiculoNPC : VehiculoBase, IInteractable
 {
     // ═══════════════════════════════════════════════════════════════════════
     //  MOVIMIENTO
@@ -83,6 +85,26 @@ public class VehiculoNPC : VehiculoBase
     private Quaternion _rotDerCached;
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  ROBO / IInteractable
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [Header("═══ ROBO ═══")]
+    [Tooltip("Si false el coche no puede ser robado (p.ej. vehículo policial bloqueado).")]
+    [SerializeField] public bool puedeSerRobado = true;
+
+    private bool   _robado;
+    private bool   _mostrarPromptRobo;
+    private float  _timerBuscarJugador;
+    private Transform _jugadorCacheado;
+    private GUIStyle  _estiloPrompt;
+
+    // IInteractable — lo lee IndicadorEntradaVehiculo si se añade al prefab
+    public string TextoInteraccion  => "[E] Robar vehículo";
+    public float  RadioInteraccion  => 2.5f;
+    public bool   PuedeInteractuar  => puedeSerRobado && !_destruido && !_robado;
+    public void   OnInteractuar(ControladorJugador jugador) => IniciarRobo(jugador);
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  UNITY
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -107,6 +129,10 @@ public class VehiculoNPC : VehiculoBase
             _mpbCoche.SetColor("_Color",     c);
             rendererPrincipal.SetPropertyBlock(_mpbCoche);
         }
+
+        // Añadir sistema de daño por colisión automáticamente
+        if (GetComponent<SistemaDañoFisicoVehiculo>() == null)
+            gameObject.AddComponent<SistemaDañoFisicoVehiculo>();
     }
 
     // ─── Modelo 3D externo ───────────────────────────────────────────────
@@ -205,9 +231,39 @@ public class VehiculoNPC : VehiculoBase
         wpActual = 0;
     }
 
+    private void Update()
+    {
+        if (_destruido || _robado) { _mostrarPromptRobo = false; return; }
+        if (!puedeSerRobado) return;
+
+        // Cachear referencia al jugador con throttle (evitar FindWithTag cada frame × N coches)
+        _timerBuscarJugador -= Time.deltaTime;
+        if (_timerBuscarJugador <= 0f)
+        {
+            _timerBuscarJugador = 0.5f;
+            var go = GameObject.FindWithTag("Player");
+            _jugadorCacheado = go != null ? go.transform : null;
+        }
+
+        if (_jugadorCacheado == null) { _mostrarPromptRobo = false; return; }
+
+        float dist = Vector3.Distance(transform.position, _jugadorCacheado.position);
+        _mostrarPromptRobo = dist <= RadioInteraccion;
+
+        if (_mostrarPromptRobo)
+        {
+            var kb = Keyboard.current;
+            if (kb != null && kb.eKey.wasPressedThisFrame)
+            {
+                var jug = _jugadorCacheado.GetComponent<ControladorJugador>();
+                if (jug != null && jug.enabled) StartCoroutine(SecuenciaRobo(jug));
+            }
+        }
+    }
+
     private void FixedUpdate()
     {
-        if (_destruido || waypoints.Count == 0) return;
+        if (_destruido || _robado || waypoints.Count == 0) return;
 
         DetectarObstaculos();
         MoverHaciaWaypoint();
@@ -324,6 +380,72 @@ public class VehiculoNPC : VehiculoBase
     // ═══════════════════════════════════════════════════════════════════════
     //  DAÑO
     // ═══════════════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ROBO — secuencia de carjack
+    // ═══════════════════════════════════════════════════════════════════════
+
+    void IniciarRobo(ControladorJugador jugador)
+    {
+        if (_robado || !jugador.enabled) return;
+        StartCoroutine(SecuenciaRobo(jugador));
+    }
+
+    IEnumerator SecuenciaRobo(ControladorJugador jugador)
+    {
+        _mostrarPromptRobo = false;
+        // Parar el coche mientras el jugador "fuerza la entrada" (0.6 s de pausa dramática)
+        velocidadActual = 0f;
+        yield return new WaitForSeconds(0.6f);
+
+        // Congelar movimiento NPC — el FixedUpdate ya tiene guard (!_robado)
+        _robado = true;
+
+        // Añadir controlador del jugador y activar conducción
+        var ctrl = gameObject.AddComponent<ControladorVehiculoSimple>();
+        ctrl.IniciarConduccion(jugador);
+
+        // Subir nivel de búsqueda policial
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
+
+        AlsasuaLogger.Info("VehiculoNPC", $"'{name}' ROBADO por el jugador — nivel búsqueda +1.");
+    }
+
+    void OnGUI()
+    {
+        if (!_mostrarPromptRobo) return;
+        var cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 mundo = transform.position + Vector3.up * 2.3f;
+        Vector3 screen = cam.WorldToScreenPoint(mundo);
+        if (screen.z <= 0f) return;
+
+        if (_estiloPrompt == null)
+        {
+            _estiloPrompt = new GUIStyle(GUI.skin.label)
+            {
+                fontSize  = 22,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap  = false,
+            };
+            _estiloPrompt.normal.textColor = Color.white;
+        }
+
+        const float W = 180f, H = 34f;
+        float sx = screen.x - W * 0.5f;
+        float sy = Screen.height - screen.y - H * 0.5f;
+        var rect = new Rect(sx, sy, W, H);
+
+        // Sombra + texto principal
+        Color prev = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.85f);
+        GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, W, H), "[E] Robar vehículo", _estiloPrompt);
+        GUI.color = new Color(1f, 0.60f, 0.15f); // naranja-ámbar
+        GUI.Label(rect, "[E] Robar vehículo", _estiloPrompt);
+        GUI.color = prev;
+    }
 
     protected override void OnDanoRecibido(int cantidad, Vector3 origen, TipoDano tipo)
     {

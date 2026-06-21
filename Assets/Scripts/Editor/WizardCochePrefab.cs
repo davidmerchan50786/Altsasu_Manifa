@@ -35,7 +35,7 @@ public static class WizardCochePrefab
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Assets/🚔 Prefabs Coche Policia", priority = 12)]
+    [MenuItem("Tools/Alsasua/Assets/🚔 Prefabs Coche Policia", priority = 61)]
     public static void CrearPrefabs()
     {
         // Crear carpeta destino

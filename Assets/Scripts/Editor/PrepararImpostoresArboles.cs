@@ -27,9 +27,9 @@ public static class PrepararImpostoresArboles
     static readonly (string nombre, string src)[] MAPA =
     {
         ("imp_ribera",   "Assets/ALP_Assets/Poplar Tree FREE/Models/Textures/PoplarTree001_Billboard.tga"),
-        ("imp_roble",    "Assets/MapMagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_85ec345c-301e-4eaa-8fd5-adced0b8a33b.png"),
-        ("imp_pino",     "Assets/MapMagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_886a084f-6603-47f2-97f4-95bd52d9495f.png"),
-        ("imp_generico", "Assets/MapMagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_16a94683-e848-4560-9ba6-f383cac42f7b.png"),
+        ("imp_roble",    "Packages/com.denispahunov.mapmagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_85ec345c-301e-4eaa-8fd5-adced0b8a33b.png"),
+        ("imp_pino",     "Packages/com.denispahunov.mapmagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_886a084f-6603-47f2-97f4-95bd52d9495f.png"),
+        ("imp_generico", "Packages/com.denispahunov.mapmagic/Demo/Compatibility/VegetationStudioPro/VSProPackage_billboards/billboard_16a94683-e848-4560-9ba6-f383cac42f7b.png"),
     };
 
     [MenuItem("Tools/Alsasua/Render/🌳 Preparar Impostores de Árboles (texturas reales)")]

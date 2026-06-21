@@ -11,6 +11,7 @@ using UnityEngine.AI;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using URandom = UnityEngine.Random;
 
 public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
 {
@@ -210,11 +211,11 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
         // 1. Barricadas
         yield return StartCoroutine(ColocarBarricadas());
 
-        // 2. Manifestantes pacíficos (forman bloque)
-        yield return StartCoroutine(SpawnManifestantesPacificos());
-
-        // 3. Grupo de disturbios (más adelante, zona barricadas)
-        yield return StartCoroutine(SpawnGrupoDisturbios());
+        // 2. Todas las formaciones en paralelo (bloque + jarrai + guardia)
+        var c1 = StartCoroutine(SpawnManifestantesPacificos());
+        var c2 = StartCoroutine(SpawnGrupoDisturbios());
+        yield return c1;
+        yield return c2;
 
         // 4. Fuego en barricadas
         yield return new WaitForSeconds(30f);
@@ -240,7 +241,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
             GameObject barricada;
             if (prefabBarricada != null)
             {
-                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, UnityEngine.Random.Range(-20f, 20f), 0));
+                barricada = Instantiate(prefabBarricada, pos, Quaternion.Euler(0, URandom.Range(-20f, 20f), 0));
             }
             else
             {
@@ -256,7 +257,7 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
                 {
                     var cubo = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cubo.transform.SetParent(barricada.transform);
-                    cubo.transform.localPosition = new Vector3(UnityEngine.Random.Range(-1.5f, 1.5f), b * 0.55f, UnityEngine.Random.Range(-0.3f, 0.3f));
+                    cubo.transform.localPosition = new Vector3(URandom.Range(-1.5f, 1.5f), b * 0.55f, URandom.Range(-0.3f, 0.3f));
                     cubo.transform.localScale = new Vector3(1.2f, 0.5f, 0.6f);
                     cubo.GetComponent<MeshRenderer>().SetPropertyBlock(mpbBarricada); // evita material instance
                 }
@@ -267,21 +268,73 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
         }
     }
 
+    GameObject ResolverPrefabManifestante()
+    {
+        if (prefabManifestante != null) return prefabManifestante;
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.prefabsManifestante?.Length > 0)
+            return cfg.prefabsManifestante[URandom.Range(0, cfg.prefabsManifestante.Length)];
+        return CreateDefaultManifestante(false);
+    }
+
+    GameObject ResolverPrefabJarrai()
+    {
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        if (cfg?.prefabsJarrai?.Length > 0)
+            return cfg.prefabsJarrai[URandom.Range(0, cfg.prefabsJarrai.Length)];
+        return ResolverPrefabManifestante();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  FORMACIONES — disposición espacial realista de la manifestación
+    //
+    //  Eje Z+: dirección norte (hacia la Guardia Civil)
+    //
+    //  [OBSERVADORES]  scattered ±60m, detrás y lados
+    //  [BLOQUE PRINCIPAL manifestantes] filas de 10, z = -5 a -50
+    //  [VANGUARDIA JARRAI] semicírculo, z = +10 a +25
+    //  [BARRICADAS] z ≈ +30
+    //  [GUARDIA CIVIL] línea, z ≈ +55
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Coordenadas relativas al centro de manifestación (Z+ = hacia guardia)
+    const float Z_BLOQUE_INICIO  = -5f;    // inicio del bloque principal
+    const float Z_BLOQUE_FIN     = -50f;   // fondo del bloque
+    const float Z_JARRAI         = 15f;    // vanguardia
+    const float Z_GUARDIA        = 55f;    // línea de guardia
+    const float ANCHO_BLOQUE     = 35f;    // anchura del bloque (columnas)
+    const float PASO_FILA        = 1.4f;   // separación entre filas
+    const float PASO_COLUMNA     = 1.2f;   // separación entre columnas
+    const int   COLUMNAS_BLOQUE  = 10;
+
+    float AlturaTerreno(Vector3 pos) =>
+        Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : centroManifestacion.y;
+
+    Vector3 PosConAltura(Vector3 base_) { base_.y = AlturaTerreno(base_) + 0.05f; return base_; }
+
     IEnumerator SpawnManifestantesPacificos()
     {
-        var prefab = prefabManifestante ?? CreateDefaultManifestante(false);
+        // ── 1. BLOQUE PRINCIPAL (manifestantes en filas) ─────────────────
+        var prefabM = ResolverPrefabManifestante();
+        var cfg = ConfiguradorAssetsAAA.Instance;
+        int filas = Mathf.CeilToInt((float)numManifestantes / COLUMNAS_BLOQUE);
+
         for (int i = 0; i < numManifestantes; i++)
         {
-            // Formar en bloque detrás de las barricadas
-            float angle = (i / (float)numManifestantes) * 360f * Mathf.Deg2Rad;
-            float radio = UnityEngine.Random.Range(8f, 40f);
-            var pos = centroManifestacion + new Vector3(Mathf.Cos(angle) * radio, 0, Mathf.Sin(angle) * radio + 30f);
-            float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
-            pos.y = py;
+            int fila   = i / COLUMNAS_BLOQUE;
+            int col    = i % COLUMNAS_BLOQUE;
+            float x    = (col - COLUMNAS_BLOQUE * 0.5f) * PASO_COLUMNA + URandom.Range(-0.3f, 0.3f);
+            float z    = Z_BLOQUE_INICIO - fila * PASO_FILA + URandom.Range(-0.2f, 0.2f);
+            var pos    = PosConAltura(centroManifestacion + new Vector3(x, 0, z));
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
+            // Variedad: Kenney crowd en las filas traseras
+            GameObject prefabUsar = prefabM;
+            if (fila > filas / 2 && cfg?.prefabsCivilKenney?.Length > 0)
+                prefabUsar = cfg.prefabsCivilKenney[URandom.Range(0, cfg.prefabsCivilKenney.Length)];
+
+            var go = Instantiate(prefabUsar, pos, Quaternion.Euler(0, URandom.Range(-20f, 20f), 0));
             go.name = $"Manifestante_{i}";
-            go.transform.localScale = Vector3.one * UnityEngine.Random.Range(0.85f, 1.05f);
+            go.transform.localScale = Vector3.one * URandom.Range(0.88f, 1.05f);
 
             var ia = go.AddComponent<ManifestanteIA>();
             ia.tipo = TipoManifestante.Pacifico;
@@ -289,22 +342,61 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
             ia.apoyoSistema = _apoyo;
             _manifestantes.Add(ia);
 
-            if (i % 5 == 0) yield return null; // no bloquear
+            ImpostoresNPCDistantes.Instance?.Registrar(go, ImpostoresNPCDistantes.Faccion.Manifestante);
+
+            if (i % 8 == 0) yield return null;
+        }
+
+        // ── 2. OBSERVADORES CIVILES (perimetro trasero, curiosos) ────────
+        int numObservadores = Mathf.RoundToInt(numManifestantes * 0.25f);
+        for (int i = 0; i < numObservadores; i++)
+        {
+            float angle = URandom.Range(Mathf.PI * 0.6f, Mathf.PI * 1.4f); // arco trasero
+            float radio = URandom.Range(25f, 65f);
+            var pos = PosConAltura(centroManifestacion + new Vector3(
+                Mathf.Cos(angle) * radio, 0, Mathf.Sin(angle) * radio - 30f));
+
+            GameObject prefabUsar = prefabM;
+            if (cfg?.prefabsCivil?.Length > 0)
+                prefabUsar = cfg.prefabsCivil[URandom.Range(0, cfg.prefabsCivil.Length)];
+
+            var go = Instantiate(prefabUsar, pos, Quaternion.Euler(0, URandom.Range(0f, 360f), 0));
+            go.name = $"Observador_{i}";
+            go.transform.localScale = Vector3.one * URandom.Range(0.88f, 1.05f);
+
+            var ia = go.AddComponent<ManifestanteIA>();
+            ia.tipo = TipoManifestante.Pacifico;
+            ia.centro = centroManifestacion;
+            ia.apoyoSistema = _apoyo;
+            _manifestantes.Add(ia);
+
+            ImpostoresNPCDistantes.Instance?.Registrar(go, ImpostoresNPCDistantes.Faccion.Civilian);
+
+            if (i % 5 == 0) yield return null;
         }
     }
 
     IEnumerator SpawnGrupoDisturbios()
     {
-        var prefab = prefabEncapuchado ?? CreateDefaultManifestante(true);
+        // ── 3. VANGUARDIA JARRAI (semicírculo, cara a la guardia) ────────
+        var prefabJ = ResolverPrefabJarrai();
+        var prefabEnc = prefabEncapuchado ?? CreateDefaultManifestante(true);
+
         for (int i = 0; i < numDisturbios; i++)
         {
-            // Grupo de disturbios en la zona de barricadas
-            var pos = centroManifestacion + new Vector3(UnityEngine.Random.Range(-15f, 15f), 0, UnityEngine.Random.Range(-20f, 20f));
-            float py = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(pos) : 240f;
-            pos.y = py;
+            // Semicírculo delante del bloque, apuntando hacia la guardia
+            float t     = (float)i / numDisturbios;
+            float angle = Mathf.Lerp(-Mathf.PI * 0.45f, Mathf.PI * 0.45f, t);
+            float radio = URandom.Range(8f, 20f);
+            float z     = Z_JARRAI + Mathf.Cos(angle) * radio * 0.4f + URandom.Range(-1f, 1f);
+            float x     = Mathf.Sin(angle) * radio + URandom.Range(-0.5f, 0.5f);
+            var pos     = PosConAltura(centroManifestacion + new Vector3(x, 0, z));
 
-            var go = Instantiate(prefab, pos, Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0));
-            go.name = $"Encapuchado_{i}";
+            // Alternar jarrai / encapuchado
+            var prefabUsar = (i % 3 == 0) ? prefabEnc : prefabJ;
+            var go = Instantiate(prefabUsar, pos,
+                Quaternion.Euler(0, URandom.Range(-10f, 10f), 0)); // mirando norte
+            go.name = $"Jarrai_{i}";
 
             var ia = go.AddComponent<ManifestanteIA>();
             ia.tipo = TipoManifestante.Disturbios;
@@ -312,7 +404,37 @@ public class SistemaManifestacion : SingletonMono<SistemaManifestacion>
             ia.apoyoSistema = _apoyo;
             _manifestantes.Add(ia);
 
+            ImpostoresNPCDistantes.Instance?.Registrar(go, ImpostoresNPCDistantes.Faccion.Jarrai);
+
             if (i % 5 == 0) yield return null;
+        }
+
+        // ── 4. LÍNEA DE GUARDIA CIVIL (al norte de las barricadas) ───────
+        var cfgGuardia = ConfiguradorAssetsAAA.Instance;
+        if (cfgGuardia?.prefabsGuardia?.Length > 0)
+        {
+            int numGuardia = Mathf.Max(8, numDisturbios / 2);
+            for (int i = 0; i < numGuardia; i++)
+            {
+                float x = (i - numGuardia * 0.5f) * 2.0f; // 2m entre agentes
+                var pos = PosConAltura(centroManifestacion + new Vector3(x, 0, Z_GUARDIA));
+
+                var prefabG = cfgGuardia.prefabsGuardia[i % cfgGuardia.prefabsGuardia.Length];
+                var go = Instantiate(prefabG, pos,
+                    Quaternion.Euler(0, 180f, 0)); // mirando sur (hacia manifestantes)
+                go.name = $"Guardia_{i}";
+                go.tag = "GuardiaCivil";
+
+                var ia = go.AddComponent<ManifestanteIA>();
+                ia.tipo = TipoManifestante.Pacifico;
+                ia.centro = centroManifestacion + Vector3.forward * Z_GUARDIA;
+                ia.apoyoSistema = _apoyo;
+                _manifestantes.Add(ia);
+
+                ImpostoresNPCDistantes.Instance?.Registrar(go, ImpostoresNPCDistantes.Faccion.GuardiaCivil);
+
+                if (i % 4 == 0) yield return null;
+            }
         }
 
         if (_srcDisturbios != null) _srcDisturbios.Play();
@@ -505,11 +627,11 @@ public class ManifestanteIA : MonoBehaviour, IAgente
 
     void ElegirObjetivo()
     {
-        _timer = UnityEngine.Random.Range(3f, 10f);
+        _timer = URandom.Range(3f, 10f);
         if (tipo == TipoManifestante.Pacifico)
-            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-30f, 30f), 0, UnityEngine.Random.Range(-15f, 50f));
+            _objetivo = centro + new Vector3(URandom.Range(-30f, 30f), 0, URandom.Range(-15f, 50f));
         else
-            _objetivo = centro + new Vector3(UnityEngine.Random.Range(-20f, 20f), 0, UnityEngine.Random.Range(-25f, 15f));
+            _objetivo = centro + new Vector3(URandom.Range(-20f, 20f), 0, URandom.Range(-25f, 15f));
         float y = Terrain.activeTerrain != null ? Terrain.activeTerrain.SampleHeight(_objetivo) : 240f;
         _objetivo.y = y;
     }

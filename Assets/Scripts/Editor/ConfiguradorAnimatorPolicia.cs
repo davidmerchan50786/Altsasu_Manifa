@@ -24,7 +24,7 @@ public static class ConfiguradorAnimatorPolicia
     const string POLICIA_CTRL  = "Assets/Animators/PoliciaForalAnimator.controller";
     const string JUGADOR_CTRL  = "Assets/Animators/JugadorAnimator.controller";
 
-    [MenuItem("Tools/Alsasua/Assets/🎭 Animator Policia (MeshyAI)", priority = 16)]
+    [MenuItem("Tools/Alsasua/Assets/🎭 Animator Policia (MeshyAI)", priority = 41)]
     public static void Configurar()
     {
         // ── 1. Cargar clips reales ──────────────────────────────────────────

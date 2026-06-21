@@ -43,8 +43,17 @@ public class ConfiguradorAssetsAAA : MonoBehaviour
     [Header("═ NPCS CIVILES (MeshyAI) ═")]
     public GameObject[] prefabsCivil;        // Casual, CodeKicks, DenimOveralls, Doctor,
                                              // Executive, Pruu, SummerStreet, UrbanEdge
+    [Header("═ NPCS CIVILES (Kenney crowd) ═")]
+    public GameObject[] prefabsCivilKenney;  // NPC_Crowd_character-male/female-a..f (12 variantes)
+
+    [Header("═ MANIFESTANTES ═")]
+    public GameObject[] prefabsManifestante; // NPC_Manifestante, NPC_Jarrai (Personajes + skin)
+
+    [Header("═ JARRAI ═")]
+    public GameObject[] prefabsJarrai;       // NPC_Jarrai (jóvenes facción)
+
     [Header("═ GUARDIA CIVIL ═")]
-    public GameObject[] prefabsGuardia;      // GuardiaCivil_01, GuardiaCivil_02
+    public GameObject[] prefabsGuardia;      // GuardiaCivil_01, GuardiaCivil_02, NPC_GuardiaCivil_K
 
     [Header("═ ANIMACIONES PELEA (FightingMotionsVolume1) ═")]
     public AnimationClip animPunetazo;       // hp_straight_right_A2

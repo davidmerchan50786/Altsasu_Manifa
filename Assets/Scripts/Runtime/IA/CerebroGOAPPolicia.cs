@@ -203,7 +203,14 @@ namespace Alsasua.IA
         void Arrestar()
         {
             AlsasuaLogger.Info("GOAP", $"{name}: jugador arrestado.");
-            // TODO gameplay: encadenar con la pantalla de detención / game over.
+            // Notifica el arresto por EventBus (desacoplado). HUDCanvas muestra la
+            // pantalla de detención; GameManagerAltsasua puede suscribirse para el
+            // respawn / game-over (política de gameplay).
+            EventBus.Publish(new PlayerArrestedEvent
+            {
+                posicion = transform.position,
+                policia  = name,
+            });
         }
 
         // Permite a otra cobertura marcar a este policía como atrincherado.

@@ -64,7 +64,7 @@ public static class ConstructorVehiculosPrefabs
         },
     };
 
-    [MenuItem("Tools/Alsasua/Assets/🚗 Prefabs Vehículos", priority = 11)]
+    [MenuItem("Tools/Alsasua/Assets/🚗 Prefabs Vehículos", priority = 60)]
     public static void Construir()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))

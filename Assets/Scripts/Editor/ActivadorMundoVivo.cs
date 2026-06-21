@@ -15,7 +15,7 @@ using UnityEngine;
 
 public static class ActivadorMundoVivo
 {
-    [MenuItem("Tools/Alsasua/✨ Añadir Mundo Vivo EXTRA (tren, túneles, charcos, humo, viento)", priority = 0)]
+    [MenuItem("Tools/Alsasua/Mundo/✨ Añadir Mundo Vivo EXTRA", priority = 52)]
     public static void Activar()
     {
         // Contenedor de los sistemas nuevos

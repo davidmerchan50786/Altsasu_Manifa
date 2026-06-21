@@ -95,7 +95,7 @@ public class SistemaEdificiosFotogrametria : MonoBehaviour
         // lat/lon → metros relativos al centro (Herriko Plaza) → coords Unity.
         double dLat = e.latitud  - GeoDataAlsasua.LATITUD_CENTRO;
         double dLon = e.longitud - GeoDataAlsasua.LONGITUD_CENTRO;
-        float ux = GeoDataAlsasua.OX + (float)(dLon * GeoDataAlsasua.M_POR_GRADO_LON);
+        float ux = GeoDataAlsasua.OX + (float)(dLon * GeoDataAlsasua.M_POR_GRADO_LON * GeoDataAlsasua.ESCALA_UTM_X);
         float uz = GeoDataAlsasua.OZ + (float)(dLat * GeoDataAlsasua.M_POR_GRADO_LAT);
         float uy = GeoDataAlsasua.AlturaTerreno(ux, uz) + e.offsetY;
 

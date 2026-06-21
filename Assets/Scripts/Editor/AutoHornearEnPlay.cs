@@ -56,8 +56,8 @@ public static class AutoHornearEnPlay
         catch (System.Exception e) { Debug.LogError($"[AutoHornear] Falló: {e}"); }
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/⏹️ Auto-hornear: desactivar")]
+    [MenuItem("Tools/Alsasua/Mundo/⏹️ Auto-hornear: desactivar", priority = 73)]
     static void Desactivar() { EditorPrefs.SetBool(PREF_OFF, true);  Debug.Log("[AutoHornear] Desactivado."); }
-    [MenuItem("Tools/Alsasua/Mundo/▶️ Auto-hornear: activar")]
+    [MenuItem("Tools/Alsasua/Mundo/▶️ Auto-hornear: activar", priority = 72)]
     static void Activar()    { EditorPrefs.SetBool(PREF_OFF, false); Debug.Log("[AutoHornear] Activado."); }
 }

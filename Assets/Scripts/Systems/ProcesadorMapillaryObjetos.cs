@@ -189,7 +189,7 @@ public class ProcesadorMapillaryObjetos : MonoBehaviour
 
     Vector3 GpsAUnity(double lat, double lon)
     {
-        float ux = (float)((lon - LON_CENTRO) * M_POR_GRADO_LON_LOCAL) + GeoDataAlsasua.OX;
+        float ux = (float)((lon - LON_CENTRO) * M_POR_GRADO_LON_LOCAL * GeoDataAlsasua.ESCALA_UTM_X) + GeoDataAlsasua.OX;
         float uz = (float)((lat - LAT_CENTRO) * GeoDataAlsasua.M_POR_GRADO_LAT)  + GeoDataAlsasua.OZ;
         return new Vector3(ux, 0f, uz);
     }

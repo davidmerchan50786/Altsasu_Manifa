@@ -65,7 +65,7 @@ public sealed class VisualizadorHeatmap : EditorWindow
     readonly Matrix4x4[] _matrices = new Matrix4x4[LOTE];
     readonly Vector4[]   _colores  = new Vector4[LOTE];
 
-    [MenuItem("Tools/Alsasua/📊 Heatmap de Rendimiento", priority = 30)]
+    [MenuItem("Tools/Alsasua/Debug/📊 Heatmap de Rendimiento", priority = 33)]
     public static void Abrir()
     {
         var w = GetWindow<VisualizadorHeatmap>();

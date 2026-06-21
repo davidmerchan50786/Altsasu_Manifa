@@ -60,7 +60,7 @@ public static class FachadasVascas
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Mundo/🏛 Fachadas Vascas", priority = 12)]
+    [MenuItem("Tools/Alsasua/Legacy/🏛 Fachadas Vascas (estilo vasco abandonado)")]
     public static void AplicarFachadas()
     {
         var zona = GameObject.Find("Zone_01_HerrikoPlaza_Centro");

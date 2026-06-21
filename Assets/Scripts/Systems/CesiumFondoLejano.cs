@@ -69,7 +69,11 @@ public class CesiumFondoLejano : MonoBehaviour
              "real con la ortofoto drapeada, DrapeOrtofotoLejana). Para que no repita\n" +
              "el problema de FPS, el GobernadorRender lo throttlea (sube SSE / lo apaga\n" +
              "bajo presión de GPU) y se desactiva el SistemaMontesFondo placeholder.")]
-    public bool deshabilitarCesium = false;
+    // Vuelto a TRUE 2026-06-18: con la escena saturada (GPU ~407 ms, factor 0.00) el
+    // gobernador apaga Cesium en cuanto carga → no se sostiene. Reactivar (false) solo
+    // cuando la saturación base (MundoVivoExtra ~2954 + GameManager ~739 renderers) esté
+    // resuelta. El código de creación/throttle queda listo para entonces.
+    public bool deshabilitarCesium = true;
 
     [Tooltip("SSE máximo (peor calidad, más barato) al que sube Cesium bajo presión de GPU.")]
     public float screenSpaceErrorMax = 96f;

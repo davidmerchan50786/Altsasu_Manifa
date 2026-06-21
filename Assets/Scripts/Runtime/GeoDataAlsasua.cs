@@ -30,14 +30,16 @@ public static class GeoDataAlsasua
     public const double UTM_E_ORIGIN = 567951.0;
     public const double UTM_N_ORIGIN = 4749902.0;
 
-    // ── Conversión UTM ↔ Unity — CONVENCIÓN REAL DEL MUNDO ────────────────
-    // El mundo está comprimido en X un factor 76400/81548 ≈ 0.93687 respecto
-    // a UTM real (herencia del importador OSM, M_LON_PROJ=76400). Verificado
-    // empíricamente 2026-06-12: barrido de escala lidar_ground.xyz vs MDT05
-    // oficial → mínimo en 0.937 (mediana 0.19 m); identidad da 0.34 m.
-    // El mosaico V2 se generó con esta misma convención (manifest_v2.json).
-    // NUNCA usar UnityX = (E−E0) + OX a secas: desplaza ~25 m a 400 m del centro.
-    public const float ESCALA_UTM_X = 76400f / 81548f;
+    // ── Conversión UTM ↔ Unity — UTM REAL ISÓTROPO ───────────────────────
+    // 2026-06-19: el mundo se pasó a UTM real isótropo (1 ud = 1 m en X y Z).
+    // Antes estaba comprimido en X un factor 76400/81548 ≈ 0.93687 (herencia
+    // del importador OSM con M_LON_PROJ=76400), lo que deformaba el pueblo
+    // ~6.3% en E-O (hasta ~25 m a 400 m del centro). Ahora terreno (mosaico V2
+    // regenerado con SX=1), edificios, carreteras y jugador comparten la misma
+    // escala real: cada objeto cae en su sitio OSM/IGN/Catastro a <0.5 m.
+    // Para volver al espacio antiguo: ESCALA_UTM_X_LEGACY.
+    public const float ESCALA_UTM_X = 1f;
+    public const float ESCALA_UTM_X_LEGACY = 76400f / 81548f;
 
     /// <summary>UTM 30N ETRS89 → Unity XZ (convención canónica del proyecto).</summary>
     public static Vector2 UTMaUnity(double e, double n) => new(

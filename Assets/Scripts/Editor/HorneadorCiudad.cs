@@ -43,41 +43,31 @@ public static class HorneadorCiudad
     const string MANIFEST   = DIR_RAIZ + "/manifest_ciudad.json";
     const int    MIN_MALLAS = 30;                   // por debajo, la escena no tiene mundo
 
+    // ScriptableObject con refs directas a prefabs → cargable por CargadorCiudadHorneada en runtime
+    const string RESOURCES_DIR = "Assets/Resources/CiudadHorneada";
+    const string SO_PATH       = RESOURCES_DIR + "/ManifestCiudadSO.asset";
+
     // Transiciones del LODGroup (altura relativa en pantalla). HD→HLOD→cull.
     const float LOD0_HASTA = 0.30f;   // por encima de 30% de pantalla → HD
     const float LOD1_HASTA = 0.045f;  // entre 30% y 4.5% → HLOD; por debajo → cull
 
-    // DENYLIST por OBJETO/contenido dinámico — NO por nombre de manager/contenedor.
-    // (Lección del [DIAG]: los ~90k renderers cuelgan de "GameManager"; filtrar por
-    //  "manager" en la cadena de padres saltaba TODA la ciudad. Ahora solo excluimos
-    //  lo que de verdad NO es geometría estática de mundo.)
-    static readonly string[] DENY = {
-        // Terreno / naturaleza / agua → otros sistemas (terreno = caída libre si se oculta)
-        "terrain", "terreno", "mosaico",
-        "arbol", "arboles", "árbol", "vegetacion", "vegetación", "tree", "grass", "hierba",
-        "agua", "water", "river", "río", "charco",      // ("rio" suelto evitado: choca con "barrio")
-        // Dinámicos: jugador, NPCs, multitud, vehículos
-        "player", "jugador", "npc", "civil", "peaton", "peatón",
-        "manifestante", "multitud", "crowd",
-        "vehiculo", "vehículo", "coche",                // ("car" suelto evitado: choca con "carretera")
-        // Cámara / luces / efectos / UI / Cesium
-        "camera", "cámara", "light", "luz", "sun", "sol",
-        "particle", "particula", "partícula", "vfx",
-        "canvas", "eventsystem", "hud",
-        "cesium", "georeference",
-        // La propia salida del horneado (no re-hornear)
-        "ciudadhorneada",
-    };
+    // Decimación del HLOD: agrupa vértices en células de este tamaño (metros).
+    // 2.5m → ~65% reducción de tris (proxy visible a 100-400m).
+    const float HLOD_CELL_SIZE = 2.5f;
+
+    // Denylist centralizada en DenylistUtility.cs — fuente única de verdad.
+    // Lección del [DIAG]: filtrar por "manager" saltaba TODA la ciudad; la denylist
+    // ahora solo excluye lo que de verdad NO es geometría estática de mundo.
 
     [System.Serializable] struct CeldaManifest { public int cx, cz; public float centroX, centroZ; public string prefab; public int materiales; }
     [System.Serializable] struct CiudadManifest { public float celda; public int totalCeldas; public int drawCallsAprox; public List<CeldaManifest> celdas; }
 
     // ════════════════════════════════════════════════════════════════════════
-    [MenuItem("Tools/Alsasua/Mundo/🏗️ Hornear Ciudad (LOD pyramid estilo RAGE)", priority = 6)]
+    [MenuItem("Tools/Alsasua/Mundo/🏗️ Hornear Ciudad (LOD pyramid estilo RAGE)", priority = 30)]
     static void Hornear() => HornearNucleo(true);
 
-    /// <summary>Bake SIN diálogos (lo invoca AutoHornearEnPlay desde código, sin tocar la UI).</summary>
-    internal static void HornearAuto() => HornearNucleo(false);
+    /// <summary>Bake SIN diálogos (invocado desde FLUJO_COMPLETO y AutoHornearEnPlay).</summary>
+    public static void HornearAuto() => HornearNucleo(false);
 
     static void HornearNucleo(bool interactivo)
     {
@@ -184,20 +174,26 @@ public static class HorneadorCiudad
                     if (instanciados.Add(mat) && !mat.enableInstancing) { mat.enableInstancing = true; EditorUtility.SetDirty(mat); }
                 }
 
-                // ── LOD1 (HLOD): toda la celda fusionada en UNA malla (material dominante) ──
+                // ── LOD1 (HLOD): toda la celda fusionada + DECIMADA (60-80% menos tris) ────
                 Renderer rHLOD = null;
                 if (todasInstancias.Count > 0 && matDominante != null)
                 {
-                    var mh = NuevaMallaCombinada(todasInstancias, $"hlod_{cx}_{cz}");
-                    if (mh != null)
+                    var mhFull = NuevaMallaCombinada(todasInstancias, $"hlod_{cx}_{cz}");
+                    if (mhFull != null)
                     {
+                        // Decimar con vertex clustering — mantiene silueta, reduce tris
+                        var mhDecimated = DecimadorMeshLOD1.Decimar(mhFull, HLOD_CELL_SIZE);
+                        var mh = mhDecimated ?? mhFull;   // fallback si decimación devuelve null
+                        mh.name = $"hlod_{cx}_{cz}";
+                        if (mhDecimated != null) Object.DestroyImmediate(mhFull);  // no guardar la sin decimar
+
                         string mp = AssetDatabase.GenerateUniqueAssetPath($"{DIR_MESH}/hlod_{cx}_{cz}.asset");
                         AssetDatabase.CreateAsset(mh, mp);
                         var go = new GameObject("HLOD"); go.transform.SetParent(celdaGO.transform);
                         go.AddComponent<MeshFilter>().sharedMesh = mh;
                         rHLOD = go.AddComponent<MeshRenderer>();
                         rHLOD.sharedMaterial = matDominante;
-                        rHLOD.shadowCastingMode = ShadowCastingMode.Off;   // proxy lejano: sin sombras
+                        rHLOD.shadowCastingMode = ShadowCastingMode.Off;
                     }
                 }
 
@@ -219,18 +215,44 @@ public static class HorneadorCiudad
         }
         finally { AssetDatabase.StopAssetEditing(); EditorUtility.ClearProgressBar(); }
 
-        // 3) Manifest + desactivar originales.
+        // 3) Manifest JSON + desactivar originales.
         manifest.totalCeldas = manifest.celdas.Count;
         manifest.drawCallsAprox = drawCallsHD;
         File.WriteAllText(MANIFEST, JsonUtility.ToJson(manifest, true));
         foreach (var go in originales) if (go != null) go.SetActive(false);
 
+        // 4) ManifestCiudadSO en Resources/ → CargadorCiudadHorneada puede cargarlo en runtime.
+        Directory.CreateDirectory(RESOURCES_DIR);
+        AssetDatabase.SaveAssets(); AssetDatabase.Refresh();
+
+        var so = AssetDatabase.LoadAssetAtPath<ManifestCiudadSO>(SO_PATH);
+        bool soNuevo = (so == null);
+        if (soNuevo) so = ScriptableObject.CreateInstance<ManifestCiudadSO>();
+        so.celda           = CELDA;
+        so.totalCeldas     = manifest.totalCeldas;
+        so.drawCallsAprox  = drawCallsHD;
+        var prefabRefs = new List<GameObject>(manifest.celdas.Count);
+        foreach (var c in manifest.celdas)
+        {
+            var p = AssetDatabase.LoadAssetAtPath<GameObject>(c.prefab);
+            if (p != null) prefabRefs.Add(p);
+        }
+        so.prefabs = prefabRefs.ToArray();
+        if (so.prefabs.Length == 0)
+            Debug.LogWarning($"[Horneador] ⚠️ ManifestCiudadSO creado pero sin prefabs cargables — " +
+                "verifica que los prefabs existen en Assets/CiudadHorneada/Celdas/.");
+        if (soNuevo) AssetDatabase.CreateAsset(so, SO_PATH);
+        else         EditorUtility.SetDirty(so);
+
         AssetDatabase.SaveAssets(); AssetDatabase.Refresh();
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
 
+        // Invalidar firma de bake guardada → GestorEstadoCiudad descartará deltas obsoletos
+        GestorEstadoCiudad.InvalidarFirmaGuardada();
+
         Debug.Log($"[Horneador] ✅ Ciudad horneada (pirámide LOD). {originales.Count} renderers → " +
                   $"{manifest.totalCeldas} celdas · ~{drawCallsHD} draw calls en LOD0 (cerca), 1/celda en LOD1 (lejos). " +
-                  $"GPU instancing ON en {instanciados.Count} materiales. Manifest: {MANIFEST}. Originales DESACTIVADOS.");
+                  $"GPU instancing ON en {instanciados.Count} materiales. ManifestSO: {SO_PATH}. Originales DESACTIVADOS.");
         if (interactivo) EditorUtility.DisplayDialog("Hornear Ciudad",
             $"✅ {originales.Count} renderers → {manifest.totalCeldas} celdas con LODGroup.\n" +
             $"LOD0 ≈ {drawCallsHD} draw calls de cerca; LOD1 = 1/celda de lejos; cull al fondo.\n" +
@@ -238,7 +260,7 @@ public static class HorneadorCiudad
             "Dale a Play y mira el [DIAG] → 'GPU draw' debe desplomarse.", "Genial");
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/↩️ Deshacer Horneado (reactivar originales)", priority = 7)]
+    [MenuItem("Tools/Alsasua/Mundo/↩️ Deshacer Horneado (reactivar originales)", priority = 31)]
     static void Deshacer()
     {
         var raiz = GameObject.Find("CiudadHorneada");
@@ -268,15 +290,7 @@ public static class HorneadorCiudad
             GameObjectUtility.SetStaticEditorFlags(t.gameObject, flags);
     }
 
-    static bool EnDenylist(Transform t)
-    {
-        for (var cur = t; cur != null; cur = cur.parent)
-        {
-            string n = cur.name.ToLowerInvariant();
-            foreach (var d in DENY) if (n.Contains(d)) return true;
-        }
-        return false;
-    }
+    static bool EnDenylist(Transform t) => DenylistUtility.EnDenylist(t);
 
     static Vector3 ZonaCentro(int cx, int cz)
         => new Vector3(GeoDataAlsasua.OX + (cx + 0.5f) * CELDA, 0f, GeoDataAlsasua.OZ + (cz + 0.5f) * CELDA);

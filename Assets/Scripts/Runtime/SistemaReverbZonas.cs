@@ -70,14 +70,37 @@ public class SistemaReverbZonas : MonoBehaviour
 
     // ════════════════════════════════════════════════════════════════════════
 
+    // ── Auto-bootstrap: no necesita estar en escena ──────────────────────
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (FindFirstObjectByType<SistemaReverbZonas>() != null) return;
+        var go = new GameObject("SistemaReverbZonas");
+        DontDestroyOnLoad(go);
+        go.AddComponent<SistemaReverbZonas>();
+    }
+
     void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(this); return; }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        _camCache    = Camera.main;
+        _camCache     = Camera.main;
         _maskOclusion = LayerMask.GetMask("Default", "Building", "Wall");
         InicializarReverbZone();
     }
+
+    void OnEnable()
+    {
+        // Reaccionar a cambio de zona del streaming (más eficiente que polling a 1Hz)
+        EventBus.Subscribe<ZoneChangedEvent>(OnZonaStreamingCambiada);
+    }
+
+    void OnDisable()
+    {
+        EventBus.Unsubscribe<ZoneChangedEvent>(OnZonaStreamingCambiada);
+    }
+
+    void OnZonaStreamingCambiada(ZoneChangedEvent _) => DetectarZona();
 
     void InicializarReverbZone()
     {

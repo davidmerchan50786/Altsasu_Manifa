@@ -28,7 +28,7 @@ public static class IntegradorAssetsInteriores
     const string DIR_MATS     = "Assets/Materials/Interiores";
 
     // ── Menú principal ────────────────────────────────────────────────────────
-    [MenuItem("Altsasu/Interiores/Integrar todos los assets")]
+    [MenuItem("Tools/Alsasua/Render/Interiores/Integrar todos")]
     static void IntegrarTodo()
     {
         int ok = 0;
@@ -42,10 +42,10 @@ public static class IntegradorAssetsInteriores
             "Revisa la Console para detalles.", "OK");
     }
 
-    [MenuItem("Altsasu/Interiores/Solo cubemaps HDRI")]
+    [MenuItem("Tools/Alsasua/Render/Interiores/Solo cubemaps HDRI")]
     static void SoloCubemaps() { IntegrarCubemaps(); AssetDatabase.Refresh(); }
 
-    [MenuItem("Altsasu/Interiores/Solo materiales PBR")]
+    [MenuItem("Tools/Alsasua/Render/Interiores/Solo materiales PBR")]
     static void SoloMateriales() { CrearMaterialesPBR(); AplicarMateriales(); AssetDatabase.Refresh(); }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -274,7 +274,7 @@ public static class IntegradorAssetsInteriores
     }
 
     // ── Validar que todo está bien ──────────────────────────────────────────
-    [MenuItem("Altsasu/Interiores/Validar estado")]
+    [MenuItem("Tools/Alsasua/Render/Interiores/Validar estado")]
     static void ValidarEstado()
     {
         var sb = new System.Text.StringBuilder();

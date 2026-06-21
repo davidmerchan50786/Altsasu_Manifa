@@ -11,6 +11,8 @@ using UnityEngine.Rendering.HighDefinition;
 
 public class SistemaClima : MonoBehaviour
 {
+    public static SistemaClima Instance { get; private set; }
+
     // ── Estado de clima ────────────────────────────────────────────────────
     public enum EstadoClima { Sol, Nublado, LluviaLigera, Tormenta, Niebla, NieveLigera }
     public EstadoClima climaActual = EstadoClima.Sol;
@@ -70,6 +72,17 @@ public class SistemaClima : MonoBehaviour
     bool _transicionando;
 
     // =========================================================================
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     void Start()
     {

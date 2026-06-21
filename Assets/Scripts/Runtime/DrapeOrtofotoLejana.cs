@@ -45,12 +45,14 @@ public class DrapeOrtofotoLejana : MonoBehaviour
 
     GameObject _root;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Boot()
-    {
-        if (Instance != null || FindFirstObjectByType<DrapeOrtofotoLejana>() != null) return;
-        new GameObject("DrapeOrtofotoLejana").AddComponent<DrapeOrtofotoLejana>();
-    }
+    // DESACTIVADO 2026-06-18: el drape flotante es la herramienta equivocada para el
+    // suelo que se pisa — z-fighting con el relieve real (cuadrícula gruesa) → el terreno
+    // asoma a parches ("verde raro"). Un drape solo sirve de fondo MUY lejano, no para
+    // alfombrar el valle jugable. El look "ortofoto sobre el terreno" debe hacerse
+    // texturizando el PROPIO terreno (basemap/TerrainLayer del mosaico), que conforma
+    // perfecto y no hace z-fight. Se deja el código + los datos (regenerables) para
+    // cuando se aborde de esa forma. NO auto-arranca.
+    static void Boot() { }
 
     void Awake()
     {

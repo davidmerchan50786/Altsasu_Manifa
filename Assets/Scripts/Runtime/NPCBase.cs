@@ -266,6 +266,10 @@ public abstract class NPCBase : MonoBehaviour, IAgente, ISimulable, ITickable
         if (SistemaNavMesh.EstaListo) ActivarAgente();
         else SistemaNavMesh.OnNavMeshListo += ActivarAgente;
 
+        // NavMesh throttle: registrar el agente en OptimizadorFPS para priorización por distancia
+        if (_agente != null && OptimizadorFPS.Instance != null)
+            OptimizadorFPS.Instance.RegistrarAgente(_agente);
+
         OnStart();
     }
 
@@ -281,6 +285,9 @@ public abstract class NPCBase : MonoBehaviour, IAgente, ISimulable, ITickable
         SistemaNavMesh.OnNavMeshListo      -= ActivarAgente;
         AltsasuCore.OnJugadorSpawned       -= CacharJugadorDesdeEvento;
         SistemaIA.Desregistrar(this);
+
+        if (_agente != null && OptimizadorFPS.Instance != null)
+            OptimizadorFPS.Instance.DesregistrarAgente(_agente);
 
         if (_orquestado)
         {

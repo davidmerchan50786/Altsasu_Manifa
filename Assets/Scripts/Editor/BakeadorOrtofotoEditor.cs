@@ -32,7 +32,7 @@ public static class BakeadorOrtofotoEditor
 
     // ── Estado ────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Ortofoto/📸 Ver Estado Ortofoto", priority = 25)]
+    [MenuItem("Tools/Alsasua/Terreno/🔍 Ver Estado Ortofoto (legacy)", priority = 32)]
     public static void EstadoOrtofoto()
     {
         string metaFull  = Path.Combine(Application.dataPath.Replace("Assets",""), META_PATH);
@@ -63,7 +63,7 @@ public static class BakeadorOrtofotoEditor
 
     // ── Bake ──────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Ortofoto/🗺 Aplicar Ortofoto al Terreno (bake 8K)", priority = 26)]
+    [MenuItem("Tools/Alsasua/Terreno/🗺 Aplicar Ortofoto TerrainLayer (legacy)", priority = 33)]
     public static void BakearOrtofoto()
     {
         string metaFull = Path.Combine(Application.dataPath.Replace("Assets",""), META_PATH);

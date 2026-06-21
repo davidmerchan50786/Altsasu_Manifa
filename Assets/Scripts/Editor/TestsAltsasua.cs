@@ -1,4 +1,3 @@
-#pragma warning disable CS0219 // locales de test asignados y no leidos (asserts pendientes)
 // Assets/Scripts/Editor/TestsAltsasua.cs
 // ═══════════════════════════════════════════════════════════════════════════
 //  SUITE DE TESTS — Alsasua Simulator
@@ -181,14 +180,30 @@ public static class TestsAltsasua
     static bool RecibirDano_ReduceVida()
     {
         var go = new GameObject("TestVehiculo");
+        go.AddComponent<Rigidbody>();          // VehiculoNPC necesita Rigidbody
         var v  = go.AddComponent<VehiculoNPC>();
-        var rbField = typeof(VehiculoNPC).GetField("vidaMax",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        // VehiculoNPC necesita Rigidbody para funcionar
-        go.AddComponent<Rigidbody>();
-        int vidaInicial = 100;
-        v.RecibirDano(25);
-        bool ok = true; // si no lanza excepción = OK (vida privada)
+
+        // Leer la vida por reflexión (campo privado; tolerante al nombre exacto).
+        FieldInfo fVida = null;
+        foreach (var n in new[] { "vida", "vidaActual", "_vida", "salud" })
+        {
+            fVida = typeof(VehiculoNPC).GetField(n, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fVida != null) break;
+        }
+
+        bool ok;
+        try
+        {
+            object antes = fVida?.GetValue(v);
+            v.RecibirDano(25);
+            object despues = fVida?.GetValue(v);
+            // Si pudimos leer la vida y estaba >0, debe haber bajado; si no, basta con
+            // que RecibirDano no lance (vida privada / no inicializada en EditMode).
+            ok = (antes == null) ||
+                 System.Convert.ToDouble(despues) <= System.Convert.ToDouble(antes);
+        }
+        catch { ok = false; }
+
         Object.DestroyImmediate(go);
         return ok;
     }
@@ -198,12 +213,16 @@ public static class TestsAltsasua
         bool disparado = false;
         System.Action<VehiculoNPC> handler = _ => disparado = true;
         VehiculoNPC.OnVehiculoDestruido += handler;
-        // Disparar manualmente via reflexión para no necesitar Awake
-        var ev = typeof(VehiculoNPC).GetField("OnVehiculoDestruido",
-            BindingFlags.Static | BindingFlags.Public);
-        VehiculoNPC.OnVehiculoDestruido -= handler;
-        // El evento existe y se suscribió sin excepción = OK
-        return true;
+        try
+        {
+            // Disparar el evento por reflexión (campo backing del field-like event).
+            var f = typeof(VehiculoNPC).GetField("OnVehiculoDestruido",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            if (f == null) return true; // evento custom: no disparable desde fuera, basta con que exista
+            (f.GetValue(null) as System.Action<VehiculoNPC>)?.Invoke(null);
+        }
+        finally { VehiculoNPC.OnVehiculoDestruido -= handler; }
+        return disparado;   // el handler debe haberse ejecutado
     }
 
     static bool VehiculoJugador_SeInstancia()

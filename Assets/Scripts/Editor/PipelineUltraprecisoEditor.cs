@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 public static class PipelineUltraprecisoEditor
 {
-    [MenuItem("Tools/Alsasua/🌐 Pipeline Ultra-Preciso (10 fuentes)", priority = 2)]
+    [MenuItem("Tools/Alsasua/Terreno/🌐 Pipeline Ultra-Preciso (10 fuentes)", priority = 50)]
     public static void EjecutarPipeline()
     {
         bool ok = EditorUtility.DisplayDialog(
@@ -71,7 +71,7 @@ public static class PipelineUltraprecisoEditor
             "2. Dale Play", "OK");
     }
 
-    [MenuItem("Tools/Alsasua/🌐 Pipeline — Solo LIDAR", priority = 3)]
+    [MenuItem("Tools/Alsasua/Terreno/🌐 Pipeline — Solo LIDAR", priority = 51)]
     public static void EjecutarSoloLIDAR()
     {
         LanzarPipeline("lidar",
@@ -82,7 +82,7 @@ public static class PipelineUltraprecisoEditor
             "• Puntos de vegetación → posición y altura de cada árbol");
     }
 
-    [MenuItem("Tools/Alsasua/🌐 Pipeline — Solo Fusion", priority = 4)]
+    [MenuItem("Tools/Alsasua/Terreno/🌐 Pipeline — Solo Fusión", priority = 52)]
     public static void EjecutarFusion()
     {
         LanzarPipeline("fusion",

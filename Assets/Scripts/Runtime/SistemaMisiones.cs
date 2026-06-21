@@ -85,6 +85,7 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
         mision.AlIniciar?.Invoke();
         MostrarTexto(mision.Nombre, mision.Objetivos[0].Descripcion);
         OnMisionIniciada?.Invoke(mision.Nombre);
+        SistemaMinimapa.ActualizarBlipMision(mision.Objetivos[0].ObjetivoTransform);
         AlsasuaLogger.Info("Misiones", $"Iniciada: {mision.Nombre}");
     }
 
@@ -115,7 +116,9 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
         }
         else
         {
-            MostrarTexto(_misionActual.Nombre, _misionActual.Objetivos[_objetivoActual].Descripcion);
+            var nuevoObj = _misionActual.Objetivos[_objetivoActual];
+            MostrarTexto(_misionActual.Nombre, nuevoObj.Descripcion);
+            SistemaMinimapa.ActualizarBlipMision(nuevoObj.ObjetivoTransform);
         }
         // BUG FIX: limpiar referencia al terminar para que Update() pueda lanzar el siguiente objetivo.
         _crCompletarObjetivo = null;
@@ -162,9 +165,11 @@ public class SistemaMisiones : SingletonMono<SistemaMisiones>
 
 public class Objetivo
 {
-    public string       Descripcion;
+    public string              Descripcion;
     public System.Func<bool>   Condicion;   // se evalúa cada frame — devuelve true cuando se cumple
     public System.Action       AlCompletar;
+    /// <summary>Transform del objetivo en el mundo (opcional). El minimapa muestra un blip cian aquí.</summary>
+    public Transform           ObjetivoTransform;
 }
 
 public abstract class Mision

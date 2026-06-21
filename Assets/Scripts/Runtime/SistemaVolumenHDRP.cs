@@ -95,7 +95,9 @@ public class SistemaVolumenHDRP : MonoBehaviour
     bool _propHoraBuscada; // true = ya intentamos buscar (evita búsqueda repetida si no existe)
 
     // PERF: estado de features HDRP dinámicas — evita SetActive innecesarios cada 2s
-    bool _ssrActivo  = true;
+    // Inicializar a false: CrearVolumenDia pone SSR Override(false) al arrancar,
+    // así que el tracking empieza en sync con el volumen real.
+    bool _ssrActivo  = false;
     bool _dofActivo  = true;
     bool _fogActivo  = true;
 
@@ -476,8 +478,11 @@ public class SistemaVolumenHDRP : MonoBehaviour
                 QueryTriggerInteraction.Ignore);
         }
 
-        // ── SSR: desactivar en interior (~1-2ms/frame ahorrados en HDRP) ─────
-        bool ssrDeseado = !enInterior;
+        // ── SSR: activar solo en exterior Y con GPU holgada (tier 0-1) ─────────
+        // Tier 0 = Ultra, 1 = Alto → SSR ON si está fuera.
+        // Tier 2-3 → SSR OFF siempre (ahorra 1-2ms/frame en la manifestación).
+        bool tierPermiteSSR = SistemaOptimizacion.TierCalidad <= 1;
+        bool ssrDeseado = !enInterior && tierPermiteSSR;
         if (ssrDeseado != _ssrActivo)
         {
             _ssrActivo = ssrDeseado;

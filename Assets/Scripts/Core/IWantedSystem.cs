@@ -20,4 +20,10 @@ public interface IWantedSystem
 
     /// <summary>Fija el nivel directamente (sin sumar). Clamp 0-5.</summary>
     void FijarBusqueda(int nivel);
+
+    /// <summary>
+    /// Pausa (true) o reanuda (false) el contador de deescalada automática.
+    /// Llamar desde SistemaEscapeWanted cuando hay policía en radio de búsqueda.
+    /// </summary>
+    void BloquearDeescalada(bool bloquear);
 }

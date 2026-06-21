@@ -1,0 +1,14 @@
+Validación de datos georreferenciados (Tools/ValidarGeorrefDatos.py)
+
+✓ manifest_v2 escalaX=1 (isótropo)
+✓ V2 cota plaza 531.97 m
+✓ iglesia a 0.01 m de OSM
+✓ censo edificios 1030
+✓ autovía presente (89 tramos)
+✓ vía tren (86 rails)
+✓ río Arakil presente
+✓ huertas/cultivos (100)
+✓ V3 escalaX=1
+✓ V3 sin recortes
+✓ V3 cota plaza 531.97 m
+✓ V3≈V2 p99 0.093 m (med 0.008, máx 0.542)

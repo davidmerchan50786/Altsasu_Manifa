@@ -18,7 +18,7 @@ public static class ProcesadorDSMEditor
 
     // ── Descargar IGN ─────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/⬇ Descargar LIDAR IGN (DSM real)", priority = 3)]
+    [MenuItem("Tools/Alsasua/Terreno/⬇ Descargar LIDAR IGN (DSM real)", priority = 53)]
     public static void DescargarLIDAR()
     {
         string scriptPath = Path.Combine(
@@ -61,7 +61,7 @@ public static class ProcesadorDSMEditor
 
     // ── Procesar y aplicar DSM ────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/🏔 Procesar DSM/LIDAR (tejados reales)", priority = 4)]
+    [MenuItem("Tools/Alsasua/Terreno/🏔 Procesar DSM/LIDAR (tejados reales)", priority = 54)]
     public static void ProcesarDSM()
     {
         string dsmFull = Path.Combine(Application.dataPath.Replace("Assets",""), PATH_DSM);

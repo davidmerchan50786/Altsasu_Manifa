@@ -198,7 +198,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         go.transform.localScale = new Vector3(b.size.x + 0.06f, alturaZocalo, b.size.z + 0.06f);
         go.GetComponent<Renderer>().sharedMaterial = _matZocalo;
         go.isStatic = true;
-        Object.Destroy(go.GetComponent<Collider>());
+        if (go.TryGetComponent<Collider>(out var _colg)) Object.Destroy(_colg);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         go.transform.localScale = new Vector3(b.size.x + 0.32f, alturaCornisa, b.size.z + 0.32f);
         go.GetComponent<Renderer>().sharedMaterial = _matCornisa;
         go.isStatic = true;
-        Object.Destroy(go.GetComponent<Collider>());
+        if (go.TryGetComponent<Collider>(out var _colg)) Object.Destroy(_colg);
 
         // Gola inferior (perfil moldurado)
         var gola = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -225,7 +225,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         gola.transform.localScale = new Vector3(b.size.x + 0.16f, 0.09f, b.size.z + 0.16f);
         gola.GetComponent<Renderer>().sharedMaterial = _matCornisa;
         gola.isStatic = true;
-        Object.Destroy(gola.GetComponent<Collider>());
+        if (gola.TryGetComponent<Collider>(out var _colga)) Object.Destroy(_colga);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         vierteaguas.transform.localScale    = new Vector3(ancho + 0.12f, 0.05f, 0.14f);
         vierteaguas.transform.localRotation = Quaternion.Euler(-15f, 0f, 0f);
         vierteaguas.GetComponent<Renderer>().sharedMaterial = _matCornisa;
-        Object.Destroy(vierteaguas.GetComponent<Collider>());
+        if (vierteaguas.TryGetComponent<Collider>(out var _colva)) Object.Destroy(_colva);
 
         // Marco exterior
         var marco = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -312,7 +312,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         marco.transform.localPosition = Vector3.zero;
         marco.transform.localScale    = new Vector3(ancho + 0.08f, alto + 0.08f, 0.07f);
         marco.GetComponent<Renderer>().sharedMaterial = _matMarco;
-        Object.Destroy(marco.GetComponent<Collider>());
+        if (marco.TryGetComponent<Collider>(out var _colmc)) Object.Destroy(_colmc);
 
         // Vidrio
         var vidrio = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -321,7 +321,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         vidrio.transform.localPosition = new Vector3(0, 0, -0.015f);
         vidrio.transform.localScale    = new Vector3(ancho, alto, 0.02f);
         vidrio.GetComponent<Renderer>().sharedMaterial = _matVidrio;
-        Object.Destroy(vidrio.GetComponent<Collider>());
+        if (vidrio.TryGetComponent<Collider>(out var _colvd)) Object.Destroy(_colvd);
 
         // Dintel superior (arco para convex)
         if (esConvex)
@@ -332,7 +332,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
             dintel.transform.localPosition = new Vector3(0, alto * 0.5f + 0.055f, 0);
             dintel.transform.localScale    = new Vector3(ancho + 0.12f, 0.11f, 0.10f);
             dintel.GetComponent<Renderer>().sharedMaterial = _matCornisa;
-            Object.Destroy(dintel.GetComponent<Collider>());
+            if (dintel.TryGetComponent<Collider>(out var _coldn)) Object.Destroy(_coldn);
         }
 
         // División central
@@ -342,7 +342,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         division.transform.localPosition = new Vector3(0, 0, -0.012f);
         division.transform.localScale    = new Vector3(0.04f, alto, 0.025f);
         division.GetComponent<Renderer>().sharedMaterial = _matMarco;
-        Object.Destroy(division.GetComponent<Collider>());
+        if (division.TryGetComponent<Collider>(out var _coldv)) Object.Destroy(_coldv);
     }
 
     void CrearPuertaConCanopy(Transform edif, Vector3 pos)
@@ -359,7 +359,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         hoja.transform.localPosition = new Vector3(0, 1.05f, 0);
         hoja.transform.localScale    = new Vector3(1.0f, 2.1f, 0.07f);
         hoja.GetComponent<Renderer>().sharedMaterial = _matMarco;
-        Object.Destroy(hoja.GetComponent<Collider>());
+        if (hoja.TryGetComponent<Collider>(out var _colhj)) Object.Destroy(_colhj);
 
         // Canopy_Full sobre puerta
         var canopy = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -368,7 +368,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         canopy.transform.localPosition = new Vector3(0, 2.4f, -0.5f);
         canopy.transform.localScale    = new Vector3(1.4f, 0.08f, 1.0f);
         canopy.GetComponent<Renderer>().sharedMaterial = _matPersiana;
-        Object.Destroy(canopy.GetComponent<Collider>());
+        if (canopy.TryGetComponent<Collider>(out var _colcp)) Object.Destroy(_colcp);
 
         // Soporte canopy
         var soporte = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -377,7 +377,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         soporte.transform.localPosition = new Vector3(0, 2.1f, -0.25f);
         soporte.transform.localScale    = new Vector3(0.06f, 0.6f, 0.06f);
         soporte.GetComponent<Renderer>().sharedMaterial = _matHierroNegro;
-        Object.Destroy(soporte.GetComponent<Collider>());
+        if (soporte.TryGetComponent<Collider>(out var _colsp)) Object.Destroy(_colsp);
     }
 
     void CrearEscaparate(Transform edif, Bounds b, float w)
@@ -393,7 +393,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         marco.transform.localScale = new Vector3(anchoEsc + 0.08f, altoEsc + 0.08f, 0.06f);
         marco.GetComponent<Renderer>().sharedMaterial = _matMarco;
         marco.isStatic = true;
-        Object.Destroy(marco.GetComponent<Collider>());
+        if (marco.TryGetComponent<Collider>(out var _colmc)) Object.Destroy(_colmc);
 
         // Vidrio 80% transparente
         var vidrio = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -403,7 +403,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         vidrio.transform.localScale = new Vector3(anchoEsc, altoEsc, 0.02f);
         vidrio.GetComponent<Renderer>().sharedMaterial = _matVidrio;
         vidrio.isStatic = true;
-        Object.Destroy(vidrio.GetComponent<Collider>());
+        if (vidrio.TryGetComponent<Collider>(out var _colvd)) Object.Destroy(_colvd);
 
         // Persiana metálica enrollada en parte superior
         var persiana = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -413,7 +413,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         persiana.transform.localScale = new Vector3(anchoEsc, 0.12f, 0.10f);
         persiana.GetComponent<Renderer>().sharedMaterial = _matPersiana;
         persiana.isStatic = true;
-        Object.Destroy(persiana.GetComponent<Collider>());
+        if (persiana.TryGetComponent<Collider>(out var _colps)) Object.Destroy(_colps);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -438,7 +438,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         losa.transform.position   = new Vector3(b.center.x, y, b.min.z - 0.55f);
         losa.transform.localScale = new Vector3(anchoB, 0.12f, 1.1f);
         losa.GetComponent<Renderer>().sharedMaterial = _matCornisa;
-        Object.Destroy(losa.GetComponent<Collider>());
+        if (losa.TryGetComponent<Collider>(out var _colls)) Object.Destroy(_colls);
 
         // Viga soporte (Canopy_Beam_Short)
         var viga = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -447,7 +447,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         viga.transform.position   = new Vector3(b.center.x, y - 0.06f, b.min.z - 0.28f);
         viga.transform.localScale = new Vector3(anchoB * 0.8f, 0.08f, 0.55f);
         viga.GetComponent<Renderer>().sharedMaterial = _matHierroNegro;
-        Object.Destroy(viga.GetComponent<Collider>());
+        if (viga.TryGetComponent<Collider>(out var _colvg)) Object.Destroy(_colvg);
 
         // Barandilla hierro negro — barras verticales
         int nBarras = Mathf.Max(3, (int)(anchoB * 3f));
@@ -460,7 +460,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
             barra.transform.position   = new Vector3(bx, y + 0.44f, bz);
             barra.transform.localScale = new Vector3(0.03f, 0.8f, 0.03f);
             barra.GetComponent<Renderer>().sharedMaterial = _matHierroNegro;
-            Object.Destroy(barra.GetComponent<Collider>());
+            if (barra.TryGetComponent<Collider>(out var _colbr)) Object.Destroy(_colbr);
         }
 
         // Barra horizontal superior e inferior
@@ -470,7 +470,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         hBarS.transform.position   = new Vector3(b.center.x, y + 0.86f, bz);
         hBarS.transform.localScale = new Vector3(anchoB, 0.05f, 0.05f);
         hBarS.GetComponent<Renderer>().sharedMaterial = _matHierroNegro;
-        Object.Destroy(hBarS.GetComponent<Collider>());
+        if (hBarS.TryGetComponent<Collider>(out var _colhs)) Object.Destroy(_colhs);
 
         var hBarI = GameObject.CreatePrimitive(PrimitiveType.Cube);
         hBarI.name = "BarraHInf";
@@ -478,7 +478,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         hBarI.transform.position   = new Vector3(b.center.x, y + 0.06f, bz);
         hBarI.transform.localScale = new Vector3(anchoB, 0.04f, 0.04f);
         hBarI.GetComponent<Renderer>().sharedMaterial = _matHierroNegro;
-        Object.Destroy(hBarI.GetComponent<Collider>());
+        if (hBarI.TryGetComponent<Collider>(out var _colhi)) Object.Destroy(_colhi);
     }
 
     void AnadirBalconSimple(Transform edif, Bounds b, float y, float w)
@@ -492,7 +492,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         losa.transform.localScale = new Vector3(anchoB, 0.12f, 1.0f);
         losa.GetComponent<Renderer>().sharedMaterial = _matCornisa;
         losa.isStatic = true;
-        Object.Destroy(losa.GetComponent<Collider>());
+        if (losa.TryGetComponent<Collider>(out var _colls)) Object.Destroy(_colls);
 
         var pretil = GameObject.CreatePrimitive(PrimitiveType.Cube);
         pretil.name = "BalconPretil";
@@ -501,7 +501,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         pretil.transform.localScale = new Vector3(anchoB, 0.9f, 0.1f);
         pretil.GetComponent<Renderer>().sharedMaterial = _matCornisa;
         pretil.isStatic = true;
-        Object.Destroy(pretil.GetComponent<Collider>());
+        if (pretil.TryGetComponent<Collider>(out var _colpt)) Object.Destroy(_colpt);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -546,7 +546,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
             new Material(Shader.Find("HDRP/Lit") ?? Shader.Find("Standard"))
             { color = new Color(0.3f, 0.3f, 0.32f) };
         go.isStatic = true;
-        Object.Destroy(go.GetComponent<Collider>());
+        if (go.TryGetComponent<Collider>(out var _colg)) Object.Destroy(_colg);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -586,7 +586,7 @@ public class GeneradorFachadasAAA : MonoBehaviour
         var mat = new Material(Shader.Find("HDRP/Unlit") ?? Shader.Find("Unlit/Color")) { color = col };
         go.GetComponent<Renderer>().sharedMaterial = mat;
         go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        Object.Destroy(go.GetComponent<Collider>());
+        if (go.TryGetComponent<Collider>(out var _colg)) Object.Destroy(_colg);
         go.isStatic = true;
     }
 

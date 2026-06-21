@@ -238,6 +238,10 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
         // OPT: cachear LayerMask del spring arm — evita string lookup cada Update
         _maskSpringArmCached = ~LayerMask.GetMask("Player", "Ignore Raycast");
         // _vida ya inicializado por VehiculoBase.Awake() con vidaMaxima
+
+        // Sistema de daño físico por colisión (auto-add)
+        if (GetComponent<SistemaDañoFisicoVehiculo>() == null)
+            gameObject.AddComponent<SistemaDañoFisicoVehiculo>();
     }
 
     private void Update()

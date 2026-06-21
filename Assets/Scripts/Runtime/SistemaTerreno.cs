@@ -188,6 +188,7 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             {
                 yield return StartCoroutine(PintarAlphamap8Biomas());
             }
+            _pintados.Add(tile);
         }
 
         // Extras solo en el anillo jugable (0) o el terreno único
@@ -203,15 +204,61 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             if (!_esMosaico) ConfigurarCalidadVisual(); // mosaico: pixelError por anillo (cargador)
         }
 
-        // dejar el tile ancla seleccionado para WetMud/MicroDetail
+        // Jugable ya con el anillo 0 pintado.
         SeleccionarTile(_tilesObjetivo[0]);
         Listo = true;
+        AlsasuaLogger.Info("Terreno",
+            $"✅ SistemaTerreno 8 biomas (anillo 0) — {_cauces.Count} cauces, {_bosques.Count} bosques" +
+            (_esMosaico ? $", {_tilesObjetivo.Count} tiles iniciales" : ""));
+
+        // Pinta en SEGUNDO PLANO los tiles que cargan tras el anillo 0 (anillos 1-2:
+        // valle y sierras, donde transcurre gran parte del juego). El bucle inicial
+        // solo vio los tiles disponibles al marcar EstaListo (anillo 0); los demás se
+        // quedaban con la capa verde base del cargador = "campo verde liso". Al terminar
+        // arranca la cosmética (WetMud/MicroDetail), que usa el _td compartido → no debe
+        // solaparse con el pintado de fondo.
+        StartCoroutine(PintarTilesRestantesLuegoCosmetica());
+    }
+
+    readonly HashSet<Terrain> _pintados = new HashSet<Terrain>();
+
+    IEnumerator PintarTilesRestantesLuegoCosmetica()
+    {
+        var svc = ServiceLocator.Get<ITerrainService>();
+        if (_esMosaico && svc != null)
+        {
+            int estable = 0, ultimo = -1;
+            float backstop = Time.realtimeSinceStartup + 180f;   // límite duro
+            while (Time.realtimeSinceStartup < backstop)
+            {
+                bool pinto = false;
+                var actuales = new List<Terrain>(svc.Tiles);   // copia: la lista crece al cargar
+                foreach (var tile in actuales)
+                {
+                    if (tile == null || _pintados.Contains(tile)) continue;
+                    SeleccionarTile(tile);
+                    AsegurarCapas8Biomas();
+                    yield return null;
+                    yield return StartCoroutine(PintarAlphamap8Biomas());
+                    _pintados.Add(tile);
+                    pinto = true;
+                }
+                int count = svc.Tiles.Count;
+                // Cuando no quedan tiles por pintar y el recuento no crece (3 ciclos), terminamos.
+                if (!pinto && count == ultimo) { if (++estable >= 3) break; }
+                else estable = 0;
+                ultimo = count;
+                yield return new WaitForSeconds(0.5f);
+            }
+            AlsasuaLogger.Info("Terreno", $"✅ Biomas pintados en {_pintados.Count} tiles del mosaico.");
+        }
+
+        // Cosmética sobre el tile ancla (ya sin pintado de fondo en curso → _td estable).
+        if (_tilesObjetivo.Count > 0 && _tilesObjetivo[0] != null)
+            SeleccionarTile(_tilesObjetivo[0]);
         InicializarWetMud();
         StartCoroutine(CicloWetMud());
         StartCoroutine(AplicarMicroDetail());
-        AlsasuaLogger.Info("Terreno",
-            $"✅ SistemaTerreno 8 biomas — {_cauces.Count} cauces, {_bosques.Count} bosques" +
-            (_esMosaico ? $", {_tilesObjetivo.Count} tiles" : ""));
     }
 
     /// <summary>Fija el tile en curso (_terrain/_td/_baseY) y ajusta la
@@ -569,8 +616,27 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
             { yield return null; t0 = Time.realtimeSinceStartup; }
         }
 
-        _td.SetAlphamaps(0, 0, mapa);
-        AlsasuaLogger.Info("Terreno", "✅ Alphamap 8 biomas aplicado");
+        // FIX "Float array size wrong (layers should be 1)": el cargador del mosaico
+        // asigna a cada tile UNA capa base (CrearCapasCompartidas), y durante los yields
+        // del pintado el nº de capas del TerrainData puede volver a 1 → SetAlphamaps con
+        // el mapa de 'numCapas' reventaba. Re-aseguramos las capas JUSTO antes de escribir
+        // (sin yield de por medio → la carrera no se puede colar) y protegemos la llamada.
+        if (_td.terrainLayers == null || _td.terrainLayers.Length != numCapas)
+            AsegurarCapas8Biomas();
+
+        if (_td.alphamapLayers == numCapas)
+        {
+            try { _td.SetAlphamaps(0, 0, mapa); }
+            catch (System.Exception e)
+            { AlsasuaLogger.Warn("Terreno", $"SetAlphamaps falló ({_resAlpha}², capas={_td.alphamapLayers}): {e.Message}"); }
+            AlsasuaLogger.Info("Terreno", "✅ Alphamap 8 biomas aplicado");
+        }
+        else
+        {
+            AlsasuaLogger.Warn("Terreno",
+                $"Alphamap omitido: capas del tile={_td.alphamapLayers} ≠ mapa={numCapas} " +
+                "(no se pudo re-asegurar las 8 capas).");
+        }
     }
 
     IEnumerator PrecomputarMascaras(

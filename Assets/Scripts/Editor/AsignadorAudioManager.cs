@@ -134,7 +134,7 @@ public static class AsignadorAudioManager
         EditorUtility.DisplayDialog("🔊 Audio asignado", resumen, "OK");
     }
 
-    [MenuItem("Tools/Alsasua/Debug/🔊 Verificar Audio", priority = 12)]
+    [MenuItem("Tools/Alsasua/Debug/🔊 Verificar Audio", priority = 13)]
     public static void Verificar()
     {
         var clips = Resources.LoadAll<AudioClip>("Audio");

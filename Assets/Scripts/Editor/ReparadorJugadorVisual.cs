@@ -29,7 +29,7 @@ public static class ReparadorJugadorVisual
     const string MODELO_PATH = "Assets/Prefabs/Personajes/Jugador_Modelo_SummerStreet.prefab";
     const string PLAYER_PATH = "Assets/Prefabs/Personajes/Jugador_Altsasua.prefab";
 
-    [MenuItem("Tools/Alsasua/Assets/🧍 Reparar Jugador (modelo + animaciones)", priority = 18)]
+    [MenuItem("Tools/Alsasua/Assets/🧍 Reparar Jugador (modelo + animaciones)", priority = 44)]
     public static void Reparar()
     {
         // ── 1. FBX → rig Humanoid con Avatar propio ──────────────────────────

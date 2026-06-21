@@ -70,14 +70,32 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
 
     void Start()
     {
-        Application.targetFrameRate = fpsMeta;
-        QualitySettings.vSyncCount  = 0; // vsync off — controlamos nosotros
+        Application.targetFrameRate  = fpsMeta;
+        QualitySettings.vSyncCount   = 0;     // vsync off — controlamos nosotros
+        // Sin maximumDeltaTime Unity puede entregar deltaTime de 2-4s tras un hitch de carga
+        // → física explota, NPCs teletransportan, animaciones saltan. 0.1s es el suelo seguro.
+        Time.maximumDeltaTime        = 0.1f;
+        // El streamer de activos se ejecuta en hilo de fondo; prioridad Low evita
+        // que robe tiempo al hilo principal durante el gameplay.
+        Application.backgroundLoadingPriority = ThreadPriority.Low;
+        StartCoroutine(WarmupShaders());
         // Reacción más ágil: medir al menos 1×/s (un 0 FPS no puede esperar 2 s/escalón).
         intervaloMedicion = Mathf.Min(intervaloMedicion, 1f);
         _tierCalidad = 0;
         Shader.SetGlobalFloat(ID_QualityTier, 0f); // arrancar en Ultra; sube si la carga lo exige
         StartCoroutine(BucleMedicion());
         AlsasuaLogger.Info("Optimizacion", $"Sistema activo — objetivo {fpsMeta}fps");
+    }
+
+    // Warmup de shaders durante la pantalla de carga — evita hitches cuando
+    // el jugador ve un material/shader por primera vez en el mundo.
+    // Se lanza en Start (pantalla carga activa) y tarda 1-5s sin notarse.
+    IEnumerator WarmupShaders()
+    {
+        // Esperar un frame para no solapar con el resto del Start
+        yield return null;
+        Shader.WarmupAllShaders();
+        AlsasuaLogger.Info("Optimizacion", "Shader warmup OK — sin hitches de primer uso.");
     }
 
     void GuardarConfigOriginal()
@@ -147,9 +165,16 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         // dinámico solo actúa ya como red de seguridad suave (ver AjustarCalidad).
         if (QualitySettings.GetQualityLevel() != 0)
             QualitySettings.SetQualityLevel(0, true);   // 0 = High Fidelity (mejor)
-        QualitySettings.shadowDistance = Mathf.Max(_shadowDistOrig, 300f);
-        QualitySettings.lodBias        = Mathf.Max(_lodBiasOrig, 2f);   // detalle lejano (edificios no se "acajonan")
-        RenderSettings.fogDensity      = _fogDensityOrig;                // quita la niebla de emergencia
+        QualitySettings.shadowDistance    = Mathf.Max(_shadowDistOrig, 300f);
+        QualitySettings.lodBias           = Mathf.Max(_lodBiasOrig, 2f);
+        QualitySettings.shadowCascades    = 4;
+        // Splits óptimos para ciudad densa (calles estrechas de Alsasua):
+        // Cascada 0:  0-6m  (máx detalle, sombras de edificios adyacentes)
+        // Cascada 1:  6-25m (pasos/fachadas visibles)
+        // Cascada 2: 25-80m (bloques del barrio)
+        // Cascada 3: 80-300m (GobernadorRender ajusta shadowDistance)
+        QualitySettings.shadowCascade4Split = new Vector4(0.02f, 0.08f, 0.267f, 0f);
+        RenderSettings.fogDensity           = _fogDensityOrig;
         FijarTier(0);
         AlsasuaLogger.Info("Optimizacion",
             $"Baseline listo → calidad MÁXIMA (High Fidelity, sombras {QualitySettings.shadowDistance:F0} m, LOD {QualitySettings.lodBias:F2}, tier 0).");
@@ -163,6 +188,7 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         // bias decente (los edificios no se vuelven cajas). Solo recortamos sombras.
         QualitySettings.shadowDistance = 120f;
         QualitySettings.lodBias        = Mathf.Max(1f, QualitySettings.lodBias - 0.5f);
+        QualitySettings.shadowCascades = 2;   // emergencia: 2 cascadas (ahorra ~30% GPU shadow pass)
         FijarTier(2);
         AlsasuaLogger.Warn("Optimizacion",
             $"FPS CRÍTICO ({_fpsActual:F0}) → degrade SUAVE (tier 2, sombras 120 m, LOD {QualitySettings.lodBias:F2}; sin niebla).");
@@ -174,10 +200,13 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         QualitySettings.shadowDistance = Mathf.Max(120f, QualitySettings.shadowDistance - 40f);
         // LOD: suelo 1.2 (los edificios mantienen geometría, no se "acajonan")
         QualitySettings.lodBias = Mathf.Max(1.2f, QualitySettings.lodBias - 0.2f);
+        // Cascadas: reducir a 2 al entrar en tier 2 (bajo FPS) — ahorra ~30% del shadow pass
+        int nuevoTier = Mathf.Clamp(_tierCalidad + 1, 0, 3);
+        QualitySettings.shadowCascades = nuevoTier >= 2 ? 2 : 4;
         // (sin inyección de niebla — lavaba la imagen)
 
         // Subir el tier (peor calidad) y difundirlo al pipeline.
-        FijarTier(_tierCalidad + 1);
+        FijarTier(nuevoTier);
 
         AlsasuaLogger.Info("Optimizacion",
             $"FPS bajo ({_fpsActual:F0}) → tier={_tierCalidad} shadow={QualitySettings.shadowDistance:F0}m LOD={QualitySettings.lodBias:F2}");
@@ -189,7 +218,9 @@ public class SistemaOptimizacion : SingletonMono<SistemaOptimizacion>
         QualitySettings.lodBias        = Mathf.Min(_lodBiasOrig,    QualitySettings.lodBias + 0.1f);
 
         // Bajar el tier (mejor calidad) y difundirlo.
-        FijarTier(_tierCalidad - 1);
+        int tierMejor = Mathf.Clamp(_tierCalidad - 1, 0, 3);
+        QualitySettings.shadowCascades = tierMejor <= 1 ? 4 : 2;
+        FijarTier(tierMejor);
     }
 
     // Fija el tier 0..3 y lo publica como global de shader solo si cambió (evita writes redundantes).

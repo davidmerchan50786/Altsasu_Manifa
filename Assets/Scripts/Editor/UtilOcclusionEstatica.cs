@@ -33,7 +33,7 @@ public static class UtilOcclusionEstatica
         "Suelo", "SueloBase", "Calles", "Muros", "Tuneles",
     };
 
-    [MenuItem("Alsasua/Occlusion/Marcar geometría estática")]
+    [MenuItem("Tools/Alsasua/Render/Occlusion · Marcar geometría estática", priority = 90)]
     static void MarcarEstaticos()
     {
         int objetos = 0, contenedores = 0;
@@ -78,7 +78,33 @@ public static class UtilOcclusionEstatica
             "Siguiente: Window ▸ Rendering ▸ Occlusion Culling ▸ Bake.", "OK");
     }
 
-    [MenuItem("Alsasua/Occlusion/Marcar geometría estática", validate = true)]
+    [MenuItem("Tools/Alsasua/Render/Occlusion · Marcar geometría estática", validate = true)]
     static bool MarcarEstaticosValida() => !Application.isPlaying;
+
+    // ── BAKE ONE-CLICK ─────────────────────────────────────────────────────
+    // Marca la geometría Y hornea el occlusion culling en un solo clic.
+    // Equivale a hacer manualmente: marcar → Window ▸ Rendering ▸ OC ▸ Bake.
+    // Coste: 10-90 segundos según tamaño de la ciudad (Unity bloquea el editor).
+    [MenuItem("Tools/Alsasua/Render/Occlusion · Bake completo (marca + hornea)", priority = 91)]
+    static void BakearOcclusion()
+    {
+        if (EditorUtility.DisplayDialog("Occlusion Bake",
+            "Esto marca toda la geometría de la ciudad como Occluder+Occludee " +
+            "y luego hornea el occlusion culling.\n\n" +
+            "Puede tardar entre 10 y 90 segundos. ¿Continuar?",
+            "Bake", "Cancelar"))
+        {
+            MarcarEstaticos();
+            StaticOcclusionCulling.smallestOccluder = 5f;   // edificio mínimo ≈ 5m
+            StaticOcclusionCulling.smallestHole     = 0.25f; // hueco mínimo visible
+            StaticOcclusionCulling.backfaceThreshold = 100f;
+            StaticOcclusionCulling.Compute();
+            Debug.Log("[Occlusion] Bake completado. Guarda la escena para conservar los datos.");
+        }
+    }
+
+    [MenuItem("Tools/Alsasua/Render/Occlusion · Bake completo (marca + hornea)", validate = true)]
+    static bool BakearOcclusionValida() => !Application.isPlaying && !StaticOcclusionCulling.isRunning;
 }
+
 #endif

@@ -156,6 +156,9 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
         if (nivelBusqueda != prev) OnEstrellasCambia?.Invoke(nivelBusqueda);
     }
 
+    bool _deescaladaBloqueada;
+    void IWantedSystem.BloquearDeescalada(bool bloquear) => _deescaladaBloqueada = bloquear;
+
     // ── IEconomyService ───────────────────────────────────────────────────────
     int IEconomyService.Dinero     => dinero;
     int IEconomyService.Puntuacion => puntuacion;
@@ -324,6 +327,7 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     void GestionarNivelBusqueda()
     {
         if (nivelBusqueda <= 0) return;
+        if (_deescaladaBloqueada) return; // SistemaEscapeWanted pausa esto mientras hay policía cerca
 
         _timerBajarNivel -= Time.deltaTime;
         if (_timerBajarNivel <= 0f)

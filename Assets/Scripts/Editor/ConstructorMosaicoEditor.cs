@@ -32,7 +32,7 @@ public static class ConstructorMosaicoEditor
     static readonly Dictionary<int, float> PIXEL_ERROR = new() { { 0, 3f }, { 1, 6f }, { 2, 12f } };
     const float PIXEL_ERROR_FRONTERA = 4f;
 
-    [MenuItem("Tools/Alsasua/Mundo/🧩 Construir Mosaico V2 (bake)")]
+    [MenuItem("Tools/Alsasua/Terreno/🧩 Construir Mosaico V2 (bake)", priority = 10)]
     public static void Construir()
     {
         string rutaManifest = CargadorMosaicoTerreno.RutaManifest();

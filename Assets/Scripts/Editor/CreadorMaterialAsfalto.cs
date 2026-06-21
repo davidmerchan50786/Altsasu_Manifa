@@ -30,7 +30,7 @@ public static class CreadorMaterialAsfalto
     const string HGT2  = "pebbled_asphalt_Height.png";
     const string AO2   = "pebbled_asphalt_ao.png";
 
-    [MenuItem("Altsasu GTA/Crear Materiales de Asfalto", false, 10)]
+    [MenuItem("Tools/Alsasua/Legacy/Crear Material Asfalto (legacy)", false, 10)]
     public static void CrearMateriales()
     {
         // Crear carpeta de materiales si no existe

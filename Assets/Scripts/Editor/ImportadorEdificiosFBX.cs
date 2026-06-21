@@ -42,7 +42,7 @@ public class ImportadorEdificiosFBX : EditorWindow
     bool soloConFotos   = false;
 
     // ── Ventana ──────────────────────────────────────────────────────────────
-    [MenuItem("Altsasua/Importar Edificios FBX")]
+    [MenuItem("Tools/Alsasua/Importar/📦 Importar Edificios FBX", priority = 8)]
     public static void AbrirVentana()
         => GetWindow<ImportadorEdificiosFBX>("Importar Edificios FBX");
 

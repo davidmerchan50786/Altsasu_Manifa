@@ -29,41 +29,102 @@ public static class ConstructorCiudadAssets
     const string JSON      = "Assets/AlsasuaData/buildings_unity.json";
     const string RAIZ      = "Edificios_Asset";
 
-    // Catálogo de prefabs por categoría (se cargan los que existan; los que falten se ignoran).
-    static readonly string[] CASAS = {   // 1-2 plantas, footprint pequeño/medio
-        "Assets/HousePack/Perfabs/House1.prefab","Assets/HousePack/Perfabs/House2.prefab",
-        "Assets/HousePack/Perfabs/House3.prefab","Assets/HousePack/Perfabs/House4.prefab",
-        "Assets/HousePack/Perfabs/House5.prefab","Assets/HousePack/Perfabs/House6.prefab",
-        "Assets/HousePack/Perfabs/House7.prefab","Assets/HousePack/Perfabs/House8.prefab",
-        "Assets/HousePack/Perfabs/House9.prefab","Assets/HousePack/Perfabs/House10.prefab",
+    // ── Catálogo de prefabs por categoría ────────────────────────────────────
+    // Los que no existan en el proyecto se ignoran automáticamente (Cargar() los filtra).
+
+    static readonly string[] CASAS = {   // residencial 1-2 plantas
+        "Assets/HousePack/Perfabs/House1.prefab",
+        "Assets/HousePack/Perfabs/House2.prefab",
+        "Assets/HousePack/Perfabs/House3.prefab",
+        "Assets/HousePack/Perfabs/House4.prefab",
+        "Assets/HousePack/Perfabs/House5.prefab",
+        "Assets/HousePack/Perfabs/House6.prefab",
+        "Assets/HousePack/Perfabs/House7.prefab",
+        "Assets/HousePack/Perfabs/House8.prefab",
+        "Assets/HousePack/Perfabs/House9.prefab",
+        "Assets/HousePack/Perfabs/House10.prefab",
         "Assets/VillagePack/OldHouse/OldHousePrefab.prefab",
         "Assets/Resources/Prefabs/Edificios/House_Prefab.prefab",
+        "Assets/Resources/Prefabs/Edificios/House_Green_Prefab.prefab",
+        "Assets/ALP_Assets/country house01/Models/House_Prefab.prefab",
+        // Polygon City Free Pack — casas y comercios pequeños
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_A.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_B.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_C.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_D.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/House_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/House_02.prefab",
     };
-    static readonly string[] BLOQUES = { // 3+ plantas, footprint grande → bloque urbano
+
+    static readonly string[] BLOQUES = { // residencial 3+ plantas / bloque urbano
         "Assets/Prefabs/FBX/Edificios/lisbon_building.prefab",
         "Assets/Prefabs/FBX/Edificios/lisbon_building_2.prefab",
         "Assets/VillagePack/BigHouse/BigHousePrefab.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Apartment_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Apartment_02.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Apartment_03.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Office_01.prefab",
     };
+
+    static readonly string[] INDUSTRIALES = { // naves industriales, hangares, almacenes
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Garage_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Hangar_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Warehouse_01.prefab",
+        // Fallback: bloques escalados horizontalmente si no existen los anteriores
+    };
+
+    static readonly string[] COMERCIALES = { // tiendas, oficinas
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Shop_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Shop_02.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/GasStation_01.prefab",
+    };
+
     static readonly string[] RUINAS = {  // post-apocalíptico: estructuras derruidas
         "Assets/Prefabs/FBX/Edificios/destroyedWalls3.prefab",
         "Assets/Prefabs/FBX/Edificios/destroyedWalls_UV1.prefab",
         "Assets/Prefabs/FBX/Edificios/destroyedWalls_UV2.prefab",
+        // Ruinas variadas con más piezas si existen
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_Destroyed_01.prefab",
+        "Assets/Wand and Circles/Polygon City Free Pack/Prefabs/Buildings/Building_Destroyed_02.prefab",
     };
-    const float PORCENTAJE_RUINAS = 0.30f;  // ~30% de footprints en ruinas (mezcla post-apoc)
+
+    const float PORCENTAJE_RUINAS     = 0.25f; // ~25% post-apocalíptico
+    const float PORCENTAJE_INDUSTRIAL = 0.12f; // ~12% industrial (polígonos)
+    const float PORCENTAJE_COMERCIAL  = 0.10f; // ~10% comercial (centro)
 
     [System.Serializable] class Vert { public float x, z; }
     [System.Serializable] class Edif { public long id; public string type, name; public int levels; public float height; public Vert[] vertices; }
     [System.Serializable] class Wrap { public Edif[] items; }
 
-    [MenuItem("Tools/Alsasua/Mundo/🏙️ Construir Edificios de Asset (footprints reales)", priority = 8)]
-    static void Construir()
+    // Altura tile-aware del mosaico V2: SampleHeight sobre el tile que CONTIENE (x,z),
+    // no sobre Terrain.activeTerrain (con 48 tiles devuelve uno arbitrario / 0 fuera de su tile).
+    static float AlturaEnMosaico(Terrain[] ts, float x, float z)
+    {
+        for (int i = 0; i < ts.Length; i++)
+        {
+            var t = ts[i];
+            if (t == null || t.terrainData == null) continue;
+            var p = t.transform.position; var s = t.terrainData.size;
+            if (x >= p.x && x < p.x + s.x && z >= p.z && z < p.z + s.z)
+                return p.y + t.SampleHeight(new Vector3(x, 0f, z));
+        }
+        return 0f; // fuera del mosaico
+    }
+
+    [MenuItem("Tools/Alsasua/Mundo/🏙️ Construir Edificios de Asset (footprints reales)", priority = 10)]
+    public static void Construir()
     {
         string ruta = Path.GetFullPath(Path.Combine(Application.dataPath, "..", JSON));
         if (!File.Exists(ruta)) { EditorUtility.DisplayDialog("Edificios de Asset", $"No existe {JSON}", "Vale"); return; }
 
-        var casas   = Cargar(CASAS);
-        var bloques = Cargar(BLOQUES);
-        var ruinas  = Cargar(RUINAS);
+        var casas        = Cargar(CASAS);
+        var bloques      = Cargar(BLOQUES);
+        var industriales = Cargar(INDUSTRIALES);
+        var comerciales  = Cargar(COMERCIALES);
+        var ruinas       = Cargar(RUINAS);
+        // Fallback: si categorías especializadas están vacías, usar bloques como comodín
+        if (industriales.Count == 0) industriales = bloques;
+        if (comerciales.Count  == 0) comerciales  = casas.Count > 0 ? casas : bloques;
         if (casas.Count == 0 && bloques.Count == 0 && ruinas.Count == 0)
         { EditorUtility.DisplayDialog("Edificios de Asset", "No se cargó ningún prefab de edificio. Revisa las rutas en CASAS/BLOQUES/RUINAS.", "Vale"); return; }
 
@@ -73,23 +134,30 @@ public static class ConstructorCiudadAssets
         if (w?.items == null || w.items.Length == 0) { EditorUtility.DisplayDialog("Edificios de Asset", "JSON sin edificios.", "Vale"); return; }
 
         if (!EditorUtility.DisplayDialog("Construir Edificios de Asset",
-            $"Voy a colocar {w.items.Length} edificios de asset en los footprints reales " +
-            $"({casas.Count} casa, {bloques.Count} bloque, {ruinas.Count} ruina · ~{PORCENTAJE_RUINAS*100:F0}% post-apocalíptico), escalados a parcela+altura.\n\n" +
-            "Crea la raíz 'Edificios_Asset' (static). Reversible (menú Limpiar).\n¿Continuar?", "Construir", "Cancelar"))
+            $"Voy a colocar {w.items.Length} edificios en los footprints reales:\n" +
+            $"  · {casas.Count} modelos de casa\n" +
+            $"  · {bloques.Count} modelos de bloque\n" +
+            $"  · {industriales.Count} modelos industriales\n" +
+            $"  · {comerciales.Count} modelos comerciales\n" +
+            $"  · {ruinas.Count} modelos de ruina (~{PORCENTAJE_RUINAS*100:F0}% post-apoc)\n\n" +
+            "Clasificación automática por tipo OSM + tamaño de parcela.\n" +
+            "Raíz 'Edificios_Asset' static. Reversible (menú Limpiar).\n¿Continuar?", "Construir", "Cancelar"))
             return;
 
         // Medir bounds de cada prefab una vez (para escalar a las dimensiones objetivo).
         var bounds = new Dictionary<GameObject, Vector3>();
-        foreach (var p in casas)   bounds[p] = MedirBounds(p);
-        foreach (var p in bloques) bounds[p] = MedirBounds(p);
-        foreach (var p in ruinas)  bounds[p] = MedirBounds(p);
+        foreach (var p in casas)        bounds[p] = MedirBounds(p);
+        foreach (var p in bloques)      bounds[p] = MedirBounds(p);
+        foreach (var p in industriales) { if (!bounds.ContainsKey(p)) bounds[p] = MedirBounds(p); }
+        foreach (var p in comerciales)  { if (!bounds.ContainsKey(p)) bounds[p] = MedirBounds(p); }
+        foreach (var p in ruinas)       bounds[p] = MedirBounds(p);
 
         var raizAnt = GameObject.Find(RAIZ);
         if (raizAnt != null) Object.DestroyImmediate(raizAnt);
         var raiz = new GameObject(RAIZ);
         var matsInstancia = new HashSet<Material>();   // GPU instancing en materiales repetidos (AAA)
 
-        var terrain = Terrain.activeTerrain;
+        var terrains = Terrain.activeTerrains;   // mosaico V2: todos los tiles colocados
         int colocados = 0, idx = 0;
         try
         {
@@ -126,19 +194,30 @@ public static class ConstructorCiudadAssets
                 float fondo = Mathf.Max(3f, maxV - minV);
                 float altura = Mathf.Max(3f, e.height > 0 ? e.height : e.levels * 3.1f);
 
-                // Elegir prefab: bloque si alto/grande, si no casa.
-                // Mezcla post-apocalíptica: un % de footprints se vuelven RUINAS (muros derruidos).
-                bool esRuina = ruinas.Count > 0 && ((uint)e.id % 100u) < (uint)(PORCENTAJE_RUINAS * 100f);
-                List<GameObject> lista;
-                if (esRuina) lista = ruinas;
-                else
-                {
-                    bool esBloque = (altura >= 9f || (ancho * fondo) >= 220f) && bloques.Count > 0;
-                    lista = esBloque ? bloques : (casas.Count > 0 ? casas : bloques);
-                }
+                // ── Clasificación por tipo OSM + geometría ─────────────────
+                // Prioridad: ruina → industrial → comercial → bloque → casa
+                uint hash = (uint)e.id;
+                bool esRuina     = ruinas.Count > 0       && (hash % 100u) < (uint)(PORCENTAJE_RUINAS     * 100f);
+                bool esIndustrial= !esRuina && industriales.Count > 0
+                                   && ((e.type == "industrial" || e.type == "warehouse" || e.type == "garage"
+                                        || (ancho * fondo) >= 400f)   // nave grande
+                                       || (hash % 100u) < (uint)(PORCENTAJE_INDUSTRIAL * 100f));
+                bool esComercial = !esRuina && !esIndustrial && comerciales.Count > 0
+                                   && (e.type == "commercial" || e.type == "retail" || e.type == "office"
+                                       || (hash % 100u) < (uint)((PORCENTAJE_INDUSTRIAL + PORCENTAJE_COMERCIAL) * 100f));
+                bool esBloque    = !esRuina && !esIndustrial && !esComercial
+                                   && ((altura >= 9f || (ancho * fondo) >= 220f) && bloques.Count > 0);
+
+                List<GameObject> lista =
+                    esRuina      ? ruinas :
+                    esIndustrial ? industriales :
+                    esComercial  ? comerciales :
+                    esBloque     ? bloques :
+                    casas.Count > 0 ? casas : bloques;
+
                 if (lista == null || lista.Count == 0)
                     lista = casas.Count > 0 ? casas : (bloques.Count > 0 ? bloques : ruinas);
-                var prefab = lista[(int)((uint)e.id % (uint)lista.Count)];
+                var prefab = lista[(int)(hash % (uint)lista.Count)];
 
                 Vector3 size = bounds[prefab];
                 if (size.x < 0.01f || size.y < 0.01f || size.z < 0.01f) size = Vector3.one;
@@ -146,7 +225,7 @@ public static class ConstructorCiudadAssets
                 // Los footprints son RELATIVOS al origen (Herriko Plaza). World = + OX/OZ
                 // (igual que ConstruirEdificio procedural: v + GeoDataAlsasua.OX/OZ).
                 float wx = c.x + GeoDataAlsasua.OX, wz = c.y + GeoDataAlsasua.OZ;
-                float y = terrain != null ? terrain.SampleHeight(new Vector3(wx, 0, wz)) : 0f;
+                float y = AlturaEnMosaico(terrains, wx, wz);
 
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, raiz.transform);
                 go.transform.position = new Vector3(wx, y, wz);
@@ -172,14 +251,14 @@ public static class ConstructorCiudadAssets
             UnityEngine.SceneManagement.SceneManager.GetActiveScene());
 
         Debug.Log($"[CiudadAssets] ✅ {colocados} edificios de asset colocados en footprints reales (raíz '{RAIZ}', static). " +
-                  (terrain == null ? "⚠ Sin Terrain activo en editor → Y=0 (se ajustará en Play)." : ""));
+                  (terrains.Length == 0 ? "⚠ Sin Terrain en escena → Y=0. Construye el Mosaico V2 primero." : ""));
         EditorUtility.DisplayDialog("Edificios de Asset",
             $"✅ {colocados} edificios colocados en '{RAIZ}'.\n\n" +
-            (terrain == null ? "⚠ No había Terrain en el editor → quedaron a Y=0.\n\n" : "") +
+            (terrains.Length == 0 ? "⚠ No había Terrain en el editor → quedaron a Y=0.\n\n" : "") +
             "Siguiente: desactivar la generación procedural de edificios para que estos la sustituyan en Play.", "Genial");
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/↩️ Limpiar Edificios de Asset", priority = 9)]
+    [MenuItem("Tools/Alsasua/Mundo/↩️ Limpiar Edificios de Asset", priority = 11)]
     static void Limpiar()
     {
         var raiz = GameObject.Find(RAIZ);

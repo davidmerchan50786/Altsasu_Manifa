@@ -50,7 +50,7 @@ public static class AuditorTerrenoMosaico
         public float X0 => def.x; public float Z0 => def.z; public float Ancho => def.ancho;
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/🔍 Auditor Terreno Mosaico")]
+    [MenuItem("Tools/Alsasua/Terreno/🔍 Auditar Mosaico V2", priority = 11)]
     public static void Auditar()
     {
         string rutaManifest = CargadorMosaicoTerreno.RutaManifest();

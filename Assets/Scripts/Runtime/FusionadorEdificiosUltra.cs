@@ -881,28 +881,22 @@ public class FusionadorEdificiosUltra : MonoBehaviour
 
     // Constantes WGS84→UTM (aproximación lineal válida para área 1km² de Alsasua)
     // Factores de escala calculados para lat≈42.819°, lon≈-2.192°
-    const double DEG_TO_UTM_E_FACTOR = 77450.0;   // metros por grado de longitud en esta latitud
-    const double DEG_TO_UTM_N_FACTOR = 111320.0;  // metros por grado de latitud (casi constante)
-    const double LON_ORIGIN = -2.192000;           // lon de referencia (aprox Herriko Plaza)
-    const double LAT_ORIGIN = 42.819000;           // lat de referencia
+    const double LON_ORIGIN = -2.192000;  // lon de referencia (aprox Herriko Plaza)
+    const double LAT_ORIGIN = 42.819000;  // lat de referencia
 
     /// <summary>
-    /// Convierte coordenadas lon/lat WGS84 a Unity XZ.
-    /// Se usa la misma fórmula que GeoDataAlsasua.
-    /// UnityX = (E - 567951) + 1918
+    /// Convierte coordenadas lon/lat WGS84 a Unity XZ via GeoDataAlsasua (escala X 0.93687).
+    /// UnityX = (E - 567951) * ESCALA_UTM_X + 1918
     /// UnityZ = (N - 4749902) + 8570
-    /// con E,N = UTM aproximado desde lon/lat via proyección lineal local.
     /// </summary>
     static (double ux, double uz) LonLatToUnity(double lon, double lat)
     {
-        // Conversión lineal lon/lat → UTM 30N (válida para extensión ~5km²)
         double dLon = lon - LON_ORIGIN;
         double dLat = lat - LAT_ORIGIN;
-        double E = GeoDataAlsasua.UTM_E_ORIGIN + dLon * DEG_TO_UTM_E_FACTOR;
-        double N = GeoDataAlsasua.UTM_N_ORIGIN + dLat * DEG_TO_UTM_N_FACTOR;
-        double ux = (E - GeoDataAlsasua.UTM_E_ORIGIN) + GeoDataAlsasua.UNITY_OX;
-        double uz = (N - GeoDataAlsasua.UTM_N_ORIGIN) + GeoDataAlsasua.UNITY_OZ;
-        return (ux, uz);
+        double E = GeoDataAlsasua.UTM_E_ORIGIN + dLon * GeoDataAlsasua.M_POR_GRADO_LON;
+        double N = GeoDataAlsasua.UTM_N_ORIGIN + dLat * GeoDataAlsasua.M_POR_GRADO_LAT;
+        var uv = GeoDataAlsasua.UTMaUnity(E, N);
+        return (uv.x, uv.y);
     }
 
     static double CalcularSuperficieM2(double[][] footprintUtm)

@@ -170,6 +170,7 @@ public class HUDCanvas : MonoBehaviour
         ControladorVehiculoJugador.OnJugadorSalio  += OnSalioVehiculo;
         // EventBus: fade a negro en muerte del jugador (desacoplado de ControladorJugador)
         EventBus.Subscribe<PlayerDeathEvent>(OnPlayerMuerto);
+        EventBus.Subscribe<PlayerArrestedEvent>(OnPlayerArrestado);
     }
 
     void DesuscribirEventos()
@@ -186,6 +187,7 @@ public class HUDCanvas : MonoBehaviour
         ControladorVehiculoJugador.OnJugadorEntro  -= OnEntroVehiculo;
         ControladorVehiculoJugador.OnJugadorSalio  -= OnSalioVehiculo;
         EventBus.Unsubscribe<PlayerDeathEvent>(OnPlayerMuerto);
+        EventBus.Unsubscribe<PlayerArrestedEvent>(OnPlayerArrestado);
     }
 
     void OnApoyo(float v) => _apoyoActual = v;
@@ -194,6 +196,13 @@ public class HUDCanvas : MonoBehaviour
     {
         // Fade a negro y mensaje de muerte en pantalla
         _notifQueue.Enqueue("☠  Has muerto");
+        StartCoroutine(FadeNegroMuerte());
+    }
+
+    void OnPlayerArrestado(PlayerArrestedEvent evt)
+    {
+        // Detención por la Policía Foral: mismo fade a negro + mensaje.
+        _notifQueue.Enqueue("🚓  Has sido detenido");
         StartCoroutine(FadeNegroMuerte());
     }
 

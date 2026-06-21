@@ -5,12 +5,13 @@
 //
 //  PREREQUISITO (hacer UNA VEZ antes):
 //    Tools → Alsasua → Importar → 📦 Importar Assets Locales
+//    Tools → Alsasua → Mundo  → 🧩 Construir Mosaico V2  (terreno antes que ciudad)
 //
 //  PASOS AUTOMÁTICOS (en orden de dependencia):
 //
 //  FASE 1 · ESTRUCTURA
 //    01  Crear escena Alsasua_Main v4 (SceneBootstrapper + 30 sistemas)
-//    02  Configurar Cesium (Georeference Herriko Plaza + Google 3D Tiles)
+//    02  Configurar Cesium (Georeference Herriko Plaza, deshabilitado hasta resolver FPS)
 //    03  Configurar Zonas del mapa (10 zonas reales de Alsasua)
 //
 //  FASE 2 · ASSETS
@@ -21,13 +22,13 @@
 //    08  Crear prefabs coche policial (Police Car Interceptor)
 //    09  Construir prefabs vehículos (Trabant, Ambulancia, Tractor, Camión)
 //
-//  FASE 3 · MUNDO
-//    10  Generar edificios Zone_01 (548 edificios OSM reales)
-//    11  Aplicar fachadas vascas (paleta cromática real)
-//    12  Crear material asfalto (PBR roadway)
-//    13  Generar carreteras Zone_01 (400 segmentos OSM)
-//    14  Configurar tráfico OSM (waypoints 12 carriles)
-//    15  Aplicar texturas AAA (600+ materiales PBR PolyHaven)
+//  FASE 3 · MUNDO  (assets reales, generación procedural OFF)
+//    10  🏙️ Construir edificios de asset (1030 footprints OSM → prefabs HousePack/lisbon)
+//    11  🛣️ Construir calles + autovía (roads_unity.json → 4 mallas estáticas)
+//    12  Material asfalto PBR (M_Asfalto_Carretera.mat)
+//    13  📸 Ortofoto como Decal (pirámide LOD: fondo 14.4km + valle 2.75km)
+//    14  Texturas AAA PBR (600+ materiales PolyHaven)
+//    15  🏗️ Hornear Ciudad (LOD pyramid estilo RAGE → <2.5k draw calls)
 //
 //  FASE 4 · AUDIO + CONEXIONES
 //    16  Asignar audio (clips reales → AudioManager)
@@ -60,11 +61,12 @@ public static class FLUJO_COMPLETO
             "Construirá el simulador entero en orden correcto:\n\n" +
             "FASE 1 · Estructura (escena + Cesium + zonas)\n" +
             "FASE 2 · Assets (personajes + vehículos + animadores)\n" +
-            "FASE 3 · Mundo (edificios + carreteras + texturas)\n" +
+            "FASE 3 · Mundo (edificios asset + calles + ortofoto + bake)\n" +
             "FASE 4 · Audio + conexiones + civiles\n" +
             "FASE 5 · Sellado (tags + quality + builds)\n\n" +
-            "⚠ PREREQUISITO: ejecuta primero\n" +
-            "Importar → 📦 Importar Assets Locales\n\n" +
+            "⚠ PRERREQUISITOS:\n" +
+            "  1) Importar → 📦 Importar Assets Locales\n" +
+            "  2) Mundo → 🧩 Construir Mosaico V2 (terreno antes de ciudad)\n\n" +
             "⏱ Estimado: 5-15 minutos.",
             "▶▶ EJECUTAR ◀◀", "Cancelar");
 
@@ -86,13 +88,13 @@ public static class FLUJO_COMPLETO
         Encolar("08 · Prefabs Police Car",            WizardCochePrefab.CrearPrefabs);
         Encolar("09 · Prefabs vehículos",             ConstructorVehiculosPrefabs.Construir);
 
-        // ── FASE 3: MUNDO ─────────────────────────────────────────────────
-        Encolar("10 · Generar edificios Zone_01",     () => GeneradorEdificiosZona.GenerarEdificios(silencioso: true));
-        Encolar("11 · Fachadas vascas",               FachadasVascas.AplicarFachadas);
-        Encolar("12 · Material asfalto",              CreadorMaterialAsfalto.CrearMateriales);
-        Encolar("13 · Generar carreteras",            GeneradorCarreteras.Generar);
-        Encolar("14 · Configurar tráfico",            ConfiguradorTrafico.Configurar);
-        Encolar("15 · Texturas AAA PBR",              AplicadorTexturasAAA.Aplicar);
+        // ── FASE 3: MUNDO (assets reales, procedural OFF) ────────────────────
+        Encolar("10 · Construir edificios de asset",  ConstructorCiudadAssets.Construir);
+        Encolar("11 · Construir calles + autovía",    ConstructorCallesAssets.Construir);
+        Encolar("12 · Material asfalto PBR",          CreadorMaterialAsfalto.CrearMateriales);
+        Encolar("13 · Ortofoto como Decal",           AplicadorOrtoDecalEditor.Aplicar);
+        Encolar("14 · Texturas AAA PBR",              AplicadorTexturasAAA.Aplicar);
+        Encolar("15 · Hornear Ciudad (LOD pyramid)",  HorneadorCiudad.HornearAuto);
 
         // ── FASE 4: AUDIO + CONEXIONES ────────────────────────────────────
         Encolar("16 · Asignar audio",                 AsignadorAudioManager.AsignarTodos);
@@ -111,12 +113,6 @@ public static class FLUJO_COMPLETO
         EditorApplication.delayCall += Siguiente;
     }
 
-    // ── Separador visual en el menú ───────────────────────────────────────
-
-    [MenuItem("Tools/Alsasua/─────────────────────", priority = -50)]
-    static void Separador() { }
-    [MenuItem("Tools/Alsasua/─────────────────────", true)]
-    static bool SeparadorValidate() => false;
 
     // ── Motor de pasos ────────────────────────────────────────────────────
 
@@ -137,6 +133,11 @@ public static class FLUJO_COMPLETO
             EditorUtility.DisplayDialog("✅ FLUJO COMPLETO",
                 $"Completado: {_actual}/{_total} pasos\n\n" +
                 "El simulador está listo.\n\n" +
+                "Lo que tienes ahora:\n" +
+                "• Edificios de asset en footprints reales (Edificios_Asset)\n" +
+                "• Red viaria completa con rotondas (Calles_Asset)\n" +
+                "• Ortofoto PNOA sobre el terreno (DecalProjectors_Orto)\n" +
+                "• Ciudad horneada en LOD pyramid (CiudadHorneada/)\n\n" +
                 "Dale PLAY — SceneBootstrapper generará el terreno\n" +
                 "y el jugador automáticamente.",
                 "OK");

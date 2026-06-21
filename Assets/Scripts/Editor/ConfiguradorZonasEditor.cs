@@ -36,7 +36,7 @@ public static class ConfiguradorZonasEditor
     //  MENÚ PRINCIPAL — CONFIGURAR ZONAS
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Mundo/📦 Configurar Zonas del Mapa", priority = 1)]
+    [MenuItem("Tools/Alsasua/Mundo/📦 Configurar Zonas del Mapa", priority = 70)]
     public static void ConfigurarZonas()
     {
         // ── 1. WorldManager ─────────────────────────────────────────────────
@@ -185,7 +185,7 @@ public static class ConfiguradorZonasEditor
     //  MENÚ: INFO DE ZONAS ────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
 
-    [MenuItem("Tools/Alsasua/Debug/ℹ Info Zonas", priority = 60)]
+    [MenuItem("Tools/Alsasua/Debug/ℹ Info Zonas", priority = 12)]
     static void MostrarInfoZonas()
     {
         var sb = new System.Text.StringBuilder();

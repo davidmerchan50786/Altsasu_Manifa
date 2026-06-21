@@ -630,6 +630,13 @@ public class PoliciaForalIA : NPCBase, IDamageable
         AudioManager.Play(AudioManager.Clip.ImpactoSangre, transform.position);
         AlsasuaLogger.Info("PoliciaForal", $"{name} abatido.");
         SistemaRagdoll.Activar(transform, 4f, -transform.forward);
+
+        // Soltar arma recogible junto al cuerpo
+        PropArmaRecogible.Spawn(
+            SistemaArmasExtendido.TipoArma.Pistola,
+            municion: Random.Range(6, 14),
+            posicion: transform.position,
+            alturaOffset: 0.15f);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

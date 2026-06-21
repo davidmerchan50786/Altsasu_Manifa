@@ -25,7 +25,7 @@ public static class AplicadorTexturasAAA
     private const string TEX_DIR  = "Assets/Textures_AAA";
     private const string HDRI_DIR = "Assets/HDRIs";
 
-    [MenuItem("Tools/Alsasua/Mundo/🎨 Texturas AAA PBR", priority = 15)]
+    [MenuItem("Tools/Alsasua/Render/🎨 Texturas AAA PBR", priority = 10)]
     public static void Aplicar()
     {
         // Verificar que hay texturas descargadas
@@ -402,7 +402,7 @@ public static class AplicadorTexturasAAA
     // ── Conversión de materiales Standard → HDRP/Lit ─────────────────────────
     // Movido desde IntegradorAssetsNuevos (eliminado por redundancia).
 
-    [MenuItem("Tools/Alsasua/Mundo/🎨 Convertir Materiales HDRP", priority = 11)]
+    [MenuItem("Tools/Alsasua/Render/🎨 Convertir Materiales HDRP", priority = 11)]
     public static int ConvertirMaterialesAHDRP()
     {
         EditorUtility.DisplayProgressBar("Convirtiendo materiales", "Buscando materiales Standard...", 0f);

@@ -24,7 +24,7 @@ public static class AsignarAssetsAAAEditor
         Debug.Log($"[AAA] ConfiguradorAssetsAAA poblado desde CreadorEscenaPrincipal");
     }
 
-    [MenuItem("Tools/Alsasua/⭐ Asignar Todos los Assets AAA+", priority = 1)]
+    [MenuItem("Tools/Alsasua/Assets/⭐ Asignar Todos los Assets AAA+", priority = 1)]
     public static void AsignarTodo()
     {
         var cfg = FindOrCreateConfigurador();
@@ -116,7 +116,25 @@ public static class AsignarAssetsAAAEditor
             p+"NPC_Civil_UrbanEdge.prefab" });
         cfg.prefabsGuardia = CargarPrefabs(new[] {
             p+"NPC_GuardiaCivil_01.prefab",
-            p+"NPC_GuardiaCivil_02.prefab" });
+            p+"NPC_GuardiaCivil_02.prefab",
+            p+"NPC_GuardiaCivil_K.prefab" });
+
+        // Manifestantes y Jarrai (Personajes/ + skins de facción)
+        string rp = "Assets/Resources/Prefabs/NPCs/";
+        cfg.prefabsManifestante = CargarPrefabs(new[] {
+            rp+"NPC_Manifestante.prefab",
+            rp+"NPC_Civil_Mujer.prefab" });
+        cfg.prefabsJarrai = CargarPrefabs(new[] {
+            rp+"NPC_Jarrai.prefab" });
+
+        // Kenney crowd (12 variantes)
+        cfg.prefabsCivilKenney = CargarPrefabs(new[] {
+            rp+"NPC_Crowd_character-male-a.prefab",   rp+"NPC_Crowd_character-male-b.prefab",
+            rp+"NPC_Crowd_character-male-c.prefab",   rp+"NPC_Crowd_character-male-d.prefab",
+            rp+"NPC_Crowd_character-male-e.prefab",   rp+"NPC_Crowd_character-male-f.prefab",
+            rp+"NPC_Crowd_character-female-a.prefab", rp+"NPC_Crowd_character-female-b.prefab",
+            rp+"NPC_Crowd_character-female-c.prefab", rp+"NPC_Crowd_character-female-d.prefab",
+            rp+"NPC_Crowd_character-female-e.prefab", rp+"NPC_Crowd_character-female-f.prefab" });
 
         // Animaciones de pelea
         string fa = "Assets/FightingMotionsVolume1/FBX/nomove/";

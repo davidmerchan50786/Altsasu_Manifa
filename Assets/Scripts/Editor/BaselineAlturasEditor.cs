@@ -37,7 +37,7 @@ public static class BaselineAlturasEditor
         public float  alturaUnity; // SampleHeight + transform.y (datum Z_MIN)
     }
 
-    [MenuItem("Tools/Alsasua/Mundo/📐 Capturar Baseline Alturas (pre-mosaico)")]
+    [MenuItem("Tools/Alsasua/Terreno/📐 Capturar Baseline Alturas", priority = 12)]
     public static void Capturar()
     {
         var terrain = Terrain.activeTerrain;

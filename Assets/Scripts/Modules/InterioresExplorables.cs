@@ -75,13 +75,27 @@ public class InterioresExplorables : MonoBehaviour
     // ── Auto-detección de edificios clave ─────────────────────────────────────
     void AutoDetectarEdificiosClave()
     {
-        var raiz = GameObject.Find("Edificios_AAA");
-        if (raiz == null) { Debug.LogWarning("[InterioresExplorables] No hay 'Edificios_AAA'."); return; }
+        // Buscar en la ciudad horneada primero (arquitectura nueva), luego en Edificios_AAA (legacy)
+        var raiz = GameObject.Find("CiudadHorneada") ?? GameObject.Find("Edificios_AAA");
+        if (raiz == null)
+        {
+            Debug.LogWarning("[InterioresExplorables] No hay 'CiudadHorneada' ni 'Edificios_AAA'. " +
+                "Ejecuta 🏗️ Hornear Ciudad primero.");
+            return;
+        }
+
+        // Limitar al radio del jugador (radio de detalle = 150m) para no crear salas en todo el mapa
+        Vector3 posJugador = _jugador != null ? _jugador.position
+            : new Vector3(1918f, 0f, 8570f); // OX/OZ de Herriko Plaza (GeoDataAlsasua, Runtime)
+        const float RADIO_INTERIORES = 150f;
 
         int creados = 0;
         foreach (Transform hijo in raiz.transform)
         {
-            if (hijo == null || creados >= 12) continue; // límite sensato
+            if (hijo == null || creados >= 12) continue;
+            // Solo edificios cerca del jugador
+            float dist = Vector3.Distance(hijo.position, posJugador);
+            if (dist > RADIO_INTERIORES) continue;
             string n = hijo.name.ToUpperInvariant();
             string tipo = TipoSegunNombre(n);
             if (tipo == null) continue;

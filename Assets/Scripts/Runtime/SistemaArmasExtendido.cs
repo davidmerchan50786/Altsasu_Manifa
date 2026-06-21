@@ -26,6 +26,10 @@ public class SistemaArmasExtendido : MonoBehaviour
     [Header("Arma equipada")]
     public TipoArma armaActual = TipoArma.Puños;
 
+    [Tooltip("PRUEBAS: si true, el jugador empieza con TODAS las armas disponibles " +
+             "(teclas 1-4 + rueda). Ponlo en false para volver al modo recoger-armas.")]
+    public bool desbloquearTodas = true;
+
     [Header("Tirachinas")]
     public float fuerzaTirachinas = 18f;
     public GameObject prefabPiedra;
@@ -63,6 +67,19 @@ public class SistemaArmasExtendido : MonoBehaviour
     bool[] _tiene = new bool[10];
     int[]  _municionPorArma;   // munición persistente por arma (auditoría: evita recarga gratis al cambiar)
 
+    // ── API pública para UI (rueda de armas / inventario) ─────────────────
+    public bool TieneArma(TipoArma t) => _tiene != null && _tiene[(int)t];
+    public int  MunicionDe(TipoArma t) => (t == armaActual) ? _municion
+        : (_municionPorArma != null ? _municionPorArma[(int)t] : 0);
+    public static readonly string[] NombresArma = {
+        "Puños", "Spray", "Tirachinas", "Molotov", "Ikurriña",
+        "Bomba lapa", "Coche bomba", "Pistola", "Escopeta", "Fusil"
+    };
+
+    /// <summary>Se emite cuando el jugador dispara o golpea (Vector3 = origen del ruido/amenaza).
+    /// Lo escucha ReaccionAlJugador para que los NPCs cercanos reaccionen.</summary>
+    public static event System.Action<Vector3> AlDisparar;
+
     void Start()
     {
         _destruccion = SistemaDestruccion.Instance;
@@ -70,6 +87,8 @@ public class SistemaArmasExtendido : MonoBehaviour
         _apoyo       = SistemaApoyoPopular.Instance;
         _tiene[(int)TipoArma.Puños] = true;
         _tiene[(int)TipoArma.Spray] = true; // siempre disponible
+        if (desbloquearTodas)
+            for (int i = 0; i < _tiene.Length; i++) _tiene[i] = true;
         _municionPorArma = (int[])MUNICION_INICIAL.Clone();
         _municion = _municionPorArma[(int)armaActual];
         ActualizarUI();
@@ -88,6 +107,11 @@ public class SistemaArmasExtendido : MonoBehaviour
             if (kb.digit2Key.wasPressedThisFrame && _tiene[2]) CambiarArma((TipoArma)2);
             if (kb.digit3Key.wasPressedThisFrame && _tiene[3]) CambiarArma((TipoArma)3);
             if (kb.digit4Key.wasPressedThisFrame && _tiene[4]) CambiarArma((TipoArma)4);
+            if (kb.digit5Key.wasPressedThisFrame && _tiene[5]) CambiarArma((TipoArma)5);
+            if (kb.digit6Key.wasPressedThisFrame && _tiene[6]) CambiarArma((TipoArma)6);
+            if (kb.digit7Key.wasPressedThisFrame && _tiene[7]) CambiarArma((TipoArma)7);
+            if (kb.digit8Key.wasPressedThisFrame && _tiene[8]) CambiarArma((TipoArma)8);
+            if (kb.digit9Key.wasPressedThisFrame && _tiene[9]) CambiarArma((TipoArma)9);
         }
         if (ms != null)
         {
@@ -111,7 +135,62 @@ public class SistemaArmasExtendido : MonoBehaviour
             case TipoArma.BombaLapa:     ColocarBombaLapa();   break;
             case TipoArma.CocheBomba:    ArmarCocheBomba();    break;
             case TipoArma.BanderaEuskadi:AgitarBandera();      break;
+            case TipoArma.Puños:         GolpearMelee();       break;
+            case TipoArma.Pistola:       DispararFuego(34, 1, 0.6f, 0.20f); break;
+            case TipoArma.Escopeta:      DispararFuego(13, 8, 7f,  0.75f);  break;
+            case TipoArma.Fusil:         DispararFuego(26, 1, 1.3f, 0.11f); break;
         }
+    }
+
+    // ── Cuerpo a cuerpo (Puños) ───────────────────────────────────────────
+    void GolpearMelee()
+    {
+        _cooldown = 0.4f;
+        var cam = Camera.main;
+        if (cam == null) return;
+        var ray = new Ray(cam.transform.position, cam.transform.forward);
+        if (Physics.SphereCast(ray, 0.5f, out var hit, 2.2f))
+        {
+            var d = hit.collider.GetComponentInParent<IDamageable>();
+            if (d != null && !d.EstaMuerto) d.RecibirDano(20, hit.point, TipoDano.Impacto);
+            var rb = hit.collider.attachedRigidbody;
+            if (rb != null) rb.AddForce(cam.transform.forward * 4f, ForceMode.Impulse);
+        }
+        AlDisparar?.Invoke(cam.transform.position);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
+    }
+
+    // ── Armas de fuego (Pistola / Escopeta / Fusil) ───────────────────────
+    void DispararFuego(int dano, int perdigones, float dispersionGrados, float cadencia)
+    {
+        if (_municion <= 0) { _cooldown = 0.25f; return; }
+        _cooldown = cadencia;
+        _municion--;
+
+        var cam = Camera.main;
+        if (cam == null) return;
+        Vector3 origen = cam.transform.position;
+
+        for (int p = 0; p < Mathf.Max(1, perdigones); p++)
+        {
+            Vector3 dir = cam.transform.forward;
+            if (dispersionGrados > 0f)
+                dir = Quaternion.Euler(
+                    UnityEngine.Random.Range(-dispersionGrados, dispersionGrados),
+                    UnityEngine.Random.Range(-dispersionGrados, dispersionGrados), 0f) * dir;
+
+            if (Physics.Raycast(origen, dir, out var hit, 300f))
+            {
+                var d = hit.collider.GetComponentInParent<IDamageable>();
+                if (d != null && !d.EstaMuerto) d.RecibirDano(dano, hit.point, TipoDano.Bala);
+                var rb = hit.collider.attachedRigidbody;
+                if (rb != null) rb.AddForce(dir * 6f, ForceMode.Impulse);
+            }
+        }
+
+        AlDisparar?.Invoke(origen);
+        _apoyo?.SumarParanoia(8f);
+        ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(3);
     }
 
     // ── Spray ─────────────────────────────────────────────────────────────
@@ -250,7 +329,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         Debug.Log($"[Armas] Recogida: {tipo}");
     }
 
-    void CambiarArma(TipoArma tipo)
+    public void CambiarArma(TipoArma tipo)
     {
         // BUG FIX (auditoría): munición persistente por arma. Antes cambiar de
         // arma reseteaba _municion a tope = recarga gratis (munición infinita).

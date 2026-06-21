@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "titulo": "ALTSASU 207D",
+  "descripcion": "Arco narrativo M01-M12 + laterales + finales. Datos para SistemaMisiones via cargador con factoria de 'tipo'. Ficcion satirica; personajes inventados.",
+  "umbralesApoyo": { "finalA_min": 70, "finalB_min": 40 },
+  "puntos": {
+    "deposito": "PoligonoIsasia", "txosna": "HerrikoPlaza", "iglesia": "HerrikoPlaza",
+    "casa_quemada": "MonteAralar", "estacion": "EstacionTren", "promotora": "PoligonoIsasia",
+    "ayuntamiento": "HerrikoPlaza", "hoguera": "HerrikoPlaza", "rio": "CarreteraN1Sur"
+  },
+  "misiones": [
+    {
+      "id": "M01", "clase": "Mision_AzkenBidaia", "nombre": "Azken bidaia (El ultimo viaje)",
+      "acto": 1, "localizacion": "deposito", "sistemas": ["conduccion","sigilo","apoyo","wanted"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Llega al deposito municipal sin que te vea la Foral", "tipo":"llegar_sigilo", "parametros":{"target":"deposito","radio":15} },
+        { "id":"o2", "descripcion":"Fuerza la 207D (minijuego)", "tipo":"minijuego", "parametros":{"minijuego":"forzar_vehiculo"} },
+        { "id":"o3", "descripcion":"Conduce dentro del cortejo funebre hasta la txosna", "tipo":"escolta_lenta", "parametros":{"target":"txosna","velMax":15} }
+      ],
+      "apoyoDelta": 15, "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M02"
+    },
+    {
+      "id": "M02", "clase": "Mision_Zuloa", "nombre": "Zuloa (El agujero)",
+      "acto": 1, "localizacion": "deposito", "sistemas": ["exploracion","inventario"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Vacia el doble fondo de la furgoneta", "tipo":"interactuar", "parametros":{"objeto":"doble_fondo"} },
+        { "id":"o2", "descripcion":"Cataloga 5 cintas", "tipo":"recolectar", "parametros":{"item":"cinta","n":5} },
+        { "id":"o3", "descripcion":"Encuentra una casetera que funcione", "tipo":"interactuar", "parametros":{"objeto":"casetera_iglesia"} }
+      ],
+      "apoyoDelta": 5, "dineroDelta": 0, "flagsSet": ["tiene_cintas"], "flagsReq": [], "siguiente": "M03"
+    },
+    {
+      "id": "M03", "clase": "Mision_Itzalak", "nombre": "Itzalak (Sombras)",
+      "acto": 1, "localizacion": "txosna", "sistemas": ["wanted","grafitis","conduccion"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Despista a la patrulla (3 estrellas)", "tipo":"escapar_wanted", "parametros":{"estrellas":3} },
+        { "id":"o2", "descripcion":"Pinta 2 muros para marcar ruta segura", "tipo":"pintar", "parametros":{"n":2} },
+        { "id":"o3", "descripcion":"Pierdelos en el fronton Burunda", "tipo":"escapar_zona", "parametros":{"target":"txosna","radio":120} }
+      ],
+      "apoyoDelta": 8, "apoyoDeltaSiSucio": -10, "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M04"
+    },
+    {
+      "id": "M04", "clase": "Mision_PlazakoPintada", "nombre": "Plazako pintada (La pintada de la plaza)",
+      "acto": 1, "localizacion": "txosna", "sistemas": ["grafitis","decision"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Pinta el primer mensaje en el muro grande", "tipo":"pintar", "parametros":{"n":1} },
+        { "id":"o2", "descripcion":"Decision: aceptar el sobre de Goikoetxea o rechazarlo", "tipo":"decision", "parametros":{"opciones":[
+            {"id":"aceptar","apoyoDelta":-15,"dineroDelta":3000,"flag":"acepto_sobre"},
+            {"id":"rechazar","apoyoDelta":12,"dineroDelta":0,"flag":"rechazo_sobre"}]} }
+      ],
+      "apoyoDelta": 0, "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M05"
+    },
+    {
+      "id": "M05", "clase": "Mision_Kanpandorrea", "nombre": "Kanpandorrea (El campanario)",
+      "acto": 2, "localizacion": "iglesia", "sistemas": ["sigilo","audio"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Distrae a Casimiro", "tipo":"interactuar", "parametros":{"objeto":"distraccion_cura"} },
+        { "id":"o2", "descripcion":"Sube al campanario", "tipo":"llegar_sigilo", "parametros":{"target":"iglesia","radio":8} },
+        { "id":"o3", "descripcion":"Reproduce la cinta n1", "tipo":"escuchar_audio", "parametros":{"audio":"cinta_1"} }
+      ],
+      "apoyoDelta": 0, "dineroDelta": 0, "flagsSet": ["sabe_confidente"], "flagsReq": ["tiene_cintas"], "siguiente": "M06"
+    },
+    {
+      "id": "M06", "clase": "Mision_Bostekoa", "nombre": "Bostekoa (La quinta)",
+      "acto": 2, "localizacion": "casa_quemada", "sistemas": ["walking","apoyo","emocional"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Recoge algo para los muertos (flor/lata/mechero)", "tipo":"recolectar_eleccion", "parametros":{"item":"ofrenda"} },
+        { "id":"o2", "descripcion":"Sigue al Rumano por el monte (a pie)", "tipo":"escolta_lenta", "parametros":{"target":"casa_quemada"} },
+        { "id":"o3", "descripcion":"Escucha el monologo completo / o vete", "tipo":"decision", "parametros":{"opciones":[
+            {"id":"quedarse","apoyoDelta":20,"flag":"escuchaste_la_quinta"},
+            {"id":"irse","apoyoDelta":5,"flag":"te_fuiste_quinta"}]} },
+        { "id":"o4", "descripcion":"Deja la ofrenda en la casa", "tipo":"interactuar", "parametros":{"objeto":"poyo_piedra"} }
+      ],
+      "apoyoDelta": 0, "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M07", "desbloquea":["L2"]
+    },
+    {
+      "id": "M07", "clase": "Mision_Sarekada", "nombre": "Sarekada (La redada)",
+      "acto": 2, "localizacion": "txosna", "sistemas": ["manifestacion","wanted","arresto"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Esconde las cintas antes de que entren", "tipo":"interactuar", "parametros":{"objeto":"escondite_cintas"} },
+        { "id":"o2", "descripcion":"Levanta una manifestacion para frenar el desalojo", "tipo":"manifestacion", "parametros":{"oleadas":3} },
+        { "id":"o3", "descripcion":"Aguanta 3 oleadas sin que te detengan", "tipo":"defender", "parametros":{"oleadas":3,"siCapturado":"PlayerArrestedEvent"} }
+      ],
+      "apoyoDelta": 15, "apoyoDeltaSiArrestado": -25, "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M08"
+    },
+    {
+      "id": "M08", "clase": "Mision_BiAldeak", "nombre": "Bi aldeak (Los dos bandos)",
+      "acto": 2, "localizacion": "txosna", "sistemas": ["puzzle","decision","cinematica"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Reconstruye el orden de las cintas (la n2 esta mal numerada)", "tipo":"puzzle_orden", "parametros":{"clave":"fechas"} },
+        { "id":"o2", "descripcion":"Mira el flashback del 85 (no jugable)", "tipo":"cinematica", "parametros":{"clip":"flashback_cabina"} },
+        { "id":"o3", "descripcion":"Decision: contar la verdad cruda o con contexto", "tipo":"decision", "parametros":{"opciones":[
+            {"id":"cruda","apoyoDelta":-10,"apoyoDeltaDiferido":25,"flag":"verdad_cruda"},
+            {"id":"contexto","apoyoDelta":18,"flag":"verdad_contexto","requiereSkill":"tono_dialogo"}]} }
+      ],
+      "apoyoDelta": 0, "dineroDelta": 0, "flagsSet": ["sabe_doble_juego"], "flagsReq": [], "siguiente": "M09"
+    },
+    {
+      "id": "M09", "clase": "Mision_Hormigoia", "nombre": "Hormigoia (El hormigon)",
+      "acto": 2, "localizacion": "promotora", "sistemas": ["sigilo","puzzle"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Colate en la promotora de Goikoetxea", "tipo":"llegar_sigilo", "parametros":{"target":"promotora","radio":10} },
+        { "id":"o2", "descripcion":"Cruza la cinta n3 con los planos de recalificacion", "tipo":"puzzle_evidencias", "parametros":{"pruebas":["cinta_3","planos"]} },
+        { "id":"o3", "descripcion":"Sal con la copia antes de que llegue seguridad", "tipo":"escapar_temporizado", "parametros":{"segundos":90} }
+      ],
+      "apoyoDelta": 10, "dineroDelta": 0, "flagsSet": ["tiene_prueba_goiko"], "flagsReq": [], "siguiente": "M10"
+    },
+    {
+      "id": "M10", "clase": "Mision_HerriaSalgai", "nombre": "Herria salgai (El pueblo en venta)",
+      "acto": 3, "localizacion": "ayuntamiento", "sistemas": ["persuasion","apoyo"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Convence a 3 de 5 facciones", "tipo":"persuadir", "parametros":{"facciones":["cuadrilla","comerciantes","jubilados","peña","iglesia"],"min":3} },
+        { "id":"o2", "descripcion":"Sabotea el discurso de Goikoetxea", "tipo":"sabotaje", "parametros":{"medio":["pintada","altavoz","cinta"]} },
+        { "id":"o3", "descripcion":"Evita que el cura se venda (puja)", "tipo":"puja", "parametros":{"rival":"Goikoetxea"} }
+      ],
+      "apoyoDelta": 10, "dineroDelta": -1000, "flagsSet": [], "flagsReq": ["tiene_prueba_goiko"], "siguiente": "M11"
+    },
+    {
+      "id": "M11", "clase": "Mision_SanJoanSutan", "nombre": "San Joan sutan (San Juan arde)",
+      "acto": 3, "localizacion": "hoguera", "sistemas": ["persecucion","multitud_brg","manifestacion","wanted"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Cruza la plaza con las cintas (procesion+Foral+Gemelos)", "tipo":"cruzar_multitud", "parametros":{"target":"hoguera"} },
+        { "id":"o2", "descripcion":"Recupera la 207D (la tienen los Gemelos)", "tipo":"recuperar_vehiculo", "parametros":{"vehiculo":"207D"} },
+        { "id":"o3", "descripcion":"Llega a la hoguera con las pruebas intactas", "tipo":"llegar", "parametros":{"target":"hoguera"} },
+        { "id":"o4", "descripcion":"(Opcional) Asoma las cintas al fuego", "tipo":"decision_opcional", "parametros":{"flag":"tentacion_hoguera"} }
+      ],
+      "apoyoDelta": 0, "apoyoDeltaSegunCruce": [-20,20], "dineroDelta": 0, "flagsSet": [], "flagsReq": [], "siguiente": "M12"
+    },
+    {
+      "id": "M12", "clase": "Mision_Egia", "nombre": "Egia (La verdad)",
+      "acto": 3, "localizacion": "hoguera", "sistemas": ["decision_final"],
+      "objetivos": [
+        { "id":"o1", "descripcion":"Decide con Berrueta que hacer con la verdad", "tipo":"decision_final", "parametros":{"opciones":[
+            {"id":"filtrar","flag":"eleccion_filtrar"},
+            {"id":"quedartelas","flag":"eleccion_quedar"},
+            {"id":"quemar","flag":"eleccion_quemar"}]} }
+      ],
+      "ramas": [
+        { "condicion": { "apoyoMin": 70, "flag": "eleccion_filtrar" }, "resultado": "FINAL_A" },
+        { "condicion": { "flag": "eleccion_quemar" }, "resultado": "FINAL_C" },
+        { "condicion": {}, "resultado": "FINAL_B" }
+      ]
+    }
+  ],
+  "laterales": [
+    { "id":"L1", "nombre":"El trastero de Casimiro", "localizacion":"iglesia", "apoyoDelta":6, "desbloqueaPor":"M05",
+      "objetivos":[{"descripcion":"Baja al trastero del campanario","tipo":"interactuar","parametros":{"objeto":"trastero"}},
+                   {"descripcion":"Encuentra el sobre de 1985 y la copia de Goikoetxea","tipo":"recolectar","parametros":{"item":"sobre_1985","n":1}}] },
+    { "id":"L2", "nombre":"La maqueta", "localizacion":"txosna", "apoyoDelta":8, "desbloqueaPor":"M06",
+      "objetivos":[{"descripcion":"Remasteriza y pincha el tema perdido de Eskizofrenia Rural","tipo":"minijuego","parametros":{"minijuego":"remaster"}}],
+      "desbloquea":["bso_tema_quinta"] },
+    { "id":"L3", "nombre":"Los Gemelos", "localizacion":"deposito", "apoyoDelta":3, "repetible":true,
+      "objetivos":[{"descripcion":"Tres encargos absurdos que acaban en hostia","tipo":"encargo_comico","parametros":{"n":3}}] },
+    { "id":"L4", "nombre":"El rio", "localizacion":"rio", "apoyoDelta":4, "repetible":true,
+      "objetivos":[{"descripcion":"Pesca pruebas y chatarra en el Arakil","tipo":"pesca","parametros":{"item":"prueba"}}] }
+  ],
+  "finales": {
+    "FINAL_A": { "nombre":"Gora ta gora... y de obra", "resumen":"Se filtran las cintas; el pueblo estalla; Goikoetxea cae y es absuelto por defecto de forma y se presenta a alcalde. En el muro estan los tres nombres y nadie los borra.", "tono":"amargo", "usaFlags":["verdad_cruda","verdad_contexto"] },
+    "FINAL_B": { "nombre":"El nuevo intermediario", "resumen":"Kintto guarda las cintas como seguro de vida y ocupa el sitio del tio. El ciclo se repite. La 207D arranca.", "tono":"nihilista" },
+    "FINAL_C": { "nombre":"Que arda", "resumen":"Todo a la hoguera de San Juan. Catarsis punk. Berrueta por fin duerme. Kintto se va a pie. El Rumano: 'Por la quinta.' (solo si escuchaste_la_quinta).", "tono":"catarsis", "usaFlags":["escuchaste_la_quinta","tentacion_hoguera"] }
+  }
+}

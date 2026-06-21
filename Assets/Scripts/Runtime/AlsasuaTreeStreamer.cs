@@ -100,6 +100,15 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     Transform                 _jugador;
     bool                      _cargado;
 
+    // ── API para los impostores de distancia (ImpostoresArbolesDistantes) ────
+    // Las posiciones (XZ; Y=0, el impostor calcula la altura real) y especies de
+    // TODOS los árboles, incl. relleno procedural. ListoImpostores se marca cuando
+    // la lista está completa (tras el relleno), para que el sistema de billboards
+    // lea el conjunto entero una sola vez.
+    public IReadOnlyList<Vector3> PosicionesArboles => _posiciones;
+    public IReadOnlyList<int>     EspeciesArboles   => _especies;
+    public bool ListoImpostores { get; private set; }
+
     // BUG FIX: referencias a corrutinas persistentes para poder cancelarlas en OnDestroy.
     // Sin guardar la referencia StopCoroutine() no puede detener la corrutina específica
     // y tras Destroy() la corrutina sigue ejecutando un frame más accediendo a datos
@@ -155,6 +164,10 @@ public class AlsasuaTreeStreamer : MonoBehaviour
     {
         PreCalentarPool();
         PreCalentarPoolEspecies();
+        // Sistema de billboards para los árboles lejanos (>800 m), donde el streamer
+        // 3D ya no instancia nada → el monte salía pelado.
+        if (GetComponent<ImpostoresArbolesDistantes>() == null)
+            gameObject.AddComponent<ImpostoresArbolesDistantes>();
     }
 
     void Start()
@@ -234,6 +247,9 @@ public class AlsasuaTreeStreamer : MonoBehaviour
         AlsasuaLogger.Info("TreeStreamer",
             $"{_posiciones.Count} árboles totales ({cntRoble} roble, {cntPino} pino, {cntRibera} ribera)");
 
+        // Conjunto completo listo → los impostores de distancia pueden leerlo.
+        ListoImpostores = true;
+
         _crBucleSteaming = StartCoroutine(BucleSteaming());
     }
 
@@ -305,7 +321,7 @@ public class AlsasuaTreeStreamer : MonoBehaviour
                 if (!float.TryParse(json.AsSpan(i, end-i), System.Globalization.NumberStyles.Float, ci, out float nu))
                 { i++; continue; }
                 i = end;
-                pts.Add(new Vector2((eu - E_ORIG) + UNITY_OX, (nu - N_ORIG) + UNITY_OZ));
+                pts.Add(new Vector2((eu - E_ORIG) * GeoDataAlsasua.ESCALA_UTM_X + UNITY_OX, (nu - N_ORIG) + UNITY_OZ));
                 while (i < json.Length && json[i]!='['&&json[i]!=']'&&json[i]!='-'&&!char.IsDigit(json[i])) i++;
             }
             else i++;

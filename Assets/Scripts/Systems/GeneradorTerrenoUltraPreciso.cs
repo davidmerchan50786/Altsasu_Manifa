@@ -330,7 +330,7 @@ public class GeneradorTerrenoUltraPreciso : MonoBehaviour
                 {
                     // Usar DTM 5m para toda la zona fuera del LIDAR
                     // Convertir ux/uz → UTM → índice ASC
-                    float utm_e = (ux - UNITY_OX) + E_ORIG;
+                    float utm_e = (ux - UNITY_OX) / GeoDataAlsasua.ESCALA_UTM_X + E_ORIG;
                     float utm_n = (uz - UNITY_OZ) + N_ORIG;
                     refH = SampleASCUTM(dtm5m, utm_e, utm_n, terSize.y);
                 }
