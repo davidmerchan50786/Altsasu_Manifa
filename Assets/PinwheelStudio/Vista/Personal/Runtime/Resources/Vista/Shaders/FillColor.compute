@@ -1,0 +1,10 @@
+#pragma kernel CSMain
+
+float4 _Color;
+RWTexture2D<float4> _TargetRT;
+
+[numthreads(8,1,8)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	_TargetRT[id.xz] = _Color;
+}

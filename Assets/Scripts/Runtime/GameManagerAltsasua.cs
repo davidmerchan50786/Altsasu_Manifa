@@ -288,6 +288,9 @@ public class GameManagerAltsasua : MonoBehaviour, IWantedSystem, IEconomyService
     IEnumerator RespawnJugador(float delay)
     {
         yield return new WaitForSeconds(delay);
+        // Si hay una detención en curso (interrogatorio), esperar a que termine
+        // antes de reaparecer: la captura te lleva a la escena, no a un respawn seco.
+        while (SistemaInterrogatorio.EnCurso) yield return null;
         if (jugadorActivo != null) Destroy(jugadorActivo);
         SpawnJugador();
         // Restaurar salud usando ControladorJugador (Health no existe — usa Curar)

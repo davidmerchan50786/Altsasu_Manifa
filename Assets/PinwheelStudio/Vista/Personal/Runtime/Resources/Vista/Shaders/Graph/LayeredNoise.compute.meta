@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: b7c78aa2171e4c74c8b821c0c00482b6
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 2492420
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/LayeredNoise.compute
+  uploadId: 922302

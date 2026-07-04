@@ -1,0 +1,23 @@
+{
+    "name": "Convai.Editor",
+    "rootNamespace": "Convai.Editor",
+    "references": [
+        "Convai.Domain",
+        "Convai.Modules.LipSync",
+        "Convai.Modules.Narrative",
+        "Convai.RestAPI",
+        "Convai.Runtime",
+        "Convai.Modules.Vision"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

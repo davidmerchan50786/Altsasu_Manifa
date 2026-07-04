@@ -43,7 +43,9 @@ if hasattr(sys.stdout, "reconfigure"):
 # ── Constantes del mundo ────────────────────────────────────────────────────
 E0, N0 = 567951.0, 4749902.0
 OX, OZ = 1918.0, 8570.0
-SX = 76400.0 / 81548.0          # escala X UTM→Unity (verificada empíricamente)
+SX = 1.0                        # ISOTROPO — UTM real (1 ud = 1 m en X y Z).
+# Antes 76400/81548 (=0.93687): comprimia el mundo 6.3% en X. Corregido 2026-06-19
+# para que terreno, edificios, carreteras y jugador conserven la misma escala real.
 Z_MIN = 511.33
 COTA_PLAZA = 531.94
 

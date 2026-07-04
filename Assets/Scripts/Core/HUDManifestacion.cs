@@ -45,6 +45,7 @@ public class HUDManifestacion : MonoBehaviour
     void OnGUI()
     {
         if (!visible) return;
+        if (!ArranqueMundo.BaselineListo) return;
         if (!_estilosCreados) CrearEstilos();
 
         float sw = Screen.width, sh = Screen.height;

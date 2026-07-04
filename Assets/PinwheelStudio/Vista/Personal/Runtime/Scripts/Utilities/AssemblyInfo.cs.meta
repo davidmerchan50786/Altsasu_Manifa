@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: b0984ed709bd05a4bbcc8e23521d67cd
+labels:
+- VistaCoreAssemblyInfo
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Scripts/Utilities/AssemblyInfo.cs
+  uploadId: 922302

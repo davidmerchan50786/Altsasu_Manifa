@@ -139,6 +139,7 @@ public class SistemaTutorial : SingletonMono<SistemaTutorial>
 
     void OnGUI()
     {
+        if (!ArranqueMundo.BaselineListo) return;
         if (!_mostrando || !_pistaActual.HasValue) return;
         if (!PISTAS.TryGetValue(_pistaActual.Value, out var datos)) return;
 

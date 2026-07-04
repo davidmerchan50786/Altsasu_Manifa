@@ -1,0 +1,575 @@
+#pragma exclude_renderers gles3
+
+#pragma kernel InitWorldData
+#pragma kernel OutputHeight01
+#pragma kernel Rain
+#pragma kernel OutputWater01
+#pragma kernel WaterFlowPhase1
+#pragma kernel WaterFlowPhase2
+#pragma kernel Evaporate
+#pragma kernel ErosionAndDeposition
+#pragma kernel OutputSediment01
+#pragma kernel SedimentTransportPhase1
+#pragma kernel SedimentTransportPhase2
+#pragma kernel ThermalErosionPhase1
+#pragma kernel ThermalErosionPhase2
+#pragma kernel FinalizeWorldData
+#pragma kernel OutputErosionMask01
+#pragma kernel Upsampling
+#pragma kernel OutputDeposit01
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include COMPUTE_COMMON_HLSL
+#include SAMPLING_HLSL
+
+Texture2D<float> _InputHeight01;
+Texture2D<float> _InputHardness01;
+RWTexture2D<float4> _WorldDataCM; //height, sediment, temp (water/sediment decrement phase 1), water
+RWTexture2D<float4> _SimData0; //outflowVH || (deltaHeight, sediment, deposit, water) for upsampling
+RWTexture2D<float4> _SimData1; //outflowDiag
+RWTexture2D<float4> _SimData2; //(flowVelocity.xy, deposit, erosionMask)
+
+RWTexture2D<float> _OutputRT01;
+
+float2 _WorldDataResolution;
+float2 _UpsampleResolution;
+float3 _WorldSizeCM;
+float _FlowConstant;
+float _SedimentTransportConstant;
+float _ThermalErosionDeltaHeightThreshold;
+
+float _RainRateCM;
+float _SedimentCapacityCM;
+float _ErosionRateCM;
+float _DepositionRateCM;
+float _EvaporationRateCM;
+float _SineTalus;
+
+#define MARGIN float2(4,4)
+#define PX_POS id.xz + MARGIN
+
+#define PX_LEFT float2(id.x-1, id.z)+ MARGIN
+#define PX_TOP float2(id.x, id.z+1)+ MARGIN
+#define PX_RIGHT float2(id.x+1, id.z)+ MARGIN
+#define PX_BOTTOM float2(id.x, id.z-1)+ MARGIN
+
+#define PX_LEFT_TOP float2(id.x-1, id.z+1)+ MARGIN
+#define PX_TOP_RIGHT float2(id.x+1, id.z+1)+ MARGIN
+#define PX_RIGHT_BOTTOM float2(id.x+1, id.z-1)+ MARGIN
+#define PX_BOTTOM_LEFT float2(id.x-1, id.z-1)+ MARGIN
+
+#define PX_MIN_NO_MARGIN float2(0, 0)
+#define PX_MAX_NO_MARGIN float2(_WorldDataResolution.x - 1, _WorldDataResolution.y - 1)
+
+#define PX_LEFT_CLAMP clamp(float2(id.x-1, id.z), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_TOP_CLAMP clamp(float2(id.x, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_RIGHT_CLAMP clamp(float2(id.x+1, id.z), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_BOTTOM_CLAMP clamp(float2(id.x, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+
+#define PX_LEFT_TOP_CLAMP clamp(float2(id.x-1, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_TOP_RIGHT_CLAMP clamp(float2(id.x+1, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_RIGHT_BOTTOM_CLAMP clamp(float2(id.x+1, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_BOTTOM_LEFT_CLAMP clamp(float2(id.x-1, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+
+#define WATER_OUTFLOW_VH_CM _SimData0
+#define WATER_OUTFLOW_DIAG_CM _SimData1
+#define FLOW_VELOCITY_CM _SimData2
+
+#define SEDIMENT_OUTFLOW_VH_CM _SimData0
+#define SEDIMENT_OUTFLOW_DIAG_CM _SimData1
+
+#define THERMAL_EROSION_OUTFLOW_VH_CM _SimData0
+#define THERMAL_EROSION_OUTFLOW_DIAG_CM _SimData1
+
+#define WORLD_POSITION _SimData2
+
+[numthreads(8, 1, 8)]
+void InitWorldData(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+
+	float4 upsampledWorldData = _SimData0[PX_POS];
+
+	float hCM = _InputHeight01.SampleLevel(_SamplerLinearClamp, uv, 0) * _WorldSizeCM.y;
+	float4 worldData = float4(0, 0, 0, 0);
+	worldData.r = hCM + upsampledWorldData.r;
+	worldData.g = upsampledWorldData.g;
+	worldData.a = upsampledWorldData.a;
+
+	_WorldDataCM[PX_POS] = worldData;
+
+	float2 uv1 = uv * 2 - 1;
+	float fadeX = 1 - pow(abs(uv1.x), 8);
+	float fadeY = 1 - pow(abs(uv1.y), 8);
+	float fade = fadeX * fadeY;
+
+	float erosionMask = 1 - _InputHardness01.SampleLevel(_SamplerLinearClamp, uv, 0);
+	float4 simData2 = _SimData2[PX_POS];
+	simData2.a = erosionMask * fade;
+
+	//reset deposit value because it will mess up the result with multi-resolution
+	//we only take deposit value from the highest canvas resolution
+	simData2.b = 0;
+
+	_SimData2[PX_POS] = simData2;
+}
+
+[numthreads(8, 1, 8)]
+void OutputHeight01(uint3 id : SV_DispatchThreadID)
+{
+	float hCM = _WorldDataCM[PX_POS].r;
+	float h01 = hCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS-MARGIN] = h01;
+}
+
+[numthreads(8, 1, 8)]
+void Rain(uint3 id : SV_DispatchThreadID)
+{
+	float4 worldData = _WorldDataCM[PX_POS];
+	worldData.a += _RainRateCM * DT;
+	_WorldDataCM[PX_POS] = worldData;
+
+	//only reset xy channel, zw may contains other data
+	float4 flowVelocity = FLOW_VELOCITY_CM[PX_POS];
+	flowVelocity.x = 0;
+	flowVelocity.y = 0;
+	FLOW_VELOCITY_CM[PX_POS] = flowVelocity;
+}
+
+[numthreads(8, 1, 8)]
+void OutputWater01(uint3 id : SV_DispatchThreadID)
+{
+	float wCM = _WorldDataCM[PX_POS].a;
+	float w01 = wCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS] = w01;
+}
+
+[numthreads(8, 1, 8)]
+void WaterFlowPhase1(uint3 id : SV_DispatchThreadID)
+{
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	float hSrc = dataSrc.r + dataSrc.a;
+
+	float4 dataL = _WorldDataCM[PX_LEFT];
+	float dhL = hSrc - dataL.r - dataL.a;
+	float fL = max(0, _FlowConstant * dhL);
+
+	float4 dataT = _WorldDataCM[PX_TOP];
+	float dhT = hSrc - dataT.r - dataT.a;
+	float fT = max(0, _FlowConstant * dhT);
+
+	float4 dataR = _WorldDataCM[PX_RIGHT];
+	float dhR = hSrc - dataR.r - dataR.a;
+	float fR = max(0, _FlowConstant * dhR);
+
+	float4 dataB = _WorldDataCM[PX_BOTTOM];
+	float dhB = hSrc - dataB.r - dataB.a;
+	float fB = max(0, _FlowConstant * dhB);
+
+	float4 dataLT = _WorldDataCM[PX_LEFT_TOP];
+	float dhLT = hSrc - dataLT.r - dataLT.a;
+	float fLT = max(0, _FlowConstant * dhLT);
+
+	float4 dataTR = _WorldDataCM[PX_TOP_RIGHT];
+	float dhTR = hSrc - dataTR.r - dataTR.a;
+	float fTR = max(0, _FlowConstant * dhTR);
+
+	float4 dataRB = _WorldDataCM[PX_RIGHT_BOTTOM];
+	float dhRB = hSrc - dataRB.r - dataRB.a;
+	float fRB = max(0, _FlowConstant * dhRB);
+
+	float4 dataBL = _WorldDataCM[PX_BOTTOM_LEFT];
+	float dhBL = hSrc - dataBL.r - dataBL.a;
+	float fBL = max(0, _FlowConstant * dhBL);
+
+	float fSum = 0;
+	fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+
+	float fScale = 0;
+	if (fSum > 0)
+	{
+		fScale = min(1, dataSrc.a / fSum);
+	}
+
+	float4 fVH = float4(fL, fT, fR, fB) * fScale; //channel order is important for inflow
+	WATER_OUTFLOW_VH_CM[PX_POS] = fVH;
+
+	float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+	WATER_OUTFLOW_DIAG_CM[PX_POS] = fDiag;
+
+	//temporary write water decrement to B channel, as other threads may still reading from A
+	dataSrc.b = fSum * fScale;
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void WaterFlowPhase2(uint3 id : SV_DispatchThreadID)
+{
+	//Apply water decrement and reset temp channel
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	dataSrc.a -= dataSrc.b;
+	dataSrc.a = max(0, dataSrc.a); //water level should not be negative, but just in case
+	dataSrc.b = 0;
+
+	float4 ofL = WATER_OUTFLOW_VH_CM[PX_LEFT];
+	float4 ofT = WATER_OUTFLOW_VH_CM[PX_TOP];
+	float4 ofR = WATER_OUTFLOW_VH_CM[PX_RIGHT];
+	float4 ofB = WATER_OUTFLOW_VH_CM[PX_BOTTOM];
+
+	float4 ofLT = WATER_OUTFLOW_DIAG_CM[PX_LEFT_TOP];
+	float4 ofTR = WATER_OUTFLOW_DIAG_CM[PX_TOP_RIGHT];
+	float4 ofRB = WATER_OUTFLOW_DIAG_CM[PX_RIGHT_BOTTOM];
+	float4 ofBL = WATER_OUTFLOW_DIAG_CM[PX_BOTTOM_LEFT];
+
+	float4 ofVHSrc = WATER_OUTFLOW_VH_CM[PX_POS];
+	float4 ofDiagSrc = WATER_OUTFLOW_DIAG_CM[PX_POS];
+
+	float ifL = ofL.b; //flow from the left pixel to the right (the current pixel)
+	float ifT = ofT.a;
+	float ifR = ofR.r;
+	float ifB = ofB.g;
+
+	float ifLT = ofLT.b; //flow from the left top pixel to right bottom (the current pixel)
+	float ifTR = ofTR.a;
+	float ifRB = ofRB.r;
+	float ifBL = ofBL.g;
+
+	float ifSum = ifL + ifT + ifR + ifB + ifLT + ifTR + ifRB + ifBL;
+	dataSrc.a += ifSum;
+
+	_WorldDataCM[PX_POS] = dataSrc;
+
+	//Update flow velocity	
+	//(fL, fT, fR, fB)
+	//(fLT, fTR, fRB, fBL)
+	float2 v0 = float2(1, 0) * (ofL.b + ofVHSrc.b);
+	float2 v1 = float2(-1, 0) * (ofR.r + ofVHSrc.r);
+	float2 v2 = float2(0, 1) * (ofB.g + ofVHSrc.g);
+	float2 v3 = float2(0, -1) * (ofT.a + ofVHSrc.a);
+
+	float2 v4 = float2(-1, -1) * (ofTR.a + ofDiagSrc.a);
+	float2 v5 = float2(1, 1) * (ofBL.g + ofDiagSrc.g);
+	float2 v6 = float2(-1, 1) * (ofRB.r + ofDiagSrc.r);
+	float2 v7 = float2(1, -1) * (ofLT.b + ofDiagSrc.b);
+
+	float2 v = (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7);
+	FLOW_VELOCITY_CM[PX_POS] += float4(v, 0, 0); //velocity reset in Rain
+}
+
+[numthreads(8, 1, 8)]
+void Evaporate(uint3 id : SV_DispatchThreadID)
+{
+	float4 worldData = _WorldDataCM[PX_POS];
+	worldData.a -= _EvaporationRateCM * DT;
+	worldData.a = max(0, worldData.a);
+
+	_WorldDataCM[PX_POS] = worldData;
+}
+
+float GetErosionMask(uint2 pxPos)
+{
+	return _SimData2[pxPos].w;
+}
+
+[numthreads(8, 1, 8)]
+void ErosionAndDeposition(uint3 id : SV_DispatchThreadID)
+{
+	float4 simData2 = _SimData2[PX_POS];
+	float2 flowVelocity = simData2.xy;
+	float velocityFactor = length(flowVelocity) * 0.01;
+	float capacity = _SedimentCapacityCM * velocityFactor;
+	float4 worldData = _WorldDataCM[PX_POS];
+
+	if (capacity > worldData.g)
+	{
+		float erosionMask = GetErosionMask(PX_POS);
+		float erosionAmount = _ErosionRateCM * erosionMask * DT * (capacity - worldData.g);
+		worldData.r -= erosionAmount;
+		worldData.g += erosionAmount;
+		simData2.b += erosionAmount;
+	}
+	else
+	{
+		float depositionAmount = _DepositionRateCM * DT * (worldData.g - capacity);
+		worldData.r += depositionAmount;
+		worldData.g -= depositionAmount;
+		simData2.b += depositionAmount;
+	}
+
+	_WorldDataCM[PX_POS] = worldData;
+
+	simData2.b = max(0, simData2.b);
+	_SimData2[PX_POS] = simData2;
+}
+
+[numthreads(8, 1, 8)]
+void OutputSediment01(uint3 id : SV_DispatchThreadID)
+{
+	float sCM = _WorldDataCM[PX_POS].g;
+	float s01 = sCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS] = s01;
+}
+
+[numthreads(8, 1, 8)]
+void SedimentTransportPhase1(uint3 id : SV_DispatchThreadID)
+{
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	float hSrc = dataSrc.r + dataSrc.g;
+
+	float4 dataL = _WorldDataCM[PX_LEFT];
+	float dhL = hSrc - dataL.r - dataL.g;
+	float fL = max(0, _SedimentTransportConstant * dhL);
+
+	float4 dataT = _WorldDataCM[PX_TOP];
+	float dhT = hSrc - dataT.r - dataT.g;
+	float fT = max(0, _SedimentTransportConstant * dhT);
+
+	float4 dataR = _WorldDataCM[PX_RIGHT];
+	float dhR = hSrc - dataR.r - dataR.g;
+	float fR = max(0, _SedimentTransportConstant * dhR);
+
+	float4 dataB = _WorldDataCM[PX_BOTTOM];
+	float dhB = hSrc - dataB.r - dataB.g;
+	float fB = max(0, _SedimentTransportConstant * dhB);
+
+	float4 dataLT = _WorldDataCM[PX_LEFT_TOP];
+	float dhLT = hSrc - dataLT.r - dataLT.g;
+	float fLT = max(0, _SedimentTransportConstant * dhLT);
+
+	float4 dataTR = _WorldDataCM[PX_TOP_RIGHT];
+	float dhTR = hSrc - dataTR.r - dataTR.g;
+	float fTR = max(0, _SedimentTransportConstant * dhTR);
+
+	float4 dataRB = _WorldDataCM[PX_RIGHT_BOTTOM];
+	float dhRB = hSrc - dataRB.r - dataRB.g;
+	float fRB = max(0, _SedimentTransportConstant * dhRB);
+
+	float4 dataBL = _WorldDataCM[PX_BOTTOM_LEFT];
+	float dhBL = hSrc - dataBL.r - dataBL.g;
+	float fBL = max(0, _SedimentTransportConstant * dhBL);
+
+	float fSum = 0;
+	fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+
+	float fScale = 0;
+	if (fSum > 0)
+	{
+		fScale = min(1, dataSrc.g / fSum);
+	}
+
+	float4 fVH = float4(fL, fT, fR, fB) * fScale; //channel order is important for inflow
+	SEDIMENT_OUTFLOW_VH_CM[PX_POS] = fVH;
+
+	float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+	SEDIMENT_OUTFLOW_DIAG_CM[PX_POS] = fDiag;
+
+	//temporary write to B channel, as other threads may still reading from G
+	dataSrc.b = fSum * fScale;
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void SedimentTransportPhase2(uint3 id : SV_DispatchThreadID)
+{
+	//Apply sediment decrement and reset temp channel
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	dataSrc.g -= dataSrc.b;
+	dataSrc.g = max(0, dataSrc.g); //should not be negative, but just in case
+	dataSrc.b = 0;
+
+	float4 ofL = SEDIMENT_OUTFLOW_VH_CM[PX_LEFT];
+	float4 ofT = SEDIMENT_OUTFLOW_VH_CM[PX_TOP];
+	float4 ofR = SEDIMENT_OUTFLOW_VH_CM[PX_RIGHT];
+	float4 ofB = SEDIMENT_OUTFLOW_VH_CM[PX_BOTTOM];
+
+	float4 ofLT = SEDIMENT_OUTFLOW_DIAG_CM[PX_LEFT_TOP];
+	float4 ofTR = SEDIMENT_OUTFLOW_DIAG_CM[PX_TOP_RIGHT];
+	float4 ofRB = SEDIMENT_OUTFLOW_DIAG_CM[PX_RIGHT_BOTTOM];
+	float4 ofBL = SEDIMENT_OUTFLOW_DIAG_CM[PX_BOTTOM_LEFT];
+
+	float4 ofVHSrc = SEDIMENT_OUTFLOW_VH_CM[PX_POS];
+	float4 ofDiagSrc = SEDIMENT_OUTFLOW_DIAG_CM[PX_POS];
+
+	float ifL = ofL.b; //flow from the left pixel to the right (the current pixel)
+	float ifT = ofT.a;
+	float ifR = ofR.r;
+	float ifB = ofB.g;
+
+	float ifLT = ofLT.b; //flow from the left top pixel to right bottom (the current pixel)
+	float ifTR = ofTR.a;
+	float ifRB = ofRB.r;
+	float ifBL = ofBL.g;
+
+	float ifSum = ifL + ifT + ifR + ifB + ifLT + ifTR + ifRB + ifBL;
+	dataSrc.g += ifSum;
+
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void ThermalErosionPhase1(uint3 id : SV_DispatchThreadID)
+{
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	float hSrc = dataSrc.r;
+	float threshold = _ThermalErosionDeltaHeightThreshold;
+	float f = GetErosionMask(PX_POS) * _SedimentTransportConstant * DT;
+
+	uint3 minId = uint3(0, 0, 0);
+	uint3 maxId = uint3(_WorldDataResolution.x - 1, 0, _WorldDataResolution.y - 1);
+
+	float4 dataL = _WorldDataCM[PX_LEFT];
+	float dhL = hSrc - dataL.r - threshold;
+	float fL = max(0, dhL * f) * (id.x > minId.x);
+
+	float4 dataT = _WorldDataCM[PX_TOP];
+	float dhT = hSrc - dataT.r - threshold;
+	float fT = max(0, dhT * f) * (id.z < maxId.z);
+
+	float4 dataR = _WorldDataCM[PX_RIGHT];
+	float dhR = hSrc - dataR.r - threshold;
+	float fR = max(0, dhR * f) * (id.x < maxId.x);
+
+	float4 dataB = _WorldDataCM[PX_BOTTOM];
+	float dhB = hSrc - dataB.r - threshold;
+	float fB = max(0, dhB * f) * (id.z > minId.z);
+
+	float4 dataLT = _WorldDataCM[PX_LEFT_TOP];
+	float dhLT = hSrc - dataLT.r - threshold;
+	float fLT = max(0, dhLT * f) * (id.x > minId.x) * (id.z < maxId.z);
+
+	float4 dataTR = _WorldDataCM[PX_TOP_RIGHT];
+	float dhTR = hSrc - dataTR.r - threshold;
+	float fTR = max(0, dhTR * f) * (id.x < maxId.x) * (id.z < maxId.z);
+
+	float4 dataRB = _WorldDataCM[PX_RIGHT_BOTTOM];
+	float dhRB = hSrc - dataRB.r - threshold;
+	float fRB = max(0, dhRB * f) * (id.x < maxId.x) * (id.z > minId.z);
+
+	float4 dataBL = _WorldDataCM[PX_BOTTOM_LEFT];
+	float dhBL = hSrc - dataBL.r - threshold;
+	float fBL = max(0, dhBL * f) * (id.x > minId.x) * (id.z > minId.z);
+
+	float fSum = 0;
+	fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+
+	float fScale = 0;
+	if (fSum > 0)
+	{
+		fScale = min(1, dataSrc.r / fSum);
+	}
+
+	float4 fVH = float4(fL, fT, fR, fB) * fScale; //channel order is important for inflow
+	THERMAL_EROSION_OUTFLOW_VH_CM[PX_POS] = fVH;
+
+	float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+	THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_POS] = fDiag;
+
+	//temporary write to B channel, as other threads may still reading from G
+	dataSrc.b = fSum * fScale;
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void ThermalErosionPhase2(uint3 id : SV_DispatchThreadID)
+{
+	//Apply height decrement and reset temp channel
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	dataSrc.r -= dataSrc.b;
+	dataSrc.r = max(0, dataSrc.r); //should not be negative, but just in case
+	dataSrc.b = 0;
+
+	float4 ofL = THERMAL_EROSION_OUTFLOW_VH_CM[PX_LEFT];
+	float4 ofT = THERMAL_EROSION_OUTFLOW_VH_CM[PX_TOP];
+	float4 ofR = THERMAL_EROSION_OUTFLOW_VH_CM[PX_RIGHT];
+	float4 ofB = THERMAL_EROSION_OUTFLOW_VH_CM[PX_BOTTOM];
+
+	float4 ofLT = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_LEFT_TOP];
+	float4 ofTR = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_TOP_RIGHT];
+	float4 ofRB = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_RIGHT_BOTTOM];
+	float4 ofBL = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_BOTTOM_LEFT];
+
+	float4 ofVHSrc = THERMAL_EROSION_OUTFLOW_VH_CM[PX_POS];
+	float4 ofDiagSrc = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_POS];
+
+	float ifL = ofL.b; //flow from the left pixel to the right (the current pixel)
+	float ifT = ofT.a;
+	float ifR = ofR.r;
+	float ifB = ofB.g;
+
+	float ifLT = ofLT.b; //flow from the left top pixel to right bottom (the current pixel)
+	float ifTR = ofTR.a;
+	float ifRB = ofRB.r;
+	float ifBL = ofBL.g;
+
+	float ifSum = ifL + ifT + ifR + ifB + ifLT + ifTR + ifRB + ifBL;
+	dataSrc.r += ifSum;
+
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void FinalizeWorldData(uint3 id : SV_DispatchThreadID)
+{
+	float4 worldData = _WorldDataCM[PX_POS];
+	worldData.r += worldData.g;
+	worldData.g = 0;
+	worldData.b = 0;
+	worldData.a = 0;
+	_WorldDataCM[PX_POS] = worldData;
+}
+
+[numthreads(8, 1, 8)]
+void OutputErosionMask01(uint3 id : SV_DispatchThreadID)
+{
+	_OutputRT01[PX_POS] = GetErosionMask(PX_POS);
+}
+
+//Dispatch based on upsampled resolution
+//_UpsampleResolution is the current canvas size
+//_WorldDataResolution is the last canvas size
+[numthreads(8, 1, 8)]
+void Upsampling(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_UpsampleResolution.x - 1),
+		id.z / (_UpsampleResolution.y - 1));
+
+	float2 samplePos = float2(
+		lerp(0, _WorldDataResolution.x - 1, uv.x),
+		lerp(0, _WorldDataResolution.y - 1, uv.y));
+
+	samplePos.x = clamp(samplePos.x, 0, _WorldDataResolution.x - 1) + MARGIN.x;
+	samplePos.y = clamp(samplePos.y, 0, _WorldDataResolution.y - 1) + MARGIN.y;
+
+	int xFloor = floor(samplePos.x);
+	int xCeil = ceil(samplePos.x);
+	int yFloor = floor(samplePos.y);
+	int yCeil = ceil(samplePos.y);
+	float2 unitCoord = float2(samplePos.x - xFloor, samplePos.y - yFloor);
+	
+	//interpolate world data
+	float4 w00 = _WorldDataCM[uint2(xFloor, yFloor)];
+	float4 w01 = _WorldDataCM[uint2(xFloor, yCeil)];
+	float4 w10 = _WorldDataCM[uint2(xCeil, yFloor)];
+	float4 w11 = _WorldDataCM[uint2(xCeil, yCeil)];
+	float4 w = w00 * (1 - unitCoord.x) * (1 - unitCoord.y) + w01 * (1 - unitCoord.x) * unitCoord.y + w10 * unitCoord.x * (1 - unitCoord.y) + w11 * unitCoord.x * unitCoord.y;
+
+	//store delta height in R
+	float inputHeightCM = _InputHeight01.SampleLevel(_SamplerLinearClamp, uv, 0) * _WorldSizeCM.y;
+	w.r = inputHeightCM - w.r;
+
+	_SimData0[PX_POS] = w;
+}
+
+[numthreads(8, 1, 8)]
+void OutputDeposit01(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+	float depositCM = _SimData2[PX_POS].b;
+	float deposit01 = depositCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS - MARGIN] = deposit01;
+}

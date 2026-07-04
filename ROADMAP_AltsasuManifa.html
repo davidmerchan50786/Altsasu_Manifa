@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roadmap — Altsasu Manifa</title>
+<title>Roadmap AAA+++ — Altsasu Manifa</title>
 <style>
   :root{
     --bg:#0e0f12; --card:#16181d; --card2:#1b1e25; --bd:#272b34;
@@ -14,9 +14,8 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--tx);
-    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;line-height:1.5;
-    -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px}
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
   h1{font-size:26px;font-weight:600;margin:0 0 2px;letter-spacing:.2px}
   .sub{color:var(--mut);font-size:14px;margin:0 0 22px}
   .top{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px 20px;margin-bottom:22px}
@@ -41,8 +40,7 @@
   .sub2{margin-top:12px}
   .sub2 h3{font-size:13px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px;padding-left:2px}
   .tasks{display:flex;flex-wrap:wrap;gap:8px}
-  .task{font-size:13.5px;padding:7px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent;
-    display:inline-flex;align-items:center;gap:8px;transition:transform .06s}
+  .task{font-size:13.5px;padding:7px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;transition:transform .06s}
   .task:active{transform:scale(.97)}
   .task .tdot{width:9px;height:9px;border-radius:50%;flex:none}
   .s0{background:var(--r0b);color:#ffb4b6;border-color:rgba(229,72,77,.4)}
@@ -51,17 +49,16 @@
   .s1 .tdot{background:var(--r1)}
   .s2{background:var(--r2b);color:#86e3b8;border-color:rgba(48,164,108,.45)}
   .s2 .tdot{background:var(--r2)}
-  .tools{display:flex;gap:10px;margin-top:18px}
-  .btn{background:var(--card);border:1px solid var(--bd);color:var(--mut);font-size:13px;
-    padding:8px 14px;border-radius:9px;cursor:pointer}
+  .tools{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .btn{background:var(--card);border:1px solid var(--bd);color:var(--mut);font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
   .btn:hover{color:var(--tx);border-color:#3a3f4a}
   .hint{color:var(--mut);font-size:12.5px;margin-top:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Altsasu Manifa — Roadmap a juego de 20 h</h1>
-  <p class="sub">Ambición GTA VI · historia cine negro + humor negro · clic en cada tarea para cambiar su estado</p>
+  <h1>Altsasu Manifa — Roadmap AAA+++ · mundo abierto 3ª persona</h1>
+  <p class="sub">Todo lo necesario para nivel AAA+++ · clic en cada tarea para cambiar su estado (rojo → ámbar → verde)</p>
 
   <div class="top">
     <div class="stat">
@@ -86,148 +83,107 @@
     <button class="btn" id="collapse">Plegar todo</button>
     <button class="btn" id="reset">Restablecer estados</button>
   </div>
-  <p class="hint">El estado se guarda en este navegador (localStorage). Hechas = 100%, en desarrollo = 50% en el progreso ponderado.</p>
+  <p class="hint">Estado guardado en este navegador. Hechas = 100%, en desarrollo = 50% en el progreso ponderado.</p>
 </div>
 
 <script>
 const DATA = [
  {t:"1 · Mundo y mapa", s:[
-   {h:"Terreno", k:[
-     ["Mosaico V2 multi-resolución (48 tiles)",2],
-     ["Colocar mosaico en la escena principal",1],
-     ["Costuras bit-exactas (lattice 1/64)",2],
-     ["Mosaico V3 — clipmap GPU (1–2 draw calls)",1]]},
-   {h:"Edificios", k:[
-     ["Datos reales fusionados (11 fuentes)",2],
-     ["Generador edificios AAA (12 arquetipos)",1],
-     ["Edificios de asset sobre footprints reales",1],
-     ["Fachadas y tejados modulares",1],
-     ["Interiores jugables",0]]},
-   {h:"Calles e infraestructura", k:[
-     ["Carreteras + autovía N-1 (v2)",1],
-     ["Aceras, señalización y rotondas",1],
-     ["Puentes (LIDAR)",2],
-     ["Tráfico OSM",1]]},
-   {h:"Agua y naturaleza", k:[
-     ["Ríos Arakil + afluentes",2],
-     ["Shader de agua",1],
-     ["Árboles LIDAR (2.956+) con streaming",2],
-     ["Masas forestales / bosques",2]]},
-   {h:"Streaming y props", k:[
-     ["StreamerMundoEstatico (3 bandas)",1],
-     ["Impostores billboard con atlas",1],
-     ["Occlusion culling (bake)",1],
-     ["Mobiliario urbano y props",1]]}
+   {h:"Terreno", k:[["Mosaico V2 multi-resolución (datos)",2],["Colocar mosaico en la escena",1],["Costuras bit-exactas (lattice 1/64)",2],["Mosaico V3 clipmap GPU",1],["Streaming de terreno por chunks",1]]},
+   {h:"Geometría de ciudad", k:[["Datos reales fusionados (11 fuentes)",2],["Edificios AAA procedurales",1],["Edificios de asset (footprints)",1],["Fachadas y tejados modulares",1],["Calles + autovía",1],["Aceras / señalización / rotondas",1],["Puentes (LIDAR)",2],["Interiores jugables",0],["Destrucción de entorno",0]]},
+   {h:"Naturaleza y agua", k:[["Ríos Arakil + afluentes",2],["Shader de agua AAA (olas/espuma)",1],["Árboles LIDAR con streaming",2],["Bosques / masas forestales",2],["Hierba / vegetación instanciada",1],["Lámina de agua grande / océano",0]]},
+   {h:"Props y mobiliario", k:[["Mobiliario urbano",1],["Props post-apocalípticos",1],["Colocación procedural por zona",1],["Decals de suciedad / desgaste",1]]},
+   {h:"Streaming del mundo", k:[["StreamerMundoEstatico (3 bandas)",1],["Impostores billboard con atlas",1],["Occlusion culling (bake)",1],["World partition / celdas",1],["Carga asíncrona sin tirones",1]]}
  ]},
- {t:"2 · Gráficos y render (HDRP)", s:[
-   {h:"Pipeline", k:[
-     ["HDRP + perfil Volume",2],
-     ["Ciclo día / noche",2],
-     ["Cesium fondo lejano",2]]},
-   {h:"Iluminación", k:[
-     ["Bake lightmaps (async)",1],
-     ["APV — probe volumes",1],
-     ["Sol y exposición automática",2]]},
-   {h:"Materiales y look", k:[
-     ["Texturas PBR fachadas/tejados/suelo",1],
-     ["Conversión de materiales a HDRP",2],
-     ["Look cinematográfico cine negro (grading, niebla, contraste)",0]]},
-   {h:"Clima", k:[
-     ["SistemaClima (lluvia / niebla)",1],
-     ["Charcos y superficie mojada dinámica",1]]}
+ {t:"2 · Render y gráficos (HDRP)", s:[
+   {h:"Pipeline", k:[["HDRP + perfil Volume",2],["Ciclo día / noche",2],["Cesium fondo lejano",2],["Render graph / presupuestos",1]]},
+   {h:"Iluminación", k:[["Bake de lightmaps",1],["APV (probe volumes)",1],["Sol y exposición automática",2],["GI en tiempo real",0],["Reflejos SSR / planar",1],["Ray tracing (RTGI / RTR / RTAO)",0]]},
+   {h:"Atmósfera / volumétricos", k:[["Niebla volumétrica",1],["Nubes volumétricas",0],["God rays / shafts",1],["Clima visual (lluvia / nieve)",1]]},
+   {h:"Materiales", k:[["PBR fachadas / tejados / suelo",1],["Conversión de materiales a HDRP",2],["Mojado dinámico / charcos",1],["Nieve / barro acumulado",0]]},
+   {h:"Post / look cinematográfico", k:[["Look cine negro (grading)",0],["Motion blur / DoF cinematográfico",1],["Bloom / grano / aberración",1],["Photo mode",0]]}
  ]},
- {t:"3 · Jugabilidad", s:[
-   {h:"Jugador", k:[
-     ["Controlador movimiento + cámara TP",2],
-     ["Salud / muerte / respawn",2],
-     ["Parkour y escalada",2],
-     ["Sigilo y cobertura",2]]},
-   {h:"Vehículos", k:[
-     ["Conducción base",2],
-     ["Física y daño de vehículos",1],
-     ["Entrar / salir / robar coches",1]]},
-   {h:"Combate", k:[
-     ["Sistema de armas extendido",1],
-     ["Cuerpo a cuerpo",2],
-     ["Sistema de búsqueda (wanted) + policía",1],
-     ["Disparo desde cobertura",2]]},
-   {h:"Mecánicas propias (originalidad)", k:[
-     ["Manifestación / protesta",1],
-     ["Apoyo popular (reputación)",1],
-     ["Economía y dinero",2],
-     ["Interacción con mundo y objetos",2]]}
+ {t:"3 · Animación y personajes", s:[
+   {h:"Rig y mallas", k:[["Esqueleto humanoide estándar",0],["Retargeting de animaciones",0],["Variedad de cuerpos / ropa",0],["LODs de personaje",1]]},
+   {h:"Locomoción", k:[["Blend trees andar / correr",0],["Foot IK (pies al suelo)",1],["Inclinación / lean en curvas",0],["Motion matching / transiciones",0]]},
+   {h:"Acciones", k:[["Animación de armas (apuntar / recargar)",0],["Cuerpo a cuerpo (combos)",0],["Saltar / trepar / vault animado",0],["Entrar / salir de coche animado",0]]},
+   {h:"Cara y captura", k:[["Animación facial / lipsync",0],["Mocap o librería de mocap",0],["Ragdoll y muerte física",1],["Expresiones / emoción",0]]},
+   {h:"Multitud", k:[["Animación de multitud (crowd)",1],["Variación procedural de NPC",1]]}
  ]},
- {t:"4 · IA y vida urbana", s:[
-   {h:"NPCs", k:[
-     ["NPCBase con IA",1],
-     ["Multitud BRG (1 draw call)",1],
-     ["Rutinas diarias / horarios",2],
-     ["Reacciones dinámicas al jugador",2]]},
-   {h:"Autoridad", k:[
-     ["Policía Foral IA",1],
-     ["Escalado de búsqueda",1]]},
-   {h:"Navegación", k:[
-     ["NavMesh peatones",2],
-     ["NavMesh sobre mosaico V3",1]]},
-   {h:"Facciones", k:[
-     ["Sistema de facciones / escenarios",1]]}
+ {t:"4 · Jugador y traversal", s:[
+   {h:"Movimiento", k:[["Controlador 3ª persona",2],["Salud / muerte / respawn",2],["Esprint / stamina",1],["Agacharse / sigilo",1],["Nadar",0],["Rodar / esquivar",0]]},
+   {h:"Traversal", k:[["Parkour / escalada",2],["Saltar entre tejados",1],["Escaleras / tirolinas",0],["Cobertura (cover)",2]]},
+   {h:"Cámara", k:[["Cámara TP con colisión",1],["Apuntado over-the-shoulder",1],["Lock-on a objetivos",0],["Trauma / sacudidas de cámara",1]]}
  ]},
- {t:"5 · Historia y narrativa (20 h)", s:[
-   {h:"Estructura", k:[
-     ["Cadena de misiones M00–M12 (esqueleto)",1],
-     ["Misión inicial / tutorial 'Esnatu, Altsasu'",2],
-     ["Arco principal de 20 h (outline)",2],
-     ["Subtramas y misiones secundarias",1]]},
-   {h:"Guion", k:[
-     ["Biblia narrativa y tono (cine negro / humor negro)",2],
-     ["Diálogos por misión",1],
-     ["Personajes y arcos",2],
-     ["Ramificación y decisiones",1]]},
-   {h:"Presentación", k:[
-     ["Sistema de diálogo / branching",2],
-     ["Cinemáticas in-engine",0],
-     ["Doblaje / voces",0],
-     ["Cámaras cinematográficas",2]]}
+ {t:"5 · Combate", s:[
+   {h:"Cuerpo a cuerpo", k:[["Golpes básicos",2],["Combos / contras",0],["Bloqueo / parry",0],["Agarres / ejecuciones",0]]},
+   {h:"Armas de fuego", k:[["Disparo (pistola / escopeta / fusil)",2],["Recarga / munición",1],["Balística / penetración",1],["Retroceso / dispersión",2]]},
+   {h:"Cobertura y táctica", k:[["Disparo desde cobertura",2],["Asomarse / fuego ciego",2],["Coberturas dinámicas (IA)",1]]},
+   {h:"Daño y feedback", k:[["Sistema IDamageable",2],["Hit markers / feedback",1],["Gore / heridas / decals de sangre",0],["Físicas de impacto",1]]}
  ]},
- {t:"6 · Audio", s:[
-   {h:"Sistemas", k:[
-     ["AudioManager",2],
-     ["Reverb por zonas",2],
-     ["Mezcla y ducking dinámico",0]]},
-   {h:"Contenido", k:[
-     ["Banda sonora original",0],
-     ["SFX (armas, ambiente, ciudad)",1],
-     ["Voces / doblaje",0]]}
+ {t:"6 · Vehículos", s:[
+   {h:"Conducción", k:[["Controlador de conducción",2],["Modelo de física (derrapes)",1],["Cámara de conducción",1],["Entrar / salir / robar",1]]},
+   {h:"Variedad", k:[["Coches",1],["Motos",0],["Camiones / furgonetas",0],["Bicis",0]]},
+   {h:"Sistemas", k:[["Daño y deformación",1],["Tráfico OSM (IA)",1],["Combustible / colisiones",0],["Persecuciones policiales",1]]}
  ]},
- {t:"7 · UI / UX", s:[
-   {h:"Interfaz", k:[
-     ["HUD (vida, dinero, wanted)",1],
-     ["Pantalla de carga",2],
-     ["Menú principal",1],
-     ["Mapa / minimapa",2],
-     ["Inventario / rueda de armas",2],
-     ["Objetivos y marcadores",2]]}
+ {t:"7 · IA y vida urbana", s:[
+   {h:"NPC base", k:[["NPCBase + Sim-LOD",1],["Detección por visión",1],["Rutinas / horarios",2],["Reacciones al jugador",2]]},
+   {h:"Multitud", k:[["Multitud BRG (1 draw call)",1],["Pánico / estampida",1],["Diálogos ambientales (barks)",0]]},
+   {h:"Combate IA", k:[["Policía Foral (GOAP)",1],["Escalado de búsqueda (wanted)",1],["Coberturas / flanqueo IA",0],["Refuerzos / helicóptero",0]]},
+   {h:"Tráfico y peatones", k:[["NavMesh peatones",2],["NavMesh sobre Mosaico V3",1],["Tráfico de coches",1],["Cruces / semáforos",0]]},
+   {h:"Facciones", k:[["Sistema de facciones",1],["Reputación por facción",0]]}
  ]},
- {t:"8 · Producción y pulido", s:[
-   {h:"Rendimiento", k:[
-     ["Optimización CPU (orquestador sim)",1],
-     ["Optimización GPU (gobernador render)",1]]},
-   {h:"Calidad y entrega", k:[
-     ["Guardar / cargar partida",2],
-     ["QA y testing sistemático",0],
-     ["Balanceo de dificultad",0],
-     ["Localización (ES / EU / EN)",2],
-     ["Build y distribución",0]]}
+ {t:"8 · Misiones y narrativa", s:[
+   {h:"Estructura", k:[["Cadena M00–M12 (esqueleto)",1],["Tutorial M00",2],["Arco principal 20 h (outline)",2],["Subtramas",1],["Secundarias / recados",0],["Eventos de mundo aleatorios",0]]},
+   {h:"Guion", k:[["Biblia narrativa y tono",2],["Personajes y arcos",2],["Diálogos por misión",1],["Ramificación y decisiones",1],["Finales múltiples",1]]},
+   {h:"Presentación", k:[["Motor de diálogo / branching",2],["Cinemáticas in-engine",0],["Cámaras cinematográficas",2],["Doblaje / voces",0],["Subtítulos",1]]},
+   {h:"Mecánicas propias", k:[["Manifestación / protesta",1],["Apoyo popular",1],["Economía / dinero",2]]}
+ ]},
+ {t:"9 · Audio", s:[
+   {h:"Música", k:[["BSO original",0],["Música adaptativa por estado",0],["Radio / emisoras en coche",0]]},
+   {h:"SFX", k:[["Armas",1],["Ambiente ciudad / naturaleza",1],["Pisadas por superficie",0],["Vehículos",1]]},
+   {h:"Voces", k:[["Doblaje de misiones",0],["Barks / voces ambientales",0]]},
+   {h:"Mezcla", k:[["AudioManager",2],["Reverb por zonas",2],["Mezcla / ducking dinámico",0],["Audio espacial / HRTF",0]]}
+ ]},
+ {t:"10 · UI / UX", s:[
+   {h:"HUD", k:[["Vida / dinero / wanted",1],["Brújula / marcadores",2],["Indicadores de daño",1],["Avisos / toasts",1]]},
+   {h:"Menús", k:[["Menú principal",1],["Pausa / ajustes",1],["Pantalla de carga",2],["Config. gráfica / control",1]]},
+   {h:"Mapa", k:[["Minimapa",2],["Mapa grande + waypoints",2],["Iconos de actividades",0]]},
+   {h:"Inventario", k:[["Rueda de armas",2],["Inventario",2],["Selección rápida",1]]},
+   {h:"Accesibilidad", k:[["Remapeo de controles",0],["Daltonismo / escala UI",0],["Asistencias de puntería",0]]}
+ ]},
+ {t:"11 · Sistemas de juego", s:[
+   {h:"Progresión", k:[["Guardar / cargar",2],["Autosave / slots",2],["Progresión / desbloqueos",0],["Estadísticas / logros",0]]},
+   {h:"Economía", k:[["Dinero / economía",2],["Tiendas / compra",0],["Recompensas por misión",1]]},
+   {h:"Mundo persistente", k:[["Estado del mundo",1],["Hora / clima persistente",1],["Wanted con decay",1]]},
+   {h:"Localización", k:[["Sistema ES / EU / EN",2],["Traducción de contenido",1]]}
+ ]},
+ {t:"12 · Rendimiento y optimización", s:[
+   {h:"CPU", k:[["Orquestador de simulación",1],["Sim-LOD por frecuencia",1],["Jobs / Burst masivos",1],["Cero GC en steady state",1]]},
+   {h:"GPU", k:[["Gobernador de render",1],["LODs / impostores",1],["Occlusion / culling",1],["Batching / instancing",1]]},
+   {h:"Streaming", k:[["Carga por chunks",1],["Presupuesto por frame",1],["Pool de objetos",1]]},
+   {h:"Objetivos de plataforma", k:[["60 fps en PC objetivo",0],["Consolas (Series / PS5)",0],["Budget de memoria / VRAM",0]]}
+ ]},
+ {t:"13 · Herramientas y pipeline", s:[
+   {h:"Editores", k:[["Constructores de mundo (Tools)",1],["Importadores GIS / OSM / LIDAR",2],["Validadores / gates",1]]},
+   {h:"Datos", k:[["Pipeline de terreno V2 / V3",1],["Bake de ciudad / LOD",1],["Versionado de datos",1]]},
+   {h:"Build", k:[["Pipeline de build",0],["CI / automatización",0],["Gestión de LFS / assets",1]]}
+ ]},
+ {t:"14 · Pulido AAA+++", s:[
+   {h:"Game feel", k:[["Juice / feedback de impacto",0],["Screen shake / hitstop",1],["Vibración / haptics",0]]},
+   {h:"Cámara y foto", k:[["Photo mode",0],["Cámaras de muerte / cine",1],["Replays",0]]},
+   {h:"Detalle visual", k:[["Ray tracing",0],["Cielo / nubes volumétricas",0],["Cabello / tela física",0],["Destrucción avanzada",0]]}
+ ]},
+ {t:"15 · Calidad y entrega", s:[
+   {h:"QA", k:[["Plan de testing",0],["Tests automatizados",1],["Bug tracking",0]]},
+   {h:"Balance", k:[["Balanceo de dificultad",0],["Curva de progresión",0]]},
+   {h:"Entrega", k:[["Build y distribución",0],["Certificación de consola",0],["Marketing / trailer",0],["Localización final",1]]}
  ]}
 ];
 
-const KEY="altsasu_roadmap_v1";
+const KEY="altsasu_roadmap_v2";
 let saved={};
 try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){saved={}}
-
 function id(bi,si,ki){return bi+"."+si+"."+ki}
-function stOf(i){return saved[i]!==undefined?saved[i]:i._def}
-
 const root=document.getElementById("root");
 
 function build(){
@@ -235,8 +191,7 @@ function build(){
   DATA.forEach((b,bi)=>{
     const blk=document.createElement("div");blk.className="block";
     const head=document.createElement("div");head.className="bhead";
-    head.innerHTML='<span class="chev">▼</span><span class="btitle">'+b.t+'</span>'+
-      '<span class="minibar"></span><span class="bpct"></span>';
+    head.innerHTML='<span class="chev">▼</span><span class="btitle">'+b.t+'</span><span class="minibar"></span><span class="bpct"></span>';
     head.onclick=()=>blk.classList.toggle("col");
     blk.appendChild(head);
     const body=document.createElement("div");body.className="body";
@@ -248,44 +203,21 @@ function build(){
         const i=id(bi,si,ki);
         const cur=saved[i]!==undefined?saved[i]:k[1];
         const el=document.createElement("div");
-        el.className="task s"+cur;el.dataset.id=i;
+        el.className="task s"+cur;
         el.innerHTML='<span class="tdot"></span>'+k[0];
-        el.onclick=()=>{
-          let n=(saved[i]!==undefined?saved[i]:k[1]);
-          n=(n+1)%3;saved[i]=n;persist();
-          el.className="task s"+n;refresh();
-        };
+        el.onclick=()=>{let n=(saved[i]!==undefined?saved[i]:k[1]);n=(n+1)%3;saved[i]=n;persist();el.className="task s"+n;refresh();};
         tg.appendChild(el);
       });
       grp.appendChild(tg);body.appendChild(grp);
     });
     blk.appendChild(body);root.appendChild(blk);
-    blk._head=head;blk._b=b;blk._bi=bi;
+    blk._head=head;blk._bi=bi;
   });
   refresh();
 }
-
-function counts(){
-  let c=[0,0,0];
-  DATA.forEach((b,bi)=>b.s.forEach((sb,si)=>sb.k.forEach((k,ki)=>{
-    const i=id(bi,si,ki);const v=saved[i]!==undefined?saved[i]:k[1];c[v]++;
-  })));
-  return c;
-}
-function blockCounts(bi){
-  let c=[0,0,0];const b=DATA[bi];
-  b.s.forEach((sb,si)=>sb.k.forEach((k,ki)=>{
-    const i=id(bi,si,ki);const v=saved[i]!==undefined?saved[i]:k[1];c[v]++;
-  }));
-  return c;
-}
-function fillBar(node,c){
-  const tot=c[0]+c[1]+c[2]||1;
-  node.innerHTML=
-    '<i style="background:var(--r2);width:'+(c[2]/tot*100)+'%"></i>'+
-    '<i style="background:var(--r1);width:'+(c[1]/tot*100)+'%"></i>'+
-    '<i style="background:var(--r0);width:'+(c[0]/tot*100)+'%"></i>';
-}
+function counts(){let c=[0,0,0];DATA.forEach((b,bi)=>b.s.forEach((sb,si)=>sb.k.forEach((k,ki)=>{const i=id(bi,si,ki);const v=saved[i]!==undefined?saved[i]:k[1];c[v]++;})));return c;}
+function blockCounts(bi){let c=[0,0,0];const b=DATA[bi];b.s.forEach((sb,si)=>sb.k.forEach((k,ki)=>{const i=id(bi,si,ki);const v=saved[i]!==undefined?saved[i]:k[1];c[v]++;}));return c;}
+function fillBar(node,c){const tot=c[0]+c[1]+c[2]||1;node.innerHTML='<i style="background:var(--r2);width:'+(c[2]/tot*100)+'%"></i><i style="background:var(--r1);width:'+(c[1]/tot*100)+'%"></i><i style="background:var(--r0);width:'+(c[0]/tot*100)+'%"></i>';}
 function refresh(){
   const c=counts();const tot=c[0]+c[1]+c[2]||1;
   const pct=Math.round((c[2]+c[1]*0.5)/tot*100);
@@ -295,19 +227,12 @@ function refresh(){
   document.getElementById("ctodo").textContent=c[0];
   document.getElementById("ctot").textContent=tot;
   fillBar(document.getElementById("gbar"),c);
-  document.querySelectorAll(".block").forEach(blk=>{
-    const bc=blockCounts(blk._bi);const t=bc[0]+bc[1]+bc[2]||1;
-    const p=Math.round((bc[2]+bc[1]*0.5)/t*100);
-    blk._head.querySelector(".bpct").textContent=p+"%";
-    fillBar(blk._head.querySelector(".minibar"),bc);
-  });
+  document.querySelectorAll(".block").forEach(blk=>{const bc=blockCounts(blk._bi);const t=bc[0]+bc[1]+bc[2]||1;const p=Math.round((bc[2]+bc[1]*0.5)/t*100);blk._head.querySelector(".bpct").textContent=p+"%";fillBar(blk._head.querySelector(".minibar"),bc);});
 }
-function persist(){localStorage.setItem(KEY,JSON.stringify(saved))}
-
+function persist(){localStorage.setItem(KEY,JSON.stringify(saved));}
 document.getElementById("expand").onclick=()=>document.querySelectorAll(".block").forEach(b=>b.classList.remove("col"));
 document.getElementById("collapse").onclick=()=>document.querySelectorAll(".block").forEach(b=>b.classList.add("col"));
 document.getElementById("reset").onclick=()=>{if(confirm("¿Restablecer todos los estados a los iniciales?")){saved={};persist();build();}};
-
 build();
 </script>
 </body>

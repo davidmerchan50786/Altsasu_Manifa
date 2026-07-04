@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd3d01eddcedb04c8e9bd76ec8c3819, type: 3}
+  m_Name: SandDunes
+  m_EditorClassIdentifier: 
+  m_nodeData:
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.NoiseNode
+    jsonData: '{"m_groupId":"","m_id":"6I9SFZCJ","m_visualState":{"m_position":{"x":306.39996337890627,"y":211.19998168945313},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_offset":{"x":0.0,"y":0.0},"m_scale":149.0,"m_lacunarity":2.5,"m_persistence":0.23999999463558198,"m_layerCount":2,"m_mode":1,"m_seed":89,"m_layerDerivativeMode":1,"m_flipSign":false,"m_warpMode":1,"m_warpAngleMin":-200.0,"m_warpAngleMax":143.0,"m_warpIntensity":12.699999809265137,"m_remapCurve":{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.0,"value":0.0,"inSlope":1.0757395029067994,"outSlope":1.0757395029067994,"tangentMode":0,"weightedMode":0,"inWeight":0.0,"outWeight":0.20129869878292085},{"serializedVersion":"3","time":1.0,"value":0.9318733215332031,"inSlope":1.0,"outSlope":1.0,"tangentMode":0,"weightedMode":0,"inWeight":0.0,"outWeight":0.0}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},"m_applyRemapPerLayer":true}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.ThermalErosionNode2
+    jsonData: '{"m_groupId":"","m_id":"AOIT7GHB","m_visualState":{"m_position":{"x":862.3999633789063,"y":211.19998168945313},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_iterationCount":300,"m_iterationPerFrame":50,"m_erosionRate":50.0,"m_talusAngle":0.0,"m_useMultiResolution":false,"m_sedimentOutputMin":0.0,"m_sedimentOutputMax":1.0}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.NoiseNode
+    jsonData: '{"m_groupId":"","m_id":"BT39PJ39","m_visualState":{"m_position":{"x":306.4000244140625,"y":286.3999938964844},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_offset":{"x":0.0,"y":0.0},"m_scale":132.0,"m_lacunarity":2.130000114440918,"m_persistence":0.2840000092983246,"m_layerCount":2,"m_mode":1,"m_seed":113,"m_layerDerivativeMode":1,"m_flipSign":false,"m_warpMode":1,"m_warpAngleMin":-360.0,"m_warpAngleMax":360.0,"m_warpIntensity":-19.799999237060548,"m_remapCurve":{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.0,"value":0.0,"inSlope":1.0757395029067994,"outSlope":1.0757395029067994,"tangentMode":0,"weightedMode":0,"inWeight":0.0,"outWeight":0.20129869878292085},{"serializedVersion":"3","time":1.0,"value":0.8734779357910156,"inSlope":1.0,"outSlope":1.0,"tangentMode":0,"weightedMode":0,"inWeight":0.0,"outWeight":0.0}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},"m_applyRemapPerLayer":false}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.CombineNode
+    jsonData: '{"m_groupId":"","m_id":"WA760HI3","m_visualState":{"m_position":{"x":491.20001220703127,"y":211.20004272460938},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_mode":4,"m_backgroundMultiplier":1.0,"m_foregroundMultiplier":1.0,"m_maskMultiplier":1.0}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.LevelsNode
+    jsonData: '{"m_groupId":"","m_id":"MS62W9HL","m_visualState":{"m_position":{"x":695.2000122070313,"y":211.19998168945313},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_inLow":0.0,"m_inMid":0.5,"m_inHigh":1.0,"m_outLow":0.0,"m_outHigh":0.414000004529953}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.HeightOutputNode
+    jsonData: '{"m_groupId":"","m_id":"LSBJC14U","m_visualState":{"m_position":{"x":1099.2000732421875,"y":211.20001220703126},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.TextureOutputNode
+    jsonData: '{"m_groupId":"","m_id":"HQTSWC7G","m_visualState":{"m_position":{"x":1089.5999755859375,"y":365.6000061035156},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_order":0}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.MathNode
+    jsonData: '{"m_groupId":"","m_id":"5A7LLEN5","m_visualState":{"m_position":{"x":913.5999755859375,"y":365.59991455078127},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_maths":[{"m_enabled":true,"m_number":1.0,"m_ops":0}]}'
+  m_edgeData:
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"Q4YBG05F","m_outputSlot":{"m_nodeId":"6I9SFZCJ","m_slotId":100},"m_inputSlot":{"m_nodeId":"WA760HI3","m_slotId":0}}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"6V45NQHB","m_outputSlot":{"m_nodeId":"BT39PJ39","m_slotId":100},"m_inputSlot":{"m_nodeId":"WA760HI3","m_slotId":1}}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"QKML0G1X","m_outputSlot":{"m_nodeId":"WA760HI3","m_slotId":100},"m_inputSlot":{"m_nodeId":"MS62W9HL","m_slotId":0}}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"AUWOMK5L","m_outputSlot":{"m_nodeId":"MS62W9HL","m_slotId":100},"m_inputSlot":{"m_nodeId":"AOIT7GHB","m_slotId":0}}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"I5049VPO","m_outputSlot":{"m_nodeId":"AOIT7GHB","m_slotId":100},"m_inputSlot":{"m_nodeId":"LSBJC14U","m_slotId":0}}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"KIXLBMDX","m_outputSlot":{"m_nodeId":"5A7LLEN5","m_slotId":100},"m_inputSlot":{"m_nodeId":"HQTSWC7G","m_slotId":0}}'
+  m_groupData: []
+  m_stickyNoteData: []
+  m_stickyImageData: []
+  m_objectReferences:
+  - m_key: HQTSWC7G.m_terrainLayer
+    m_target: {fileID: 8574412962073106934, guid: 8e3dd6fea1a6a264f8ea553502fb6d7d, type: 2}
+  m_exposedProperties: []
+  m_debugConfigs:
+    m_resolution: 512
+    m_worldBounds:
+      serializedVersion: 2
+      x: -87.97522
+      y: -28.572128
+      width: 801.0796
+      height: 527.7289
+    m_terrainHeight: 200
+    m_seed: 0
+    m_shouldOutputTempHeight: 0
+  m_allowSplitExecution: 1

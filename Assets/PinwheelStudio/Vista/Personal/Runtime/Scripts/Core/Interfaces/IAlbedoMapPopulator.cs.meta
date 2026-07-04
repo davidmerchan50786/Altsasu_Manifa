@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b506f5da86afa774eb544bddfd2050e6
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Scripts/Core/Interfaces/IAlbedoMapPopulator.cs
+  uploadId: 922302

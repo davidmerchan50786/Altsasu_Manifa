@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: f3b2d50f639f95843a3ffb101aae8e2a
+labels:
+- VistaCoreIncludeFile
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Includes/OpenSimplex2S.hlsl
+  uploadId: 922302

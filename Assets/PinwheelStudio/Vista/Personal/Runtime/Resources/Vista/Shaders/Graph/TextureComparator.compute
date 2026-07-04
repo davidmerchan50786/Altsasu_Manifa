@@ -1,0 +1,25 @@
+#pragma exclude_renderers gles3
+#pragma kernel CSMain
+
+Texture2D<float4> _TexA;
+Texture2D<float4> _TexB;
+uint _Width;
+uint _Height;
+RWStructuredBuffer<uint> _Result;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _Width || id.y >= _Height)
+    {
+        return;
+    }
+
+    float4 a = _TexA[id.xy];
+    float4 b = _TexB[id.xy];
+    if (any(a != b))
+    {
+        InterlockedAdd(_Result[0], 1);
+    }
+}
+

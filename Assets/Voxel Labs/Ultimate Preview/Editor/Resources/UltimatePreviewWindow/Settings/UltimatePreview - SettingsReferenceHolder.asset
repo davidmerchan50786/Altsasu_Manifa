@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1156077403, guid: 2c5e762d0e6dc7142869576a34c3ee18, type: 3}
+  m_Name: UltimatePreview - SettingsReferenceHolder
+  m_EditorClassIdentifier: VoxelLabs.UltimatePreview.Core.dll::VoxelLabs.UltimatePreview.Core.UltimatePreviewSettingsReferenceHolder
+  ultimatePreviewSettings: {fileID: 11400000, guid: abb625c2a3e5eb64c8536306c096e6e4, type: 2}

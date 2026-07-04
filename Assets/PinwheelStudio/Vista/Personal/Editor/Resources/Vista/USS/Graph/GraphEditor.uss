@@ -1,0 +1,62 @@
+#body-container
+{
+	flex: 1;
+	flex-grow: 1;
+	flex-shrink: 0;
+	overflow: hidden;
+	flex-direction: row;
+	background-color: rgb(51,51,51);
+	padding: 2px;
+}
+
+#body-container #left-container
+{
+	flex: 1;
+	flex-grow: 1;
+	flex-shrink: 0;
+}
+
+#body-container #left-container #graph-view-container
+{
+	flex: 1;
+	flex-grow: 1;
+	flex-shrink: 0;
+}
+
+#body-container #right-container
+{	
+}
+
+.panel
+{
+	margin: 2px;
+	border-width: 1px;
+	border-color: rgb(35,35,35);
+	background-color: rgb(56,56,56);
+}
+
+.utility-button-container
+{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	margin: 2px;
+}
+
+.utility-button-container.v2
+{
+	position:relative;
+	flex-direction: row;
+	align-items: center;
+	margin: 0px;
+	margin-left: 4px;
+	width: auto;
+	height: 100%;
+	left:auto;
+	top:auto;
+}
+
+.unity-toolbar
+{
+	height: 25px;
+}

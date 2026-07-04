@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 9324da0c84560b54fa6ed40c6dc9d69c
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Samples/Shaders/SimpleLeavesCutout.shadergraph
+  uploadId: 922302

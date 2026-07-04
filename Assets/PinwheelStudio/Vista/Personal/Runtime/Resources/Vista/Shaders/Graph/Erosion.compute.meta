@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f6a263b9ef3b1824984b502a1bd4d109
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/Erosion.compute
+  uploadId: 922302

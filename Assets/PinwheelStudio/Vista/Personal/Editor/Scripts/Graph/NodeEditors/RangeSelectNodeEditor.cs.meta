@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 548e8dd9c8f09a1489562e6c4aa73ae4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Editor/Scripts/Graph/NodeEditors/RangeSelectNodeEditor.cs
+  uploadId: 922302

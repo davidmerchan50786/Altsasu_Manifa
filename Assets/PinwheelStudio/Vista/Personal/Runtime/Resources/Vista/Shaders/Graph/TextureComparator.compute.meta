@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 8d361b3b2a754f0aaea830e79b3eca96
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 4
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/TextureComparator.compute
+  uploadId: 922302

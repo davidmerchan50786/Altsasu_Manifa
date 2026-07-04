@@ -669,11 +669,31 @@ public class MobiliarioUrbano : MonoBehaviour
     {
         if (prefab == null || pos == Vector3.zero) return;
 
+        // Validar que la posición sea suelo transitable antes de instanciar.
+        // Raycast desde arriba: si no hay suelo, o el ángulo de la superficie es
+        // >40° (pared, rampa) → descartar. Evita bicis y farolas dentro de edificios.
+        const float RAY_ORIGEN = 20f;
+        const float RAY_DIST   = 40f;
+        var maskSuelo = ~LayerMask.GetMask("Player", "NPC", "Manifestante",
+                                            "Ignore Raycast", "Water");
+        if (Physics.Raycast(new Vector3(pos.x, pos.y + RAY_ORIGEN, pos.z),
+                            Vector3.down, out var hit, RAY_DIST, maskSuelo))
+        {
+            // Superficie muy inclinada (pared o tejado) → saltar
+            if (Vector3.Angle(hit.normal, Vector3.up) > 40f) return;
+            // Ajustar Y exactamente al suelo detectado
+            pos.y = hit.point.y + alturaBaseProps;
+        }
+        else
+        {
+            return; // sin suelo detectado → no colocar
+        }
+
         var go = Instantiate(prefab, pos,
             Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f), transform);
         go.name = $"Mobiliario_{tag}_{_propsZona.Count}";
         go.isStatic = true;
-        ConfigurarGPUInstancing(go);   // también registra luces en SistemaVidaNocturna
+        ConfigurarGPUInstancing(go);
         _propsZona.Add(go);
     }
 

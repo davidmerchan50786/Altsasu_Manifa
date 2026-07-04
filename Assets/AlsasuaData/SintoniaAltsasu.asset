@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a729421a0bc2ec4580c1f02399acddb, type: 3}
+  m_Name: SintoniaAltsasu
+  m_EditorClassIdentifier: Alsasua.Core::SintoniaAltsasu
+  umbralConversion: 70
+  umbralCritico: 90
+  maxConvertidos: 12
+  frenoApoyoMin: 0.25
+  controlesUmbralActivacion: 70
+  maxControles: 4
+  controlUmbralArresto: 3
+  controlProbPasarApoyo0: 0.05
+  controlProbPasarApoyo100: 0.6
+  testigoRango: 18
+  testigoRetardoReporte: 3
+  testigoProbChivarApoyo0: 0.9
+  testigoProbChivarApoyo100: 0.05
+  coartadaRitmoBase: 1
+  coartadaBonusApoyo: 1

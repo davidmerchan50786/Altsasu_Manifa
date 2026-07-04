@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91f5b49799f26ed4381350bdb8429dd6, type: 3}
+  m_Name: ShowcaseCameraConfig
+  m_EditorClassIdentifier: 
+  defaultYaw: 0
+  defaultPitch: 2
+  defaultDollyDistance: 1.1
+  defaultFocalLength: 70
+  defaultFramingOffset: {x: 0, y: 0, z: 0.04}
+  minPitch: -12
+  maxPitch: 20
+  minDollyDistance: 0.55
+  maxDollyDistance: 1.4
+  minFocalLength: 55
+  maxFocalLength: 105
+  orbitSensitivityX: 0.12
+  orbitSensitivityY: 0.1
+  zoomSensitivity: 0.08
+  orbitSmoothTime: 0.1
+  zoomSmoothTime: 0.12
+  anchorSmoothTime: 0.08
+  anchorFollowThreshold: 0.3
+  sensorSize: {x: 36, y: 24}
+  aperture: 10
+  shutterSpeed: 0.008
+  iso: 100
+  enableLipSyncMouthFocusBias: 0
+  mouthFocusBlend: 0.45
+  estimatedMouthVerticalOffset: -0.095
+  estimatedMouthForwardOffset: 0.02
+  enableFaceCenterFocusOffset: 1
+  faceCenterVerticalOffset: -0.022
+  faceCenterForwardOffset: 0.006
+  enableZoomFramingCompensation: 1
+  zoomCompensationStart: 0.4
+  zoomCompensationY: -0.023
+  zoomCompensationZ: 0
+  shotPresets:
+  - label: Portrait
+    yaw: 0
+    pitch: 0
+    dollyDistance: 0.95
+    focalLength: 72
+    framingOffset: {x: 0, y: 0, z: 0.04}
+    transitionTime: 0.55
+  - label: Three Quarter
+    yaw: -15
+    pitch: 0
+    dollyDistance: 1
+    focalLength: 80
+    framingOffset: {x: 0.01, y: 0, z: 0.04}
+    transitionTime: 0.6
+  - label: Hero Close
+    yaw: 15
+    pitch: 2
+    dollyDistance: 0.75
+    focalLength: 95
+    framingOffset: {x: 0, y: 0, z: 0.03}
+    transitionTime: 0.65
+  - label: Side Profile
+    yaw: 20
+    pitch: 2
+    dollyDistance: 1.05
+    focalLength: 85
+    framingOffset: {x: 0, y: 0, z: 0.04}
+    transitionTime: 0.7

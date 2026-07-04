@@ -1,8 +1,8 @@
 {
  "version": 2,
- "descripcion": "Mosaico 3 anillos LIDAR0.5+IDENA2m+MDT05/25, costuras enteras exactas",
- "fecha": "2026-06-12T01:25:32",
- "generadoPor": "GenerarMosaicoTerrenoV2.py",
+ "descripcion": "Mosaico V2 UTM REAL ISOTROPO (SX=1)",
+ "fecha": "2026-06-19T19:45:58",
+ "generadoPor": "GenerarMosaicoTerrenoV2.py (SX=1)",
  "datumYBase": 511.33,
  "cuantoVertical": 0.015625,
  "altoGlobal": 1023.984375,
@@ -11,7 +11,7 @@
   "N0": 4749902.0,
   "OX": 1918.0,
   "OZ": 8570.0,
-  "escalaX": 0.9368715357826065,
+  "escalaX": 1.0,
   "formula": "UnityX=(E-E0)*escalaX+OX ; UnityZ=(N-N0)+OZ"
  },
  "ordenFilas": "fila 0 = sur (estilo SetHeights)",
@@ -51,7 +51,7 @@
   "estacion": {
    "x": 1650.0,
    "z": 8200.0,
-   "cota": 530.65
+   "cota": 530.4
   }
  },
  "tiles": [
@@ -65,8 +65,8 @@
    "ancho": 1200.0,
    "res": 2049,
    "hMinReal": 509.189,
-   "hMaxReal": 577.783,
-   "sha256": "864a398bdf547f28f53a9cda1e82ce0416a66c98b5314a2808d056502ac65366"
+   "hMaxReal": 560.83,
+   "sha256": "b5aeb2f31b405c54ffcf71c899ee69631ce1d8ceafd5f1829cc6797677f42a11"
   },
   {
    "file": "tile_a0_z0_x1.raw",
@@ -79,7 +79,7 @@
    "res": 2049,
    "hMinReal": 504.064,
    "hMaxReal": 567.424,
-   "sha256": "cb2ddf3148915c4472b9f90385d61190160bd994676aef246661c9c9185645f6"
+   "sha256": "36f55ad26ec1288566a62d3063bf12986d2948684dfd30b20b1bd3a9aad4ee68"
   },
   {
    "file": "tile_a0_z1_x0.raw",
@@ -91,8 +91,8 @@
    "ancho": 1200.0,
    "res": 2049,
    "hMinReal": 514.205,
-   "hMaxReal": 617.283,
-   "sha256": "7bcac100a78e95d7015f03eebd25f8d22e01582f06878e3a512d78ecea0d29e7"
+   "hMaxReal": 606.189,
+   "sha256": "4146327b32e487b1cfaf1ea1fdbd9fd53b09fae9fc8c3396e8a439addbd334a8"
   },
   {
    "file": "tile_a0_z1_x1.raw",
@@ -105,46 +105,46 @@
    "res": 2049,
    "hMinReal": 507.705,
    "hMaxReal": 584.892,
-   "sha256": "71dab9b2f04e193a4e64673993dbe36bee89b6d7530a1ca83776d355d57d7b33"
+   "sha256": "6ee4799ac8bd5f6f42b4d6a1badc1f16f44818d23bcb21dc0a140dbabdef604a"
   },
   {
    "file": "tile_a1_z0_x0.raw",
    "anillo": 1,
    "x": -1682.0,
    "z": 4970.0,
-   "y64": 880,
-   "y": 13.75,
+   "y64": 879,
+   "y": 13.734375,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 529.08,
-   "hMaxReal": 642.877,
-   "sha256": "aa7e5be2e70dba8bfa32fd959fa44e90f180d0060111c8a41a160c2f45d6b491"
+   "hMinReal": 529.064,
+   "hMaxReal": 643.064,
+   "sha256": "953fbd374f56740cc596e5c78e50654779bb891f9f49c5328938b79a9fd76f8e"
   },
   {
    "file": "tile_a1_z0_x1.raw",
    "anillo": 1,
    "x": -482.0,
    "z": 4970.0,
-   "y64": 1185,
-   "y": 18.515625,
+   "y64": 1377,
+   "y": 21.515625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 533.846,
-   "hMaxReal": 774.158,
-   "sha256": "0cadf0526c26ba9fd4d864f6f6a9a047f234ebe6bf713c8e0675fe42d7a919b0"
+   "hMinReal": 536.846,
+   "hMaxReal": 784.721,
+   "sha256": "1e5fa82d195d0b970164f5595faef9d7b508f41aa8b5d8fddc5806f1cf7412c5"
   },
   {
    "file": "tile_a1_z0_x2.raw",
    "anillo": 1,
    "x": 718.0,
    "z": 4970.0,
-   "y64": 4932,
-   "y": 77.0625,
+   "y64": 5631,
+   "y": 87.984375,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 592.392,
-   "hMaxReal": 1155.658,
-   "sha256": "2e45e643a47d3527746ce21805aae4d98ec52e2d7640cb39b97de36891b4341a"
+   "hMinReal": 603.314,
+   "hMaxReal": 1155.642,
+   "sha256": "b6c2f3eccd831ea8726795811cc9cc777662f26516b94bcd0433d0aa74d1c952"
   },
   {
    "file": "tile_a1_z0_x3.raw",
@@ -156,8 +156,8 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 735.986,
-   "hMaxReal": 1154.299,
-   "sha256": "e3102f00d0297faafdb69201d175156138e37074d463c155122fbdd8933ade82"
+   "hMaxReal": 1154.486,
+   "sha256": "3f3bcd7971e893962ca4ebc0e3e6a7a6111e3b0ed91e9f631488caf5c92a9662"
   },
   {
    "file": "tile_a1_z0_x4.raw",
@@ -169,47 +169,47 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 781.596,
-   "hMaxReal": 1134.377,
-   "sha256": "0aa10c44c28fb18d1d18336ddbbf26093bd171fb3c4b8901c1ec30015bc4cdc8"
+   "hMaxReal": 1134.392,
+   "sha256": "e31d6fca32b0196a036a1c4e084f4695ee25e927cb83b91e2f66123d75f1c62c"
   },
   {
    "file": "tile_a1_z0_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 4970.0,
-   "y64": 13732,
-   "y": 214.5625,
+   "y64": 15978,
+   "y": 249.65625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 729.892,
-   "hMaxReal": 1073.971,
-   "sha256": "6a364cef8d0d8a959ff9542fe7afc4f96f6ef234821ab836ec952787a367cee6"
+   "hMinReal": 764.986,
+   "hMaxReal": 1081.377,
+   "sha256": "9dc7fa95cbe4a135226c115f41f94c3a98678c6029b227fa9f74f8e5534adfa6"
   },
   {
    "file": "tile_a1_z1_x0.raw",
    "anillo": 1,
    "x": -1682.0,
    "z": 6170.0,
-   "y64": 602,
-   "y": 9.40625,
+   "y64": 513,
+   "y": 8.015625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 524.736,
-   "hMaxReal": 856.689,
-   "sha256": "17d70ec4afc0cf2b03a142af993dc279a382907221d436c005e4bb5e8690dc7c"
+   "hMinReal": 523.346,
+   "hMaxReal": 856.674,
+   "sha256": "9c978c258e66a0b5763210bf254037abee2a0ef9b49ee0bf4d6b2fa85b2b6f1a"
   },
   {
    "file": "tile_a1_z1_x1.raw",
    "anillo": 1,
    "x": -482.0,
    "z": 6170.0,
-   "y64": 83,
-   "y": 1.296875,
+   "y64": 81,
+   "y": 1.265625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 516.627,
-   "hMaxReal": 686.455,
-   "sha256": "fc109d5b0b16412f08249e13da01f0a5a8a36becbeaf628090b595c173ce95a7"
+   "hMinReal": 516.596,
+   "hMaxReal": 669.955,
+   "sha256": "baa679f13f616c312db792fca8136b27575ae30b9463e33766e06a68161a5431"
   },
   {
    "file": "tile_a1_z1_x2.raw",
@@ -222,7 +222,7 @@
    "res": 1025,
    "hMinReal": 511.533,
    "hMaxReal": 753.689,
-   "sha256": "be02df1746497ba2d3a958da2f001cb10188a0eb3ccb16771f05950bf8574d45"
+   "sha256": "f81db0be7caab5a1a09744ccf1672c338eb55709f40836398c171bc348d9adb6"
   },
   {
    "file": "tile_a1_z1_x3.raw",
@@ -235,98 +235,98 @@
    "res": 1025,
    "hMinReal": 520.736,
    "hMaxReal": 812.752,
-   "sha256": "ad18e10ab190d20e6803db6ee294dc67d7d8b8aec9cef625b38eb507498d8cce"
+   "sha256": "88c5846ffd5b5a58426e34fbb7d4f88d27a5e46d4060be367a5c3415711b37b1"
   },
   {
    "file": "tile_a1_z1_x4.raw",
    "anillo": 1,
    "x": 3118.0,
    "z": 6170.0,
-   "y64": 1440,
-   "y": 22.5,
+   "y64": 1443,
+   "y": 22.546875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 537.83,
-   "hMaxReal": 835.283,
-   "sha256": "51c77ba29180e1596045acad7ca2075b35efd8902f4eaa8f66fda4e6b6ed2e5e"
+   "hMinReal": 537.877,
+   "hMaxReal": 834.471,
+   "sha256": "5c79cda81d76c8133120999f39cf96fc5733401af67c7755178d0781533b08fc"
   },
   {
    "file": "tile_a1_z1_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 6170.0,
-   "y64": 809,
-   "y": 12.640625,
+   "y64": 1388,
+   "y": 21.6875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 527.971,
-   "hMaxReal": 829.064,
-   "sha256": "3ab1226ad94ec8204346f8f268b0bd20b88ec090edf4ef3559db7a81108ab3b2"
+   "hMinReal": 537.017,
+   "hMaxReal": 835.299,
+   "sha256": "5ee2f0db7c45754868ef291cd736fa440c18e2056522fcf3ad875a2759468104"
   },
   {
    "file": "tile_a1_z2_x0.raw",
    "anillo": 1,
    "x": -1682.0,
    "z": 7370.0,
-   "y64": 5963,
-   "y": 93.171875,
+   "y64": 5965,
+   "y": 93.203125,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 608.502,
-   "hMaxReal": 953.408,
-   "sha256": "e783f8f88ed1344038fd4ca8e339718f003520ba5bae1c2ffdcec7cb03033f12"
+   "hMinReal": 608.533,
+   "hMaxReal": 937.721,
+   "sha256": "cfadee0cd666013c7a24128941b11281f159c3ca1d6c1f87b60b5203413b94bc"
   },
   {
    "file": "tile_a1_z2_x1.raw",
    "anillo": 1,
    "x": -482.0,
    "z": 7370.0,
-   "y64": 608,
-   "y": 9.5,
+   "y64": 438,
+   "y": 6.84375,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 524.83,
-   "hMaxReal": 798.486,
-   "sha256": "ad3f41b14bfcca52cae2b91858bceebcd47afd36a2fee3f4147856e999c549a0"
+   "hMinReal": 522.174,
+   "hMaxReal": 776.439,
+   "sha256": "7077865363d3406688f1d6c5a621f8956da9b9341a051708d06dcd87cbb9b7b2"
   },
   {
    "file": "tile_a1_z2_x4.raw",
    "anillo": 1,
    "x": 3118.0,
    "z": 7370.0,
-   "y64": -922,
-   "y": -14.40625,
+   "y64": -905,
+   "y": -14.140625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 500.924,
+   "hMinReal": 501.189,
    "hMaxReal": 565.736,
-   "sha256": "6e7c44a7dde5528e83f5355fc8ba94654e6601f0012f90b7d43225fb6bcf6da0"
+   "sha256": "237aef71e4197c7c0ebb7ed5cf8be72ca32d684ea2e58dc497a4c8191db9f3a5"
   },
   {
    "file": "tile_a1_z2_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 7370.0,
-   "y64": -1153,
-   "y": -18.015625,
+   "y64": -1148,
+   "y": -17.9375,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 497.314,
+   "hMinReal": 497.392,
    "hMaxReal": 578.283,
-   "sha256": "6ee3a8990209174d91036f6aaa43e19fb63e4623a2382cd78a6d2e9fadaf6ba8"
+   "sha256": "91504c2d0165998a06bfbc5248401272fdb5f3fa298be0c52c5f532c54771c30"
   },
   {
    "file": "tile_a1_z3_x0.raw",
    "anillo": 1,
    "x": -1682.0,
    "z": 8570.0,
-   "y64": 1265,
-   "y": 19.765625,
+   "y64": 1164,
+   "y": 18.1875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 535.096,
-   "hMaxReal": 782.549,
-   "sha256": "4219d398aae943200ade8ff422989cc21080416c6009c0e73303709417001082"
+   "hMinReal": 533.517,
+   "hMaxReal": 742.189,
+   "sha256": "4cdec3fe016b355b3dfb88b86f9bbeab566c735a120f8e40007426d46024f3e3"
   },
   {
    "file": "tile_a1_z3_x1.raw",
@@ -338,34 +338,34 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 522.002,
-   "hMaxReal": 724.205,
-   "sha256": "f26482b77c42921eedebd0042b5fd9d75c68680312548714402dea913a89dc14"
+   "hMaxReal": 723.502,
+   "sha256": "9566c36b2e2024ff8a6f7320c6aee7c0bc8b8d96a7e49fbecf60c22898696a5a"
   },
   {
    "file": "tile_a1_z3_x4.raw",
    "anillo": 1,
    "x": 3118.0,
    "z": 8570.0,
-   "y64": -630,
-   "y": -9.84375,
+   "y64": -606,
+   "y": -9.46875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 505.486,
-   "hMaxReal": 626.408,
-   "sha256": "5bd41480af868fdae78305a8d37091f46a5af5d010dfcc0880c97c85bd5582f7"
+   "hMinReal": 505.861,
+   "hMaxReal": 609.955,
+   "sha256": "4433fb61bff625a9d4f4c613e15eb0405cf72cae6ee12aad4bf4b71e4aa40667"
   },
   {
    "file": "tile_a1_z3_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 8570.0,
-   "y64": -676,
-   "y": -10.5625,
+   "y64": -677,
+   "y": -10.578125,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 504.768,
+   "hMinReal": 504.752,
    "hMaxReal": 647.439,
-   "sha256": "8a8e1fe30ad3bc5e51439dba721675b7377b3878015844feccc73db1da2f7a59"
+   "sha256": "2bfd7dae13c32d6874c0ed0d5e6dcea001a6313917617aacb5a841c7ddfbcafb"
   },
   {
    "file": "tile_a1_z4_x0.raw",
@@ -377,21 +377,21 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 544.517,
-   "hMaxReal": 821.846,
-   "sha256": "57920d8d88d0b8638022dc0bcaf7316ee289247d3528851a6b6067791d2e3a23"
+   "hMaxReal": 757.846,
+   "sha256": "b64f2b0b46ab680cc3ed1ac5eb45928b29f6292e8436cc1036953d5c541613f5"
   },
   {
    "file": "tile_a1_z4_x1.raw",
    "anillo": 1,
    "x": -482.0,
    "z": 9770.0,
-   "y64": 919,
-   "y": 14.359375,
+   "y64": 845,
+   "y": 13.203125,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 529.689,
-   "hMaxReal": 718.111,
-   "sha256": "b3c14d6279fdaa0034c32d52d5098ea8dffd389438b362c6a04a9b74de7b4805"
+   "hMinReal": 528.533,
+   "hMaxReal": 715.486,
+   "sha256": "db7d80d3e63fa9bd31893710c6f4afb3e1a0d00b0a747a18fc6f95186e272e16"
   },
   {
    "file": "tile_a1_z4_x2.raw",
@@ -404,20 +404,20 @@
    "res": 1025,
    "hMinReal": 525.408,
    "hMaxReal": 662.236,
-   "sha256": "1a2ba09095d2ed9841d5b2fb4104cc842f3ad526ea4d8e1cbee60c219b8b325b"
+   "sha256": "658b5a6471cf027a86b3dda23cbda42129cbddf799b16b5552fb66828c376dd5"
   },
   {
    "file": "tile_a1_z4_x3.raw",
    "anillo": 1,
    "x": 1918.0,
    "z": 9770.0,
-   "y64": 521,
-   "y": 8.140625,
+   "y64": 600,
+   "y": 9.375,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 523.471,
+   "hMinReal": 524.705,
    "hMaxReal": 683.752,
-   "sha256": "72144b8a8817e2fe18d6d1bca817167dec7a319130d0f29ca39340044d4d8481"
+   "sha256": "75942138f9228a25f8fc0abcb479d8abebfd38272bc31f762e90af39bc91b839"
   },
   {
    "file": "tile_a1_z4_x4.raw",
@@ -429,21 +429,21 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 518.986,
-   "hMaxReal": 692.236,
-   "sha256": "cf94a4b6394a165b18d481a4c87630e038d637ce14da2fa95639700487e84e17"
+   "hMaxReal": 684.846,
+   "sha256": "90abcc1b592e239efabee40069db27141559642d41190eb0764a49dc82264a31"
   },
   {
    "file": "tile_a1_z4_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 9770.0,
-   "y64": 1778,
-   "y": 27.78125,
+   "y64": 1347,
+   "y": 21.046875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 543.111,
-   "hMaxReal": 690.033,
-   "sha256": "1fd41f3f2a9e9c0d26aa4362330ecf0e2285534cd3046f4c3a9d24a21c9bdafb"
+   "hMinReal": 536.377,
+   "hMaxReal": 692.361,
+   "sha256": "f28813719249467a868aa77be12156129ec57f0afe4899b3c1b71c6442a2da1c"
   },
   {
    "file": "tile_a1_z5_x0.raw",
@@ -455,8 +455,8 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 555.314,
-   "hMaxReal": 683.189,
-   "sha256": "49a4f5f6e3ad913460b5dddef12fa54a7c75bdea6e4c9ef6e367b2095c3e5413"
+   "hMaxReal": 694.721,
+   "sha256": "46d5b05dfea5752f5cfd88d5d6fbfe14e3642ac293b6d18f5aa0f8056fcc19c6"
   },
   {
    "file": "tile_a1_z5_x1.raw",
@@ -468,60 +468,60 @@
    "ancho": 1200.0,
    "res": 1025,
    "hMinReal": 546.252,
-   "hMaxReal": 797.361,
-   "sha256": "ddbab741a9a2569abd97f95a7c1f84f87193d88d66efb9f43082b99cd35c050d"
+   "hMaxReal": 801.096,
+   "sha256": "f11293dfc95cacbfa3ae330e9fa3d6887c0aba12f3f011d99418fdfd2089b9ec"
   },
   {
    "file": "tile_a1_z5_x2.raw",
    "anillo": 1,
    "x": 718.0,
    "z": 10970.0,
-   "y64": 2885,
-   "y": 45.078125,
+   "y64": 3507,
+   "y": 54.796875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 560.408,
-   "hMaxReal": 808.564,
-   "sha256": "591fae8a8552d7d6df04d4a6e1b7492e0b9be1d46b757624a6df6a2693a0546f"
+   "hMinReal": 570.127,
+   "hMaxReal": 808.549,
+   "sha256": "3ca1a5f88954a1b78b4a27582faf5e358a3a922ca12358d8a7bacdd2ccc322f3"
   },
   {
    "file": "tile_a1_z5_x3.raw",
    "anillo": 1,
    "x": 1918.0,
    "z": 10970.0,
-   "y64": 1748,
-   "y": 27.3125,
+   "y64": 1747,
+   "y": 27.296875,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 542.642,
-   "hMaxReal": 805.205,
-   "sha256": "da8b70b0173e2e651b4e8f78898a3c425aa9e07ba399feeb41e32b0a5d7da170"
+   "hMinReal": 542.627,
+   "hMaxReal": 805.236,
+   "sha256": "a36b696ff935b2fa78cabe95e7af5fabf1be2c7365144b7540989ff71c622019"
   },
   {
    "file": "tile_a1_z5_x4.raw",
    "anillo": 1,
    "x": 3118.0,
    "z": 10970.0,
-   "y64": 1877,
-   "y": 29.328125,
+   "y64": 1793,
+   "y": 28.015625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 544.658,
-   "hMaxReal": 750.877,
-   "sha256": "8ebbcec5480cbcad934feebe44d351183d94aa48326f9facceca3fceffbea134"
+   "hMinReal": 543.346,
+   "hMaxReal": 750.971,
+   "sha256": "9db65711f7ffbb78968b1fabbfc9a89979d2944337d4bb2e43495e39a01478c5"
   },
   {
    "file": "tile_a1_z5_x5.raw",
    "anillo": 1,
    "x": 4318.0,
    "z": 10970.0,
-   "y64": 2825,
-   "y": 44.140625,
+   "y64": 3041,
+   "y": 47.515625,
    "ancho": 1200.0,
    "res": 1025,
-   "hMinReal": 559.471,
+   "hMinReal": 562.846,
    "hMaxReal": 775.361,
-   "sha256": "941f1a5fe72aa8d71c502765c21362cac9f008ba5d4ceaa52399a7af28052d7e"
+   "sha256": "c4bde1047201755503600fe5c2dc0740cb80bd004de55992581b6de7caf8f941"
   },
   {
    "file": "tile_a2_z0_x0.raw",
@@ -533,60 +533,60 @@
    "ancho": 3600.0,
    "res": 1025,
    "hMinReal": 549.033,
-   "hMaxReal": 1125.096,
-   "sha256": "edb42848845f6b9abb8e29c5871eccfbc4c35e9e814a2037f52a2d3913046276"
+   "hMaxReal": 1125.033,
+   "sha256": "da8fe9eea9a21c397da779a268c6bd4035628d2c0b1ecd2bb42a6de2b1a56ae1"
   },
   {
    "file": "tile_a2_z0_x1.raw",
    "anillo": 2,
    "x": -1682.0,
    "z": 1370.0,
-   "y64": 3587,
-   "y": 56.046875,
+   "y64": 3584,
+   "y": 56.0,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 571.377,
-   "hMaxReal": 1123.064,
-   "sha256": "816549223e1c7aeadd8e113ac086e600a20f6e4a8f2fc55791bc71d0ed4c2d3d"
+   "hMinReal": 571.33,
+   "hMaxReal": 1122.939,
+   "sha256": "4d8dfd1d08166daf8d4967ea1dcc76addb7651bb03698b9b1c8005f333f89d9c"
   },
   {
    "file": "tile_a2_z0_x2.raw",
    "anillo": 2,
    "x": 1918.0,
    "z": 1370.0,
-   "y64": 20197,
-   "y": 315.578125,
+   "y64": 20193,
+   "y": 315.515625,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 830.908,
-   "hMaxReal": 1054.314,
-   "sha256": "c64b95a40f2459c9c256a694d25b407138689331e65ef9c1a821923ba1213a82"
+   "hMinReal": 830.846,
+   "hMaxReal": 1054.268,
+   "sha256": "21a5dea9a60975ddcafa484b356e1b087ff6057a59434923945e00ebd9ee59fe"
   },
   {
    "file": "tile_a2_z0_x3.raw",
    "anillo": 2,
    "x": 5518.0,
    "z": 1370.0,
-   "y64": 23218,
-   "y": 362.78125,
+   "y64": 22679,
+   "y": 354.359375,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 878.111,
+   "hMinReal": 869.689,
    "hMaxReal": 1093.721,
-   "sha256": "bb0a36942ef6ef425a2f06626ad67bc976b13a8db4fb71a3dadd48a352e3648d"
+   "sha256": "5bda199fa282ed75ebeb7f2469c53677b3083ea2f89c25a1aeae6037aa2efd3f"
   },
   {
    "file": "tile_a2_z1_x0.raw",
    "anillo": 2,
    "x": -5282.0,
    "z": 4970.0,
-   "y64": 1221,
-   "y": 19.078125,
+   "y64": 1105,
+   "y": 17.265625,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 534.408,
+   "hMinReal": 532.596,
    "hMaxReal": 1117.189,
-   "sha256": "f3577e3fb8d3e5fd9a4fc4be2fdeed3bd3fbf0f26dd1ac9ddc018687938e4399"
+   "sha256": "dfb4eadd68d411655a28dbacff5aa8d10b455557819c91fd42da209367f01379"
   },
   {
    "file": "tile_a2_z1_x3.raw",
@@ -598,86 +598,86 @@
    "ancho": 3600.0,
    "res": 1025,
    "hMinReal": 490.924,
-   "hMaxReal": 1181.033,
-   "sha256": "f120f160ec9678d5ff77276bcfce67924b2cbef13d8398d57e6b732c55f0abc2"
+   "hMaxReal": 1181.127,
+   "sha256": "d91c7fcf274972241eca21d534159e53eb8ba405abcfbf6fb504ebf6f4f8d7c2"
   },
   {
    "file": "tile_a2_z2_x0.raw",
    "anillo": 2,
    "x": -5282.0,
    "z": 8570.0,
-   "y64": 3238,
-   "y": 50.59375,
+   "y64": 3008,
+   "y": 47.0,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 565.924,
+   "hMinReal": 562.33,
    "hMaxReal": 1043.439,
-   "sha256": "d6ff9386dd1f5406d98fa6440cb40460ecc2afbf3728233480162604781f47dd"
+   "sha256": "cc29953c650e3c6228ae36ac9fabe69a7535b16660191cad45dd3c330e4741c2"
   },
   {
    "file": "tile_a2_z2_x3.raw",
    "anillo": 2,
    "x": 5518.0,
    "z": 8570.0,
-   "y64": -1927,
-   "y": -30.109375,
+   "y64": -1870,
+   "y": -29.21875,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 485.221,
+   "hMinReal": 486.111,
    "hMaxReal": 776.408,
-   "sha256": "930740bcb59ba8f2870f78021f78de4861f4fc70cad0b50031d903550ab63f01"
+   "sha256": "e5e2023ddc4ff31f1b4e2a755ea9d7adbefd4e8c553ba264793f84a2ea0d3608"
   },
   {
    "file": "tile_a2_z3_x0.raw",
    "anillo": 2,
    "x": -5282.0,
    "z": 12170.0,
-   "y64": -8319,
-   "y": -129.984375,
+   "y64": -8320,
+   "y": -130.0,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 385.346,
-   "hMaxReal": 963.814,
-   "sha256": "331502742782391e3657561c8d7a57e1ab68b1feba38cd6944f72d3d4ba0d171"
+   "hMinReal": 385.33,
+   "hMaxReal": 983.689,
+   "sha256": "0f98e0331d95542c74eaf49932f98edaec2a3e559ff494a82a4ad29431f01341"
   },
   {
    "file": "tile_a2_z3_x1.raw",
    "anillo": 2,
    "x": -1682.0,
    "z": 12170.0,
-   "y64": -15673,
-   "y": -244.890625,
+   "y64": -15674,
+   "y": -244.90625,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 270.439,
-   "hMaxReal": 984.486,
-   "sha256": "c5e198289064068bd5a2aacb41c15a537ce673c1fd00617e74b2633c75881e3c"
+   "hMinReal": 270.424,
+   "hMaxReal": 984.471,
+   "sha256": "a33c20c626405c179f3400b16ff4cb3b422dba6333079938d67a73bf1e0e7d72"
   },
   {
    "file": "tile_a2_z3_x2.raw",
    "anillo": 2,
    "x": 1918.0,
    "z": 12170.0,
-   "y64": -14969,
-   "y": -233.890625,
+   "y64": -14970,
+   "y": -233.90625,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 281.439,
+   "hMinReal": 281.424,
    "hMaxReal": 941.721,
-   "sha256": "96d2259c006aa13f4e642fd6317b33ddbfcab99480ac620d4b1c4443dd0fece4"
+   "sha256": "23eb5b386017e55b78b2a8f02f3cac25400568920d77fa1aca55331d3b7e9d10"
   },
   {
    "file": "tile_a2_z3_x3.raw",
    "anillo": 2,
    "x": 5518.0,
    "z": 12170.0,
-   "y64": -6259,
-   "y": -97.796875,
+   "y64": -7123,
+   "y": -111.296875,
    "ancho": 3600.0,
    "res": 1025,
-   "hMinReal": 417.533,
-   "hMaxReal": 986.783,
-   "sha256": "5a46e9147ce8735298203cf68eba9823c0f398d3a204c88561d18c81216ac515"
+   "hMinReal": 404.033,
+   "hMaxReal": 986.767,
+   "sha256": "0734002f633c29dc0cddd08c45791405d214b627431255c493410dc05ab49ef2"
   }
  ]
 }

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 76357deb831f08140a12eb5254223e84
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 4
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/SnowFall.compute
+  uploadId: 922302

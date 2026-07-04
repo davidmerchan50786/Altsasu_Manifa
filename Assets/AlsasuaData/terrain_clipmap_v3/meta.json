@@ -1,0 +1,24 @@
+{
+ "descripcion": "Heightmap unificado true-UTM para clipmap GPU V3",
+ "crs": "ETRS89/UTM30N (EPSG:25830) via Unity XZ",
+ "escalaX": 1.0,
+ "origenUnity": {
+  "OX": 1918.0,
+  "OZ": 8570.0
+ },
+ "E0": 567951.0,
+ "N0": 4749902.0,
+ "halfExtent_m": 3600.0,
+ "lado_m": 7200.0,
+ "res": 4097,
+ "metrosPorPixel": 1.7578,
+ "datumYBase": 495.0,
+ "cuantoVertical": 0.015625,
+ "altoGlobal": 1023.984375,
+ "Z_MIN": 511.33,
+ "formula": "altitudReal = datumYBase + q/64 ; alturaUnity = altitudReal - Z_MIN",
+ "hMinReal": 497.391,
+ "hMaxReal": 1155.594,
+ "recortes_pct": 0.0,
+ "ordenFilas": "fila 0 = sur"
+}

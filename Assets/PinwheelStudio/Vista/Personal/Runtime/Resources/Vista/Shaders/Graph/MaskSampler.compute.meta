@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5e81a50b0399c72459c87d5027ca28d2
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 4
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/MaskSampler.compute
+  uploadId: 922302

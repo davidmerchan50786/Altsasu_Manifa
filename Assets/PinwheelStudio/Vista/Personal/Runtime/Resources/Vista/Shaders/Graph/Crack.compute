@@ -1,0 +1,112 @@
+#pragma exclude_renderers gles3
+#pragma kernel Init
+#pragma kernel Simulate
+#pragma kernel VertexGen
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include COMPUTE_COMMON_HLSL
+#include COMMON_DATA_TYPES_HLSL
+#include SAMPLING_HLSL
+#include GEOMETRY_HLSL
+
+struct CrackSample
+{
+	float isValid;
+	float2 position;
+	float2 lastPosition;
+	float2 initialDirection;
+	float2 direction;
+	float2 lastDirection;
+	float intensity;
+};
+
+RWStructuredBuffer<PositionSample> _InputPositions;
+RWStructuredBuffer<CrackSample> _Samples;
+RWStructuredBuffer<float3> _Vertices;
+
+Texture2D _HeightMask;
+float4 _HeightMask_TexelSize;
+
+RWTexture2D<float> _TrailMap;
+float _TrailMapResolution;
+float _TrailIntensity;
+float _TrailWidth;
+
+float _Iteration;
+float _Smoothness;
+float _Length;
+
+int _BaseIndex;
+
+[numthreads(8, 1, 1)]
+void Init(uint3 id: SV_DISPATCHTHREADID)
+{
+	PositionSample p = _InputPositions[id.x + _BaseIndex];
+	CrackSample cs = (CrackSample)0;
+	cs.isValid = p.isValid;
+	cs.position = p.position.xz;
+	cs.lastPosition = p.position.xz;
+
+	float3 normal = normalFromHeightMap(_HeightMask, _HeightMask_TexelSize, _SamplerLinearClamp, float3(1, 1, 1), p.position.xy);
+	float2 dir = normalize(normal.xz);
+	cs.initialDirection = dir.xy;
+	cs.direction = float2(0, 0);
+	cs.lastDirection = float2(0, 0);
+	_Samples[id.x + _BaseIndex] = cs;
+}
+
+[numthreads(8, 1, 1)]
+void Simulate(uint3 id: SV_DISPATCHTHREADID)
+{
+	CrackSample s = _Samples[id.x + _BaseIndex];
+	float lerpFactor = lerp(0.525, 0.625, _Smoothness);
+
+	float mask = _HeightMask.SampleLevel(_SamplerLinearClamp, s.position.xy, 0).r;
+	float3 normal = normalFromHeightMap(_HeightMask, _HeightMask_TexelSize, _SamplerLinearClamp, float3(1, 1, 1), s.position.xy);
+	float2 normalXZ = normalize(normal.xz);
+
+	float2 dir = normalize(lerp(normalXZ, s.initialDirection, lerpFactor));
+	float2 offset = dir * _HeightMask_TexelSize.xy * _Length;
+
+	s.lastDirection = s.direction;
+	s.direction = offset;
+
+	s.lastPosition = s.position;
+	s.position.x += offset.x;
+	s.position.y += offset.y;
+
+	s.isValid = s.isValid * (mask < 1) * (s.position.x >= 0) * (s.position.x <= 1) * (s.position.y >= 0) * (s.position.y <= 1);
+	s.intensity = _TrailIntensity;
+
+	_Samples[id.x + _BaseIndex] = s;
+}
+
+[numthreads(8, 1, 1)]
+void VertexGen(uint3 id: SV_DISPATCHTHREADID)
+{
+	int index = id.x + _BaseIndex;
+	CrackSample s = _Samples[index];
+	
+	float2 p0 = s.lastPosition;
+	float2 p1 = s.position;
+	float2 normal0 = normalize(float2(-s.lastDirection.y, s.lastDirection.x)) * _TrailWidth * _HeightMask_TexelSize.xy;
+	float2 normal1 = normalize(float2(-s.direction.y, s.direction.x)) * _TrailWidth * _HeightMask_TexelSize.xy;
+
+	normal0 *= s.intensity * s.isValid;
+	normal1 *= s.intensity * s.isValid;
+
+
+	float3 v0 = float3(p0.x + normal0.x, p0.y + normal0.y, s.intensity * s.isValid);
+	float3 v1 = float3(p1.x + normal1.x, p1.y + normal1.y, s.intensity * s.isValid);
+	float3 v2 = float3(p1.x - normal1.x, p1.y - normal1.y, s.intensity * s.isValid);
+	float3 v3 = float3(p0.x - normal0.x, p0.y - normal0.y, s.intensity * s.isValid);
+
+	uint baseIndex = index * 6;
+	_Vertices[baseIndex + 0] = v0;
+	_Vertices[baseIndex + 1] = v1;
+	_Vertices[baseIndex + 2] = v2;
+	
+	_Vertices[baseIndex + 3] = v0;
+	_Vertices[baseIndex + 4] = v2;
+	_Vertices[baseIndex + 5] = v3;
+}

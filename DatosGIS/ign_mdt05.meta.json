@@ -1,0 +1,12 @@
+{
+ "e0": 560015.0,
+ "n0": 4742450.0,
+ "cell": 5.0,
+ "ncols": 3175,
+ "nrows": 2981,
+ "z_min": 263.3190002441406,
+ "z_max": 1181.4119873046875,
+ "fuente": "IGN WCS Elevacion25830_5",
+ "orden_filas": "fila 0 = sur",
+ "registro": "centros de celda"
+}

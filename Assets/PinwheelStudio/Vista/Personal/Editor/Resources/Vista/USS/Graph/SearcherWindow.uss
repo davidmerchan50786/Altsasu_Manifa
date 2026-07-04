@@ -1,0 +1,15 @@
+.content
+{
+	border-width: 1px;
+	border-color: rgb(35,35,35);
+}
+
+VisualElement#searcherVisualContainer
+{
+	flex-basis: 50%;
+}
+
+VisualElement#unity-dragline-anchor
+{
+	display:none;
+}

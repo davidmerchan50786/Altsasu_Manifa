@@ -198,6 +198,7 @@ public class SistemaLogros : SingletonMono<SistemaLogros>
 
     void OnGUI()
     {
+        if (!ArranqueMundo.BaselineListo) return;
         if (_timerNotif <= 0f || _logroMostrado == null) return;
 
         if (_estiloNotif == null)

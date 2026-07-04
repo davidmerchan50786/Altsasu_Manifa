@@ -1,0 +1,20 @@
+{
+    "name": "Convai.Sample",
+    "rootNamespace": "Convai.Sample",
+    "references": [
+        "Convai.Domain",
+        "Convai.Runtime",
+        "Convai.Runtime.UI",
+        "Convai.Shared.Unity",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

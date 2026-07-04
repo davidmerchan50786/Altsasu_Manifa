@@ -1,0 +1,35 @@
+#pragma kernel Main
+#pragma multi_compile_local DATA_TYPE_INSTANCE_SAMPLE DATA_TYPE_POSITION_SAMPLE
+#pragma multi_compile_local _ FLIP_MASK
+
+#include "./Includes/ShaderIncludes.hlsl"
+#include COMMON_DATA_TYPES_HLSL
+#include SAMPLING_HLSL
+#include PATTERN_GENERATOR_HLSL
+
+#if DATA_TYPE_INSTANCE_SAMPLE
+	#define SAMPLE InstanceSample
+#else
+	#define SAMPLE PositionSample 
+#endif
+
+RWStructuredBuffer<SAMPLE> _SrcBuffer;
+Texture2D _MaskMap;
+int _BaseIndex;
+
+[numthreads(8, 1, 1)]
+void Main(uint3 id: SV_DISPATCHTHREADID)
+{
+	SAMPLE s = _SrcBuffer[id.x + _BaseIndex];
+
+	float fMask = _MaskMap.SampleLevel(_SamplerLinearClamp, s.position.xz, 0).r;
+	#if FLIP_MASK
+		fMask = 1 - fMask;
+	#endif
+
+	float f = simpleNoise_Scale10k(s.position.xz);
+	int isValid = f < fMask;
+	s.isValid *= isValid;
+
+	_SrcBuffer[id.x + _BaseIndex] = s;
+}

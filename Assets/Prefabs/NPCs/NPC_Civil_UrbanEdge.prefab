@@ -174,6 +174,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCCivil
   prefabModelo: {fileID: 1000013228589232, guid: 3bf11e47adbdd4542a4be54c81dac563, type: 3}
+  velocidadBase: 1.4
+  velocidadMaxima: 5.5
   radioDeambulacion: 50
   velocidadAndar: 1.4
   velocidadHuida: 4.2

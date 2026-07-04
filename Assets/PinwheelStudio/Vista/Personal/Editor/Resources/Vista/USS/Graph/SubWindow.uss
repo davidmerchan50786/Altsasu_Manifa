@@ -1,0 +1,171 @@
+﻿.subWindow
+{
+	width: 200px;
+	height: 200px;
+	position: absolute;
+}
+
+#mainContainer
+{
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	border-radius: 10px;
+}
+
+#border
+{
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	border-width: 1px;
+	border-color: rgb(88,88,88);
+	border-radius: 8px;
+}
+
+#resizerContainer
+{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+}
+
+#topContainer
+{
+	height: 25px;
+	background-color: rgb(64,64,64);
+	flex-direction: row;
+}
+
+#bodyContainer
+{
+	flex-grow: 1;
+	background-color: rgb(49,49,49);
+}
+
+#titleLabel
+{
+	margin: 4px;
+	-unity-text-align: middle-left;
+	width: auto;
+	flex-grow: 0;
+	-unity-font-style: bold;
+}
+
+#closeButton
+{
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	border-radius: 0px;
+	border-width: 0px;
+	margin: 0px;
+	background-color: rgb(64,64,64);
+}
+
+#closeButton:hover
+{
+	background-color: rgb(200,50,50);
+}
+
+#closeButton:active
+{
+	background-color: rgb(175,25,25);
+}
+
+
+.resizer
+{
+	position: absolute;
+}
+
+.resizer.left
+{
+	width: 8px;
+
+	left: -4px;
+	top: 4px;
+	bottom: 4px;
+	
+	cursor: resize-horizontal;
+}
+
+.resizer.left-top
+{
+	width: 8px;
+	height: 8px;
+
+	left: -4px;
+	top: -4px;
+	
+	cursor: resize-up-left;
+}
+
+.resizer.top
+{
+	height: 8px;
+
+	left: 4px;
+	top: -4px;
+	right: 4px;
+	 
+	cursor: resize-vertical;
+}
+
+.resizer.top-right
+{
+	width: 8px;
+	height: 8px;
+
+	top: -4px;
+	right: -4px;
+	 
+	cursor: resize-up-right;
+}
+
+.resizer.right
+{
+	width: 8px;
+
+	top: 4px;
+	bottom: 4px;
+	right: -4px;
+	 
+	cursor: resize-horizontal;
+}
+
+.resizer.right-bottom
+{
+	width: 8px;
+	height: 8px;
+
+	right: -4px;
+	bottom: -4px;
+	
+	cursor: resize-up-left;
+}
+
+.resizer.bottom
+{
+	height: 8px;
+
+	left: 4px;
+	right: 4px;
+	bottom: -4px;
+	
+	cursor: resize-vertical;
+}
+
+.resizer.bottom-left
+{
+	width: 8px;
+	height: 8px;
+
+	left: -4px;
+	bottom: -4px;
+	
+	cursor: resize-up-right;
+}

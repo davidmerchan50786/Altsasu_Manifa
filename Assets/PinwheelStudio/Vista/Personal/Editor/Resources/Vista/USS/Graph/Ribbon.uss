@@ -1,0 +1,18 @@
+.ribbon
+{
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+	-unity-text-align: middle-center;
+	background-color: rgb(16,16,32);
+	padding: 4px;
+	cursor: link;
+}
+
+.ribbon>.close-button
+{
+	align-self: flex-end;
+	background-color: rgba(0,0,0,0);
+	border-width: 0px;
+}

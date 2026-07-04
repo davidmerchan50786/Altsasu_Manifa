@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a41c5422025e6854c871799f28b5f8e9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Editor/Scripts/Graph/NodeEditors/PolygonMaskNodeEditor.cs
+  uploadId: 922302

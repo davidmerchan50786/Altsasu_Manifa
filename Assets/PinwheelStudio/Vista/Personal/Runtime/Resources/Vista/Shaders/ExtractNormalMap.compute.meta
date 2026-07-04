@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 947be76066905dc4c8e5a6fba561c4e0
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/ExtractNormalMap.compute
+  uploadId: 922302

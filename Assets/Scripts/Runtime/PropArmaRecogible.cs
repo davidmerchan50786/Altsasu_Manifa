@@ -119,8 +119,8 @@ public sealed class PropArmaRecogible : MonoBehaviour, IInteractable
         {
             SistemaArmasExtendido.TipoArma.Pistola   => new Color(0.20f, 0.20f, 0.20f),
             SistemaArmasExtendido.TipoArma.Escopeta  => new Color(0.35f, 0.22f, 0.10f),
-            SistemaArmasExtendido.TipoArma.Rifle     => new Color(0.18f, 0.25f, 0.18f),
-            SistemaArmasExtendido.TipoArma.Lanzagran => new Color(0.25f, 0.20f, 0.10f),
+            SistemaArmasExtendido.TipoArma.Fusil     => new Color(0.18f, 0.25f, 0.18f),
+            SistemaArmasExtendido.TipoArma.Molotov   => new Color(0.25f, 0.20f, 0.10f),
             _                                        => new Color(0.20f, 0.20f, 0.20f),
         };
         foreach (var r in _renderers)

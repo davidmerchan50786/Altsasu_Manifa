@@ -127,15 +127,21 @@ public class SistemaAtmosfera : MonoBehaviour
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  SISTEMA PARANOIA — nivel de paranoia global independiente
+//  SISTEMA PARANOIA — FACHADA (integrado 2026-06)
+//  Antes mantenía su PROPIO valor de paranoia → duplicaba a SistemaApoyoPopular
+//  (que es la fuente de verdad: tiene OnParanoiaCambia/Critica, umbrales y decay).
+//  Ahora delega TODO en SistemaApoyoPopular para que no haya dos paranoias que
+//  se desincronicen. Los sistemas nuevos (GuardiaCivil, coartada) ya usan la buena.
 // ─────────────────────────────────────────────────────────────────────────────
 public class SistemaParanoia : MonoBehaviour
 {
     public static SistemaParanoia Instance { get; private set; }
-    [Range(0f, 100f)] public float paranoia = 0f;
+
+    /// <summary>Lee la paranoia canónica de SistemaApoyoPopular.</summary>
+    public float paranoia => SistemaApoyoPopular.Instance != null ? SistemaApoyoPopular.Instance.paranoia : 0f;
 
     void Awake() { if (Instance && Instance != this) { Destroy(this); return; } Instance = this; }
 
-    public void SumarParanoia(float v) => paranoia = Mathf.Clamp(paranoia + v, 0f, 100f);
-    public void RestarParanoia(float v) => paranoia = Mathf.Clamp(paranoia - v, 0f, 100f);
+    public void SumarParanoia(float v)  => SistemaApoyoPopular.Instance?.SumarParanoia(v);
+    public void RestarParanoia(float v) => SistemaApoyoPopular.Instance?.RestarParanoia(v);
 }

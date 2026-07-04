@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1671d888bdad8d847a993a46135ee034, type: 3}
+  m_Name: ShowcaseEyeContactConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Convai.ShowcaseCamera.ShowcaseEyeContactConfig
+  leftEyeBoneName: CC_Base_L_Eye
+  rightEyeBoneName: CC_Base_R_Eye
+  eyeForwardAxis: 3
+  eyeUpAxis: 4
+  gazeTrackingSmoothTime: 0.055
+  disableVergenceForCameraTargets: 1
+  disableVergenceDuringLookAway: 1
+  gazeMaxTrackingSpeed: 220
+  maxHorizontalAngleDeg: 32
+  maxVerticalAngleDeg: 20
+  masterGazeWeight: 1
+  enableVergence: 1
+  enableSaccades: 1
+  saccadeMeanInterval: 3.2
+  saccadeIntervalStdDev: 0.85
+  saccadeMaxAmplitudeDeg: 2.1
+  saccadeDriftReturnSpeed: 1.1
+  enableMicroTremor: 1
+  microTremorAmplitudeDeg: 0.035
+  microTremorFrequency: 24
+  enableBlinks: 1
+  blinkRatePerMinute: 14
+  blinkIntervalStdDev: 1.1
+  blinkCloseDuration: 0.06
+  blinkOpenDuration: 0.14
+  blinkLeftBlendshapeName: Eye_Blink_L
+  blinkRightBlendshapeName: Eye_Blink_R
+  enableEyelidFollow: 1
+  eyelidLookUpStrength: 0.18
+  eyelidLookDownStrength: 0.16
+  eyelidUpLeftBlendshapeName: Eye_Wide_L
+  eyelidUpRightBlendshapeName: Eye_Wide_R
+  eyelidDownLeftBlendshapeName: Eye_Squint_L
+  eyelidDownRightBlendshapeName: Eye_Squint_R
+  enableDirectionalCorrectives: 1
+  horizontalCorrectiveStrength: 0.14
+  verticalCorrectiveStrength: 0.1
+  lookAwayCorrectiveMultiplier: 0
+  lookLeftOnLeftEyeBlendshapeName: Eye_L_Look_L
+  lookLeftOnRightEyeBlendshapeName: Eye_R_Look_L
+  lookRightOnLeftEyeBlendshapeName: Eye_L_Look_R
+  lookRightOnRightEyeBlendshapeName: Eye_R_Look_R
+  lookUpOnLeftEyeBlendshapeName: Eye_L_Look_Up
+  lookUpOnRightEyeBlendshapeName: Eye_R_Look_Up
+  lookDownOnLeftEyeBlendshapeName: Eye_L_Look_Down
+  lookDownOnRightEyeBlendshapeName: Eye_R_Look_Down
+  enableLookAway: 0
+  lookAwayMeanInterval: 9
+  lookAwayIntervalStdDev: 1.6
+  lookAwayHoldDuration: 0.35
+  lookAwayHoldDurationStdDev: 0.12
+  lookAwayHorizontalAngleDeg: 4.5
+  lookAwayMinHorizontalAngleDeg: 1.5
+  lookAwayVerticalRangeDeg: 0.85
+  lookAwaySafeMarginDeg: 12
+  lookAwayTargetDistance: 8
+  lookAwaySmoothTime: 0.12

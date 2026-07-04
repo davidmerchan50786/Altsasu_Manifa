@@ -255,6 +255,14 @@ public class HUDCanvas : MonoBehaviour
 
     void Update()
     {
+        // Ocultar el HUD completo hasta que el mundo esté listo.
+        // UGUI se dibuja POR ENCIMA de OnGUI (incluyendo PantallaCarga),
+        // así que sin este gate el HUD aparece superpuesto sobre la pantalla de carga.
+        bool mundoListo = ArranqueMundo.BaselineListo;
+        if (_canvas != null && _canvas.enabled != mundoListo)
+            _canvas.enabled = mundoListo;
+        if (!mundoListo) return;
+
         ActualizarVida();
         ActualizarDinero();
         ActualizarApoyo();

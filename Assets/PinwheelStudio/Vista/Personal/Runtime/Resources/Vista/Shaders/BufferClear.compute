@@ -1,0 +1,15 @@
+#pragma kernel Main
+
+RWStructuredBuffer<float> _Buffer;
+int _BaseIndex;
+int _Count;
+
+[numthreads(8, 1, 1)]
+void Main(uint3 id: SV_DISPATCHTHREADID)
+{
+	int elementIndex = _BaseIndex.x + (int)id.x;
+	if (elementIndex < _Count) 
+	{
+		_Buffer[elementIndex] = 0;
+	}
+}

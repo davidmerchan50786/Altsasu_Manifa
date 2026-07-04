@@ -1,0 +1,96 @@
+#pragma exclude_renderers gles3
+#pragma kernel Init
+#pragma kernel SumValue1
+#pragma kernel SumValue2
+#pragma kernel WriteValue
+#pragma kernel Finalize
+
+#include "../Includes/Sampling.hlsl"
+
+Texture2D<float> _InputTex;
+RWTexture2D<float4> _TempTex;
+RWTexture2D<float> _OutputTex;
+float _OutputResolution;
+float _Epsilon;
+uint _Iteration;
+
+[numthreads(8, 1, 8)]
+void Init(uint3 id : SV_DispatchThreadID)
+{
+	uint2 pixelPos = id.xz;
+	float2 uv = float2(
+		pixelPos.x / (_OutputResolution - 1),
+		pixelPos.y / (_OutputResolution - 1));
+
+	float input = clamp(_InputTex.SampleLevel(_SamplerLinearClamp, uv, 0),0,1);
+	float v = clamp(ceil(input), 0, 1);
+	_TempTex[pixelPos] = float4(v, v, v, v);
+	//_OutputTex[pixelPos]=input;
+}
+
+[numthreads(8, 1, 8)]
+void SumValue1(uint3 id : SV_DispatchThreadID)
+{
+	uint2 pixelPos = id.xz;
+	float2 uv = float2(
+		pixelPos.x * 1.0 / (_OutputResolution - 1),
+		pixelPos.y * 1.0 / (_OutputResolution - 1));
+
+	float centerValue = _TempTex[pixelPos].r;
+	float leftValue = _TempTex[uint2(pixelPos.x - 1, pixelPos.y)].r;
+	float topValue = _TempTex[uint2(pixelPos.x, pixelPos.y + 1)].r;
+	float rightValue = _TempTex[uint2(pixelPos.x + 1, pixelPos.y)].r;
+	float bottomValue = _TempTex[uint2(pixelPos.x, pixelPos.y - 1)].r;
+
+	float hasCenter = clamp(ceil(centerValue), 0, 1);
+	float hasLeft = clamp(ceil(leftValue), 0, 1);
+	float hasTop = clamp(ceil(topValue), 0, 1);
+	float hasRight = clamp(ceil(rightValue), 0, 1);
+	float hasBottom = clamp(ceil(bottomValue), 0, 1);
+
+	float v = min(1.0, hasCenter + hasLeft + hasTop + hasRight + hasBottom);
+
+	_TempTex[pixelPos] = float4(centerValue, v, 0, 0);
+}
+
+[numthreads(8, 1, 8)]
+void SumValue2(uint3 id : SV_DispatchThreadID)
+{
+	uint2 pixelPos = id.xz;
+	float2 uv = float2(
+		pixelPos.x * 1.0 / (_OutputResolution - 1),
+		pixelPos.y * 1.0 / (_OutputResolution - 1));
+
+	float centerValue = _TempTex[pixelPos].r;
+	float leftTopValue = _TempTex[uint2(pixelPos.x - 1, pixelPos.y + 1)].r;
+	float topRightValue = _TempTex[uint2(pixelPos.x + 1, pixelPos.y + 1)].r;
+	float rightBottomValue = _TempTex[uint2(pixelPos.x + 1, pixelPos.y - 1)].r;
+	float bottomLeftValue = _TempTex[uint2(pixelPos.x - 1, pixelPos.y - 1)].r;
+
+	float hasCenter = clamp(ceil(centerValue), 0, 1);
+	float hasLeftTop = clamp(ceil(leftTopValue), 0, 1);
+	float hasTopRight = clamp(ceil(topRightValue), 0, 1);
+	float hasRightBottom = clamp(ceil(rightBottomValue), 0, 1);
+	float hasBottomLeft = clamp(ceil(bottomLeftValue), 0, 1);
+
+	float v = min(1.0, hasCenter + hasLeftTop + hasTopRight + hasRightBottom + hasBottomLeft);
+
+	_TempTex[pixelPos] = float4(centerValue, v, 0, 0);
+}
+
+[numthreads(8, 1, 8)]
+void WriteValue(uint3 id : SV_DispatchThreadID)
+{
+	uint2 pixelPos = id.xz;
+	float4 pixel = _TempTex[pixelPos];
+	float4 value = float4(pixel.x + pixel.y, 0, 0, 0);
+	_TempTex[pixelPos] = value;
+}
+
+[numthreads(8, 1, 8)]
+void Finalize(uint3 id : SV_DispatchThreadID)
+{
+	uint2 pixelPos = id.xz;
+	float v = _TempTex[pixelPos].r *_Epsilon;
+	_OutputTex[pixelPos] = clamp(v,0,1);
+}

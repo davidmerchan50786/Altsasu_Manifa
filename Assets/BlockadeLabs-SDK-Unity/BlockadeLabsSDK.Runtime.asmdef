@@ -1,0 +1,55 @@
+{
+    "name": "BlockadeLabsSDK.Runtime",
+    "rootNamespace": "BlockadeLabsSDK.Runtime",
+    "references": [
+        "Unity.TextMeshPro",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.pusher.pusherwebsocketunity",
+            "expression": "2.1.0",
+            "define": "PUSHER_PRESENT"
+        },
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "10.4.0",
+            "define": "UNITY_HDRP"
+        },
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "",
+            "define": "UNITY_TMPRO"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "UNITY_TMPRO"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "",
+            "define": "UNITY_UI"
+        },
+        {
+            "name": "com.unity.modules.unitywebrequest",
+            "expression": "",
+            "define": "UNITY_WEB_REQUEST"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "UNITY_INPUT_SYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

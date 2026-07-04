@@ -108,6 +108,11 @@ public class ControladorVehiculoJugador : VehiculoBase, IInteractable
     public static event System.Action<ControladorVehiculoJugador> OnJugadorEntro;
     public static event System.Action<ControladorVehiculoJugador> OnJugadorSalio;
 
+    /// <summary>Permiten a otros controladores (p.ej. ControladorVehiculoSimple) notificar
+    /// entrada/salida del jugador; un evento solo puede invocarse desde su clase declarante.</summary>
+    public static void NotificarEntradaExterna(ControladorVehiculoJugador v = null) => OnJugadorEntro?.Invoke(v);
+    public static void NotificarSalidaExterna(ControladorVehiculoJugador v = null) => OnJugadorSalio?.Invoke(v);
+
     // ── Salud del vehículo ────────────────────────────────────────────────────
     // IDamageable (Vida, VidaMax, EstaMuerto, RecibirDano, Curar) → heredados de VehiculoBase
     // vidaMaxima, _vida, _destruido → en VehiculoBase (SerializeField = 100 por defecto;

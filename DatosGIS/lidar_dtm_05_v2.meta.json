@@ -1,0 +1,12 @@
+{
+ "e0": 566443.0,
+ "n0": 4748482.0,
+ "cell": 0.5,
+ "ncols": 6032,
+ "nrows": 5680,
+ "z_min": 504.1026306152344,
+ "z_max": 632.1376342773438,
+ "fuente": "PNOA LIDAR local clase 2, 23 LAZ, media por celda, despike 2.5 m + relleno IDENA 2 m",
+ "orden_filas": "fila 0 = sur",
+ "registro": "centros de celda"
+}

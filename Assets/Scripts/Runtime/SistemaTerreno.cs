@@ -421,6 +421,8 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
     void AsegurarCapas8Biomas()
     {
+        AsegurarMaterialHDRP(); // garantiza shader HDRP antes de tocar capas
+
         // Textura base de fallback por bioma (color sólido)
         var colores = new Color[]
         {
@@ -531,15 +533,55 @@ public class SistemaTerreno : SingletonMono<SistemaTerreno>
 
     static Texture2D TryLoadTexture2D(string relPath)
     {
-        // Intentar Resources.Load (si está en una carpeta Resources)
+        // 1) Resources.Load (funciona en runtime si la textura está en una carpeta Resources/)
         var tex = Resources.Load<Texture2D>(relPath);
         if (tex != null) return tex;
-        // Intentar AssetDatabase en editor vía path
+
+        // 2) AssetDatabase en editor (Assets/Textures_AAA/<relPath>.png)
 #if UNITY_EDITOR
         tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
             "Assets/Textures_AAA/" + relPath + ".png");
+        if (tex != null) return tex;
+
+        // 3) Variantes de extensión/subcarpeta comunes
+        string[] exts = { ".png", ".jpg", ".tga", ".exr" };
+        string[] bases = {
+            "Assets/Textures_AAA/",
+            "Assets/Textures_AAA/TerrainLayers/",
+            "Assets/Textures/",
+        };
+        foreach (var b in bases)
+            foreach (var e in exts)
+            {
+                tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(b + relPath + e);
+                if (tex != null) return tex;
+                // Sin subcarpeta — solo el nombre de archivo
+                string fileName = System.IO.Path.GetFileName(relPath);
+                tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(b + fileName + e);
+                if (tex != null) return tex;
+            }
 #endif
-        return tex;
+        return null;
+    }
+
+    /// <summary>
+    /// Garantiza que el Terrain use el shader HDRP/TerrainLit.
+    /// Si materialTemplate es null o tiene shader no-HDRP, lo limpia para que
+    /// Unity aplique automáticamente el shader de terreno correcto del pipeline.
+    /// </summary>
+    void AsegurarMaterialHDRP()
+    {
+        if (_terrain == null) return;
+        var mat = _terrain.materialTemplate;
+        if (mat == null) return; // null = Unity gestiona el shader → correcto
+        // Si el shader no es HDRP, limpiar para que HDRP lo gestione automáticamente
+        bool esHDRP = mat.shader != null && mat.shader.name.Contains("HDRP");
+        if (!esHDRP)
+        {
+            AlsasuaLogger.Warn("Terreno",
+                $"materialTemplate '{mat.shader?.name}' no es HDRP → se limpia para usar HDRP/TerrainLit automático.");
+            _terrain.materialTemplate = null;
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════

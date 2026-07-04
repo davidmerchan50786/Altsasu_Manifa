@@ -1,0 +1,19 @@
+{
+    "name": "VoxelLabs.UltimatePreview.CustomPreview",
+    "rootNamespace": "",
+    "references": [
+        "GUID:faf46303110344049ba482e786eac39d",
+        "GUID:eee97d8d6772d904786a1b8ef0ce222d"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

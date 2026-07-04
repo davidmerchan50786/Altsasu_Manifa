@@ -81,6 +81,8 @@ public sealed class StreamerMundoEstatico : MonoBehaviour
         public LODGroup   lod;                    // si lo tiene: forzamos el LOD más bajo en impostor
         public float3     centro;                 // centro de bounds (estático) para banding
         public byte       estado;                 // 0=Activo 1=Impostor 2=Oculto
+        public long       osmId;                 // sufijo numérico del nombre → clave en ImpostorAtlasSO; 0 si no aplica
+        public ImpostorBillboard impostor;       // billboard activo (solo en banda 1 con atlas disponible)
     }
 
     readonly List<Entrada> _ent = new(4096);
@@ -249,6 +251,7 @@ public sealed class StreamerMundoEstatico : MonoBehaviour
                 lod        = tr.GetComponentInChildren<LODGroup>(true),
                 centro     = new float3(b.center.x, b.center.y, b.center.z),
                 estado     = 0,   // empieza Activo; la 1ª clasificación lo corrige
+                osmId      = ExtraerOsmId(tr.name),
             });
             huboAltas = true;
 
@@ -330,21 +333,47 @@ public sealed class StreamerMundoEstatico : MonoBehaviour
         switch (estado)
         {
             case 0: // Activo — detalle completo, render ON, sombras originales
+                LiberarImpostor(e);
                 FijarRender(e, false);
                 RestaurarSombras(e);
                 if (e.lod != null) e.lod.ForceLOD(-1);   // automático por distancia
                 break;
 
             case 1: // Impostor-lite — visible pero barato: render ON, sin sombras, LOD mínimo
-                FijarRender(e, false);
+                if (e.impostor == null) AdquirirImpostor(e);
+                // Si el impostor se adquirió: malla oculta, billboard la reemplaza.
+                // Si no hay atlas/entrada: malla en LOD mínimo sin sombras (fallback).
+                FijarRender(e, e.impostor != null);
                 FijarSombras(e, ShadowCastingMode.Off);
                 if (e.lod != null && e.lod.lodCount > 0) e.lod.ForceLOD(e.lod.lodCount - 1);
                 break;
 
             default: // Oculto — mata el draw call, NO toca el GameObject (colliders/NavMesh vivos)
+                LiberarImpostor(e);
                 FijarRender(e, true);
                 break;
         }
+    }
+
+    static void AdquirirImpostor(Entrada e)
+    {
+        if (e.osmId == 0 || GestorImpostores.Instance == null) return;
+        e.impostor = GestorImpostores.Instance.Adquirir(e.osmId, e.go.transform);
+    }
+
+    static void LiberarImpostor(Entrada e)
+    {
+        if (e.impostor == null) return;
+        GestorImpostores.Instance?.Liberar(e.impostor);
+        e.impostor = null;
+    }
+
+    // Extrae el ID OSM del sufijo numérico del nombre (ej: "E_resid_12345678" → 12345678).
+    static long ExtraerOsmId(string nombre)
+    {
+        int i = nombre.LastIndexOf('_');
+        if (i >= 0 && long.TryParse(nombre.Substring(i + 1), out long id)) return id;
+        return 0;
     }
 
     // forceRenderingOff: deja de dibujar sin desactivar el componente ni el GameObject.

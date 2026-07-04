@@ -34,10 +34,34 @@ Es la pieza que respaldará `ServicioTerreno.AlturaMundo` con el clipmap.
 2. Crea un GameObject vacío, añade `ClipmapTerrenoV3`, asigna `jugador`.
 3. Play: verás la malla del clipmap siguiendo al jugador (plana hasta la fase 3).
 
-## Pendiente (fase 3-6, en el ADR) — necesita Unity para validar
-- **Shader de displacement** (ShaderGraph HDRP): en VERTEX hace `SampleLevel` del
-  R16 con `worldXZ = vertex.xz + _ClipmapOrigen.xz` → `altitud = BASE + q/64`,
-  `Y = altitud - Z_MIN`. Importar el `.r16` como Texture2D R16 (point, clamp).
+## Fase 3 — displacement GPU: PIEZAS ESCRITAS ✓ (solo falta cablear el grafo)
+Ya no hay que escribir HLSL ni C# a ciegas. Lo escrito y listo:
+- `ClipmapDisplacement.hlsl` — Custom Function (VERTEX): muestrea el R16, decodifica
+  `Y = Base + q/64 - ZMin` (idéntico al CPU y al `.py`) y **reconstruye la normal**
+  por diferencias centrales (4 taps) → sombreado AAA sin bake de normalmap.
+- `CargadorTexturaHeightmapV3.cs` — sube el `.r16` a `Texture2D R16` (lineal, clamp,
+  bilineal) y fija las constantes del material desde `meta.json`. Gemelo GPU del
+  muestreador CPU → la malla y `AlturaMundo()` coinciden bit a bit.
+
+### Receta del Shader Graph (HDRP/Lit, ~5 min en el editor)
+1. Crea un *Lit Shader Graph*. Propiedades expuestas (Reference EXACTO):
+   `_Height` (Texture2D), `_ClipmapOrigen` (Vector2), y Floats `_Half _OX _OZ _Base
+   _ZMin _Res`. Marca `_Height` como **Linear**, wrap **Clamp**, filter **Bilinear**.
+2. Añade un nodo **Custom Function** → *File* → `ClipmapDisplacement.hlsl`, nombre
+   `ClipmapDisplace`. Entradas en este orden: `PosOS`(Position **Object**),
+   `OrigenXZ`(_ClipmapOrigen), `Height`(Texture2D), `SS`(Sampler State), `_Half _OX
+   _OZ _Base _ZMin _Res`. Salidas: `OutPosOS`(Vector3), `OutNormalOS`(Vector3).
+3. Conecta `OutPosOS` → **Vertex Position**, `OutNormalOS` → **Vertex Normal**.
+4. Crea un material de ese shader y asígnalo a `ClipmapTerrenoV3.material`.
+
+### Cableado runtime (2 líneas en `ClipmapTerrenoV3`)
+- En `OnEnable`, tras asignar el material:
+  `GetComponent<CargadorTexturaHeightmapV3>()?.Configurar(material);`
+- En `Recolocar`, descomenta:
+  `material.SetVector("_ClipmapOrigen", new Vector4(x, 0, z, 0));`
+  (el shader solo usa .xy = (x,z), que es el origen del GameObject).
+
+## Pendiente (fase 4-6, en el ADR) — necesita Unity para validar
 - **ServicioTerreno**: nueva `FuenteTerreno.ClipmapV3` cuyo `AlturaMundo` delega en
   `MuestreadorHeightmapV3` (ya hecho) → mismo contrato `ITerrainService`, edificios /
   NavMesh / árboles / Cesium **no cambian**.
@@ -48,6 +72,7 @@ Es la pieza que respaldará `ServicioTerreno.AlturaMundo` con el clipmap.
   idempotentes `min()`.
 
 ## Por qué staged
-El displacement HDRP por vertex-texture-fetch y la integración con ServicioTerreno
-hay que probarlos en el editor; escritos a ciegas llegarían rotos. La geometría
-(esto) es determinista y sí puede darse correcta sin Unity.
+La integración con ServicioTerreno y el grafo HDRP hay que **validarlos** en el editor.
+Pero el HLSL, el cargador GPU, el muestreador CPU y la geometría son deterministas y
+están escritos de forma correcta y verificable sin Unity; la decodificación es la
+misma fórmula en los tres sitios (`.py`, CPU, GPU), así que no pueden desincronizarse.

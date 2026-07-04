@@ -1,0 +1,275 @@
+#pragma exclude_renderers gles3
+
+#pragma kernel InitWorldData
+#pragma kernel OutputHeight01
+#pragma kernel ThermalErosionPhase0
+#pragma kernel ThermalErosionPhase1
+#pragma kernel ThermalErosionPhase2
+#pragma kernel Upsampling
+#pragma kernel OutputDeposit01
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include COMPUTE_COMMON_HLSL
+#include SAMPLING_HLSL
+
+Texture2D<float> _InputHeight01;
+Texture2D<float> _InputHardness01;
+RWTexture2D<float4> _WorldDataCM; //height, temp, temp, temp
+RWTexture2D<float4> _SimData0; //outflowVH || (deltaHeight, temp, temp, temp) for upsampling
+RWTexture2D<float4> _SimData1; //outflowDiag
+//RWTexture2D<float4> _SimData2; //(flowVelocity.xy, deposit, erosionMask)
+
+RWTexture2D<float> _OutputRT01;
+
+float2 _WorldDataResolution;
+float2 _UpsampleResolution;
+float3 _WorldSizeCM;
+float _SedimentTransportConstant;
+float _ThermalErosionDeltaHeightThreshold;
+
+float _ErosionRate;
+float _SineTalus;
+
+#define MARGIN float2(4,4)
+#define PX_POS id.xz + MARGIN
+
+#define PX_LEFT float2(id.x-1, id.z)+ MARGIN
+#define PX_TOP float2(id.x, id.z+1)+ MARGIN
+#define PX_RIGHT float2(id.x+1, id.z)+ MARGIN
+#define PX_BOTTOM float2(id.x, id.z-1)+ MARGIN
+
+#define PX_LEFT_TOP float2(id.x-1, id.z+1)+ MARGIN
+#define PX_TOP_RIGHT float2(id.x+1, id.z+1)+ MARGIN
+#define PX_RIGHT_BOTTOM float2(id.x+1, id.z-1)+ MARGIN
+#define PX_BOTTOM_LEFT float2(id.x-1, id.z-1)+ MARGIN
+
+#define PX_MIN_NO_MARGIN float2(0, 0)
+#define PX_MAX_NO_MARGIN float2(_WorldDataResolution.x - 1, _WorldDataResolution.y - 1)
+
+#define PX_LEFT_CLAMP clamp(float2(id.x-1, id.z), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_TOP_CLAMP clamp(float2(id.x, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_RIGHT_CLAMP clamp(float2(id.x+1, id.z), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_BOTTOM_CLAMP clamp(float2(id.x, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+
+#define PX_LEFT_TOP_CLAMP clamp(float2(id.x-1, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_TOP_RIGHT_CLAMP clamp(float2(id.x+1, id.z+1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_RIGHT_BOTTOM_CLAMP clamp(float2(id.x+1, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+#define PX_BOTTOM_LEFT_CLAMP clamp(float2(id.x-1, id.z-1), PX_MIN_NO_MARGIN, PX_MAX_NO_MARGIN) + MARGIN
+
+#define WATER_OUTFLOW_VH_CM _SimData0
+#define WATER_OUTFLOW_DIAG_CM _SimData1
+#define FLOW_VELOCITY_CM _SimData2
+
+#define SEDIMENT_OUTFLOW_VH_CM _SimData0
+#define SEDIMENT_OUTFLOW_DIAG_CM _SimData1
+
+#define THERMAL_EROSION_OUTFLOW_VH_CM _SimData0
+#define THERMAL_EROSION_OUTFLOW_DIAG_CM _SimData1
+
+#define WORLD_POSITION _SimData2
+
+[numthreads(8, 1, 8)]
+void InitWorldData(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+
+
+	float hCM = _InputHeight01.SampleLevel(_SamplerLinearClamp, uv, 0) * _WorldSizeCM.y;
+	float4 upsampledWorldData = _SimData0[PX_POS];
+
+	float4 worldData = float4(0, 0, 0, 0);
+	worldData.r = hCM + upsampledWorldData.r;
+	worldData.g = upsampledWorldData.g;
+	worldData.b = 0;
+	worldData.a = 0;
+	_WorldDataCM[PX_POS] = worldData;
+}
+
+[numthreads(8, 1, 8)]
+void OutputHeight01(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = _WorldDataCM[PX_POS];
+	float hCM = data.r + data.g;
+	float h01 = hCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS - MARGIN] = h01;
+}
+
+[numthreads(8, 1, 8)]
+void ThermalErosionPhase0(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+
+	float2 uv1 = uv * 2 - 1;
+	float fadeX = 1 - pow(abs(uv1.x), 8);
+	float fadeY = 1 - pow(abs(uv1.y), 8);
+	float fade = fadeX * fadeY;
+	float erosionMask = 1 - _InputHardness01.SampleLevel(_SamplerLinearClamp, uv, 0);
+	float erodedAmount = _ErosionRate * erosionMask;
+
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	dataSrc.r -= erodedAmount;
+	dataSrc.g += erodedAmount;
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void ThermalErosionPhase1(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	float hSrc = dataSrc.r + dataSrc.g;
+	float threshold = _ThermalErosionDeltaHeightThreshold;
+	float f = _SedimentTransportConstant * DT;
+
+	uint3 minId = uint3(0, 0, 0);
+	uint3 maxId = uint3(_WorldDataResolution.x - 1, 0, _WorldDataResolution.y - 1);
+
+	float4 dataL = _WorldDataCM[PX_LEFT];
+	float dhL = hSrc - dataL.r - dataL.g - threshold;
+	float fL = max(0, dhL * f) * (id.x > minId.x);
+
+	float4 dataT = _WorldDataCM[PX_TOP];
+	float dhT = hSrc - dataT.r - dataT.g - threshold;
+	float fT = max(0, dhT * f) * (id.z < maxId.z);
+
+	float4 dataR = _WorldDataCM[PX_RIGHT];
+	float dhR = hSrc - dataR.r - dataR.g - threshold;
+	float fR = max(0, dhR * f) * (id.x < maxId.x);
+
+	float4 dataB = _WorldDataCM[PX_BOTTOM];
+	float dhB = hSrc - dataB.r - dataB.g - threshold;
+	float fB = max(0, dhB * f) * (id.z > minId.z);
+
+	float4 dataLT = _WorldDataCM[PX_LEFT_TOP];
+	float dhLT = hSrc - dataLT.r - dataLT.g - threshold;
+	float fLT = max(0, dhLT * f) * (id.x > minId.x) * (id.z < maxId.z);
+
+	float4 dataTR = _WorldDataCM[PX_TOP_RIGHT];
+	float dhTR = hSrc - dataTR.r - dataTR.g - threshold;
+	float fTR = max(0, dhTR * f) * (id.x < maxId.x) * (id.z < maxId.z);
+
+	float4 dataRB = _WorldDataCM[PX_RIGHT_BOTTOM];
+	float dhRB = hSrc - dataRB.r - dataRB.g - threshold;
+	float fRB = max(0, dhRB * f) * (id.x < maxId.x) * (id.z > minId.z);
+
+	float4 dataBL = _WorldDataCM[PX_BOTTOM_LEFT];
+	float dhBL = hSrc - dataBL.r - dataBL.g - threshold;
+	float fBL = max(0, dhBL * f) * (id.x > minId.x) * (id.z > minId.z);
+
+	float fSum = 0;
+	fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+
+	float fScale = 0;
+	if (fSum > 0)
+	{
+		fScale = min(1, dataSrc.g / fSum);
+	}
+
+	float4 fVH = float4(fL, fT, fR, fB) * fScale; //channel order is important for inflow
+	THERMAL_EROSION_OUTFLOW_VH_CM[PX_POS] = fVH;
+
+	float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+	THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_POS] = fDiag;
+
+	//temporary write to B channel, as other threads may still reading from G
+	dataSrc.b = fSum * fScale;
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+[numthreads(8, 1, 8)]
+void ThermalErosionPhase2(uint3 id : SV_DispatchThreadID)
+{
+	//Apply height decrement and reset temp channel
+	float4 dataSrc = _WorldDataCM[PX_POS];
+	dataSrc.g -= dataSrc.b;
+	dataSrc.g = max(0, dataSrc.g); //should not be negative, but just in case
+	dataSrc.b = 0;
+
+	float4 ofL = THERMAL_EROSION_OUTFLOW_VH_CM[PX_LEFT];
+	float4 ofT = THERMAL_EROSION_OUTFLOW_VH_CM[PX_TOP];
+	float4 ofR = THERMAL_EROSION_OUTFLOW_VH_CM[PX_RIGHT];
+	float4 ofB = THERMAL_EROSION_OUTFLOW_VH_CM[PX_BOTTOM];
+
+	float4 ofLT = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_LEFT_TOP];
+	float4 ofTR = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_TOP_RIGHT];
+	float4 ofRB = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_RIGHT_BOTTOM];
+	float4 ofBL = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_BOTTOM_LEFT];
+
+	float4 ofVHSrc = THERMAL_EROSION_OUTFLOW_VH_CM[PX_POS];
+	float4 ofDiagSrc = THERMAL_EROSION_OUTFLOW_DIAG_CM[PX_POS];
+
+	float ifL = ofL.b; //flow from the left pixel to the right (the current pixel)
+	float ifT = ofT.a;
+	float ifR = ofR.r;
+	float ifB = ofB.g;
+
+	float ifLT = ofLT.b; //flow from the left top pixel to right bottom (the current pixel)
+	float ifTR = ofTR.a;
+	float ifRB = ofRB.r;
+	float ifBL = ofBL.g;
+
+	float ifSum = ifL + ifT + ifR + ifB + ifLT + ifTR + ifRB + ifBL;
+	dataSrc.g += ifSum;
+
+	_WorldDataCM[PX_POS] = dataSrc;
+}
+
+//Dispatch based on upsampled resolution
+//_UpsampleResolution is the current canvas size
+//_WorldDataResolution is the last canvas size
+[numthreads(8, 1, 8)]
+void Upsampling(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_UpsampleResolution.x - 1),
+		id.z / (_UpsampleResolution.y - 1));
+
+	float2 samplePos = float2(
+		lerp(0, _WorldDataResolution.x - 1, uv.x),
+		lerp(0, _WorldDataResolution.y - 1, uv.y));
+
+	samplePos.x = clamp(samplePos.x, 0, _WorldDataResolution.x - 1) + MARGIN.x;
+	samplePos.y = clamp(samplePos.y, 0, _WorldDataResolution.y - 1) + MARGIN.y;
+
+	int xFloor = floor(samplePos.x);
+	int xCeil = ceil(samplePos.x);
+	int yFloor = floor(samplePos.y);
+	int yCeil = ceil(samplePos.y);
+	float2 unitCoord = float2(samplePos.x - xFloor, samplePos.y - yFloor);
+
+	//interpolate world data
+	float4 w00 = _WorldDataCM[uint2(xFloor, yFloor)];
+	float4 w01 = _WorldDataCM[uint2(xFloor, yCeil)];
+	float4 w10 = _WorldDataCM[uint2(xCeil, yFloor)];
+	float4 w11 = _WorldDataCM[uint2(xCeil, yCeil)];
+	float4 w = w00 * (1 - unitCoord.x) * (1 - unitCoord.y) + w01 * (1 - unitCoord.x) * unitCoord.y + w10 * unitCoord.x * (1 - unitCoord.y) + w11 * unitCoord.x * unitCoord.y;
+
+	//store delta height in R
+	float inputHeightCM = _InputHeight01.SampleLevel(_SamplerLinearClamp, uv, 0) * _WorldSizeCM.y;
+	w.r = inputHeightCM - w.r;
+
+	_SimData0[PX_POS] = w;
+}
+
+[numthreads(8, 1, 8)]
+void OutputDeposit01(uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = float2(
+		id.x / (_WorldDataResolution.x - 1),
+		id.z / (_WorldDataResolution.y - 1));
+	/*float inputHeightCM = _InputHeight01.SampleLevel(_SamplerLinearClamp, uv, 0) * _WorldSizeCM.y;
+	float finalHeightCM = _WorldDataCM[PX_POS].r;
+	float depositCM = max(0, finalHeightCM - inputHeightCM);*/
+
+	float depositCM = _WorldDataCM[PX_POS].g;
+
+	float deposit01 = depositCM / _WorldSizeCM.y;
+	_OutputRT01[PX_POS - MARGIN] = deposit01;
+}

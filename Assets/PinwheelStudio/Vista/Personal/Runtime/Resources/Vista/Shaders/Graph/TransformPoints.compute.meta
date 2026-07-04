@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5cb4ed1001cb349489795236a5e95a37
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 2492420
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/TransformPoints.compute
+  uploadId: 922302

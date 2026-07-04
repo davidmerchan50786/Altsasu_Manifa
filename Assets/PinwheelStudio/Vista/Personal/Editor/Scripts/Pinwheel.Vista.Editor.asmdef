@@ -1,0 +1,25 @@
+{
+    "name": "Pinwheel.Vista.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:2d4f7c45c8e0fbd4ba3ecdc05c6395f5",
+        "GUID:4988cf9794f41d64c884876ab6574b89",
+        "GUID:478a2357cc57436488a56e564b08d223",
+        "GUID:9c184a1e5cc20654384071dfebc106ed",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:21d1eb854b91ade49bc69a263d12bee2",
+        "GUID:4bdfb2239705740718731d0b4d54061d",
+        "GUID:90ab0119788ed4ec6b8fe54dd44f01fa"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

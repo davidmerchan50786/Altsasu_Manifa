@@ -1,0 +1,150 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 861622789, guid: 2c5e762d0e6dc7142869576a34c3ee18, type: 3}
+  m_Name: UltimatePreview - Settings
+  m_EditorClassIdentifier: VoxelLabs.UltimatePreview.Core.dll::VoxelLabs.UltimatePreview.Core.UltimatePreviewSettingsData
+  "\u2002\u204A": 1
+  ultimateAnimationPreviewSettings:
+    isEnable: 1
+    disablePlayModeColorTint: 1
+    optimizePreviewInPlayMode: 1
+    isLightsEnable: 1
+    ambientColor: {r: 1, g: 1, b: 1, a: 1}
+    cameraSettings:
+      orbitCamera: 1
+      orbitCameraForSceneGameobject: 0
+      orbitSpeed: 30
+      defaultZoom: 1
+      defaultCameraDirection: {x: 180, y: -16.5}
+      cameraFieldOfView: 30
+      clearFlags: 2
+      skyboxMaterial: {fileID: 0}
+      backgroundColor: {r: 0.14901961, g: 0.69803923, b: 1, a: 1}
+    lightingSettings:
+      isLightsEnable: 1
+      additionalLights:
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 160, y: 0}
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 20, y: 0}
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 90, y: 0}
+    floorSettings:
+      hideFloor: 0
+      floorTexture: {fileID: 0}
+      floorTiling: {x: 50, y: 50}
+      floorColor: {r: 1, g: 1, b: 1, a: 0.7}
+    defaultAvatarGameobject: {fileID: 0}
+    autoPlayAnimations: 1
+    resetPlaybackSpeed: 0
+    isAnimatorStatePreviewEnable: 1
+    isAnimatorTransitionPreviewEnable: 1
+    isAnimatorBlendTreePreviewEnable: 1
+    previewToolbarSettings:
+      buttonSize: 30
+      showPreviewToggle: 1
+      showSkyboxToggle: 1
+      showBGColorPicker: 1
+      showLightToggle: 1
+      showLockCameraToggle: 1
+      showCameraResetBtn: 1
+      showCameraRotateXBtn: 1
+      showCameraRotateYBtn: 1
+      showSettingsBtn: 0
+      showUpgradeToProBtn: 1
+      showAnimationAutoPlayToggle: 0
+      showFloorToggle: 0
+      showPlayNextAnimBtn: 1
+      showPlayPrevAnimBtn: 1
+  ultimateGameobjectPreviewSettings:
+    isEnable: 1
+    disablePlayModeColorTint: 1
+    optimizePreviewInPlayMode: 1
+    isLightsEnable: 1
+    ambientColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
+    cameraSettings:
+      orbitCamera: 1
+      orbitCameraForSceneGameobject: 0
+      orbitSpeed: 30
+      defaultZoom: 1
+      defaultCameraDirection: {x: 120, y: -20}
+      cameraFieldOfView: 30
+      clearFlags: 2
+      skyboxMaterial: {fileID: 0}
+      backgroundColor: {r: 0.827451, g: 0.99607843, b: 1, a: 1}
+    lightingSettings:
+      isLightsEnable: 1
+      additionalLights:
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 160, y: 0}
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 20, y: 0}
+      - enabled: 1
+        intensity: 0.5
+        color: {r: 1, g: 1, b: 1, a: 1}
+        rotation: {x: 90, y: 0}
+    sceneGameobjectPreviewSettings:
+      isSceneGameobjectPreviewEnable: 1
+      autoReloadScenePreview: 1
+      previewWindowReloadDelay: 0.2
+    fontPreviewSettings:
+      isFontPreviewEnable: 1
+      fontMaxSize: 135
+      fontColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+      backgroundColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
+      textureSize: 500
+      maxActiveUltimatePreviews: 10
+      text: 'Hello
+
+        World!'
+    uiDocumentPreviewSettings:
+      isUIDocumentPreviewEnable: 1
+      canvasSize: {x: 1920, y: 1080}
+      textureSize: 1600
+      maxActiveUltimatePreviews: 10
+    statsPreviewSettings:
+      fontSize: 2
+      isMeshRendererStatsEnable: 0
+      isUILayoutInfoStatsEnable: 0
+    maxActiveUltimatePreviews: 10
+    isParticlesPreviewEnable: 1
+    isUIPreviewEnable: 1
+    isVFXPreviewEnable: 1
+    isShowCanvas: 0
+    IsUiAlwaysFacingCamera: 1
+    autoPlayParticleEffects: 1
+    IsSpriteAlwaysFacingCamera: 1
+    hideParticlePlaybackSlider: 0
+    mouseButtonForPanning: 2
+    previewToolbarSettings:
+      buttonSize: 30
+      showPreviewToggle: 1
+      showSkyboxToggle: 1
+      showBGColorPicker: 1
+      showLightToggle: 1
+      showLockCameraToggle: 1
+      showCameraResetBtn: 1
+      showCameraRotateXBtn: 1
+      showCameraRotateYBtn: 1
+      showSettingsBtn: 0
+      showUpgradeToProBtn: 1
+      showSceneGOPreviewToggle: 1

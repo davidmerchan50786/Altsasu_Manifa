@@ -229,6 +229,7 @@ public class SistemaDestruccion : SingletonMono<SistemaDestruccion>
         // Daño
         DanarEntidadesCercanas(pos, radioFuegoMolotov, 30);
         SistemaApoyoPopular.Instance?.SumarParanoia(8f);
+        EventBus.Publish(new DelitoEvent { lugar = pos, gravedad = 0.6f });   // testigos
         ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 

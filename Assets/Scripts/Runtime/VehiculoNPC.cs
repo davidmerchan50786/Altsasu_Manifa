@@ -294,8 +294,10 @@ public class VehiculoNPC : VehiculoBase, IInteractable
                 velocidadGiro * Time.fixedDeltaTime);
         }
 
-        // Acelerar / frenar
-        float velObjetivo = frenando ? 0f : velocidadMax;
+        // Acelerar / frenar (obstáculo físico O semáforo en rojo delante)
+        bool pararSemaforo = SistemaTrafico.Instance != null &&
+            SistemaTrafico.Instance.HayRojoDelante(transform.position, transform.forward, 9f);
+        float velObjetivo = (frenando || pararSemaforo) ? 0f : velocidadMax;
         velocidadActual = Mathf.MoveTowards(velocidadActual, velObjetivo,
                                              aceleracion * Time.fixedDeltaTime);
 

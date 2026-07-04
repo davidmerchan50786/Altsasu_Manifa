@@ -1,0 +1,73 @@
+/*GraphEditorToolbar
+{
+	height: 21px;
+	width: auto;
+	background-color: rgb(60,60,60);
+	border-color: rgb(35,35,35);
+	border-bottom-width: 1px;
+	flex-direction: row;
+	padding-left: 4px;
+	padding-right: 4px;
+}*/
+
+ToolbarButton
+{
+	border-left-width: 1px;
+	border-left-width: 1px;
+	padding-left: 4px;
+	padding-right: 4px;
+	margin-left: -1px;
+	-unity-text-align: middle-center;
+}
+
+ToolbarButton.active
+{
+	background-color: rgb(80,80,80);
+}
+
+.unity-toolbar-button.v2
+{
+	width: auto;
+	height: 18px;
+	padding: 1px;
+	padding-left: 2px;
+	padding-right: 2px;	
+	margin: 1px;
+	border-width: 0px;
+	background-color: rgba(0,0,0,0);
+	align-self:center;
+	border-radius: 3px;
+}
+
+.unity-toolbar-button.v2:hover
+{
+	background-color: rgb(96,96,96);
+}
+
+.unity-toolbar-button.v2:active
+{
+	background-color: rgb(50,50,50);
+}
+
+.unity-toolbar-button.v2.active
+{
+	background-color: rgb(80,80,80);
+}
+
+#left-container
+{
+	position: absolute;
+	left: 4px;
+	top: 0px;
+	bottom: 0px;
+	flex-direction: row;
+}
+
+#right-container
+{
+	position: absolute;
+	right: 4px;
+	top: 0px;
+	bottom: 0px;
+	flex-direction: row-reverse;
+}

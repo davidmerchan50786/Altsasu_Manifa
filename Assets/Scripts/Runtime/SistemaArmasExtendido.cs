@@ -145,6 +145,7 @@ public class SistemaArmasExtendido : MonoBehaviour
     // ── Cuerpo a cuerpo (Puños) ───────────────────────────────────────────
     void GolpearMelee()
     {
+        if (SistemaCombateMelee.Activo) return;   // el sistema de combate avanzado gestiona el melee
         _cooldown = 0.4f;
         var cam = Camera.main;
         if (cam == null) return;
@@ -173,16 +174,17 @@ public class SistemaArmasExtendido : MonoBehaviour
 
         for (int p = 0; p < Mathf.Max(1, perdigones); p++)
         {
-            Vector3 dir = cam.transform.forward;
-            if (dispersionGrados > 0f)
+            Vector3 dir = SistemaLockOn.AsistirDireccion(origen, cam.transform.forward, 18f);
+            float disp = dispersionGrados * SistemaDrogas.MultDispersion;   // borrachera/drogas empeoran la puntería
+            if (disp > 0f)
                 dir = Quaternion.Euler(
-                    UnityEngine.Random.Range(-dispersionGrados, dispersionGrados),
-                    UnityEngine.Random.Range(-dispersionGrados, dispersionGrados), 0f) * dir;
+                    UnityEngine.Random.Range(-disp, disp),
+                    UnityEngine.Random.Range(-disp, disp), 0f) * dir;
 
             if (Physics.Raycast(origen, dir, out var hit, 300f))
             {
                 var d = hit.collider.GetComponentInParent<IDamageable>();
-                if (d != null && !d.EstaMuerto) d.RecibirDano(dano, hit.point, TipoDano.Bala);
+                if (d != null && !d.EstaMuerto) { d.RecibirDano(dano, hit.point, TipoDano.Bala); SistemaGameFeel.Impacto(hit.point, dano, false); SistemaConsecuencias.TrasDano(d, hit.point); }
                 var rb = hit.collider.attachedRigidbody;
                 if (rb != null) rb.AddForce(dir * 6f, ForceMode.Impulse);
             }
@@ -190,6 +192,7 @@ public class SistemaArmasExtendido : MonoBehaviour
 
         AlDisparar?.Invoke(origen);
         _apoyo?.SumarParanoia(8f);
+        EventBus.Publish(new DelitoEvent { lugar = origen, gravedad = 0.6f });   // testigos
         ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(3);
     }
 
@@ -224,6 +227,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         Destroy(piedra, 10f);
 
         _apoyo?.SumarParanoia(3f);
+        EventBus.Publish(new DelitoEvent { lugar = cam.transform.position, gravedad = 0.3f });   // testigos
         ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(1);
     }
 
@@ -251,6 +255,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         _destruccion?.LanzarMolotov(cam.transform.position + cam.transform.forward, vel);
 
         _apoyo?.SumarParanoia(12f);
+        EventBus.Publish(new DelitoEvent { lugar = cam.transform.position, gravedad = 0.8f });   // testigos
         ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(2);
     }
 
@@ -274,6 +279,7 @@ public class SistemaArmasExtendido : MonoBehaviour
         bomba.AddComponent<BombaLapaComponent>().Init(temporizadorLapa, _destruccion, hit.collider.gameObject);
 
         _apoyo?.SumarParanoia(20f);
+        EventBus.Publish(new DelitoEvent { lugar = hit.point, gravedad = 1f });   // testigos
         ServiceLocator.Get<IWantedSystem>()?.AumentarBusqueda(3);
         Debug.Log($"[Armas] Bomba lapa colocada en {hit.collider.gameObject.name}. Detona en {temporizadorLapa}s");
     }

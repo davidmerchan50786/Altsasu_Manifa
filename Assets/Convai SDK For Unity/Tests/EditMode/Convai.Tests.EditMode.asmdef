@@ -1,0 +1,32 @@
+{
+    "name": "Convai.Tests.EditMode",
+    "rootNamespace": "Convai.Tests.EditMode",
+    "references": [
+        "Convai.Domain",
+        "Convai.Editor",
+        "Convai.Transport.Native",
+        "Convai.Transport.WebGL",
+        "Convai.Modules.LipSync",
+        "Convai.Modules.Narrative",
+        "Convai.Modules.Vision",
+        "Convai.RestAPI",
+        "Convai.Runtime",
+        "Convai.Runtime.UI",
+        "Convai.Shared.Unity",
+        "LiveKit",
+        "LiveKitBridge"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

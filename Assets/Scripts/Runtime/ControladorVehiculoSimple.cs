@@ -99,7 +99,7 @@ public sealed class ControladorVehiculoSimple : MonoBehaviour
 
         // ── Notificar al sistema de HUD y IA ──────────────────────────────────
         ServiceLocator.Get<ISpawnService>()?.SetJugadorEnVehiculo(true);
-        ControladorVehiculoJugador.OnJugadorEntro?.Invoke(null);
+        ControladorVehiculoJugador.NotificarEntradaExterna(null);
 
         // ── Reducir drag de la física NPC que era alto ────────────────────────
         if (_rb != null) _rb.linearDamping = dragConInput;
@@ -264,7 +264,7 @@ public sealed class ControladorVehiculoSimple : MonoBehaviour
         if (_rb != null) _rb.linearDamping = 5f; // frenar progresivamente
 
         ServiceLocator.Get<ISpawnService>()?.SetJugadorEnVehiculo(false);
-        ControladorVehiculoJugador.OnJugadorSalio?.Invoke(null);
+        ControladorVehiculoJugador.NotificarSalidaExterna(null);
 
         // Transición de cámara de vuelta al spring arm del jugador
         if (_corCamara != null) StopCoroutine(_corCamara);

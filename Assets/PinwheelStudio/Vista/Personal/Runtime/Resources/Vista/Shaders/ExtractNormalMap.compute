@@ -1,0 +1,89 @@
+#pragma kernel CSMain
+#include "Includes/ComputeCommon.hlsl"
+#include "Includes/Sampling.hlsl"
+
+Texture2D _HeightMap;
+float3 _Size;
+float2 _Resolution;
+
+RWTexture2D<float4> _TargetRT;
+
+void CalculateIds(inout uint3 id, inout uint3 ids[9])
+{
+	float3 minId = float3(0, 0, 0);
+	float3 maxId = float3(_Resolution.x - 1, 0, _Resolution.y - 1);
+
+	float3 leftId = float3(id.x - 1, 0, id.z);
+	float3 topId = float3(id.x, 0, id.z + 1);
+	float3 rightId = float3(id.x + 1, 0, id.z);
+	float3 bottomId = float3(id.x, 0, id.z - 1);
+	float3 leftTopId = float3(id.x - 1, 0, id.z + 1);
+	float3 topRightId = float3(id.x + 1, 0, id.z + 1);
+	float3 rightBottomId = float3(id.x + 1, 0, id.z - 1);
+	float3 bottomLeftId = float3(id.x - 1, 0, id.z - 1);
+
+	leftId = clamp(leftId, minId, maxId);
+	topId = clamp(topId, minId, maxId);
+	rightId = clamp(rightId, minId, maxId);
+	bottomId = clamp(bottomId, minId, maxId);
+	leftTopId = clamp(leftTopId, minId, maxId);
+	topRightId = clamp(topRightId, minId, maxId);
+	rightBottomId = clamp(rightBottomId, minId, maxId);
+	bottomLeftId = clamp(bottomLeftId, minId, maxId);
+
+	ids[C] = id;
+	ids[L] = leftId;
+	ids[T] = topId;
+	ids[R] = rightId;
+	ids[B] = bottomId;
+	ids[LT] = leftTopId;
+	ids[TR] = topRightId;
+	ids[RB] = rightBottomId;
+	ids[BL] = bottomLeftId;
+}
+
+float3 CalculatePosition(inout uint3 id, inout float stepX, inout float stepZ)
+{
+	return float3(id.x * stepX, _HeightMap[id.xz].r * _Size.y, id.z * stepZ);
+}
+
+float3 CalculateNormal(inout uint3 ids[9])
+{
+	float stepX = _Size.x / _Resolution.x;
+	float stepZ = _Size.z / _Resolution.y;
+
+	float3 centerPos = CalculatePosition(ids[C], stepX, stepZ);
+	float3 leftPos = CalculatePosition(ids[L], stepX, stepZ);
+	float3 topPos = CalculatePosition(ids[T], stepX, stepZ);
+	float3 rightPos = CalculatePosition(ids[R], stepX, stepZ);
+	float3 bottomPos = CalculatePosition(ids[B], stepX, stepZ);
+	float3 leftTopPos = CalculatePosition(ids[LT], stepX, stepZ);
+	float3 topRightPos = CalculatePosition(ids[TR], stepX, stepZ);
+	float3 rightBottomPos = CalculatePosition(ids[RB], stepX, stepZ);
+	float3 bottomLeftPos = CalculatePosition(ids[BL], stepX, stepZ);
+
+	float3 n0 = cross(leftPos - centerPos, leftTopPos - centerPos);
+	float3 n1 = cross(topPos - centerPos, topRightPos - centerPos);
+	float3 n2 = cross(rightPos - centerPos, rightBottomPos - centerPos);
+	float3 n3 = cross(bottomPos - centerPos, bottomLeftPos - centerPos);
+
+	float3 n4 = cross(leftTopPos - centerPos, topPos - centerPos);
+	float3 n5 = cross(topRightPos - centerPos, rightPos - centerPos);
+	float3 n6 = cross(rightBottomPos - centerPos, bottomPos - centerPos);
+	float3 n7 = cross(bottomLeftPos - centerPos, leftPos - centerPos);
+
+	float3 nc = (n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7) / 8.0;
+	float3 normal = normalize(nc);
+
+	return normal;
+}
+
+[numthreads(8, 1, 8)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+	uint3 ids[9];
+	CalculateIds(id, ids);
+	float3 normal = CalculateNormal(ids);
+	normal = (normal + 1) / 2;
+	_TargetRT[id.xz] = float4(normal, 0);
+}

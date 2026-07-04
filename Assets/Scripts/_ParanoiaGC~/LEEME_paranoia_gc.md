@@ -7,9 +7,22 @@ vuelven Guardia Civil y algunos coches, patrulla". Diseño completo en
 ## Qué hay
 - `ParanoiaGCConfig.cs` (SO): materiales (uniforme/librea), umbrales (70/90), MAX, ritmo, curva.
 - `ConvertibleGuardiaCivil.cs`: va en cada NPC/coche convertible. Cachea original, `Convertir()`/
-  `Revertir()` con swap de material + hijos (tricornio/rotativo) + cerebro.
+  `Revertir()` con swap de material + hijos (tricornio/rotativo) + comportamiento.
+- `CerebroGuardiaCivil.cs`: cerebro GC del NPC convertido — **más agresivo que la Policía Foral**,
+  su rango y velocidad **escalan con la paranoia**; arresta vía `PlayerArrestedEvent`.
+- `PatrullaGuardiaCivil.cs`: coche patrulla — enciende **rotativo + sirena** y **persigue** al
+  jugador cuando hay wanted; se apaga al revertir.
 - `SistemaParanoiaGuardiaCivil.cs`: manager. Se suscribe a `SistemaApoyoPopular.OnParanoiaCambia`,
-  convierte/revierte **gradual** y **off-screen**.
+  convierte/revierte **gradual** y **OFF-SCREEN estricto**. El **apoyo popular FRENA** la
+  conversión (`frenoApoyo`): calle alta = menos guardias.
+- `HUDParanoia.cs`: medidor fanzine (OnGUI) verde→ámbar→rojo + aviso parpadeante
+  "⚠ TRICORNIOS EN LA ZONA (n)" al cruzar el umbral. Ponlo en cualquier GameObject de la escena.
+
+## Off-screen estricto (cómo se garantiza)
+`Convertir()` y `Revertir()` **devuelven false si el objeto está en cámara** (o lo estuvo hace
+<0.5 s); solo cambian fuera del frustum. El manager elige primero candidatos off-screen y, si solo
+quedan visibles, **espera** en vez de morfear en pantalla. El morph nunca se ve. (Para casos
+forzados —cinemáticas— usa `Convertir(cfg, forzar:true)`.)
 
 ## Activar
 1. Mueve los 3 `.cs` a `Assets/Scripts/Runtime/` (o `Systems/`).

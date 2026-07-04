@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 67a5f893509128740865f7923e838b4a
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 4
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Graph/Landslide.compute
+  uploadId: 922302

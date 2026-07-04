@@ -1,25 +1,5 @@
 fileFormatVersion: 2
-guid: d6db18eb5a9656d4a8c98e5088f8b9a6
-AudioImporter:
-  externalObjects: {}
-  serializedVersion: 6
-  defaultSettings:
-    loadType: 0
-    sampleRateSetting: 0
-    sampleRateOverride: 44100
-    compressionFormat: 1
-    quality: 1
-    conversionMode: 0
-  platformSettingOverrides: {}
-  forceToMono: 0
-  normalize: 1
-  preloadAudioData: 1
-  loadInBackground: 0
-  ambisonic: 0
-  3D: 1
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+guid: dd962988792068f46b4223f20beed911
 AssetOrigin:
   serializedVersion: 1
   productId: 171038
@@ -28,3 +8,24 @@ AssetOrigin:
   assetPath: Assets/Audio/TMM_SFXGIANTPOOLVOL1/FIELD RECORDINGS AND FOLEY/CARS 55/TMM_SFXGIANTPOOLVOL1
     - CARS #1.wav
   uploadId: 373828
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 8
+  defaultSettings:
+    serializedVersion: 2
+    loadType: 2
+    sampleRateSetting: 1
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 0.7
+    conversionMode: 0
+    preloadAudioData: 1
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  loadInBackground: 1
+  ambisonic: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -60,6 +60,13 @@ public class MenuPausa : SingletonMono<MenuPausa>
     void OnGUI()
     {
         if (!Activo) return;
+        // Garantizar cursor libre en cada frame de GUI — ControladorJugador puede
+        // intentar re-bloquearlo; aquí forzamos el estado correcto para el menú.
+        if (Cursor.lockState != CursorLockMode.None)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
+        }
         InicializarEstilos();
 
         float w = 480f, h = 520f;

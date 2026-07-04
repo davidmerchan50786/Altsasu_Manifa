@@ -992,6 +992,11 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
     private void GestionarCursor()
     {
+        // No re-bloquear el cursor si hay algún menú/UI activo que lo necesite libre.
+        bool menuAbierto = (MenuPausa.Activo)
+                        || !ArranqueMundo.BaselineListo; // pantalla de carga activa
+        if (menuAbierto) return;
+
         if (Cursor.lockState != CursorLockMode.Locked
             && Mouse.current != null
             && Mouse.current.leftButton.wasPressedThisFrame)
@@ -1245,6 +1250,9 @@ public class ControladorJugador : MonoBehaviour, IDamageable
 
     public void RecibirDano(int cantidad, Vector3 origen = default, TipoDano tipo = TipoDano.Bala)
     {
+        cantidad = SistemaCombateMelee.AplicarBloqueo(cantidad, origen, tipo);   // bloqueo/parry melee
+        if (SistemaEsquiva.Invulnerable && tipo != TipoDano.Caida) cantidad = 0; // i-frames de esquiva
+        cantidad = Mathf.RoundToInt(cantidad * SistemaDrogas.ReduccionDanoRecibido); // chute adormece el dolor
         UltimoOrigenDano = origen;
         vida      = Mathf.Max(0, vida - cantidad);
         timerDano = 0.35f;

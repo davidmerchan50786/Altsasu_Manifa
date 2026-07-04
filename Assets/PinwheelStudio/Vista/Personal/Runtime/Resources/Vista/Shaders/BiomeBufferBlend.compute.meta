@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 110c04be6722f2e47ad457a7fa6aeaa4
+ComputeShaderImporter:
+  externalObjects: {}
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/BiomeBufferBlend.compute
+  uploadId: 922302

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4a458509cbcb9c749a9eeee7b60f55f5
+ComputeShaderImporter:
+  externalObjects: {}
+  currentAPIMask: 2492420
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Editor/Resources/Vista/Shaders/GetPixel.compute
+  uploadId: 922302

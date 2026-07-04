@@ -1,0 +1,296 @@
+﻿#pragma kernel Simulate
+#pragma kernel PostProcess
+#pragma exclude_renderers gles3
+#pragma multi_compile_local _ HAS_MASK
+#pragma multi_compile_local _ HIGH_QUALITY
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include COMPUTE_COMMON_HLSL
+#include SAMPLING_HLSL
+
+float3 _Bounds; //terrain size
+float2 _SimDataResolution; //size of the simulation texture
+
+RWTexture2D<float2> _WorldData; //r: current height, g: snow
+RWTexture2D<float4> _OutflowVHData;
+#if HIGH_QUALITY
+	RWTexture2D<float4> _OutflowDiagData;
+#endif
+
+float _SnowAmount;
+float _FlowRate;
+float _RestingAngle;
+
+float2 _RandomSeed;
+
+#if HAS_MASK
+	Texture2D _MaskMap;
+#endif
+
+void CalculateIds(inout uint3 id, inout uint3 ids[9])
+{
+	float3 minPos = float3(0, 0, 0);
+	float3 maxPos = float3(_SimDataResolution.x - 1, 0, _SimDataResolution.y - 1);
+	
+	float3 leftPos = clamp(float3(id.x - 1, 0, id.z), minPos, maxPos);
+	float3 topPos = clamp(float3(id.x, 0, id.z + 1), minPos, maxPos);
+	float3 rightPos = clamp(float3(id.x + 1, 0, id.z), minPos, maxPos);
+	float3 bottomPos = clamp(float3(id.x, 0, id.z - 1), minPos, maxPos);
+	float3 leftTopPos = clamp(float3(id.x - 1, 0, id.z + 1), minPos, maxPos);
+	float3 topRightPos = clamp(float3(id.x + 1, 0, id.z + 1), minPos, maxPos);
+	float3 rightBottomPos = clamp(float3(id.x + 1, 0, id.z - 1), minPos, maxPos);
+	float3 bottomLeftPos = clamp(float3(id.x - 1, 0, id.z - 1), minPos, maxPos);
+
+	ids[C] = id;
+	ids[L] = leftPos;
+	ids[T] = topPos;
+	ids[R] = rightPos;
+	ids[B] = bottomPos;
+	ids[LT] = leftTopPos;
+	ids[TR] = topRightPos;
+	ids[RB] = rightBottomPos;
+	ids[BL] = bottomLeftPos;
+}
+
+float3 CalculateNormal(inout float2 srcData, inout uint3 ids[9])
+{
+	float3 centerPos = float3(ids[C].x, 0, ids[C].z);
+	centerPos.y = srcData.r;
+
+	float3 leftPos = ids[L];
+	float3 topPos = ids[T];
+	float3 rightPos = ids[R];
+	float3 bottomPos = ids[B];
+	float3 leftTopPos = ids[LT];
+	float3 topRightPos = ids[TR];
+	float3 rightBottomPos = ids[RB];
+	float3 bottomLeftPos = ids[BL];
+
+	leftPos.y = _WorldData[leftPos.xz].r;
+	topPos.y = _WorldData[topPos.xz].r;
+	rightPos.y = _WorldData[rightPos.xz].r;
+	bottomPos.y = _WorldData[bottomPos.xz].r;
+	
+	leftTopPos.y = _WorldData[leftTopPos.xz].r;
+	topRightPos.y = _WorldData[topRightPos.xz].r;
+	rightBottomPos.y = _WorldData[rightBottomPos.xz].r;
+	bottomLeftPos.y = _WorldData[bottomLeftPos.xz].r;
+
+	float3 n0 = cross(leftPos - centerPos, leftTopPos - centerPos);
+	float3 n1 = cross(topPos - centerPos, topRightPos - centerPos);
+	float3 n2 = cross(rightPos - centerPos, rightBottomPos - centerPos);
+	float3 n3 = cross(bottomPos - centerPos, bottomLeftPos - centerPos);
+
+	float3 n4 = cross(leftTopPos - centerPos, topPos - centerPos);
+	float3 n5 = cross(topRightPos - centerPos, rightPos - centerPos);
+	float3 n6 = cross(rightBottomPos - centerPos, bottomPos - centerPos);
+	float3 n7 = cross(bottomLeftPos - centerPos, leftPos - centerPos);
+
+	float3 nc = (n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7) / 8;
+	float3 normal = normalize(nc);
+
+	return normal;
+}
+
+void AddSnow(inout float2 srcData, float snowMask)
+{
+	float snow = _SnowAmount * snowMask * DT;
+	srcData.g += snow;
+}
+
+void Outflow(inout float2 srcData, inout uint3 ids[9])
+{
+	float srcHeight = srcData.r + srcData.g;
+	float F_CONST = DT * G * FLOW_CONST * _FlowRate;
+	float3 centerPos = float3(ids[C].x, srcHeight, ids[C].z);
+	float3 downVector = float3(0, -1, 0);
+	float3 direction;
+	float angleFactor;
+	float minFactor = sin(radians(_RestingAngle));
+
+	float3 leftPos = ids[L];
+	float2 leftData = _WorldData[leftPos.xz];
+	leftPos.y = leftData.r;
+	direction = normalize(leftPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightL = srcHeight - leftData.r - leftData.g;
+	float fL = max(0, F_CONST * angleFactor * deltaHeightL);
+
+	float3 topPos = ids[T];
+	float2 topData = _WorldData[topPos.xz];
+	topPos.y = topData.r;
+	direction = normalize(topPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightT = srcHeight - topData.r - topData.g;
+	float fT = max(0, F_CONST * angleFactor * deltaHeightT);
+
+	float3 rightPos = ids[R];
+	float2 rightData = _WorldData[rightPos.xz];
+	rightPos.y = rightData.r;
+	direction = normalize(rightPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightR = srcHeight - rightData.r - rightData.g;
+	float fR = max(0, F_CONST * angleFactor * deltaHeightR);
+
+	float3 bottomPos = ids[B];
+	float2 bottomData = _WorldData[bottomPos.xz];
+	bottomPos.y = bottomData.r;
+	direction = normalize(bottomPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightB = srcHeight - bottomData.r - bottomData.g;
+	float fB = max(0, F_CONST * angleFactor * deltaHeightB);
+
+	#if HIGH_QUALITY
+		float3 leftTopPos = ids[LT];
+		float2 leftTopData = _WorldData[leftTopPos.xz];
+		leftTopPos.y = leftTopData.r;
+		direction = normalize(leftTopPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightLT = srcHeight - leftTopData.r - leftTopData.g;
+		float fLT = max(0, F_CONST * angleFactor * deltaHeightLT);
+
+		float3 topRightPos = ids[TR];
+		float2 topRightData = _WorldData[topRightPos.xz];
+		topRightPos.y = topRightData.r;
+		direction = normalize(topRightPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightTR = srcHeight - topRightData.r - topRightData.g;
+		float fTR = max(0, F_CONST * angleFactor * deltaHeightTR);
+
+		float3 rightBottomPos = ids[RB];
+		float2 rightBottomData = _WorldData[rightBottomPos.xz];
+		rightBottomPos.y = rightBottomData.r;
+		direction = normalize(rightBottomPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightRB = srcHeight - rightBottomData.r - rightBottomData.g;
+		float fRB = max(0, F_CONST * angleFactor * deltaHeightRB);
+
+		float3 bottomLeftPos = ids[BL];
+		float2 bottomLeftData = _WorldData[bottomLeftPos.xz];
+		bottomLeftPos.y = bottomLeftData.r;
+		direction = normalize(bottomLeftPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightBL = srcHeight - bottomLeftData.r - bottomLeftData.g;
+		float fBL = max(0, F_CONST * angleFactor * deltaHeightBL) ;
+	#endif
+
+	float fSum;
+	#if HIGH_QUALITY
+		fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+	#else
+		fSum = fL + fT + fR + fB;
+	#endif
+
+	float fScale = min(1, srcData.g / (fSum + 0.0001));
+
+	float4 fVH = float4(fL, fT, fR, fB) * fScale;
+	_OutflowVHData[ids[C].xz] = fVH;
+
+	#if HIGH_QUALITY
+		float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+		_OutflowDiagData[ids[C].xz] = fDiag;
+	#endif
+	srcData.g -= fSum * fScale;
+}
+
+void Inflow(inout float2 srcData, inout uint3 ids[9])
+{
+	float4 leftData = _OutflowVHData[ids[L].xz];
+	float fL = leftData[RIGHT];
+
+	float4 topData = _OutflowVHData[ids[T].xz];
+	float fT = topData[BOTTOM];
+
+	float4 rightData = _OutflowVHData[ids[R].xz];
+	float fR = rightData[LEFT];
+
+	float4 bottomData = _OutflowVHData[ids[B].xz];
+	float fB = bottomData[TOP];
+
+	#if HIGH_QUALITY
+		float4 leftTopData = _OutflowDiagData[ids[LT].xz];
+		float fLT = leftTopData[RIGHT_BOTTOM];
+
+		float4 topRightData = _OutflowDiagData[ids[TR].xz];
+		float fTR = topRightData[BOTTOM_LEFT];
+
+		float4 rightBottomData = _OutflowDiagData[ids[RB].xz];
+		float fRB = rightBottomData[LEFT_TOP];
+
+		float4 bottomLeftData = _OutflowDiagData[ids[BL].xz];
+		float fBL = bottomLeftData[TOP_RIGHT];
+	#endif
+
+	float fSum;
+	#if HIGH_QUALITY
+		fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+	#else
+		fSum = fL + fT + fR + fB ;
+	#endif
+	srcData.g += fSum;
+}
+
+void UpdateSimData(inout float2 srcData, inout uint3 id)
+{
+	_WorldData[id.xz] = srcData;
+}
+
+[numthreads(8, 1, 8)]
+void Simulate(uint3 id: SV_DISPATCHTHREADID)
+{
+	float2 uv = id.xz / (_SimDataResolution.xy - 1);
+	#if HAS_MASK
+		float snowMask = _MaskMap.SampleLevel(_SamplerLinearClamp, uv, 0).r;
+	#else
+		float snowMask = 1;
+	#endif
+
+	float2 srcData = _WorldData[id.xz];
+	
+	uint3 ids[9];
+	CalculateIds(id, ids);
+
+	for (int step = 0; step < 5; ++step)
+	{
+		AddSnow(srcData, snowMask);
+		UpdateSimData(srcData, id);
+		GroupMemoryBarrierWithGroupSync(); //Outflow read water data
+
+		Outflow(srcData, ids);
+		GroupMemoryBarrierWithGroupSync(); //Inflow read outflow data
+
+		Inflow(srcData, ids);
+		UpdateSimData(srcData, id);
+		GroupMemoryBarrierWithGroupSync();
+	}
+}
+
+[numthreads(8, 1, 8)]
+void PostProcess(uint3 id: SV_DISPATCHTHREADID)
+{
+	uint3 ids[9];
+	CalculateIds(id, ids);
+	
+	float2 data = _WorldData[id.xz];
+
+	float2 leftData = _WorldData[ids[L].xz];
+	float2 topData = _WorldData[ids[T].xz];
+	float2 rightData = _WorldData[ids[R].xz];
+	float2 bottomData = _WorldData[ids[B].xz];
+	float2 leftTopData = _WorldData[ids[LT].xz];
+	float2 topRightData = _WorldData[ids[TR].xz];
+	float2 rightBottomData = _WorldData[ids[RB].xz];
+	float2 bottomLeftData = _WorldData[ids[BL].xz];
+
+	float2 avgData = (data + leftData + topData + rightData + bottomData + leftTopData + topRightData + rightBottomData + bottomLeftData) / 9.0;
+	data.g = avgData.g;
+	_WorldData[id.xz] = data;
+}

@@ -1,0 +1,140 @@
+#pragma kernel BlendLinear
+#pragma kernel BlendAdditive
+#pragma kernel BlendSubtractive
+#pragma kernel BlendMax
+#pragma kernel BlendMin
+#pragma kernel WinMaskMax
+#pragma kernel WinMaskMin
+#pragma kernel FilterByHeight
+#pragma kernel Clamp
+
+#pragma exclude_renderers gles3
+#pragma multi_compile_local _ SRC_IS_NULL
+#include "./Includes/ShaderIncludes.hlsl"
+#include SAMPLING_HLSL
+
+Texture2D _SrcTexture;
+RWTexture2D<float4> _DestTexture;
+Texture2D _BiomeMaskTexture;
+Texture2D _WinTexture;
+
+float2 _DestResolution;
+float _SrcRemapOffset;
+float _SrcRemapScale;
+
+void GetValues(uint3 id, inout float4 destValue, inout float4 srcValue, inout float maskValue)
+{
+	float2 uv = float2(id.x / (_DestResolution.x - 1), id.y / (_DestResolution.y - 1));
+	destValue = _DestTexture[id.xy];
+	#if SRC_IS_NULL
+		srcValue = destValue;
+	#else
+		srcValue = _SrcTexture.SampleLevel(_SamplerPointClamp, uv, 0);
+		srcValue = _SrcRemapOffset + srcValue * _SrcRemapScale;
+	#endif
+	maskValue = _BiomeMaskTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+}
+
+[numthreads(8, 8, 1)]
+void BlendLinear(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendAdditive(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, destValue + srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendSubtractive(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+	
+	float4 blendValue = lerp(destValue, destValue - srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendMax(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 maskedSrcValue = srcValue * maskValue;
+	float4 blendValue = max(destValue, maskedSrcValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendMin(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 maskedSrcValue = lerp(1, srcValue, maskValue);
+	float4 blendValue = min(destValue, maskedSrcValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void Clamp(uint3 id: SV_DISPATCHTHREADID)
+{
+	_DestTexture[id.xy] = saturate(_DestTexture[id.xy]);
+}
+
+[numthreads(8, 8, 1)]
+void WinMaskMax(uint3 id: SV_DISPATCHTHREADID)
+{
+	float2 uv = float2(id.x / (_DestResolution.x - 1), id.y / (_DestResolution.y - 1));
+	float srcValue = _SrcTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	float destValue = _WinTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	float maskValue = _BiomeMaskTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	srcValue = _SrcRemapOffset + srcValue * _SrcRemapScale;
+	float maskedSrcValue = srcValue * maskValue;
+	float win = maskedSrcValue >= destValue ? 1.0 : 0.0;
+	_DestTexture[id.xy] = float4(win, 0, 0, 0);
+}
+
+[numthreads(8, 8, 1)]
+void WinMaskMin(uint3 id: SV_DISPATCHTHREADID)
+{
+	float2 uv = float2(id.x / (_DestResolution.x - 1), id.y / (_DestResolution.y - 1));
+	float srcValue = _SrcTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	float destValue = _WinTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	float maskValue = _BiomeMaskTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+	srcValue = _SrcRemapOffset + srcValue * _SrcRemapScale;
+	float maskedSrcValue = lerp(1, srcValue, maskValue);
+	float win = maskedSrcValue <= destValue ? 1.0 : 0.0;
+	_DestTexture[id.xy] = float4(win, 0, 0, 0);
+}
+
+[numthreads(8, 8, 1)]
+// Multiplies the source weight by the precomputed 0/1 height win mask.
+void FilterByHeight(uint3 id: SV_DISPATCHTHREADID)
+{
+	float2 uv = float2(id.x / (_DestResolution.x - 1), id.y / (_DestResolution.y - 1));
+	float srcWeight = _SrcTexture.SampleLevel(_SamplerLinearClamp, uv, 0).r;
+	float winAmount = _WinTexture.SampleLevel(_SamplerLinearClamp, uv, 0).r;
+	_DestTexture[id.xy] = float4(srcWeight * winAmount, 0, 0, 0);
+}

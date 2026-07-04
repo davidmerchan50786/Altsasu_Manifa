@@ -99,8 +99,25 @@ public static class ConstructorCallesAssets
             "4 mallas static (4 draw calls para toda la red vial). ¿Continuar?", "Construir", "Cancelar"))
             return;
 
-        var terrain = Terrain.activeTerrain;
         _terrenos = Terrain.activeTerrains;   // mosaico V2: todos los tiles colocados
+        if (_terrenos == null || _terrenos.Length == 0)
+        {
+            EditorUtility.DisplayDialog("Calles v2",
+                "⚠ No hay ningún Terrain activo en la escena.\n\n" +
+                "Las carreteras quedarán a Y=0 (sin altura de terreno).\n\n" +
+                "Construye primero el mosaico de terreno V2:\n" +
+                "Tools/Alsasua/Mundo/🧩 Construir Mosaico V2", "Entendido");
+        }
+        else if (_terrenos.Length < 10)
+        {
+            bool cont = EditorUtility.DisplayDialog("Calles v2",
+                $"Solo {_terrenos.Length} tile(s) de terreno activos (el mosaico completo tiene 48).\n\n" +
+                "Las carreteras que caigan fuera de esos tiles usarán la altura del tile más cercano.\n" +
+                "Para mejor resultado construye primero el mosaico V2 completo.\n\n¿Continuar de todas formas?",
+                "Continuar", "Cancelar");
+            if (!cont) return;
+        }
+        var terrain = (_terrenos != null && _terrenos.Length > 0) ? _terrenos[0] : null;
 
         // Buffers por malla
         var (vA, tA, uA) = Buffers();   // asfalto
@@ -312,25 +329,64 @@ public static class ConstructorCallesAssets
 
     static Vector2 World(Pt p) => new Vector2(p.x + GeoDataAlsasua.OX, p.z + GeoDataAlsasua.OZ);
 
-    // Mosaico V2: tiles del terreno cacheados; altura sobre el tile que CONTIENE el punto
-    // (Terrain.activeTerrain con 48 tiles devuelve uno arbitrario / 0 fuera de su tile).
+    // Muestreador V3: heightmap unificado R16 (4097², 7.2km, bilineal).
+    // Tiene prioridad sobre el mosaico V2: no hay tile gaps, cubre todo Alsasua.
+    static MuestreadorHeightmapV3 _v3;
+    static bool _v3Intentado;
+
+    static MuestreadorHeightmapV3 ObtenerV3()
+    {
+        if (_v3Intentado) return _v3;
+        _v3Intentado = true;
+        var m = new MuestreadorHeightmapV3();
+        if (m.Cargar()) { _v3 = m; Debug.Log("[Calles] Usando V3 clipmap (bilineal exacto, sin gaps de tile)."); }
+        else             Debug.LogWarning("[Calles] V3 no disponible → usando mosaico V2.");
+        return _v3;
+    }
+
+    // Mosaico V2: tiles del terreno cacheados; altura sobre el tile que CONTIENE el punto.
+    // Fallback: si ningún tile contiene el punto, usa el tile más cercano (clampea al borde).
     static Terrain[] _terrenos;
     static float AlturaEnMosaico(Terrain[] ts, float x, float z)
     {
-        if (ts == null) return 0f;
+        if (ts == null || ts.Length == 0) return 0f;
+        Terrain closest = null;
+        float   closestDist = float.MaxValue;
+
         for (int i = 0; i < ts.Length; i++)
         {
             var t = ts[i];
             if (t == null || t.terrainData == null) continue;
-            var pos = t.transform.position; var s = t.terrainData.size;
+            var pos = t.transform.position;
+            var s   = t.terrainData.size;
+            // Punto dentro del tile → respuesta exacta
             if (x >= pos.x && x < pos.x + s.x && z >= pos.z && z < pos.z + s.z)
                 return pos.y + t.SampleHeight(new Vector3(x, 0f, z));
+            // Registrar tile más cercano para fallback
+            float cx   = Mathf.Clamp(x, pos.x, pos.x + s.x);
+            float cz   = Mathf.Clamp(z, pos.z, pos.z + s.z);
+            float dist = (cx - x) * (cx - x) + (cz - z) * (cz - z);
+            if (dist < closestDist) { closestDist = dist; closest = t; }
+        }
+        // Fallback: samplear el tile más cercano, clampando al borde
+        if (closest != null)
+        {
+            var pos = closest.transform.position;
+            var s   = closest.terrainData.size;
+            float cx = Mathf.Clamp(x, pos.x, pos.x + s.x - 0.01f);
+            float cz = Mathf.Clamp(z, pos.z, pos.z + s.z - 0.01f);
+            return pos.y + closest.SampleHeight(new Vector3(cx, 0f, cz));
         }
         return 0f;
     }
 
-    static float Y(Terrain t, Vector2 p, float offset) =>
-        AlturaEnMosaico(_terrenos ?? Terrain.activeTerrains, p.x, p.y) + offset;
+    static float Y(Terrain t, Vector2 p, float offset)
+    {
+        var v3 = ObtenerV3();
+        if (v3 != null && v3.EnRango(p.x, p.y))
+            return v3.AlturaMundo(p.x, p.y) + offset;                    // V3: bilineal exacto
+        return AlturaEnMosaico(_terrenos ?? Terrain.activeTerrains, p.x, p.y) + offset; // V2: fallback
+    }
 
     static void AñadirQuad(
         List<Vector3> v, List<int> t, List<Vector2> u,

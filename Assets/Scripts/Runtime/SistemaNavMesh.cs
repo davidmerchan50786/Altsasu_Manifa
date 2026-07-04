@@ -144,9 +144,23 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
     /// Hornea (o rehorneada) el NavMesh en un volumen centrado en <paramref name="centro"/>.
     /// Es la única función pública necesaria — SceneBootstrapper también puede llamarla.
     /// </summary>
+    // Timestamp del último bake completado — evita que tiles del terreno disparen
+    // 4 bakes seguidos durante la carga. Cooldown de 8 s entre bakes salvo el primero.
+    float _ultimoBakeT = -99f;
+    const float COOLDOWN_BAKE = 8f;
+
     public IEnumerator HornearZona(Vector3 centro, float radio)
     {
         if (_horneando) yield break;
+
+        // Durante la carga inicial, esperar a que el terreno esté estable antes de bakear.
+        // El primer bake (EstaListo=false) pasa siempre; los re-bakes tienen cooldown.
+        if (EstaListo && Time.realtimeSinceStartup - _ultimoBakeT < COOLDOWN_BAKE)
+        {
+            AlsasuaLogger.Info("NavMesh", $"Re-bake ignorado (cooldown {COOLDOWN_BAKE}s). Próximo en {COOLDOWN_BAKE - (Time.realtimeSinceStartup - _ultimoBakeT):F1}s");
+            yield break;
+        }
+
         _horneando = true;
         EstaListo  = false;
 
@@ -233,8 +247,9 @@ public class SistemaNavMesh : SingletonMono<SistemaNavMesh>
 
         if (exito)
         {
-            EstaListo  = true;
-            _horneando = false;
+            EstaListo    = true;
+            _horneando   = false;
+            _ultimoBakeT = Time.realtimeSinceStartup; // marcar timestamp para cooldown
             AlsasuaLogger.Info("NavMesh",
                 $"✅ NavMesh listo en {duracion:F2}s. " +
                 $"Zona: {radio}m × {alturaVolumen}m en {centro}.");

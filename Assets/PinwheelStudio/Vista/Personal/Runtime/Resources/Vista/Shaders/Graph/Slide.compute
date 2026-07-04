@@ -1,0 +1,81 @@
+#pragma exclude_renderers gles3
+#pragma kernel Init
+#pragma kernel Simulate
+#pragma multi_compile_local _ HAS_HEIGHT_MAP
+#pragma multi_compile_local _ HAS_TRAIL_MAP
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include GEOMETRY_HLSL
+#include SAMPLING_HLSL
+#include COMMON_DATA_TYPES_HLSL
+
+StructuredBuffer<PositionSample> _InputPositions;
+#if HAS_HEIGHT_MAP
+	Texture2D _HeightMap;
+	float4 _HeightMap_TexelSize;
+	float _TrailCurvatureFactor;
+#endif
+
+#if HAS_TRAIL_MAP
+	RWTexture2D<float> _TrailMap;
+	float _TrailMapResolution;
+	float _TrailIntensity;
+#endif
+
+RWStructuredBuffer<float2> _Offsets;
+RWStructuredBuffer<PositionSample> _OutputPositions;
+
+int _BaseIndex;
+int _InstanceCount;
+
+[numthreads(8, 1, 1)]
+void Init(uint3 id: SV_DISPATCHTHREADID)
+{
+	int index = id.x + _BaseIndex;
+	if (index >= _InstanceCount)
+		return;
+
+	PositionSample p = _InputPositions[index];
+	_OutputPositions[index] = p;
+	_Offsets[index] = float2(0, 0);
+}
+
+[numthreads(8, 1, 1)]
+void Simulate(uint3 id: SV_DISPATCHTHREADID)
+{
+	int index = id.x + _BaseIndex;
+	if (index >= _InstanceCount)
+		return;
+
+	PositionSample p = _OutputPositions[index];
+
+	#if HAS_HEIGHT_MAP
+		for (int step = 0; step < 10; ++step)
+		{
+			float3 normal = normalFromHeightMap(_HeightMap, _HeightMap_TexelSize, _SamplerLinearClamp, float3(1, 1, 1), p.position.xz);
+
+			float offsetX = normal.x * _HeightMap_TexelSize.x * p.isValid;
+			float offsetZ = normal.z * _HeightMap_TexelSize.y * p.isValid;
+			
+			float2 lastOffset = _Offsets[index] * _HeightMap_TexelSize.xy * p.isValid;
+			float fOffset = normal.y * _TrailCurvatureFactor;
+			offsetX = lerp(lastOffset.x, offsetX, fOffset);
+			offsetZ = lerp(lastOffset.y, offsetZ, fOffset);
+
+			float2 offsetVec = float2(offsetX, offsetZ);
+			_Offsets[index] = dot(offsetVec, offsetVec) > 0 ? normalize(offsetVec) : float2(0, 0);
+
+			p.position.x += offsetX * 0.7;
+			p.position.z += offsetZ * 0.7;
+			p.position.y = _HeightMap.SampleLevel(_SamplerLinearClamp, p.position.xz, 0).r;
+
+			#if HAS_TRAIL_MAP
+				float trailPixelX = lerp(0, _TrailMapResolution - 1, p.position.x);
+				float trailPixelY = lerp(0, _TrailMapResolution - 1, p.position.z);
+				_TrailMap[float2(trailPixelX, trailPixelY)] = _TrailIntensity * p.isValid;
+			#endif
+		}
+	#endif
+
+	_OutputPositions[index] = p;
+}

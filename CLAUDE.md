@@ -16,11 +16,15 @@ Trabajar en `main` (única rama; historia limpia sin LFS). Las ramas antiguas es
 - Origen = Herriko Plaza (centro de Alsasua)
 - UTM 30N ETRS89: E=567951, N=4749902
 - Unity offset: OX=1918, OZ=8570
-- Conversión UTM→Unity: `UnityX = (E - 567951) × 0.93687 + 1918; UnityZ = (N - 4749902) + 8570`
-  — **el mundo lleva escala X = 76400/81548 ≈ 0.93687** (herencia del importador OSM;
-  verificada empíricamente 2026-06 contra el MDT05 del IGN, mediana 0.19 m).
-  Usar SIEMPRE `GeoDataAlsasua.UTMaUnity()/UnityAUTM()`; la identidad desplaza ~25 m a 400 m del centro.
-- Escala: 1 unidad Unity = 1 metro real (en Z; en X comprimido 6.3%)
+- Conversión UTM→Unity: `UnityX = (E - 567951) + 1918; UnityZ = (N - 4749902) + 8570`
+  — **UTM REAL ISÓTROPO: `ESCALA_UTM_X = 1`** (1 ud = 1 m en X y en Z).
+  Corregido 2026-06-19: antes el mundo iba comprimido en X un factor 76400/81548 ≈ 0.93687
+  (bug del importador OSM con M_LON_PROJ=76400) y se deformaba ~6.3% E-O (hasta ~25 m a 400 m
+  del centro). Ahora terreno (mosaico V2 regenerado con SX=1), edificios, carreteras y jugador
+  comparten la misma escala real y caen en su sitio OSM/IGN/Catastro a <0.5 m.
+  Usar SIEMPRE `GeoDataAlsasua.UTMaUnity()/UnityAUTM()` (`ESCALA_UTM_X_LEGACY` guarda el 0.93687 viejo).
+  Gate de regresión: `Tools/Alsasua/Calidad/✅ Validar georreferenciación` + tests `GeoDataAlsasuaTests`.
+- Escala: 1 unidad Unity = 1 metro real (isótropo en X y Z)
 - Altura Unity = altitud_real - Z_min (511.33m)
 - Cota real de Herriko Plaza: **531.94 m** (`GeoDataAlsasua.COTA_PLAZA`, validada con LIDAR+IDENA+MDT05+MDT25)
 - Alturas en runtime: `TerrenoGlobal.AlturaMundo(pos)` o `GeoDataAlsasua.AlturaTerreno()` (tile-aware);
@@ -40,6 +44,21 @@ Mosaico multi-resolución estilo GTA en `Assets/AlsasuaData/terrain_tiles_v2/` (
 - Escritores del terrain: SIEMPRE vía `MultiTileTerrainEdit` (coords mundo, kernels idempotentes min()).
 - Datos v1 obsoletos archivados en `Assets/AlsasuaData/_archivo_v1~/` (unity_terrain_info.json,
   dtm/dsm_alsasua_5m.asc, terrain_tiles/ v1 — NO usar).
+- **2026-06-19: mosaico V2 REGENERADO con `SX=1`** (UTM real isótropo); `manifest_v2.json` ahora
+  `escalaX=1`. Cota plaza 531.97 m (esperado 531.94). Backup del V2 comprimido en
+  `Assets/AlsasuaData/_backup_terreno_pre_utm~/`. Datos vectoriales (edificios/calles/etc.) reproyectados
+  a OSM real <0.5 m; backup en `_backup_pre_utm_real~/`. Pasos de reconstrucción en escena:
+  `Tools/Alsasua/▶▶ APLICAR TODO (UTM real)` (ver `Assets/AlsasuaData/CORRECCION_UTM_REAL.md`).
+- **Mosaico V3 (clipmap GPU, deuda AAA)** — fundación en `Assets/AlsasuaData/terrain_clipmap_v3/`
+  (`heightmap_unificado.r16` 4097², validado: V3≈V2 <0.5 m, mediana 8 mm). Diseño en
+  `Docs/ADR_001_AAA_impostores_clipmapV3.md`; código staged en `Assets/Scripts/_ClipmapV3~/`
+  (no compilado). **Fases 3-5 ESCRITAS (2026-06-23, faltan solo wiring+Play en editor)**:
+  `ClipmapDisplacement.hlsl` (displacement+normal en vertex), `CargadorTexturaHeightmapV3`
+  (R16→GPU), `MuestreadorAlturaClipmapV3` (adaptador `IMuestreadorAlturaPrecisa` con gate de
+  cota plaza → ServicioTerreno lo usa sin cambios), `ColliderParcheClipmapV3` (física que sigue
+  al jugador, sustituye 48 TerrainColliders). Decode `.py`/CPU/GPU verificado idéntico (plaza
+  531.969 m, diff 0.000). Impostores (otra deuda AAA) staged en `Assets/Scripts/_Impostores~/`
+  (atlas+baker+billboard+`GestorImpostores` pool; falta recrear el shader como ShaderGraph HDRP/Unlit).
 
 ## Datos de terreno disponibles (de mayor a menor resolución)
 | Archivo | Resolución | Descripción |
@@ -153,8 +172,19 @@ El arranque y el render se gobiernan con presupuesto, no "modo demo todo-a-la-ve
   Impostor-lite (LOD mínimo + sombras OFF) / Oculto. **No** toca árboles (los lleva
   `AlsasuaTreeStreamer`) ni multitud (BRG, 1 draw call). `SistemaOptimizacion` cede su cull
   todo-o-nada cuando el streamer existe; su gobernador de calidad por FPS (sombras/LOD bias) sigue.
-- Pendiente AAA real: impostores con atlas de billboard (hoy "impostor-lite") y el Mosaico V3
-  (clipmap GPU, 1–2 draw calls) que sustituye los 48 Terrain.
+- Deuda AAA EN CURSO (diseño + código staged hechos 2026-06; queda wiring+Play en Unity):
+  · Impostores con atlas de billboard → `Assets/Scripts/_Impostores~/` (SO + baker + billboard +
+    `GestorImpostores` pool, staged). Falta: shader ShaderGraph HDRP/Unlit (receta en el LEEME) y
+    batching BRG.
+  · Mosaico V3 clipmap GPU (1–2 draw calls, sustituye los 48 Terrain) → `Assets/Scripts/_ClipmapV3~/`.
+    Fases 0-5 escritas y verificadas en datos (geometría+follow, sampler CPU, HLSL displacement+normal,
+    cargador R16→GPU, adaptador `IMuestreadorAlturaPrecisa`, collider-parche). Falta: cablear la
+    ShaderGraph (receta paso a paso en `LEEME_clipmapV3.md`) y validar en editor.
+  · Gameplay "calor y alivio" staged: `_ParanoiaGC~` (NPC/coches→Guardia Civil off-screen),
+    `_ControlesGC~` (controles de carretera), `_Testigos~` (vecinos te delatan/cubren),
+    `_Coartada~` (refugios enfrían), `_Tuning~/SintoniaAltsasu` (panel único). Integración y
+    bucle en `Docs/Narrativa/INTEGRACION_Sistemas.md`. Una sola paranoia (fachada en SistemasSimulacion).
+  Diseño y plan por fases: `Docs/ADR_001_AAA_impostores_clipmapV3.md`.
 
 ## Arquitectura de capas
 
@@ -185,6 +215,7 @@ UI/AUDIO  HUDCanvas · AudioManager · SistemaPolish · SistemaReverbZonas
 
 ### Eventos EventBus activos
 - `PlayerDeathEvent` — publicado por `ControladorJugador.Morir()` y `GameManagerAltsasua.JugadorMuerto()`. Suscriptor: `HUDCanvas` (fade negro).
+- `PlayerArrestedEvent` — publicado por `CerebroGOAPPolicia.Arrestar()`. Suscriptor: `HUDCanvas` (fade negro + "detenido"). `GameManagerAltsasua` puede suscribirse para la política de respawn/game-over.
 - `ChunkLoadedEvent` — publicado por `SistemaZonas` al cargar/descargar zonas OSM.
 - `ZoneChangedEvent` — publicado por `SistemaZonas.Update()` al detectar cambio de celda.
 

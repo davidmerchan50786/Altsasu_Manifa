@@ -31,21 +31,38 @@ que esto va como DRAFT staged y no directo a `Assets`.
 - `ImpostorUnlit.shader`: unlit de referencia que muestrea la celda `_UvCell`.
   ⚠ Recrear como ShaderGraph **HDRP/Unlit** para producción (en CG sale magenta en HDRP).
 
+- `GestorImpostores.cs` (Runtime): **pool + actualización central**. El streamer
+  pide/devuelve impostores aquí (sin `new`/`Destroy` por edificio → sin GC al
+  streamear cientos) y un único LateUpdate orienta todos con una lectura de cámara.
+  Es la lista que alimentará el batching BRG.
+
+### Receta del Shader HDRP/Unlit (≈4 min, quita el magenta)
+El `.shader` CG es solo referencia legible. Para HDRP, recréalo en Shader Graph:
+1. Crea un *Unlit Shader Graph*; Surface **Alpha Clip** ON, Threshold = `_Cutoff`,
+   Render Face **Both**, Cull Off.
+2. Propiedades (Reference EXACTO): `_Atlas` (Texture2D), `_UvCell` (Vector4),
+   `_Cutoff` (Float, 0.5). `_Atlas` sin sRGB-off (es albedo → sRGB ON).
+3. Grafo: `UV = _UvCell.xy + UV0 * _UvCell.zw` (Multiply + Add) → **Sample Texture2D**
+   `_Atlas` → Color a **Base Color**, Alpha a **Alpha**.
+4. Guárdalo como `Alsasua/ImpostorUnlit`; `ImpostorBillboard` ya lo busca por ese
+   nombre (con fallback a Unlit/Transparent).
+
 ### Hook en StreamerMundoEstatico (cuando actives)
-En la clasificación por bandas, sustituye el "impostor-lite" de la banda media por:
+Con el gestor (recomendado, sin GC):
 ```
 // al ENTRAR en [RadioActivacion, RadioImpostor]:
 meshRenderer.enabled = false;                       // apaga la geometría real
-_impostor = ImpostorBillboard.Crear(atlasSO, idOSM, transform);
+_impostor = GestorImpostores.Instance.Adquirir(idOSM, transform);
 // al VOLVER a 'Activo':
-if (_impostor) { Destroy(_impostor.gameObject); _impostor = null; }
+if (_impostor) { GestorImpostores.Instance.Liberar(_impostor); _impostor = null; }
 meshRenderer.enabled = true;
 ```
 
 ## Pendiente (fase 3-4, en el ADR)
-- **Batching BRG**: agrupar todos los impostores de un atlas en 1 draw call
-  (`BatchRendererGroup` / `Graphics.RenderMeshInstanced` con UVs por instancia),
-  en vez de un MeshRenderer por edificio. Es el gran ahorro de draw calls.
+- **Batching BRG**: dibujar todos los impostores activos del gestor en 1 draw call
+  (`BatchRendererGroup` / `Graphics.RenderMeshIndirect` con UVcell por instancia vía
+  StructuredBuffer). El `GestorImpostores._activos` es justo la fuente. Necesita
+  shader con props instanciadas → validar en editor.
 - Normales + profundidad (parallax) y sombra fake en el atlas.
 - Mezcla por dither 0.25 s en la transición Activo↔Impostor (anti-pop).
 

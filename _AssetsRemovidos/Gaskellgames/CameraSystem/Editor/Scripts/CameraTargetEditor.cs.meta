@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 666bb664715f95d44802b2c478047876
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {fileID: 2800000, guid: dab5722bd06abde40ae4bb813e56c525, type: 3}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 248116
+  packageName: Camera System - Gaskellgames
+  packageVersion: 1.6.6
+  assetPath: Assets/Gaskellgames/CameraSystem/Editor/Scripts/CameraTargetEditor.cs
+  uploadId: 926836

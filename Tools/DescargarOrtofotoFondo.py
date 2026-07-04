@@ -24,7 +24,7 @@ META = os.path.join(ROOT, "Assets/AlsasuaData/ortofoto_fondo_meta.json")
 # Convención horizontal del mosaico V2 (manifest_v2.json)
 E0, N0 = 567951.0, 4749902.0
 OX, OZ = 1918.0, 8570.0
-ESCALA_X = 0.9368715357826065
+ESCALA_X = 1.0  # ISOTROPO UTM real (antes 0.93687; corregido 2026-06-19)
 HALF = 7200.0                      # anillo 2: ±7200 m
 
 WMS = "https://www.ign.es/wms-inspire/pnoa-ma"

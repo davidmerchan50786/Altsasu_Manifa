@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: a78ba3a133b9ec54d9560c724f44930e
+labels:
+- VistaCoreIncludeFile
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Resources/Vista/Shaders/Includes/Sampling.hlsl
+  uploadId: 922302

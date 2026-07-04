@@ -286,7 +286,10 @@ public class PoliciaForalIA : NPCBase, IDamageable
 
         // ── 1. Comprobación de radio y ángulo de cono (sin raycast — O(1)) ────
         bool  esDeNoche = EsDeNoche();
-        float radioAct  = esDeNoche ? radioLinterna  : radioVision;
+        // alcance base día/noche (linterna) × sigilo noche × disfraz × evento (apagón/niebla)
+        float radioAct  = (esDeNoche ? radioLinterna : radioVision)
+                          * SistemaDiaNoche.DeteccionSigilo * SistemaDisfraz.FactorReconocimiento
+                          * SistemaEventosMundo.FactorEventoSigilo * SistemaTerritorio.FactorZona;
         float anguloAct = esDeNoche ? anguloLinterna : anguloVision;
 
         Vector3 oriEye = transform.position + Vector3.up * 1.65f;
@@ -449,8 +452,22 @@ public class PoliciaForalIA : NPCBase, IDamageable
     {
         _ctxGoap.posAgente     = transform.position;
         if (jugador != null) _ctxGoap.posJugador = jugador.position;
-        _ctxGoap.hayCobertura  = coberturaCercana != null;
-        _ctxGoap.posCobertura  = _ctxGoap.hayCobertura ? coberturaCercana.position : _ctxGoap.posAgente;
+        if (coberturaCercana != null)
+        {
+            _ctxGoap.hayCobertura = true;
+            _ctxGoap.posCobertura = coberturaCercana.position;
+        }
+        else if (jugador != null &&
+                 SistemaCoberturasIA.MejorCobertura(transform.position, jugador.position, 12f, out var _covDin))
+        {
+            _ctxGoap.hayCobertura = true;     // cobertura dinámica (sin transform a mano)
+            _ctxGoap.posCobertura = _covDin;
+        }
+        else
+        {
+            _ctxGoap.hayCobertura = false;
+            _ctxGoap.posCobertura = _ctxGoap.posAgente;
+        }
         _ctxGoap.nivelBusqueda = _wantedSystem != null ? _wantedSystem.NivelBusqueda : 0;
         var sap = SistemaApoyoPopular.Instance;
         _ctxGoap.apoyo01       = sap != null ? Mathf.Clamp01(sap.apoyo / 100f) : 0.5f;
@@ -523,6 +540,10 @@ public class PoliciaForalIA : NPCBase, IDamageable
         _planLenGoap = 0;
     }
 
+    // Flanqueo: ~la mitad de las unidades (determinista por instancia) rodea.
+    private bool  EsFlanker => (GetInstanceID() & 1) == 0;
+    private float _tFlanqueo;
+
     private void TickAtaque()
     {
         // agente.ResetPath() ya se llama en CambiarEstado(Atacando) — no repetir cada frame
@@ -538,6 +559,20 @@ public class PoliciaForalIA : NPCBase, IDamageable
                 transform.rotation, Quaternion.LookRotation(dirA), 8f * Time.deltaTime);
 
         if (dist > radioAtaque * 1.35f) { CambiarEstado(EstadoPolicia.Persiguiendo); return; }
+
+        // ── Flanqueo: las unidades flanker se reposicionan a un costado del
+        //    jugador cada ~2,5 s para ganar ángulo; las demás mantienen y disparan.
+        if (EsFlanker)
+        {
+            _tFlanqueo -= Time.deltaTime;
+            if (_tFlanqueo <= 0f)
+            {
+                _tFlanqueo = 2.5f;
+                if (SistemaCoberturasIA.PosicionFlanqueo(jugador.position, transform.position,
+                                                         radioAtaque * 0.8f, out var fp))
+                    agente.SetDestination(fp);
+            }
+        }
 
         timerAtaque -= Time.deltaTime;
         if (timerAtaque <= 0f) { Disparar(); timerAtaque = cadencia; }

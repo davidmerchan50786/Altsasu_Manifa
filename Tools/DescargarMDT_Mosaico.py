@@ -40,7 +40,7 @@ if hasattr(sys.stdout, "reconfigure"):
 # ── Constantes del mundo (única fuente: GeoDataAlsasua.cs / esta cabecera) ──
 E0, N0 = 567951.0, 4749902.0       # UTM Herriko Plaza
 OX, OZ = 1918.0, 8570.0            # Unity Herriko Plaza
-SX = 76400.0 / 81548.0             # escala X UTM→Unity (≈0.93687)
+SX = 1.0  # ISOTROPO UTM real (antes 76400/81548; corregido 2026-06-19)
 Z_MIN = 511.33                     # datum vertical (AlturaUnity = cota − Z_MIN)
 COTA_PLAZA = 531.94                # cota real de la plaza (validada)
 

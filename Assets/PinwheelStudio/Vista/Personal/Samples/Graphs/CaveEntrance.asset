@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd3d01eddcedb04c8e9bd76ec8c3819, type: 3}
+  m_Name: CaveEntrance
+  m_EditorClassIdentifier: 
+  m_nodeData:
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.ShapeNode
+    jsonData: '{"m_groupId":"","m_id":"N7IQYOIG","m_visualState":{"m_position":{"x":198.39999389648438,"y":259.2000427246094},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_shape":1,"m_scale":{"x":0.5,"y":0.5},"m_innerSize":0.5}'
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.HoleOutputNode
+    jsonData: '{"m_groupId":"","m_id":"DJ331LF2","m_visualState":{"m_position":{"x":368.79998779296877,"y":259.20001220703127},"m_collapsed":false},"m_shouldSplitExecution":false,"m_isBypassed":false,"m_resolutionOverride":1,"m_resolutionMultiplier":1.0,"m_resolutionAbsolute":1024,"m_threshold":0.5}'
+  m_edgeData:
+  - typeInfo:
+      fullName: Pinwheel.Vista.Graph.Edge
+    jsonData: '{"m_id":"M5PBGVNX","m_outputSlot":{"m_nodeId":"N7IQYOIG","m_slotId":100},"m_inputSlot":{"m_nodeId":"DJ331LF2","m_slotId":0}}'
+  m_groupData: []
+  m_stickyNoteData: []
+  m_stickyImageData: []
+  m_objectReferences: []
+  m_exposedProperties: []
+  m_debugConfigs:
+    m_resolution: 128
+    m_worldBounds:
+      serializedVersion: 2
+      x: 791.7798
+      y: 686.0924
+      width: 101.8313
+      height: 100.21912
+    m_terrainHeight: 200
+    m_seed: 0
+    m_shouldOutputTempHeight: 0
+  m_allowSplitExecution: 1

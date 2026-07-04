@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 885f42b7bfbb6db48a46bb46d31f1f8a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {fileID: 2800000, guid: 37a2883f2ad6df14ea66072608192d85, type: 3}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297327
+  packageName: Vista Personal - Procedural Terrain Editor, Multi-Layer Biomes
+  packageVersion: 3000.1.1
+  assetPath: Assets/PinwheelStudio/Vista/Personal/Runtime/Scripts/Graph/BiomeMaskGraph.cs
+  uploadId: 922302

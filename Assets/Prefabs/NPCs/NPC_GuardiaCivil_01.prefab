@@ -173,6 +173,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8297aa9741741904c916839b3012f794, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PoliciaForalIA
+  prefabModelo: {fileID: 0}
+  velocidadBase: 1.4
+  velocidadMaxima: 5.5
   radioVision: 22
   anguloVision: 90
   radioEscucha: 5
@@ -195,3 +198,7 @@ MonoBehaviour:
   cadencia: 1.4
   radioAtaque: 16
   dispersion: 0.05
+  usarGOAP: 1
+  coberturaCercana: {fileID: 0}
+  replanGOAP: 0.5
+  radioArresto: 2.2

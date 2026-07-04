@@ -41,6 +41,23 @@ public class SistemaTrafico : MonoBehaviour
 {
     public static SistemaTrafico Instance { get; private set; }
 
+    /// <summary>¿Hay un semáforo en rojo/ámbar delante (a 'dist' m y dentro del cono frontal)?
+    /// Lo consultan los VehiculoNPC para detenerse en las intersecciones.</summary>
+    public bool HayRojoDelante(Vector3 pos, Vector3 fwd, float dist)
+    {
+        for (int i = 0; i < _semaforos.Count; i++)
+        {
+            var s = _semaforos[i];
+            if (s == null || s.Fase == SemaforoNodo.FaseSemaforo.Verde) continue;
+            Vector3 v = s.transform.position - pos; v.y = 0f;
+            float d = v.magnitude;
+            if (d > dist || d < 0.5f) continue;
+            if (Vector3.Dot(fwd, v / d) < 0.6f) continue;   // tiene que estar delante
+            return true;
+        }
+        return false;
+    }
+
     // ── Config ────────────────────────────────────────────────────────────
     [Header("Pool de vehículos")]
     [SerializeField] GameObject prefabVehiculo;          // VehiculoNPC prefab; si null se genera procedural

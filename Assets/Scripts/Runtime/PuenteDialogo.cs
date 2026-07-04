@@ -44,6 +44,10 @@ public sealed class PuenteDialogo : MonoBehaviour
             case "aliado_amaia":  ap?.SumarApoyo(5f,  e); break;
             case "rechazo_amaia": ap?.RestarApoyo(4f, e); break;
             case "manu_se_queda": ap?.SumarApoyo(10f, e); break;
+            case "manifa_pacifica":   ap?.SumarApoyo(12f, e); break;
+            case "manifa_desbordada": ap?.RestarApoyo(10f, e); break;
+            case "aliada_sara":       ap?.SumarApoyo(6f,  e); break;
+            case "perder_aliado":     ap?.RestarApoyo(5f, e); break;
             // pista_pendrive / objetivo_fabrica / objetivo_pleno: sin efecto de
             // apoyo, pero se re-emiten abajo para que las misiones avancen.
         }

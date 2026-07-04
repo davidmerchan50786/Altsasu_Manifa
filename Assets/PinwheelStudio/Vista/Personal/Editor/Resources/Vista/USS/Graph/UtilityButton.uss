@@ -1,0 +1,50 @@
+.utility-button
+{
+	width: 32px;
+	height: 32px;
+}
+
+.utility-button.v2
+{
+	width: 18px;
+	height: 18px;
+	padding: 1px;
+	margin: 1px;
+	border-width: 0px;
+	background-color: rgba(0,0,0,0);
+}
+
+.utility-button.v2:hover
+{
+	background-color: rgb(96,96,96);
+}
+
+.utility-button.v2:active
+{
+	background-color: rgb(50,50,50);
+}
+
+.image
+{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	margin: 5px;
+}
+
+.utility-button.v2>.image
+{
+	margin: 2px;
+}
+
+.toggled
+{
+	background-color: rgb(51,51,51);
+}
+
+.v2.toggled
+{
+	background-color: rgb(80,80,80);
+}

@@ -1,0 +1,264 @@
+﻿#pragma exclude_renderers gles3
+#pragma kernel Simulate
+#pragma kernel PostProcess
+#pragma multi_compile_local _ HIGH_QUALITY
+#pragma multi_compile_local _ HAS_HARDNESS_MAP
+
+#include "../Includes/ShaderIncludes.hlsl"
+#include COMPUTE_COMMON_HLSL
+#include COMMON_DATA_TYPES_HLSL
+#include SAMPLING_HLSL
+
+RWTexture2D<float> _WorldData;
+RWTexture2D<float4> _SoilVHData;
+#if HIGH_QUALITY
+	RWTexture2D<float4> _SoilDiagData; 
+#endif
+RWTexture2D<float2> _HeightChangeData;
+
+float3 _Bounds;
+float2 _SimDataResolution;
+
+float _ErosionRate;
+float _RestingAngle;
+
+#if HAS_HARDNESS_MAP
+	Texture2D _HardnessMap;
+#endif
+
+void CalculateIds(inout uint3 id, inout uint3 ids[9])
+{
+	float3 minPos = float3(0, 0, 0);
+	float3 maxPos = float3(_SimDataResolution.x - 1, 0, _SimDataResolution.y - 1);
+	
+	float3 leftPos = clamp(float3(id.x - 1, 0, id.z), minPos, maxPos);
+	float3 topPos = clamp(float3(id.x, 0, id.z + 1), minPos, maxPos);
+	float3 rightPos = clamp(float3(id.x + 1, 0, id.z), minPos, maxPos);
+	float3 bottomPos = clamp(float3(id.x, 0, id.z - 1), minPos, maxPos);
+	float3 leftTopPos = clamp(float3(id.x - 1, 0, id.z + 1), minPos, maxPos);
+	float3 topRightPos = clamp(float3(id.x + 1, 0, id.z + 1), minPos, maxPos);
+	float3 rightBottomPos = clamp(float3(id.x + 1, 0, id.z - 1), minPos, maxPos);
+	float3 bottomLeftPos = clamp(float3(id.x - 1, 0, id.z - 1), minPos, maxPos);
+
+	ids[C] = id;
+	ids[L] = leftPos;
+	ids[T] = topPos;
+	ids[R] = rightPos;
+	ids[B] = bottomPos;
+	ids[LT] = leftTopPos;
+	ids[TR] = topRightPos;
+	ids[RB] = rightBottomPos;
+	ids[BL] = bottomLeftPos;
+}
+
+void Outflow(inout float srcData, inout uint3 ids[9], float erosionMask)
+{
+	float F_CONST = DT * G * _ErosionRate * 0.5;
+	float3 centerPos = float3(ids[C].x, srcData, ids[C].z);
+	float3 downVector = float3(0, -1, 0);
+	float3 direction;
+	float angleFactor;
+	float minFactor = sin(radians(_RestingAngle));
+	float maxDh = -10000;
+
+	float3 leftPos = ids[L];
+	float leftData = _WorldData[leftPos.xz];
+	leftPos.y = leftData;
+	direction = normalize(leftPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightL = srcData - leftData;
+	maxDh = max(maxDh, deltaHeightL);
+	float fL = max(0, F_CONST * angleFactor * deltaHeightL) * (leftPos.x >= 0);
+
+	float3 topPos = ids[T];
+	float topData = _WorldData[topPos.xz];
+	topPos.y = topData;
+	direction = normalize(topPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightT = srcData - topData;
+	maxDh = max(maxDh, deltaHeightT);
+	float fT = max(0, F_CONST * angleFactor * deltaHeightT) * (topPos.z < _SimDataResolution.y);
+
+	float3 rightPos = ids[R];
+	float rightData = _WorldData[rightPos.xz];
+	rightPos.y = rightData;
+	direction = normalize(rightPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightR = srcData - rightData;
+	maxDh = max(maxDh, deltaHeightR);
+	float fR = max(0, F_CONST * angleFactor * deltaHeightR) * (rightPos.x < _SimDataResolution.x);
+
+	float3 bottomPos = ids[B];
+	float bottomData = _WorldData[bottomPos.xz];
+	bottomPos.y = bottomData;
+	direction = normalize(bottomPos - centerPos);
+	angleFactor = saturate(dot(direction, downVector));
+	angleFactor = angleFactor >= minFactor;
+	float deltaHeightB = srcData - bottomData;
+	maxDh = max(maxDh, deltaHeightB);
+	float fB = max(0, F_CONST * angleFactor * deltaHeightB) * (bottomPos.z >= 0);
+
+	#if HIGH_QUALITY
+		float3 leftTopPos = ids[LT];
+		float leftTopData = _WorldData[leftTopPos.xz];
+		leftTopPos.y = leftTopData;
+		direction = normalize(leftTopPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightLT = srcData - leftTopData;
+		maxDh = max(maxDh, deltaHeightLT);
+		float fLT = max(0, F_CONST * angleFactor * deltaHeightLT) * (leftTopPos.x >= 0) * (leftTopPos.z < _SimDataResolution.y);
+
+		float3 topRightPos = ids[TR];
+		float topRightData = _WorldData[topRightPos.xz];
+		topRightPos.y = topRightData;
+		direction = normalize(topRightPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightTR = srcData - topRightData;
+		maxDh = max(maxDh, deltaHeightTR);
+		float fTR = max(0, F_CONST * angleFactor * deltaHeightTR) * (topRightPos.x < _SimDataResolution.x) * (topRightPos.z < _SimDataResolution.y);
+
+		float3 rightBottomPos = ids[RB];
+		float rightBottomData = _WorldData[rightBottomPos.xz];
+		rightBottomPos.y = rightBottomData;
+		direction = normalize(rightBottomPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightRB = srcData - rightBottomData;
+		maxDh = max(maxDh, deltaHeightRB);
+		float fRB = max(0, F_CONST * angleFactor * deltaHeightRB) * (rightBottomPos.x < _SimDataResolution.x) * (rightBottomPos.z >= 0);
+
+		float3 bottomLeftPos = ids[BL];
+		float bottomLeftData = _WorldData[bottomLeftPos.xz];
+		bottomLeftPos.y = bottomLeftData;
+		direction = normalize(bottomLeftPos - centerPos);
+		angleFactor = saturate(dot(direction, downVector));
+		angleFactor = angleFactor >= minFactor;
+		float deltaHeightBL = srcData - bottomLeftData;
+		maxDh = max(maxDh, deltaHeightBL);
+		float fBL = max(0, F_CONST * angleFactor * deltaHeightBL) * (bottomLeftPos.x >= 0) * (bottomLeftPos.z >= 0);
+	#endif
+
+	float fSum;
+	#if HIGH_QUALITY
+		fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+	#else
+		fSum = fL + fT + fR + fB;
+	#endif
+	float fScale = erosionMask * min(1, maxDh / (fSum + 0.0001));
+	
+	float4 fVH = float4(fL, fT, fR, fB) * fScale;
+	_SoilVHData[ids[C].xz] = fVH;
+
+	#if HIGH_QUALITY
+		float4 fDiag = float4(fLT, fTR, fRB, fBL) * fScale;
+		_SoilDiagData[ids[C].xz] = fDiag;
+	#endif
+	srcData = srcData - fSum * fScale;
+
+	float2 heightChange = _HeightChangeData[ids[C].xz];
+	heightChange.r += fSum * fScale;
+	heightChange.g -= fSum * fScale;
+	_HeightChangeData[ids[C].xz] = heightChange;
+}
+
+void Inflow(inout float srcData, inout uint3 ids[9])
+{
+	float4 leftData = _SoilVHData[ids[L].xz];
+	float fL = leftData[RIGHT];
+
+	float4 topData = _SoilVHData[ids[T].xz];
+	float fT = topData[BOTTOM];
+
+	float4 rightData = _SoilVHData[ids[R].xz];
+	float fR = rightData[LEFT];
+
+	float4 bottomData = _SoilVHData[ids[B].xz];
+	float fB = bottomData[TOP];
+
+	#if HIGH_QUALITY
+		float4 leftTopData = _SoilDiagData[ids[LT].xz];
+		float fLT = leftTopData[RIGHT_BOTTOM];
+
+		float4 topRightData = _SoilDiagData[ids[TR].xz];
+		float fTR = topRightData[BOTTOM_LEFT];
+
+		float4 rightBottomData = _SoilDiagData[ids[RB].xz];
+		float fRB = rightBottomData[LEFT_TOP];
+
+		float4 bottomLeftData = _SoilDiagData[ids[BL].xz];
+		float fBL = bottomLeftData[TOP_RIGHT];
+	#endif
+
+	float fSum;
+	#if HIGH_QUALITY
+		fSum = fL + fT + fR + fB + fLT + fTR + fRB + fBL;
+	#else
+		fSum = fL + fT + fR + fB;
+	#endif
+	srcData += fSum;
+
+	float2 heightChange = _HeightChangeData[ids[C].xz];
+	heightChange.r -= fSum;
+	heightChange.g += fSum;
+
+	heightChange.r = max(0, heightChange.r);
+	heightChange.g = max(0, heightChange.g);
+
+	_HeightChangeData[ids[C].xz] = heightChange;
+}
+
+void UpdateSimData(inout float srcData, inout uint3 id)
+{
+	_WorldData[id.xz] = srcData;
+}
+
+[numthreads(8, 1, 8)]
+void PostProcess(uint3 id: SV_DISPATCHTHREADID)
+{
+	uint3 ids[9];
+	CalculateIds(id, ids);
+
+	float2 delta = _HeightChangeData[id.xz];
+
+	float2 leftDelta = _HeightChangeData[ids[L].xz];
+	float2 topDelta = _HeightChangeData[ids[T].xz];
+	float2 rightDelta = _HeightChangeData[ids[R].xz];
+	float2 bottomDelta = _HeightChangeData[ids[B].xz];
+	float2 leftTopDelta = _HeightChangeData[ids[LT].xz];
+	float2 topRightDelta = _HeightChangeData[ids[TR].xz];
+	float2 rightBottomDelta = _HeightChangeData[ids[RB].xz];
+	float2 bottomLeftDelta = _HeightChangeData[ids[BL].xz];
+
+	float2 avgDelta = (delta + leftDelta + topDelta + rightDelta + bottomDelta + leftTopDelta + topRightDelta + rightBottomDelta + bottomLeftDelta) / 9.0;
+	_HeightChangeData[id.xz] = avgDelta;
+}
+
+[numthreads(8, 1, 8)]
+void Simulate(uint3 id: SV_DISPATCHTHREADID)
+{
+	float2 uv = id.xz / (_SimDataResolution.xy - 1);
+	#if HAS_HARDNESS_MAP
+		float hardness = _HardnessMap.SampleLevel(_SamplerLinearClamp, uv, 0).r;
+	#else
+		float hardness = 0;
+	#endif
+	float srcData = _WorldData[id.xz];
+
+	uint3 ids[9];
+	CalculateIds(id, ids);
+
+	for (int step = 0; step < 5; ++step)
+	{
+		Outflow(srcData, ids, 1 - hardness);
+		UpdateSimData(srcData, id);
+		GroupMemoryBarrierWithGroupSync();
+		Inflow(srcData, ids);
+		UpdateSimData(srcData, id);
+		GroupMemoryBarrierWithGroupSync();
+	}
+}

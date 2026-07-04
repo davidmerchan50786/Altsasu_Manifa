@@ -96,11 +96,23 @@ public static class ConstructorCiudadAssets
     [System.Serializable] class Edif { public long id; public string type, name; public int levels; public float height; public Vert[] vertices; }
     [System.Serializable] class Wrap { public Edif[] items; }
 
-    // Altura tile-aware del mosaico V2: SampleHeight sobre el tile que CONTIENE (x,z),
-    // no sobre Terrain.activeTerrain (con 48 tiles devuelve uno arbitrario / 0 fuera de su tile).
-    static float AlturaEnMosaico(Terrain[] ts, float x, float z)
+    // Muestreador V3: prioridad sobre V2 (sin tile gaps, bilineal, 7.2km)
+    static MuestreadorHeightmapV3 _v3;
+    static bool _v3Intentado;
+    static MuestreadorHeightmapV3 ObtenerV3()
     {
-        for (int i = 0; i < ts.Length; i++)
+        if (_v3Intentado) return _v3;
+        _v3Intentado = true;
+        var m = new MuestreadorHeightmapV3();
+        if (m.Cargar()) _v3 = m;
+        return _v3;
+    }
+
+    static float AlturaEnPunto(float x, float z, Terrain[] ts)
+    {
+        var v3 = ObtenerV3();
+        if (v3 != null && v3.EnRango(x, z)) return v3.AlturaMundo(x, z); // V3 exacto
+        for (int i = 0; i < ts.Length; i++)                                // V2 fallback
         {
             var t = ts[i];
             if (t == null || t.terrainData == null) continue;
@@ -108,7 +120,7 @@ public static class ConstructorCiudadAssets
             if (x >= p.x && x < p.x + s.x && z >= p.z && z < p.z + s.z)
                 return p.y + t.SampleHeight(new Vector3(x, 0f, z));
         }
-        return 0f; // fuera del mosaico
+        return 0f;
     }
 
     [MenuItem("Tools/Alsasua/Mundo/🏙️ Construir Edificios de Asset (footprints reales)", priority = 10)]
@@ -225,7 +237,7 @@ public static class ConstructorCiudadAssets
                 // Los footprints son RELATIVOS al origen (Herriko Plaza). World = + OX/OZ
                 // (igual que ConstruirEdificio procedural: v + GeoDataAlsasua.OX/OZ).
                 float wx = c.x + GeoDataAlsasua.OX, wz = c.y + GeoDataAlsasua.OZ;
-                float y = AlturaEnMosaico(terrains, wx, wz);
+                float y = AlturaEnPunto(wx, wz, terrains);
 
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, raiz.transform);
                 go.transform.position = new Vector3(wx, y, wz);

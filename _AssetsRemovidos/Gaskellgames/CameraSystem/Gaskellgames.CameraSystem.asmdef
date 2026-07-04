@@ -1,0 +1,18 @@
+{
+    "name": "Gaskellgames.CameraSystem",
+    "rootNamespace": "Gaskellgames.CameraSystem",
+    "references": [
+        "GUID:344d6eb671e15a94aa369629b2973018",
+        "GUID:841cee5f278faaa44b687f2e81c9b6e2",
+        "GUID:75469ad4d38634e559750d17036d5f7c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
