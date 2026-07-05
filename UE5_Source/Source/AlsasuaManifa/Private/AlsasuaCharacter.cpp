@@ -1,10 +1,12 @@
 // AlsasuaCharacter.cpp
 // ═══════════════════════════════════════════════════════════════════════════
-//  Implementación del personaje jugable principal (UE5.4+).
+//  Implementación del personaje jugable principal.
+//  Objetivo EXACTO: Unreal Engine 5.4.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "AlsasuaCharacter.h"
 
+// Cabeceras concretas (IWYU: sin Unity build hay que incluirlas todas).
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -13,13 +15,14 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/LocalPlayer.h"
 
+// Enhanced Input (UE5.4).
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
 
-// Componente de trayectoria de GASP (UE5.4+). Registra/predice la trayectoria
-// para PoseSearch y se actualiza por sí mismo (no hay que llamar a su tick).
+// Componente de trayectoria de GASP (plugin MotionTrajectory, UE5.4). Registra
+// y predice la trayectoria para PoseSearch y se actualiza por sí mismo.
 #include "CharacterTrajectoryComponent.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,57 +42,56 @@ AAlsasuaCharacter::AAlsasuaCharacter()
     bUseControllerRotationYaw   = false;
     bUseControllerRotationRoll  = false;
 
-    // Recibir aviso del ápice del salto (para blends/efectos en NotifyJumpApex).
+    // Sin mantener el salto (el ápice se notifica de inmediato).
     JumpMaxHoldTime = 0.f;
 
     UCharacterMovementComponent* Mov = GetCharacterMovement();
-    Mov->bOrientRotationToMovement   = true;                     // gira hacia la dirección de avance
-    Mov->RotationRate                = FRotator(0.f, 500.f, 0.f);// velocidad de giro
-    Mov->MaxWalkSpeed                = VelocidadCorrer;          // velocidad base al moverse
-    Mov->MaxWalkSpeedCrouched        = VelocidadAgachado;       // velocidad agachado
+    Mov->bOrientRotationToMovement   = true;                      // gira hacia la dirección de avance
+    Mov->RotationRate                = FRotator(0.f, 500.f, 0.f); // velocidad de giro
+    Mov->MaxWalkSpeed                = MaxWalkSpeed;              // velocidad base al moverse
+    Mov->MaxWalkSpeedCrouched        = MaxCrouchSpeed;           // velocidad agachado
     Mov->JumpZVelocity               = 500.f;
     Mov->AirControl                  = 0.35f;
     Mov->BrakingDecelerationWalking  = 2000.f;
-    Mov->bNotifyApex                 = true;                     // dispara NotifyJumpApex()
-    // Altura de la cápsula al agacharse (propiedad pública del CMC en UE5.4).
-    Mov->CrouchedHalfHeight          = AlturaMediaAgachado;
-    // Permitir agacharse (accesor correcto en UE5.4; NavAgentProps pasó a protegido).
-    Mov->GetNavAgentPropertiesRef().bCanCrouch = true;
+    Mov->bNotifyApex                 = true;                      // dispara NotifyJumpApex()
+    Mov->CrouchedHalfHeight          = CrouchedHalfHeight;        // altura de cápsula agachado
+    // Permitir agacharse (NavAgentProps es público en UE5.4).
+    Mov->NavAgentProps.bCanCrouch    = true;
 
     // ── Brazo de resorte (cámara AAA con lag) ───────────────────────────────
     SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
     SpringArm->SetupAttachment(RootComponent);
-    SpringArm->TargetArmLength          = 400.f;                   // distancia de la cámara
-    SpringArm->bUsePawnControlRotation   = true;                   // gira con el controlador (ratón)
-    SpringArm->bEnableCameraLag          = true;                   // suavizado posicional
-    SpringArm->bEnableCameraRotationLag  = true;                   // suavizado rotacional
+    SpringArm->TargetArmLength          = 400.f;                    // distancia de la cámara
+    SpringArm->bUsePawnControlRotation   = true;                    // gira con el controlador (ratón)
+    SpringArm->bEnableCameraLag          = true;                    // suavizado posicional
+    SpringArm->bEnableCameraRotationLag  = true;                    // suavizado rotacional
     SpringArm->CameraLagSpeed            = 10.f;
-    SpringArm->CameraRotationLagSpeed    = 10.f;
-    SpringArm->SocketOffset              = FVector(0.f, 0.f, 60.f);// sube la cámara sobre el hombro
+    SpringArm->CameraRotationLagSpeed    = 15.f;
+    SpringArm->SocketOffset              = FVector(0.f, 0.f, 60.f); // sube la cámara sobre el hombro
     // Pitch inicial de -30° (mirando ligeramente hacia abajo).
     SpringArm->SetRelativeRotation(FRotator(-30.f, 0.f, 0.f));
 
     // ── Cámara de seguimiento ───────────────────────────────────────────────
-    Camara = CreateDefaultSubobject<UCameraComponent>(TEXT("Camara"));
-    Camara->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
-    Camara->bUsePawnControlRotation = false;  // la rotación la aporta el brazo de resorte
+    Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+    Camera->bUsePawnControlRotation = false;  // la rotación la aporta el brazo de resorte
 
     // ── Componente de trayectoria (Motion Matching / GASP) ──────────────────
-    Trayectoria = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("Trayectoria"));
+    TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  BeginPlay: registrar el contexto de entrada (IMC_Jugador).
+//  BeginPlay: registrar el contexto de entrada (IMC_Jugador) y sanear atributos.
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
     // Sanear atributos por si el diseñador dejó valores incoherentes en el editor.
-    VidaMaxima    = FMath::Max(1.f, VidaMaxima);
-    AguanteMaximo = FMath::Max(1.f, AguanteMaximo);
-    Vida          = FMath::Clamp(Vida,    0.f, VidaMaxima);
-    Aguante       = FMath::Clamp(Aguante, 0.f, AguanteMaximo);
+    MaxHealth      = FMath::Max(1.f, MaxHealth);
+    MaxStamina     = FMath::Max(1.f, MaxStamina);
+    CurrentHealth  = FMath::Clamp(CurrentHealth,  0.f, MaxHealth);
+    CurrentStamina = FMath::Clamp(CurrentStamina, 0.f, MaxStamina);
 
     // Añadir el Input Mapping Context al subsistema de Enhanced Input del jugador local.
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -99,7 +101,7 @@ void AAlsasuaCharacter::BeginPlay()
         {
             if (IMC_Jugador)
             {
-                Subsistema->AddMappingContext(IMC_Jugador, PrioridadIMC);
+                Subsistema->AddMappingContext(IMC_Jugador, MappingPriority);
             }
         }
     }
@@ -205,12 +207,12 @@ void AAlsasuaCharacter::OnSaltarFin(const FInputActionValue& /*Valor*/)
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::OnCorrer(const FInputActionValue& /*Valor*/)
 {
-    bQuiereEsprintar = true;
+    bWantsToSprint = true;
 }
 
 void AAlsasuaCharacter::OnCorrerFin(const FInputActionValue& /*Valor*/)
 {
-    bQuiereEsprintar = false;
+    bWantsToSprint = false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -218,15 +220,15 @@ void AAlsasuaCharacter::OnCorrerFin(const FInputActionValue& /*Valor*/)
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::OnAgacharse(const FInputActionValue& /*Valor*/)
 {
-    if (bEstaAgachado)
+    if (bIsCrouching)
     {
         UnCrouch();
-        bEstaAgachado = false;
+        bIsCrouching = false;
     }
     else
     {
         Crouch();
-        bEstaAgachado = true;
+        bIsCrouching = true;
     }
 }
 
@@ -259,11 +261,11 @@ void AAlsasuaCharacter::ActualizarVelocidadMovimiento()
 
     // Solo se esprinta si: hay intención, queda aguante y el personaje se mueve.
     const bool bMoviendose = Mov->Velocity.SizeSquared2D() > FMath::Square(10.f);
-    bEstaCorriendo = bQuiereEsprintar && Aguante > 0.f && bMoviendose && !bEstaAgachado;
+    bIsRunning = bWantsToSprint && CurrentStamina > 0.f && bMoviendose && !bIsCrouching;
 
     // La velocidad agachado la gestiona MaxWalkSpeedCrouched; solo tocamos MaxWalkSpeed.
-    Mov->MaxWalkSpeedCrouched = VelocidadAgachado;
-    Mov->MaxWalkSpeed = bEstaCorriendo ? VelocidadSprint : VelocidadCorrer;
+    Mov->MaxWalkSpeedCrouched = MaxCrouchSpeed;
+    Mov->MaxWalkSpeed = bIsRunning ? MaxSprintSpeed : MaxWalkSpeed;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,16 +273,16 @@ void AAlsasuaCharacter::ActualizarVelocidadMovimiento()
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::ActualizarAguante(float DeltaSeconds)
 {
-    if (bEstaCorriendo)
+    if (bIsRunning)
     {
-        Aguante = FMath::Max(0.f, Aguante - ConsumoAguantePorSeg * DeltaSeconds);
+        CurrentStamina = FMath::Max(0.f, CurrentStamina - StaminaDrainRate * DeltaSeconds);
         // Si se agota, cancelar la intención para forzar recuperación.
-        if (Aguante <= 0.f)
-            bQuiereEsprintar = false;
+        if (CurrentStamina <= 0.f)
+            bWantsToSprint = false;
     }
     else
     {
-        Aguante = FMath::Min(AguanteMaximo, Aguante + RegenAguantePorSeg * DeltaSeconds);
+        CurrentStamina = FMath::Min(MaxStamina, CurrentStamina + StaminaRegenRate * DeltaSeconds);
     }
 }
 

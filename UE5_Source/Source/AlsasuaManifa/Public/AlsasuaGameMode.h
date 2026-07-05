@@ -1,7 +1,7 @@
 // AlsasuaGameMode.h
 // ═══════════════════════════════════════════════════════════════════════════
-//  GameMode principal de AlsasuaManifa. Establece AAlsasuaCharacter como el
-//  pawn por defecto que se posee al arrancar la partida.
+//  GameMode principal de AlsasuaManifa (UE 5.4). Establece AAlsasuaCharacter
+//  como pawn por defecto y un HUD por defecto (stub, sustituible por Blueprint).
 // ═══════════════════════════════════════════════════════════════════════════
 
 #pragma once
@@ -16,6 +16,6 @@ class ALSASUAMANIFA_API AAlsasuaGameMode : public AGameModeBase
     GENERATED_BODY()
 
 public:
-    // Constructor: fija el DefaultPawnClass a AAlsasuaCharacter.
+    // Constructor: fija DefaultPawnClass a AAlsasuaCharacter y el HUD por defecto.
     AAlsasuaGameMode();
 };
