@@ -18,6 +18,9 @@ public class AlsasuaManifa : ModuleRules
         // Usar cabeceras precompiladas explícitas (recomendado por Epic para módulos de juego).
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+        // Forzar IWYU (include-what-you-use), obligatorio a partir de UE5.2+.
+        IWYUSupport = IWYUSupport.Full;
+
         // ── Dependencias públicas (expuestas a otros módulos que dependan de este) ──
         PublicDependencyModuleNames.AddRange(new string[]
         {
@@ -29,22 +32,26 @@ public class AlsasuaManifa : ModuleRules
             // Sistema de entrada moderno (UE5.1+): IMC_Jugador, IA_Mover, etc.
             "EnhancedInput",
 
-            // Motion Matching / Game Animation Sample Project (GASP).
-            "PoseSearch",                    // base de datos de poses + motion matching
-            "MotionTrajectory",              // UMotionTrajectoryComponent (trayectoria)
-            "AnimationWarping",              // orientation/stride/slope warping
-            "AnimationLocomotionLibrary",    // nodos de anim de locomoción reutilizables
-            "Chooser",                        // tablas de selección de animación (Chooser)
-
             // IA y navegación (enemigos que patrullan sobre NavMesh).
             "AIModule",
             "NavigationSystem",
         });
 
         // ── Dependencias privadas (solo para la implementación .cpp) ──
+        //  Los módulos de GASP son plugins EXPERIMENTALES: además de listarlos
+        //  aquí hay que habilitarlos en el .uproject (ver README).
         PrivateDependencyModuleNames.AddRange(new string[]
         {
-            // Añade aquí módulos usados solo internamente (p. ej. "Slate", "UMG").
+            // Motion Matching / Game Animation Sample Project (GASP).
+            "PoseSearch",                    // base de datos de poses + motion matching
+            "MotionTrajectory",              // UCharacterTrajectoryComponent (trayectoria)
+            "AnimationWarping",              // orientation/stride/slope warping
+            "AnimationLocomotionLibrary",    // nodos de anim de locomoción reutilizables
+            "Chooser",                       // tablas de selección de animación (Chooser)
+
+            // Utilidades de animación / gameplay usadas por los sistemas anteriores.
+            "AnimationCore",
+            "GameplayTags",
         });
     }
 }
