@@ -16,6 +16,7 @@ class ALSASUAMANIFA_API AAlsasuaGameMode : public AGameModeBase
     GENERATED_BODY()
 
 public:
-    // Constructor: fija DefaultPawnClass a AAlsasuaCharacter y el HUD por defecto.
+    // Constructor: fija DefaultPawnClass (AAlsasuaCharacter), PlayerControllerClass
+    // (AAlsasuaPlayerController) y HUDClass (AAlsasuaHUD).
     AAlsasuaGameMode();
 };

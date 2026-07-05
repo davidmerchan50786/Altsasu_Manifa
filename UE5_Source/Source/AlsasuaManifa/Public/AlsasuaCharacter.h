@@ -4,11 +4,18 @@
 //  Objetivo EXACTO: Unreal Engine 5.4.
 //
 //  Integra:
-//    · Enhanced Input (UE5.4) : IMC_Jugador + IA_Mover/Mirar/Saltar/Correr/Agacharse
+//    · Enhanced Input (UE5.4) : IMC_Jugador + IA_Mover/Mirar/Saltar/Correr/
+//                               Agacharse/Interactuar
 //    · Motion Matching / GASP : UCharacterTrajectoryComponent alimenta PoseSearch
 //    · Cámara AAA             : SpringArm con lag + Camera (tercera persona)
 //    · Esqueleto              : SK_Mannequin (mannequin de Epic / GASP)
 //    · Hooks de AimOffset     : GetAimOffsetYaw/Pitch para el AnimBP
+//    · Variables ALS/GASP     : Speed2D, Direction, Gait, bIsInAir para el AnimBP
+//    · Sistema de interacción : line trace + interfaz IInteractuable
+//    · Traversal / vault      : sphere trace de detección de salientes
+//    · Foot IK y pisadas      : trazas de pie + sonido de pisada
+//    · Delegados de atributos : OnHealthChanged / OnStaminaChanged (para HUD)
+//    · Guardado de partida    : GuardarPartida / CargarPartida (USaveGame)
 //    · Stubs listos para GAS  : Salud (Health) y Aguante (Stamina)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -25,7 +32,24 @@ class UCameraComponent;
 class UCharacterTrajectoryComponent;   // Motion Matching / GASP (MotionTrajectory, UE5.4)
 class UInputMappingContext;
 class UInputAction;
+class USoundBase;
 struct FInputActionValue;
+
+/**
+ * Marcha de locomoción del personaje (para blends y Motion Matching del AnimBP).
+ */
+UENUM(BlueprintType)
+enum class EMovementGait : uint8
+{
+    Idle    UMETA(DisplayName = "Parado"),
+    Walk    UMETA(DisplayName = "Andar"),
+    Run     UMETA(DisplayName = "Correr"),
+    Sprint  UMETA(DisplayName = "Esprintar")
+};
+
+// Delegados de atributos (para que el HUD/UMG reaccione a los cambios).
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged,  float, Current, float, Max);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStaminaChanged, float, Current, float, Max);
 
 /**
  * Personaje jugable principal. Diseñado para locomoción con Motion Matching
@@ -40,6 +64,15 @@ class ALSASUAMANIFA_API AAlsasuaCharacter : public ACharacter
 public:
     // Constructor: crea y configura los componentes (cámara, spring arm, trayectoria).
     AAlsasuaCharacter();
+
+    // ── Delegados de atributos (BlueprintAssignable para enlazar el HUD) ────
+    /** Se emite al cambiar la salud (Current, Max). */
+    UPROPERTY(BlueprintAssignable, Category = "Atributos|Salud")
+    FOnHealthChanged OnHealthChanged;
+
+    /** Se emite al cambiar el aguante (Current, Max). */
+    UPROPERTY(BlueprintAssignable, Category = "Atributos|Aguante")
+    FOnStaminaChanged OnStaminaChanged;
 
 protected:
     // ── Ciclo de vida ─────────────────────────────────────────────────────────
@@ -102,6 +135,10 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UInputAction> IA_Agacharse;
 
+    /** Interactuar (bool: Started → line trace + IInteractuable). */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UInputAction> IA_Interactuar;
+
     // ── Manejadores de entrada (Enhanced Input) ────────────────────────────────
     void OnMover(const FInputActionValue& Valor);
     void OnMirar(const FInputActionValue& Valor);
@@ -110,6 +147,7 @@ protected:
     void OnCorrer(const FInputActionValue& Valor);
     void OnCorrerFin(const FInputActionValue& Valor);
     void OnAgacharse(const FInputActionValue& Valor);
+    void OnInteractuar(const FInputActionValue& Valor);
 
     // ── Velocidades de movimiento (cm/s) — configurables en el editor ──────────
 
@@ -128,6 +166,40 @@ protected:
     /** Altura de la cápsula al agacharse (mitad de la altura). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movimiento", meta = (AllowPrivateAccess = "true", ClampMin = "20.0", UIMin = "20.0"))
     float CrouchedHalfHeight = 60.f;
+
+    /** Umbral de velocidad para pasar de "Andar" a "Correr" (para EMovementGait). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movimiento", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+    float UmbralCorrer = 350.f;
+
+    // ── Interacción / Traversal / Foot IK ──────────────────────────────────────
+
+    /** Alcance del line trace de interacción (cm). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaccion", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+    float AlcanceInteraccion = 200.f;
+
+    /** Distancia hacia delante para detectar un saliente que trepar (cm). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+    float DistanciaDeteccionSaliente = 80.f;
+
+    /** Radio del sphere trace de detección de salientes (cm). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Traversal", meta = (AllowPrivateAccess = "true", ClampMin = "1.0"))
+    float RadioDeteccionSaliente = 25.f;
+
+    /** Distancia de la traza de Foot IK hacia abajo desde el pie (cm). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FootIK", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+    float DistanciaTrazaFootIK = 60.f;
+
+    /** Nombre del socket del pie izquierdo en la malla (esqueleto Mannequin). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FootIK", meta = (AllowPrivateAccess = "true"))
+    FName SocketPieIzquierdo = TEXT("foot_l");
+
+    /** Nombre del socket del pie derecho en la malla (esqueleto Mannequin). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FootIK", meta = (AllowPrivateAccess = "true"))
+    FName SocketPieDerecho = TEXT("foot_r");
+
+    /** Sonido de pisada (se reproduce en PlayFootstepSound, típicamente desde un AnimNotify). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sonido", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USoundBase> FootstepSound;
 
     // ── Atributos listos para GAS (por ahora, stubs sin AbilitySystem) ─────────
     //  Al integrar GameplayAbilities, migrar estos a un UAttributeSet.
@@ -156,7 +228,23 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Atributos|Aguante", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
     float StaminaRegenRate = 15.f;
 
-    // ── Estado (expuesto al AnimBP como BlueprintReadOnly) ─────────────────────
+    // ── Estado / variables ALS-GASP (expuesto al AnimBP como BlueprintReadOnly) ─
+
+    /** Velocidad planar actual (cm/s) — para blends de locomoción. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
+    float Speed2D = 0.f;
+
+    /** Dirección del movimiento respecto al forward del actor [-180,180]. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
+    float Direction = 0.f;
+
+    /** Marcha de locomoción actual (parado/andar/correr/sprint). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
+    EMovementGait Gait = EMovementGait::Idle;
+
+    /** true si el personaje está en el aire (salto/caída). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
+    bool bIsInAir = false;
 
     /** true mientras el personaje está esprintando de verdad (intención + aguante). */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
@@ -170,11 +258,19 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
     bool bWantsToSprint = false;
 
+    /** true si hay un saliente delante apto para saltar/trepar (vault). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Estado", meta = (AllowPrivateAccess = "true"))
+    bool bCanVault = false;
+
 private:
     // Aplica la velocidad de movimiento según el estado (sprint/andar/agachado).
     void ActualizarVelocidadMovimiento();
     // Consume/regenera aguante y corta el sprint si se agota.
     void ActualizarAguante(float DeltaSeconds);
+    // Actualiza Speed2D, Direction, Gait y bIsInAir para el AnimBP.
+    void ActualizarVariablesAnimacion();
+    // Sphere trace hacia delante+arriba para detectar salientes (actualiza bCanVault).
+    void CheckTraversal();
 
 public:
     // ── Accesores para el AnimBP (Motion Matching / AimOffset) ─────────────────
@@ -197,19 +293,76 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "AimOffset")
     float GetAimOffsetPitch() const;
 
+    // ── Accesores de estado / ALS (para el AnimInstance) ───────────────────────
+
+    UFUNCTION(BlueprintPure, Category = "Estado")
+    FORCEINLINE float GetSpeed2D() const { return Speed2D; }
+
+    UFUNCTION(BlueprintPure, Category = "Estado")
+    FORCEINLINE float GetMovementDirection() const { return Direction; }
+
+    UFUNCTION(BlueprintPure, Category = "Estado")
+    FORCEINLINE EMovementGait GetMovementGait() const { return Gait; }
+
+    UFUNCTION(BlueprintPure, Category = "Estado")
+    FORCEINLINE bool IsInAir() const { return bIsInAir; }
+
     UFUNCTION(BlueprintPure, Category = "Estado")
     FORCEINLINE bool IsRunning() const { return bIsRunning; }
 
     UFUNCTION(BlueprintPure, Category = "Estado")
     FORCEINLINE bool IsCrouchingState() const { return bIsCrouching; }
 
+    UFUNCTION(BlueprintPure, Category = "Estado")
+    FORCEINLINE bool CanVault() const { return bCanVault; }
+
+    // ── Atributos: getters y setters (setters emiten los delegados) ────────────
+
     UFUNCTION(BlueprintPure, Category = "Atributos|Salud")
     FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+
+    UFUNCTION(BlueprintPure, Category = "Atributos|Salud")
+    FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+
+    /** Fija la salud (clamp 0..Max) y emite OnHealthChanged. */
+    UFUNCTION(BlueprintCallable, Category = "Atributos|Salud")
+    void SetCurrentHealth(float NuevaSalud);
 
     UFUNCTION(BlueprintPure, Category = "Atributos|Aguante")
     FORCEINLINE float GetCurrentStamina() const { return CurrentStamina; }
 
+    UFUNCTION(BlueprintPure, Category = "Atributos|Aguante")
+    FORCEINLINE float GetMaxStamina() const { return MaxStamina; }
+
+    /** Fija el aguante (clamp 0..Max) y emite OnStaminaChanged. */
+    UFUNCTION(BlueprintCallable, Category = "Atributos|Aguante")
+    void SetCurrentStamina(float NuevoAguante);
+
     /** Normalizado 0–1 para barras de HUD. */
     UFUNCTION(BlueprintPure, Category = "Atributos|Aguante")
     float GetStaminaNormalized() const { return MaxStamina > 0.f ? CurrentStamina / MaxStamina : 0.f; }
+
+    // ── Foot IK y sonido de pisadas ────────────────────────────────────────────
+
+    /**
+     * Devuelve la posición de suelo bajo el pie indicado (line trace hacia abajo).
+     * Útil para nodos de Foot IK (Two Bone IK) en el AnimBP.
+     * @param bLeftFoot  true = pie izquierdo, false = pie derecho.
+     */
+    UFUNCTION(BlueprintCallable, Category = "FootIK")
+    FVector GetFootIKLocation(bool bLeftFoot) const;
+
+    /** Reproduce el sonido de pisada en la posición del actor (desde un AnimNotify). */
+    UFUNCTION(BlueprintCallable, Category = "Sonido")
+    void PlayFootstepSound();
+
+    // ── Guardado de partida ────────────────────────────────────────────────────
+
+    /** Guarda el estado del personaje en la ranura por defecto. */
+    UFUNCTION(BlueprintCallable, Category = "Guardado")
+    bool GuardarPartida();
+
+    /** Carga el estado del personaje desde la ranura por defecto. */
+    UFUNCTION(BlueprintCallable, Category = "Guardado")
+    bool CargarPartida();
 };

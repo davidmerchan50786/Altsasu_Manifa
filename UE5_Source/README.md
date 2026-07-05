@@ -12,14 +12,26 @@ Motion Matching (GASP), una cámara AAA en tercera persona y stubs listos para G
 ```
 UE5_Source/
 ├── AlsasuaManifa.uproject            # proyecto UE 5.4 con los plugins habilitados
+├── Config/
+│   ├── DefaultGame.ini               # GameMode/pawn/PC/HUD por defecto
+│   └── DefaultInput.ini              # Enhanced Input a nivel de motor
 └── Source/AlsasuaManifa/
     ├── AlsasuaManifa.Build.cs        # dependencias del módulo (Cpp20, bUseUnity=false)
     ├── AlsasuaManifa.h / .cpp        # módulo primario de juego
     ├── Public/
-    │   ├── AlsasuaCharacter.h        # personaje (cámara + input + trayectoria)
-    │   └── AlsasuaGameMode.h         # GameMode (pawn + HUD por defecto)
+    │   ├── AlsasuaCharacter.h        # personaje (cámara + input + trayectoria + ALS)
+    │   ├── AlsasuaAnimInstance.h     # AnimInstance base para el AnimBP (GASP)
+    │   ├── AlsasuaPlayerController.h # sensibilidad de ratón, pausa, modo de entrada
+    │   ├── AlsasuaHUD.h              # crea el widget UMG principal
+    │   ├── AlsasuaSaveGame.h         # guardado/carga de partida (USaveGame)
+    │   ├── IInteractuable.h          # interfaz de objetos interactuables
+    │   └── AlsasuaGameMode.h         # GameMode (pawn + PC + HUD)
     └── Private/
         ├── AlsasuaCharacter.cpp
+        ├── AlsasuaAnimInstance.cpp
+        ├── AlsasuaPlayerController.cpp
+        ├── AlsasuaHUD.cpp
+        ├── AlsasuaSaveGame.cpp
         └── AlsasuaGameMode.cpp
 ```
 
@@ -51,9 +63,10 @@ Si integras este `Source/` en un `.uproject` existente, copia la sección
 3. Crear los assets de entrada:
    - `IMC_Jugador` (Input Mapping Context)
    - `IA_Mover` (Vector2D), `IA_Mirar` (Vector2D), `IA_Saltar` (bool),
-     `IA_Correr` (bool), `IA_Agacharse` (bool)
+     `IA_Correr` (bool), `IA_Agacharse` (bool), `IA_Interactuar` (bool)
 4. En `BP_JugadorAlsasua`, asignar esos assets en las propiedades **Input**
-   (`IMC_Jugador`, `IA_Mover`, `IA_Mirar`, `IA_Saltar`, `IA_Correr`, `IA_Agacharse`).
+   (`IMC_Jugador`, `IA_Mover`, `IA_Mirar`, `IA_Saltar`, `IA_Correr`, `IA_Agacharse`,
+   `IA_Interactuar`).
 5. Ajustar (opcional) las velocidades **Movimiento** (`MaxWalkSpeed` 300 /
    `MaxSprintSpeed` 600 / `MaxCrouchSpeed` 150) y los **Atributos** de
    Salud/Aguante desde el panel de detalles.
@@ -78,20 +91,62 @@ DefaultPlayerInputClass=/Script/EnhancedInput.EnhancedPlayerInput
 DefaultInputComponentClass=/Script/EnhancedInput.EnhancedInputComponent
 ```
 
-## Conectar el AnimBP con `UCharacterTrajectoryComponent`
+## Conectar el AnimBP con `AlsasuaAnimInstance` y Motion Matching
 
 El personaje crea un `UCharacterTrajectoryComponent` (plugin **MotionTrajectory**,
-estable en UE 5.4) que se actualiza por sí mismo cada frame.
+estable en UE 5.4) que se actualiza por sí mismo cada frame. Para el grafo de
+animación se incluye una clase base en C++, **`UAlsasuaAnimInstance`**, que ya
+cachea el personaje y expone todas las variables listas para usar.
 
-1. En el AnimBP (Event Graph), obtén el pawn con `TryGetPawnOwner` y castea a
-   `AAlsasuaCharacter`.
-2. Llama a **`GetCharacterTrajectory()`** para recuperar el componente y, desde
-   él, la `Trajectory` (histórica + predicha) que alimenta el nodo **Motion
+1. Crea el AnimBP derivándolo de **`AlsasuaAnimInstance`** (no de `AnimInstance`).
+   Así hereda, ya calculadas en C++ (`NativeUpdateAnimation`), estas variables
+   `BlueprintReadOnly`:
+   - `Speed2D`, `Direction`, `Gait` (enum `EMovementGait`), `bIsInAir`,
+     `bIsCrouching`, `bIsRunning`, `bCanVault`
+   - `AimOffsetYaw`, `AimOffsetPitch`
+   - `Trajectory` (el `UCharacterTrajectoryComponent`)
+2. En el grafo, arrastra **`Trajectory`** al pin *Trajectory* del nodo **Motion
    Matching** de PoseSearch.
-3. Para el AimOffset, usa **`GetAimOffsetYaw()`** y **`GetAimOffsetPitch()`** como
-   entradas del blendspace de apuntado.
-4. Los flags **`IsRunning()`** / **`IsCrouchingState()`** y
-   **`GetStaminaNormalized()`** están disponibles para blends y HUD.
+3. Usa `AimOffsetYaw` / `AimOffsetPitch` como entradas del blendspace de apuntado.
+4. Usa `Gait` / `Speed2D` / `Direction` para los blends de locomoción y `bCanVault`
+   para disparar el montaje de salto/trepado (vault).
+
+> Si prefieres calcularlo en el grafo, el personaje también expone los accesores
+> equivalentes: `GetCharacterTrajectory()`, `GetSpeed2D()`, `GetMovementDirection()`,
+> `GetMovementGait()`, `IsRunning()`, `IsCrouchingState()`, `CanVault()`,
+> `GetAimOffsetYaw()`, `GetAimOffsetPitch()`, `GetStaminaNormalized()`.
+
+## Interacción, Foot IK y pisadas
+
+- **Interacción**: la acción `IA_Interactuar` lanza un *line trace* de
+  `AlcanceInteraccion` cm desde la vista; si el actor golpeado implementa la
+  interfaz **`IInteractuable`**, se llama a `Interactuar(Jugador)`. Implementa la
+  interfaz en cualquier Actor (C++ o Blueprint) para hacerlo interactuable.
+- **Foot IK**: `GetFootIKLocation(bLeftFoot)` devuelve el punto de suelo bajo cada
+  pie (sockets `foot_l` / `foot_r`) para alimentar nodos *Two Bone IK* en el AnimBP.
+- **Pisadas**: asigna `FootstepSound` y llama a `PlayFootstepSound()` desde un
+  *AnimNotify* en las animaciones de caminar/correr.
+
+## HUD y delegados de atributos
+
+El personaje emite dos delegados `BlueprintAssignable` cuando cambian sus
+atributos: **`OnHealthChanged(Current, Max)`** y **`OnStaminaChanged(Current, Max)`**.
+Enlázalos desde el widget UMG (creado por `AAlsasuaHUD`) para actualizar las barras
+sin hacer *polling* en Tick. `AAlsasuaHUD` instancia el `HUDWidgetClass` en
+`BeginPlay` y lo añade al viewport.
+
+## PlayerController (sensibilidad de ratón y pausa)
+
+`AAlsasuaPlayerController` expone `MouseSensitivityX` / `MouseSensitivityY`
+(`EditAnywhere`) y los métodos `SetMouseSensitivity(X, Y)` y `TogglePause()`
+(`BlueprintCallable`), además de fijar el modo de entrada solo-juego en `BeginPlay`.
+
+## Guardado de partida
+
+`UAlsasuaSaveGame` persiste salud, aguante, posición y rotación en la ranura
+`AlsasuaSave1`. Desde el personaje (o Blueprint) llama a **`GuardarPartida()`** y
+**`CargarPartida()`**; internamente usan `UGameplayStatics::SaveGameToSlot` /
+`LoadGameFromSlot`.
 
 ## Notas de diseño
 

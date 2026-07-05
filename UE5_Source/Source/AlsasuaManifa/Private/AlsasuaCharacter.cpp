@@ -13,13 +13,22 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
+#include "Engine/EngineTypes.h"
+#include "CollisionQueryParams.h"
+#include "Kismet/GameplayStatics.h"
 
 // Enhanced Input (UE5.4).
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
+
+// Sistemas propios.
+#include "IInteractuable.h"
+#include "AlsasuaSaveGame.h"
 
 // Componente de trayectoria de GASP (plugin MotionTrajectory, UE5.4). Registra
 // y predice la trayectoria para PoseSearch y se actualiza por sí mismo.
@@ -30,7 +39,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 AAlsasuaCharacter::AAlsasuaCharacter()
 {
-    // Tick para regenerar/consumir aguante y actualizar velocidad de movimiento.
+    // Tick para regenerar/consumir aguante, actualizar velocidad y variables de anim.
     PrimaryActorTick.bCanEverTick = true;
 
     // ── Colisión de la cápsula ──────────────────────────────────────────────
@@ -93,6 +102,10 @@ void AAlsasuaCharacter::BeginPlay()
     CurrentHealth  = FMath::Clamp(CurrentHealth,  0.f, MaxHealth);
     CurrentStamina = FMath::Clamp(CurrentStamina, 0.f, MaxStamina);
 
+    // Emitir el estado inicial para que el HUD arranque con los valores correctos.
+    OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+    OnStaminaChanged.Broadcast(CurrentStamina, MaxStamina);
+
     // Añadir el Input Mapping Context al subsistema de Enhanced Input del jugador local.
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
@@ -108,7 +121,7 @@ void AAlsasuaCharacter::BeginPlay()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Tick: gestionar aguante y velocidad de movimiento.
+//  Tick: aguante, velocidad, variables de animación y detección de salientes.
 //  (La trayectoria de GASP se actualiza sola; NO se llama a su TickComponent.)
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::Tick(float DeltaSeconds)
@@ -117,6 +130,8 @@ void AAlsasuaCharacter::Tick(float DeltaSeconds)
 
     ActualizarAguante(DeltaSeconds);
     ActualizarVelocidadMovimiento();
+    ActualizarVariablesAnimacion();
+    CheckTraversal();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,6 +169,10 @@ void AAlsasuaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
         // Agacharse: Started alterna crouch/uncrouch.
         if (IA_Agacharse)
             EIC->BindAction(IA_Agacharse, ETriggerEvent::Started, this, &AAlsasuaCharacter::OnAgacharse);
+
+        // Interactuar: Started lanza el line trace de interacción.
+        if (IA_Interactuar)
+            EIC->BindAction(IA_Interactuar, ETriggerEvent::Started, this, &AAlsasuaCharacter::OnInteractuar);
     }
 }
 
@@ -233,6 +252,36 @@ void AAlsasuaCharacter::OnAgacharse(const FInputActionValue& /*Valor*/)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  OnInteractuar: line trace hacia delante y llamada a IInteractuable::Interactuar.
+// ─────────────────────────────────────────────────────────────────────────────
+void AAlsasuaCharacter::OnInteractuar(const FInputActionValue& /*Valor*/)
+{
+    UWorld* World = GetWorld();
+    if (World == nullptr)
+        return;
+
+    // Traza desde la cámara/vista hacia delante hasta AlcanceInteraccion.
+    FVector Origen;
+    FRotator RotVista;
+    GetActorEyesViewPoint(Origen, RotVista);
+    const FVector Fin = Origen + RotVista.Vector() * AlcanceInteraccion;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FHitResult Impacto;
+    if (World->LineTraceSingleByChannel(Impacto, Origen, Fin, ECC_Visibility, Params))
+    {
+        AActor* Objetivo = Impacto.GetActor();
+        // Si el actor golpeado implementa la interfaz, invocar Interactuar.
+        if (Objetivo && Objetivo->Implements<UInteractuable>())
+        {
+            IInteractuable::Execute_Interactuar(Objetivo, this);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  NotifyJumpApex: se llama en el punto más alto del salto (bNotifyApex = true).
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::NotifyJumpApex()
@@ -273,6 +322,8 @@ void AAlsasuaCharacter::ActualizarVelocidadMovimiento()
 // ─────────────────────────────────────────────────────────────────────────────
 void AAlsasuaCharacter::ActualizarAguante(float DeltaSeconds)
 {
+    const float AnteriorAguante = CurrentStamina;
+
     if (bIsRunning)
     {
         CurrentStamina = FMath::Max(0.f, CurrentStamina - StaminaDrainRate * DeltaSeconds);
@@ -284,6 +335,121 @@ void AAlsasuaCharacter::ActualizarAguante(float DeltaSeconds)
     {
         CurrentStamina = FMath::Min(MaxStamina, CurrentStamina + StaminaRegenRate * DeltaSeconds);
     }
+
+    // Emitir el delegado solo si el valor cambió de forma apreciable (evita spam).
+    if (!FMath::IsNearlyEqual(AnteriorAguante, CurrentStamina))
+    {
+        OnStaminaChanged.Broadcast(CurrentStamina, MaxStamina);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ActualizarVariablesAnimacion: Speed2D, Direction, Gait y bIsInAir para el AnimBP.
+// ─────────────────────────────────────────────────────────────────────────────
+void AAlsasuaCharacter::ActualizarVariablesAnimacion()
+{
+    const UCharacterMovementComponent* Mov = GetCharacterMovement();
+    if (Mov == nullptr)
+        return;
+
+    const FVector Velocidad = GetVelocity();
+
+    // Velocidad planar (ignora la componente vertical).
+    Speed2D = Velocidad.Size2D();
+
+    // Dirección del movimiento respecto al forward del actor [-180,180].
+    // (Cálculo manual del ángulo con signo; equivale a UKismetAnimationLibrary::CalculateDirection.)
+    if (Speed2D > 1.f)
+    {
+        const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+        const FVector VelNorm = Velocidad.GetSafeNormal2D();
+        const float AnguloRad = FMath::Acos(FMath::Clamp(FVector::DotProduct(Forward, VelNorm), -1.f, 1.f));
+        float Angulo = FMath::RadiansToDegrees(AnguloRad);
+        // Signo según el lado (producto vectorial Z).
+        if (FVector::CrossProduct(Forward, VelNorm).Z < 0.f)
+        {
+            Angulo = -Angulo;
+        }
+        Direction = Angulo;
+    }
+    else
+    {
+        Direction = 0.f;
+    }
+
+    // Estado aéreo.
+    bIsInAir = Mov->IsFalling();
+
+    // Marcha de locomoción según velocidad y estado.
+    if (Speed2D <= 3.f)
+    {
+        Gait = EMovementGait::Idle;
+    }
+    else if (bIsRunning)
+    {
+        Gait = EMovementGait::Sprint;
+    }
+    else if (Speed2D > UmbralCorrer)
+    {
+        Gait = EMovementGait::Run;
+    }
+    else
+    {
+        Gait = EMovementGait::Walk;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CheckTraversal: sphere trace hacia delante+arriba para detectar un saliente.
+//  Actualiza bCanVault (lo consume el AnimBP/lógica de vault).
+// ─────────────────────────────────────────────────────────────────────────────
+void AAlsasuaCharacter::CheckTraversal()
+{
+    UWorld* World = GetWorld();
+    if (World == nullptr)
+    {
+        bCanVault = false;
+        return;
+    }
+
+    // Solo tiene sentido detectar salientes en el suelo y moviéndose hacia delante.
+    if (bIsInAir || Speed2D < 10.f)
+    {
+        bCanVault = false;
+        return;
+    }
+
+    // Origen a la altura del pecho; destino hacia delante.
+    const FVector Origen = GetActorLocation() + FVector(0.f, 0.f, 20.f);
+    const FVector Fin    = Origen + GetActorForwardVector() * DistanciaDeteccionSaliente;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    const FCollisionShape Esfera = FCollisionShape::MakeSphere(RadioDeteccionSaliente);
+
+    FHitResult Impacto;
+    // Golpe frontal → hay un obstáculo que potencialmente se puede trepar.
+    const bool bChoqueFrontal = World->SweepSingleByChannel(
+        Impacto, Origen, Fin, FQuat::Identity, ECC_Visibility, Esfera, Params);
+
+    if (!bChoqueFrontal)
+    {
+        bCanVault = false;
+        return;
+    }
+
+    // Comprobar que hay una superficie plana arriba del obstáculo (borde superable).
+    const FVector OrigenArriba = Impacto.ImpactPoint + FVector(0.f, 0.f, 100.f)
+                                 + GetActorForwardVector() * 10.f;
+    const FVector FinArriba    = OrigenArriba - FVector(0.f, 0.f, 120.f);
+
+    FHitResult ImpactoTecho;
+    const bool bHaySuelo = World->LineTraceSingleByChannel(
+        ImpactoTecho, OrigenArriba, FinArriba, ECC_Visibility, Params);
+
+    // Vault válido si hay borde y su altura es asumible (por debajo del pecho + margen).
+    bCanVault = bHaySuelo &&
+                (ImpactoTecho.ImpactPoint.Z - GetActorLocation().Z) < 120.f;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -300,4 +466,81 @@ float AAlsasuaCharacter::GetAimOffsetPitch() const
 {
     const FRotator Aim = GetBaseAimRotation().GetNormalized();
     return FMath::ClampAngle(Aim.Pitch, -90.f, 90.f);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Setters de atributos (emiten los delegados para el HUD).
+// ─────────────────────────────────────────────────────────────────────────────
+void AAlsasuaCharacter::SetCurrentHealth(float NuevaSalud)
+{
+    const float Anterior = CurrentHealth;
+    CurrentHealth = FMath::Clamp(NuevaSalud, 0.f, MaxHealth);
+    if (!FMath::IsNearlyEqual(Anterior, CurrentHealth))
+    {
+        OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+    }
+}
+
+void AAlsasuaCharacter::SetCurrentStamina(float NuevoAguante)
+{
+    const float Anterior = CurrentStamina;
+    CurrentStamina = FMath::Clamp(NuevoAguante, 0.f, MaxStamina);
+    if (!FMath::IsNearlyEqual(Anterior, CurrentStamina))
+    {
+        OnStaminaChanged.Broadcast(CurrentStamina, MaxStamina);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GetFootIKLocation: line trace hacia abajo desde el socket del pie.
+// ─────────────────────────────────────────────────────────────────────────────
+FVector AAlsasuaCharacter::GetFootIKLocation(bool bLeftFoot) const
+{
+    const USkeletalMeshComponent* Malla = GetMesh();
+    UWorld* World = GetWorld();
+    if (Malla == nullptr || World == nullptr)
+        return GetActorLocation();
+
+    const FName Socket = bLeftFoot ? SocketPieIzquierdo : SocketPieDerecho;
+    const FVector PosicionPie = Malla->GetSocketLocation(Socket);
+
+    // Trazar hacia abajo desde el pie para encontrar el suelo.
+    const FVector Origen = FVector(PosicionPie.X, PosicionPie.Y, GetActorLocation().Z);
+    const FVector Fin    = Origen - FVector(0.f, 0.f, DistanciaTrazaFootIK
+                                            + GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    FHitResult Impacto;
+    if (World->LineTraceSingleByChannel(Impacto, Origen, Fin, ECC_Visibility, Params))
+    {
+        return Impacto.ImpactPoint;
+    }
+    // Sin suelo: devolver la posición actual del pie (sin ajuste de IK).
+    return PosicionPie;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PlayFootstepSound: reproduce el sonido de pisada (desde un AnimNotify).
+// ─────────────────────────────────────────────────────────────────────────────
+void AAlsasuaCharacter::PlayFootstepSound()
+{
+    if (FootstepSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, FootstepSound, GetActorLocation());
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Guardado / carga de partida (delegan en UAlsasuaSaveGame).
+// ─────────────────────────────────────────────────────────────────────────────
+bool AAlsasuaCharacter::GuardarPartida()
+{
+    return UAlsasuaSaveGame::GuardarPersonaje(this);
+}
+
+bool AAlsasuaCharacter::CargarPartida()
+{
+    return UAlsasuaSaveGame::CargarPersonaje(this);
 }

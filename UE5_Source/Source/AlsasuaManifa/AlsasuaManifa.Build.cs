@@ -64,6 +64,11 @@ public class AlsasuaManifa : ModuleRules
 
             // Utilidades de animación usadas por los sistemas anteriores.
             "AnimationCore",
+
+            // Interfaz de usuario (HUD/UMG) y su back-end Slate.
+            "UMG",
+            "Slate",
+            "SlateCore",
         });
     }
 }
