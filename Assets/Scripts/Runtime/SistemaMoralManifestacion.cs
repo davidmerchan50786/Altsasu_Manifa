@@ -95,6 +95,14 @@ public class SistemaMoralManifestacion : MonoBehaviour
         _activa = true;
         enabled = true;
 
+        // Avisar a NPCs y sistemas de que la manifestación arranca (foco + participantes).
+        EventBus.Publish(new ManifestacionIniciadaEvent
+        {
+            centro         = _manifestacion.centroManifestacion,
+            radio          = 140f,
+            participantes  = _manifestacion.numManifestantes,
+        });
+
         AlsasuaLogger.Info("MoralManifa",
             $"Convocatoria x{mult:F2} → {_manifestacion.numManifestantes} manifestantes");
     }
