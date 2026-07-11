@@ -27,6 +27,17 @@ public struct CargaPolicialEvent
     public float intensidad;        // 0–1: nº de agentes y agresividad
 }
 
+/// <summary>
+/// La manifestación se ha iniciado (convocatoria). La disparan los sistemas de
+/// manifestación para que NPCs y sistemas reaccionen al foco de la protesta.
+/// </summary>
+public struct ManifestacionIniciadaEvent
+{
+    public Vector3 centro;   // posición central de la manifestación
+    public float radio;      // radio de influencia en metros
+    public int participantes;
+}
+
 /// <summary>Cambio en la moral de la manifestación (0–100).</summary>
 public struct MoralManifestacionEvent
 {

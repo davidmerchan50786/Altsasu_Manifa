@@ -149,6 +149,12 @@ public class EnemigoPatrulla : MonoBehaviour
     float        _espera;
     System.Action _onNavListo;     // FIX: guardar el handler para poder desuscribir en OnDestroy
 
+    // Reacción a la manifestación: cuando hay una protesta activa dentro del radio,
+    // la patrulla se dirige hacia el foco en lugar de seguir sus waypoints.
+    bool    _manifestacionActiva;
+    Vector3 _centroManifestacion;
+    float   _radioManifestacion = 140f;
+
     void Start()
     {
         _agente = GetComponent<NavMeshAgent>() ?? gameObject.AddComponent<NavMeshAgent>();
@@ -164,17 +170,48 @@ public class EnemigoPatrulla : MonoBehaviour
             SistemaNavMesh.OnNavMeshListo -= _onNavListo;   // ya activado: dejar de escuchar
         };
         SistemaNavMesh.OnNavMeshListo += _onNavListo;
+
+        // Suscripción a eventos de manifestación (una sola vez, no en Update).
+        EventBus.Subscribe<ManifestacionIniciadaEvent>(OnManifestacionIniciada);
+        EventBus.Subscribe<ManifestacionTerminadaEvent>(OnManifestacionTerminada);
     }
 
     void OnDestroy()
     {
         if (_onNavListo != null) SistemaNavMesh.OnNavMeshListo -= _onNavListo;
+        EventBus.Unsubscribe<ManifestacionIniciadaEvent>(OnManifestacionIniciada);
+        EventBus.Unsubscribe<ManifestacionTerminadaEvent>(OnManifestacionTerminada);
+    }
+
+    void OnManifestacionIniciada(ManifestacionIniciadaEvent evt)
+    {
+        _manifestacionActiva  = true;
+        _centroManifestacion  = evt.centro;
+        if (evt.radio > 0f) _radioManifestacion = evt.radio;
+    }
+
+    void OnManifestacionTerminada(ManifestacionTerminadaEvent evt)
+    {
+        _manifestacionActiva = false;
     }
 
     void Update()
     {
         if (!_agente.enabled || waypoints == null || waypoints.Length == 0) return;
         if (_espera > 0f) { _espera -= Time.deltaTime; return; }
+
+        // Con manifestación activa y dentro del radio de influencia, converger al foco.
+        if (_manifestacionActiva &&
+            (transform.position - _centroManifestacion).sqrMagnitude
+                <= _radioManifestacion * _radioManifestacion)
+        {
+            if (!_agente.hasPath || _agente.remainingDistance < 1.5f)
+            {
+                _agente.SetDestination(_centroManifestacion);
+                _espera = Random.Range(0.5f, 1.5f);
+            }
+            return;
+        }
 
         if (!_agente.hasPath || _agente.remainingDistance < 0.8f)
         {
