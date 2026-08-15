@@ -24,3 +24,8 @@ MemoryCaptures/
 *.VC.db
 .DS_Store
 Thumbs.db
+
+# Datos de baking de iluminacion (Unity los regenera automaticamente).
+# No deben versionarse: son artefactos binarios grandes y a menudo se corrompen.
+LightingData.asset
+LightingData.asset.meta
